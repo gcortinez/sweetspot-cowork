@@ -1,0 +1,590 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider  = "postgresql"
+    url       = env("DATABASE_URL")
+    directUrl = env("DIRECT_URL")
+}
+
+// ============================================================================
+// CORE TENANT MANAGEMENT
+// ============================================================================
+
+model Tenant {
+    id          String       @id @default(cuid())
+    name        String
+    slug        String       @unique
+    domain      String?      @unique
+    logo        String?
+    description String?
+    settings    Json?        @default("{}")
+    status      TenantStatus @default(ACTIVE)
+    createdAt   DateTime     @default(now())
+    updatedAt   DateTime     @updatedAt
+
+    // Relationships
+    users              User[]
+    clients            Client[]
+    spaces             Space[]
+    plans              Plan[]
+    services           Service[]
+    bookings           Booking[]
+    invoices           Invoice[]
+    payments           Payment[]
+    accessLogs         AccessLog[]
+    visitors           Visitor[]
+    Quotation          Quotation[]
+    Contract           Contract[]
+    Membership         Membership[]
+    ServiceConsumption ServiceConsumption[]
+
+    @@map("tenants")
+}
+
+enum TenantStatus {
+    ACTIVE
+    SUSPENDED
+    INACTIVE
+}
+
+// ============================================================================
+// USER MANAGEMENT & AUTHENTICATION
+// ============================================================================
+
+model User {
+    id          String     @id @default(cuid())
+    tenantId    String
+    supabaseId  String     @unique
+    email       String
+    firstName   String
+    lastName    String
+    phone       String?
+    avatar      String?
+    role        UserRole
+    status      UserStatus @default(ACTIVE)
+    lastLoginAt DateTime?
+    createdAt   DateTime   @default(now())
+    updatedAt   DateTime   @updatedAt
+
+    // Relationships
+    tenant             Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    client             Client?              @relation(fields: [clientId], references: [id])
+    clientId           String?
+    bookings           Booking[]
+    accessLogs         AccessLog[]
+    createdInvoices    Invoice[]            @relation("InvoiceCreatedBy")
+    Membership         Membership[]
+    ServiceConsumption ServiceConsumption[]
+    Visitor            Visitor[]
+
+    @@unique([tenantId, email])
+    @@map("users")
+}
+
+enum UserRole {
+    SUPER_ADMIN
+    COWORK_ADMIN
+    CLIENT_ADMIN
+    END_USER
+}
+
+enum UserStatus {
+    ACTIVE
+    INACTIVE
+    SUSPENDED
+}
+
+// ============================================================================
+// CLIENT MANAGEMENT (CRM)
+// ============================================================================
+
+model Client {
+    id            String       @id @default(cuid())
+    tenantId      String
+    name          String
+    email         String
+    phone         String?
+    address       String?
+    taxId         String?
+    contactPerson String?
+    status        ClientStatus @default(LEAD)
+    notes         String?
+    createdAt     DateTime     @default(now())
+    updatedAt     DateTime     @updatedAt
+
+    // Relationships
+    tenant     Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    users      User[]
+    contracts  Contract[]
+    invoices   Invoice[]
+    payments   Payment[]
+    quotations Quotation[]
+    Membership Membership[]
+
+    @@unique([tenantId, email])
+    @@map("clients")
+}
+
+enum ClientStatus {
+    LEAD
+    PROSPECT
+    ACTIVE
+    INACTIVE
+    CHURNED
+}
+
+// ============================================================================
+// QUOTATIONS & CONTRACTS
+// ============================================================================
+
+model Quotation {
+    id          String          @id @default(cuid())
+    tenantId    String
+    clientId    String
+    number      String
+    title       String
+    description String?
+    subtotal    Decimal         @db.Decimal(10, 2)
+    tax         Decimal         @default(0) @db.Decimal(10, 2)
+    total       Decimal         @db.Decimal(10, 2)
+    validUntil  DateTime
+    status      QuotationStatus @default(DRAFT)
+    notes       String?
+    createdAt   DateTime        @default(now())
+    updatedAt   DateTime        @updatedAt
+
+    // Relationships
+    tenant   Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    client   Client          @relation(fields: [clientId], references: [id])
+    items    QuotationItem[]
+    contract Contract?
+
+    @@unique([tenantId, number])
+    @@map("quotations")
+}
+
+model QuotationItem {
+    id          String   @id @default(cuid())
+    quotationId String
+    description String
+    quantity    Int
+    unitPrice   Decimal  @db.Decimal(10, 2)
+    total       Decimal  @db.Decimal(10, 2)
+    createdAt   DateTime @default(now())
+
+    // Relationships
+    quotation Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+    @@map("quotation_items")
+}
+
+enum QuotationStatus {
+    DRAFT
+    SENT
+    ACCEPTED
+    REJECTED
+    EXPIRED
+}
+
+model Contract {
+    id          String         @id @default(cuid())
+    tenantId    String
+    clientId    String
+    quotationId String?        @unique
+    number      String
+    title       String
+    startDate   DateTime
+    endDate     DateTime?
+    status      ContractStatus @default(DRAFT)
+    terms       String?
+    signedAt    DateTime?
+    createdAt   DateTime       @default(now())
+    updatedAt   DateTime       @updatedAt
+
+    // Relationships
+    tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    client      Client       @relation(fields: [clientId], references: [id])
+    quotation   Quotation?   @relation(fields: [quotationId], references: [id])
+    memberships Membership[]
+
+    @@unique([tenantId, number])
+    @@map("contracts")
+}
+
+enum ContractStatus {
+    DRAFT
+    ACTIVE
+    EXPIRED
+    TERMINATED
+}
+
+// ============================================================================
+// PLANS & MEMBERSHIPS
+// ============================================================================
+
+model Plan {
+    id           String       @id @default(cuid())
+    tenantId     String
+    name         String
+    description  String?
+    type         PlanType
+    price        Decimal      @db.Decimal(10, 2)
+    currency     String       @default("USD")
+    billingCycle BillingCycle
+    features     Json?        @default("[]")
+    maxUsers     Int?
+    accessHours  Json?        @default("{}")
+    isActive     Boolean      @default(true)
+    createdAt    DateTime     @default(now())
+    updatedAt    DateTime     @updatedAt
+
+    // Relationships
+    tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    memberships Membership[]
+
+    @@map("plans")
+}
+
+enum PlanType {
+    HOT_DESK
+    DEDICATED_DESK
+    PRIVATE_OFFICE
+    MEETING_ROOM
+    VIRTUAL_OFFICE
+    CUSTOM
+}
+
+enum BillingCycle {
+    DAILY
+    WEEKLY
+    MONTHLY
+    QUARTERLY
+    YEARLY
+}
+
+model Membership {
+    id         String           @id @default(cuid())
+    tenantId   String
+    clientId   String
+    contractId String
+    planId     String
+    userId     String
+    startDate  DateTime
+    endDate    DateTime?
+    status     MembershipStatus @default(ACTIVE)
+    qrCode     String           @unique
+    createdAt  DateTime         @default(now())
+    updatedAt  DateTime         @updatedAt
+
+    // Relationships
+    tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    client   Client   @relation(fields: [clientId], references: [id])
+    contract Contract @relation(fields: [contractId], references: [id])
+    plan     Plan     @relation(fields: [planId], references: [id])
+    user     User     @relation(fields: [userId], references: [id])
+
+    @@map("memberships")
+}
+
+enum MembershipStatus {
+    ACTIVE
+    SUSPENDED
+    EXPIRED
+    CANCELLED
+}
+
+// ============================================================================
+// SPACES & RESOURCES
+// ============================================================================
+
+model Space {
+    id          String    @id @default(cuid())
+    tenantId    String
+    name        String
+    type        SpaceType
+    description String?
+    capacity    Int
+    amenities   Json?     @default("[]")
+    hourlyRate  Decimal?  @db.Decimal(10, 2)
+    isActive    Boolean   @default(true)
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+
+    // Relationships
+    tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    bookings Booking[]
+
+    @@map("spaces")
+}
+
+enum SpaceType {
+    MEETING_ROOM
+    CONFERENCE_ROOM
+    PHONE_BOOTH
+    EVENT_SPACE
+    COMMON_AREA
+    KITCHEN
+    LOUNGE
+}
+
+// ============================================================================
+// BOOKINGS & RESERVATIONS
+// ============================================================================
+
+model Booking {
+    id          String        @id @default(cuid())
+    tenantId    String
+    spaceId     String
+    userId      String
+    title       String
+    description String?
+    startTime   DateTime
+    endTime     DateTime
+    status      BookingStatus @default(CONFIRMED)
+    cost        Decimal?      @db.Decimal(10, 2)
+    createdAt   DateTime      @default(now())
+    updatedAt   DateTime      @updatedAt
+
+    // Relationships
+    tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    space  Space  @relation(fields: [spaceId], references: [id])
+    user   User   @relation(fields: [userId], references: [id])
+
+    @@map("bookings")
+}
+
+enum BookingStatus {
+    PENDING
+    CONFIRMED
+    CANCELLED
+    COMPLETED
+    NO_SHOW
+}
+
+// ============================================================================
+// SERVICES & MARKETPLACE
+// ============================================================================
+
+model Service {
+    id          String          @id @default(cuid())
+    tenantId    String
+    name        String
+    description String?
+    category    ServiceCategory
+    price       Decimal         @db.Decimal(10, 2)
+    unit        String          @default("unit")
+    isActive    Boolean         @default(true)
+    createdAt   DateTime        @default(now())
+    updatedAt   DateTime        @updatedAt
+
+    // Relationships
+    tenant       Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    consumptions ServiceConsumption[]
+
+    @@map("services")
+}
+
+enum ServiceCategory {
+    PRINTING
+    COFFEE
+    FOOD
+    PARKING
+    STORAGE
+    MAIL
+    PHONE
+    INTERNET
+    CLEANING
+    OTHER
+}
+
+model ServiceConsumption {
+    id        String   @id @default(cuid())
+    tenantId  String
+    serviceId String
+    userId    String
+    quantity  Int
+    unitPrice Decimal  @db.Decimal(10, 2)
+    total     Decimal  @db.Decimal(10, 2)
+    date      DateTime @default(now())
+    invoiced  Boolean  @default(false)
+    createdAt DateTime @default(now())
+
+    // Relationships
+    tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    service Service @relation(fields: [serviceId], references: [id])
+    user    User    @relation(fields: [userId], references: [id])
+
+    @@map("service_consumptions")
+}
+
+// ============================================================================
+// VISITORS & ACCESS CONTROL
+// ============================================================================
+
+model Visitor {
+    id           String        @id @default(cuid())
+    tenantId     String
+    name         String
+    email        String?
+    phone        String?
+    company      String?
+    hostUserId   String
+    purpose      String?
+    qrCode       String        @unique
+    validFrom    DateTime
+    validUntil   DateTime
+    status       VisitorStatus @default(PENDING)
+    checkedInAt  DateTime?
+    checkedOutAt DateTime?
+    createdAt    DateTime      @default(now())
+    updatedAt    DateTime      @updatedAt
+
+    // Relationships
+    tenant    Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    host      User        @relation(fields: [hostUserId], references: [id])
+    AccessLog AccessLog[]
+
+    @@map("visitors")
+}
+
+enum VisitorStatus {
+    PENDING
+    APPROVED
+    CHECKED_IN
+    CHECKED_OUT
+    EXPIRED
+    CANCELLED
+}
+
+model AccessLog {
+    id        String       @id @default(cuid())
+    tenantId  String
+    userId    String?
+    visitorId String?
+    action    AccessAction
+    location  String?
+    timestamp DateTime     @default(now())
+    metadata  Json?        @default("{}")
+
+    // Relationships
+    tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    user    User?    @relation(fields: [userId], references: [id])
+    visitor Visitor? @relation(fields: [visitorId], references: [id])
+
+    @@map("access_logs")
+}
+
+enum AccessAction {
+    ENTRY
+    EXIT
+    ACCESS_DENIED
+    QR_SCANNED
+}
+
+// ============================================================================
+// BILLING & PAYMENTS
+// ============================================================================
+
+model Invoice {
+    id          String        @id @default(cuid())
+    tenantId    String
+    clientId    String
+    number      String
+    title       String?
+    description String?
+    subtotal    Decimal       @db.Decimal(10, 2)
+    tax         Decimal       @default(0) @db.Decimal(10, 2)
+    total       Decimal       @db.Decimal(10, 2)
+    currency    String        @default("USD")
+    status      InvoiceStatus @default(DRAFT)
+    dueDate     DateTime
+    paidAt      DateTime?
+    createdById String
+    createdAt   DateTime      @default(now())
+    updatedAt   DateTime      @updatedAt
+
+    // Relationships
+    tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    client    Client        @relation(fields: [clientId], references: [id])
+    createdBy User          @relation("InvoiceCreatedBy", fields: [createdById], references: [id])
+    items     InvoiceItem[]
+    payments  Payment[]
+
+    @@unique([tenantId, number])
+    @@map("invoices")
+}
+
+model InvoiceItem {
+    id          String   @id @default(cuid())
+    invoiceId   String
+    description String
+    quantity    Int
+    unitPrice   Decimal  @db.Decimal(10, 2)
+    total       Decimal  @db.Decimal(10, 2)
+    createdAt   DateTime @default(now())
+
+    // Relationships
+    invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+    @@map("invoice_items")
+}
+
+enum InvoiceStatus {
+    DRAFT
+    SENT
+    PAID
+    OVERDUE
+    CANCELLED
+}
+
+model Payment {
+    id          String        @id @default(cuid())
+    tenantId    String
+    clientId    String
+    invoiceId   String?
+    amount      Decimal       @db.Decimal(10, 2)
+    currency    String        @default("USD")
+    method      PaymentMethod
+    reference   String?
+    status      PaymentStatus @default(PENDING)
+    processedAt DateTime?
+    createdAt   DateTime      @default(now())
+    updatedAt   DateTime      @updatedAt
+
+    // Relationships
+    tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    client  Client   @relation(fields: [clientId], references: [id])
+    invoice Invoice? @relation(fields: [invoiceId], references: [id])
+
+    @@map("payments")
+}
+
+enum PaymentMethod {
+    CASH
+    CREDIT_CARD
+    DEBIT_CARD
+    BANK_TRANSFER
+    PAYPAL
+    STRIPE
+    OTHER
+}
+
+enum PaymentStatus {
+    PENDING
+    COMPLETED
+    FAILED
+    REFUNDED
+    CANCELLED
+}
+
+// ============================================================================
+// INDEXES FOR PERFORMANCE
+// ============================================================================
+
+// Add indexes for frequently queried fields
+// These will be created as part of migrations 

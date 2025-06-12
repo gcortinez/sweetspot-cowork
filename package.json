@@ -1,0 +1,39 @@
+{
+  "name": "sweetspot-cowork",
+  "version": "1.0.0",
+  "description": "SaaS de Gestión Integral para Coworks - Comprehensive coworking space management platform",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "clean": "turbo run clean",
+    "db:generate": "turbo run db:generate",
+    "db:push": "turbo run db:push",
+    "db:migrate": "turbo run db:migrate",
+    "tasks:list": "task-master list",
+    "tasks:next": "task-master next",
+    "tasks:show": "task-master show",
+    "tasks:status": "task-master set-status"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3"
+  },
+  "keywords": [
+    "coworking",
+    "saas",
+    "multi-tenant",
+    "supabase",
+    "nextjs",
+    "nodejs"
+  ],
+  "author": "Gabriel Cortinez",
+  "license": "MIT",
+  "packageManager": "npm@10.0.0"
+}
