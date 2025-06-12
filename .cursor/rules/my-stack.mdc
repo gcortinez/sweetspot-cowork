@@ -1,0 +1,17 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# My Stack
+
+- Node with express for the backend
+- Nextjs +15.3.3 for the frontend
+- Supabase Postgress databases
+- Supabase Auth
+- Supabase realtime database when necesary
+- ZOD for schema validation
+- zustand for state management
+- prisma
+- Docker for local development
+- kubernetes for deployment

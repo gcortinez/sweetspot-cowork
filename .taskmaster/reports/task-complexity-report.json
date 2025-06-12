@@ -1,0 +1,213 @@
+{
+  "meta": {
+    "generatedAt": "2025-06-12T06:23:59.431Z",
+    "tasksAnalyzed": 25,
+    "totalTasks": 25,
+    "analysisCount": 25,
+    "thresholdScore": 5,
+    "projectName": "Taskmaster",
+    "usedResearch": true
+  },
+  "complexityAnalysis": [
+    {
+      "taskId": 1,
+      "taskTitle": "Setup Multi-Tenant Architecture with Supabase",
+      "complexityScore": 8,
+      "recommendedSubtasks": 7,
+      "expansionPrompt": "Break down the setup of multi-tenant architecture with Supabase into detailed steps, including database schema design, RLS policy implementation, and environment setup.",
+      "reasoning": "High complexity due to the foundational nature of the task, requiring in-depth knowledge of Supabase, database design, and security implementations."
+    },
+    {
+      "taskId": 2,
+      "taskTitle": "Implement Supabase Auth with Role-Based Access Control",
+      "complexityScore": 7,
+      "recommendedSubtasks": 8,
+      "expansionPrompt": "Detail the steps to implement Supabase Auth with role-based access control, including user role definition, custom claims, and middleware creation.",
+      "reasoning": "Moderately high complexity due to the need for secure authentication implementation and integration with a complex role hierarchy."
+    },
+    {
+      "taskId": 3,
+      "taskTitle": "Develop Next.js Frontend Foundation",
+      "complexityScore": 6,
+      "recommendedSubtasks": 9,
+      "expansionPrompt": "Outline the steps to set up a Next.js frontend, including project structure, routing, component creation, and state management implementation.",
+      "reasoning": "Moderate complexity due to the need for a well-structured frontend foundation, but using familiar technologies."
+    },
+    {
+      "taskId": 4,
+      "taskTitle": "Implement Core API with Express and Zod",
+      "complexityScore": 7,
+      "recommendedSubtasks": 8,
+      "expansionPrompt": "Break down the implementation of the core API, including Express setup, route structure, middleware creation, and database integration with Prisma.",
+      "reasoning": "Moderately high complexity due to the critical nature of the core API and the need for robust error handling and validation."
+    },
+    {
+      "taskId": 5,
+      "taskTitle": "Develop CRM and Sales Pipeline Module",
+      "complexityScore": 7,
+      "recommendedSubtasks": 9,
+      "expansionPrompt": "Detail the steps to create a CRM system, including lead management, pipeline visualization, and activity logging functionality.",
+      "reasoning": "Moderately high complexity due to the need for complex state management and integration with various other modules."
+    },
+    {
+      "taskId": 6,
+      "taskTitle": "Implement Flexible Pricing and Plans System",
+      "complexityScore": 8,
+      "recommendedSubtasks": 9,
+      "expansionPrompt": "Outline the steps to create a flexible pricing system, including dynamic pricing logic, custom quotations, and plan management.",
+      "reasoning": "High complexity due to the need for a sophisticated pricing engine and integration with multiple modules."
+    },
+    {
+      "taskId": 7,
+      "taskTitle": "Develop Digital Contracts and Quotations Module",
+      "complexityScore": 7,
+      "recommendedSubtasks": 8,
+      "expansionPrompt": "Break down the development of a digital contracts system, including proposal generation, e-signature integration, and contract lifecycle management.",
+      "reasoning": "Moderately high complexity due to the need for integration with external e-signature services and complex document generation."
+    },
+    {
+      "taskId": 8,
+      "taskTitle": "Implement QR-Based Access Control System",
+      "complexityScore": 7,
+      "recommendedSubtasks": 8,
+      "expansionPrompt": "Detail the steps to create a QR-based access control system, including QR generation, validation, and real-time tracking.",
+      "reasoning": "Moderately high complexity due to the need for secure QR code implementation and real-time tracking capabilities."
+    },
+    {
+      "taskId": 9,
+      "taskTitle": "Develop Meeting Room Management System",
+      "complexityScore": 7,
+      "recommendedSubtasks": 9,
+      "expansionPrompt": "Outline the steps to create a meeting room management system, including inventory management, dynamic pricing, and booking workflows.",
+      "reasoning": "Moderately high complexity due to the need for real-time availability tracking and integration with multiple modules."
+    },
+    {
+      "taskId": 10,
+      "taskTitle": "Implement Additional Services Catalog",
+      "complexityScore": 6,
+      "recommendedSubtasks": 8,
+      "expansionPrompt": "Break down the implementation of a service catalog, including service management, request workflows, and usage tracking.",
+      "reasoning": "Moderate complexity due to the need for flexible service configuration and integration with billing systems."
+    },
+    {
+      "taskId": 11,
+      "taskTitle": "Develop Visitor Portal",
+      "complexityScore": 6,
+      "recommendedSubtasks": 7,
+      "expansionPrompt": "Detail the steps to create a visitor portal, including pre-registration, temporary access, and security logging.",
+      "reasoning": "Moderate complexity due to the need for secure temporary access generation and integration with the main access control system."
+    },
+    {
+      "taskId": 12,
+      "taskTitle": "Implement Automated Billing System",
+      "complexityScore": 8,
+      "recommendedSubtasks": 10,
+      "expansionPrompt": "Outline the steps to create an automated billing system, including consumption tracking, invoice generation, and payment processing.",
+      "reasoning": "High complexity due to the need for accurate consumption tracking across multiple services and integration with payment systems."
+    },
+    {
+      "taskId": 13,
+      "taskTitle": "Develop Comprehensive Dashboard and Reporting",
+      "complexityScore": 7,
+      "recommendedSubtasks": 8,
+      "expansionPrompt": "Break down the development of a comprehensive dashboard, including real-time metrics, financial reports, and multi-level views.",
+      "reasoning": "Moderately high complexity due to the need for data aggregation from multiple sources and real-time updates."
+    },
+    {
+      "taskId": 14,
+      "taskTitle": "Implement User Onboarding and Training Module",
+      "complexityScore": 5,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Detail the steps to create a user onboarding system, including interactive tutorials and contextual help.",
+      "reasoning": "Moderate complexity, primarily focused on user experience design and content creation."
+    },
+    {
+      "taskId": 15,
+      "taskTitle": "Develop Data Migration Tools",
+      "complexityScore": 7,
+      "recommendedSubtasks": 8,
+      "expansionPrompt": "Outline the steps to create data migration tools, including data mapping, validation, and incremental migration capabilities.",
+      "reasoning": "Moderately high complexity due to the need to handle various data formats and ensure data integrity during migration."
+    },
+    {
+      "taskId": 16,
+      "taskTitle": "Implement Real-time Notifications System",
+      "complexityScore": 6,
+      "recommendedSubtasks": 7,
+      "expansionPrompt": "Break down the implementation of a real-time notification system, including multi-channel delivery and preference management.",
+      "reasoning": "Moderate complexity, requiring integration with real-time communication protocols and multiple notification channels."
+    },
+    {
+      "taskId": 17,
+      "taskTitle": "Develop API Documentation and Developer Portal",
+      "complexityScore": 5,
+      "recommendedSubtasks": 7,
+      "expansionPrompt": "Detail the steps to create comprehensive API documentation and a developer portal, including interactive explorers and SDK examples.",
+      "reasoning": "Moderate complexity, focused on clear communication of API functionality and creation of developer resources."
+    },
+    {
+      "taskId": 18,
+      "taskTitle": "Implement Advanced Analytics and Forecasting",
+      "complexityScore": 9,
+      "recommendedSubtasks": 8,
+      "expansionPrompt": "Outline the steps to implement advanced analytics, including predictive models, trend analysis, and visualization of complex data.",
+      "reasoning": "High complexity due to the need for sophisticated data analysis, machine learning implementations, and handling of large datasets."
+    },
+    {
+      "taskId": 19,
+      "taskTitle": "Develop Multi-Language Support",
+      "complexityScore": 6,
+      "recommendedSubtasks": 7,
+      "expansionPrompt": "Break down the implementation of multi-language support, including translation management and RTL layout support.",
+      "reasoning": "Moderate complexity, requiring careful management of translations and consideration for various language-specific layouts."
+    },
+    {
+      "taskId": 20,
+      "taskTitle": "Implement Advanced Security Features",
+      "complexityScore": 8,
+      "recommendedSubtasks": 8,
+      "expansionPrompt": "Detail the steps to implement advanced security features, including two-factor authentication, audit logging, and enhanced encryption.",
+      "reasoning": "High complexity due to the critical nature of security features and the need for robust, foolproof implementations."
+    },
+    {
+      "taskId": 21,
+      "taskTitle": "Develop Offline Mode Capabilities",
+      "complexityScore": 8,
+      "recommendedSubtasks": 8,
+      "expansionPrompt": "Outline the steps to implement offline functionality, including data synchronization and conflict resolution mechanisms.",
+      "reasoning": "High complexity due to the challenges of maintaining data consistency and handling various network scenarios."
+    },
+    {
+      "taskId": 22,
+      "taskTitle": "Implement Compliance and Data Protection Features",
+      "complexityScore": 8,
+      "recommendedSubtasks": 8,
+      "expansionPrompt": "Break down the implementation of compliance features, including data anonymization, consent management, and audit trails.",
+      "reasoning": "High complexity due to the need for thorough understanding and implementation of various data protection regulations."
+    },
+    {
+      "taskId": 23,
+      "taskTitle": "Develop White-Label and Customization Features",
+      "complexityScore": 7,
+      "recommendedSubtasks": 8,
+      "expansionPrompt": "Detail the steps to create white-label features, including theme customization, branding management, and custom domain support.",
+      "reasoning": "Moderately high complexity, requiring a flexible architecture to support extensive customization options."
+    },
+    {
+      "taskId": 24,
+      "taskTitle": "Implement Performance Optimization and Scalability Features",
+      "complexityScore": 9,
+      "recommendedSubtasks": 8,
+      "expansionPrompt": "Outline the steps to optimize performance and ensure scalability, including caching strategies, database sharding, and load balancing.",
+      "reasoning": "High complexity due to the need for deep understanding of system architecture and various optimization techniques."
+    },
+    {
+      "taskId": 25,
+      "taskTitle": "Develop Integration Ecosystem",
+      "complexityScore": 8,
+      "recommendedSubtasks": 8,
+      "expansionPrompt": "Break down the development of an integration ecosystem, including OAuth implementation, webhook system, and app marketplace.",
+      "reasoning": "High complexity due to the need for a secure and flexible system to manage third-party integrations and extensions."
+    }
+  ]
+}

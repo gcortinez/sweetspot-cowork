@@ -1,0 +1,365 @@
+# SaaS de Gestión Integral para Coworks - Product Requirements Document
+
+## Overview
+
+### Vision
+Develop a comprehensive SaaS platform that enables coworking space owners and operators to efficiently and centrally manage all business operations, from client acquisition to billing, including access control and shared resource administration.
+
+### Problem Statement
+Coworking spaces currently struggle with fragmented systems for managing different aspects of their business - from CRM and billing to access control and resource booking. This leads to operational inefficiencies, manual processes, and lack of real-time visibility into business performance.
+
+### Solution
+A unified multi-tenant SaaS platform that centralizes all critical coworking operations with automated processes, flexible pricing models, and comprehensive reporting capabilities.
+
+### Target Users
+- **Super Admins**: Manage multiple coworking spaces across the platform
+- **Cowork Admins**: Operate and manage individual coworking spaces
+- **Client Admins**: Manage corporate team access and usage
+- **End Users**: Access facilities and book resources
+
+## Core Features
+
+### 1. Multi-Tenant Architecture
+- **4-Level Hierarchy**: Super Admin → Cowork Admin → Client Admin → End User
+- **Independent Operations**: Each coworking space operates independently with shared infrastructure
+- **Scalable Management**: Single platform instance supports multiple coworking locations
+- **Role-Based Access**: Granular permissions based on user hierarchy level
+
+### 2. CRM & Sales Pipeline
+- **Lead Management**: Capture and track prospects through sales funnel
+- **Pipeline Visualization**: Track opportunities from contact to closed deal
+- **Activity Logging**: Record interactions, notes, and follow-ups
+- **Lead Conversion**: Seamless transition from prospect to active client
+
+### 3. Flexible Pricing & Plans
+- **Membership Tiers**: Basic, Premium, Enterprise plans with different inclusions
+- **Dynamic Pricing**: Peak/off-peak rates and volume discounts
+- **Custom Quotations**: Personalized pricing for corporate clients
+- **Plan Inclusions**: Define hours, access times, user limits per plan
+
+### 4. Digital Contracts & Quotations
+- **Quote Generation**: Create customized proposals with flexible pricing
+- **Digital Contracts**: Generate contracts from approved quotations
+- **Electronic Signatures**: Streamlined contract signing process
+- **Deposit Management**: Track security deposits and guarantees
+- **Contract Status Tracking**: Monitor draft, sent, and signed states
+
+### 5. QR-Based Access Control
+- **Personal QR Codes**: Unique codes for each user
+- **Entry/Exit Tracking**: Automatic time logging for billing
+- **Area-Specific Access**: Different QR codes for various spaces
+- **Schedule Restrictions**: Enforce access hours based on membership plans
+- **Real-Time Monitoring**: Live view of facility occupancy
+
+### 6. Meeting Room Management
+- **Room Inventory**: Manage rooms with capacity and equipment details
+- **Dynamic Pricing**: Different rates based on room features
+- **Availability Calendar**: Real-time booking system
+- **Usage Tracking**: QR-based room check-in/check-out
+- **Approval Workflows**: Client admin approval for bookings exceeding plan limits
+
+### 7. Additional Services Catalog
+- **Service Marketplace**: Catering, podcast studio, event hosting
+- **Request Management**: User requests with admin approval workflow
+- **Pricing Configuration**: Flexible pricing for additional services
+- **Usage Tracking**: Monitor service consumption for billing
+
+### 8. Visitor Portal
+- **Pre-Registration**: Users can register visitors in advance
+- **Temporary QR Codes**: Time-limited access for visitors
+- **Arrival Notifications**: Alert hosts when visitors arrive
+- **Security Logging**: Complete visitor audit trail
+- **Policy Enforcement**: Configurable visitor access rules
+
+### 9. Automated Billing System
+- **Consumption Tracking**: Automatic logging of all billable activities
+- **Pre-Invoice Generation**: Monthly draft invoices for review
+- **Invoice Approval**: Admin review and adjustment before final billing
+- **Payment Tracking**: Record and reconcile payments
+- **Late Fee Automation**: Automatic penalties for overdue payments
+- **Account Statements**: Detailed client account history
+
+### 10. Comprehensive Dashboard & Reporting
+- **Real-Time Metrics**: Live occupancy, revenue, and usage data
+- **Financial Reports**: Revenue trends, profit analysis, payment status
+- **Operational Reports**: Space utilization, popular services, user activity
+- **Multi-Level Views**: Different dashboards for each user role
+- **Export Capabilities**: PDF and Excel report generation
+
+## User Experience
+
+### User Personas
+
+**Super Admin (Platform Manager)**
+- Manages multiple coworking locations
+- Needs consolidated view of all operations
+- Focuses on growth metrics and performance comparison
+- Requires high-level financial and operational insights
+
+**Cowork Admin (Space Operator)**
+- Day-to-day operations management
+- Client relationship management
+- Revenue optimization
+- Staff coordination and resource allocation
+
+**Client Admin (Corporate Manager)**
+- Team access management
+- Budget control and expense tracking
+- Usage monitoring and optimization
+- Internal policy enforcement
+
+**End User (Coworking Member)**
+- Simple access to facilities
+- Easy resource booking
+- Visitor management
+- Usage transparency
+
+### Key User Flows
+
+**New Client Onboarding Flow**
+1. Lead capture in CRM
+2. Qualification and follow-up
+3. Custom quotation generation
+4. Contract creation and signing
+5. Client setup and user creation
+6. Access provisioning and training
+
+**Daily Operations Flow**
+1. QR code facility access
+2. Meeting room booking and usage
+3. Additional service requests
+4. Visitor registration and management
+5. Real-time usage tracking
+
+**Monthly Billing Flow**
+1. Automatic consumption aggregation
+2. Pre-invoice generation and review
+3. Client review and dispute resolution
+4. Final invoice issuance
+5. Payment processing and reconciliation
+
+## Technical Architecture
+
+### System Components
+- **Frontend**: Next.js 15.3.3+ responsive web application
+- **Backend**: Node.js with Express API server
+- **Database**: Supabase PostgreSQL with Row Level Security (RLS)
+- **Authentication**: Supabase Auth with role-based access control
+- **File Storage**: Supabase Storage for documents and images
+- **Real-time**: Supabase Realtime for live updates
+- **QR Generation**: Dynamic QR code creation and validation
+- **Email System**: Automated notifications and communications
+
+### Data Models
+
+**Core Entities**
+- Organizations (Coworking Spaces)
+- Users (All hierarchy levels)
+- Clients (Corporate accounts)
+- Plans & Memberships
+- Contracts & Quotations
+- Rooms & Resources
+- Services & Catalog
+- Bookings & Reservations
+- Access Logs
+- Invoices & Payments
+
+**Key Relationships**
+- Multi-tenant isolation by organization
+- Hierarchical user permissions
+- Plan-based feature access
+- Usage tracking for billing
+- Audit trails for all operations
+
+### APIs and Integrations
+- **RESTful API**: Node.js/Express backend with Zod validation
+- **Supabase Client**: Frontend integration with Supabase services
+- **QR Code API**: Generation and validation endpoints
+- **Payment Gateway**: Integration ready for payment processing
+- **Email Service**: Automated communication system
+- **Export API**: Report generation in multiple formats
+- **Real-time Subscriptions**: Supabase Realtime for live data updates
+
+### Infrastructure Requirements
+- **Kubernetes Deployment**: Container orchestration for Node.js backend
+- **Supabase Cloud**: Managed PostgreSQL database with automatic backups
+- **CDN Integration**: Static asset delivery and Supabase Storage CDN
+- **Monitoring**: Application monitoring and Supabase built-in analytics
+- **Multi-Environment**: Separate Supabase projects for dev/test/prod
+
+## Development Roadmap
+
+### Phase 1 - MVP Core Platform (Months 1-4)
+
+**Foundation & Authentication**
+- Multi-tenant architecture setup with Supabase RLS
+- Supabase Auth integration and role management
+- Basic admin panels for each user type
+- Supabase database schema and migrations
+
+**Client Management**
+- CRM system with lead tracking
+- Basic quotation generation
+- Digital contract creation
+- Client onboarding workflow
+
+**Access Control**
+- QR code generation and validation
+- Basic access logging
+- User management within client accounts
+- Simple access restrictions
+
+**Resource Management**
+- Meeting room catalog and booking
+- Basic availability calendar
+- Simple approval workflows
+- Usage tracking
+
+**Basic Billing**
+- Consumption tracking
+- Manual invoice generation
+- Payment recording
+- Basic account statements
+
+**Essential Reporting**
+- Basic dashboard with key metrics
+- Simple usage reports
+- Financial summaries
+- Export functionality
+
+### Phase 2 - Advanced Features (Months 5-6)
+
+**Enhanced CRM**
+- Advanced pipeline management
+- Automated follow-up workflows
+- Lead scoring and qualification
+- Integration with communication tools
+
+**Sophisticated Billing**
+- Automated pre-invoice generation
+- Complex pricing rules
+- Late fee automation
+- Advanced financial reporting
+
+**Visitor Management**
+- Complete visitor portal
+- Temporary access codes
+- Visitor tracking and notifications
+- Security integrations
+
+**Service Marketplace**
+- Additional services catalog
+- Request and approval workflows
+- Service usage tracking
+- Revenue optimization tools
+
+**Advanced Analytics**
+- Predictive analytics
+- Occupancy optimization
+- Revenue forecasting
+- Performance benchmarking
+
+## Logical Dependency Chain
+
+### Foundation First (Critical Path)
+1. **Database & Authentication**: Multi-tenant architecture with role-based access
+2. **User Management**: Complete user hierarchy and permissions
+3. **Organization Setup**: Coworking space configuration and branding
+
+### Core Operations (Build Upon Foundation)
+4. **Client Management**: CRM and client onboarding workflows
+5. **Plan Configuration**: Membership plans and pricing structures
+6. **QR Access System**: Basic access control and logging
+7. **Resource Booking**: Meeting room management and reservations
+
+### Business Logic (Requires Core Operations)
+8. **Quotation System**: Pricing and contract generation
+9. **Billing Engine**: Consumption tracking and invoice generation
+10. **Dashboard & Reporting**: Analytics and business intelligence
+
+### Advanced Features (Enhancement Layer)
+11. **Visitor Management**: Guest access and tracking
+12. **Service Marketplace**: Additional revenue streams
+13. **Advanced Analytics**: Optimization and forecasting tools
+
+### Frontend Development Strategy
+- Start with admin panels for immediate functionality
+- Develop user-facing features progressively
+- Implement responsive design from the beginning
+- Focus on intuitive workflows and minimal training requirements
+
+## Risks and Mitigations
+
+### Technical Challenges
+**Risk**: Complex multi-tenant data isolation
+**Mitigation**: Implement row-level security and thorough testing protocols
+
+**Risk**: QR code security and fraud prevention
+**Mitigation**: Time-limited codes, encryption, and audit logging
+
+**Risk**: Real-time occupancy tracking accuracy
+**Mitigation**: Redundant tracking methods and data validation
+
+### Business Risks
+**Risk**: Feature complexity overwhelming users
+**Mitigation**: Phased rollout with user training and progressive disclosure
+
+**Risk**: Integration challenges with existing coworking operations
+**Mitigation**: Flexible configuration and migration tools
+
+**Risk**: Scalability issues with rapid growth
+**Mitigation**: Cloud-native architecture and performance monitoring
+
+### MVP Scope Management
+**Risk**: Feature creep delaying launch
+**Mitigation**: Strict MVP definition with clear Phase 2 deferrals
+
+**Risk**: Insufficient user feedback during development
+**Mitigation**: Early prototype testing with target coworking spaces
+
+## Success Metrics
+
+### Operational Efficiency
+- 70% reduction in manual administrative tasks
+- <24 hours client onboarding time
+- 80% reduction in invoice generation time
+- 95% user satisfaction with booking process
+
+### Business Impact
+- Real-time occupancy visibility
+- Positive ROI within 6 months for operators
+- 30% increase in additional service revenue
+- 50% improvement in payment collection time
+
+### Technical Performance
+- 99.9% system uptime
+- <2 second page load times
+- Zero data security incidents
+- 100% audit trail completeness
+
+## Appendix
+
+### Technology Stack Summary
+- **Frontend**: Next.js 15.3.3+, React, TypeScript
+- **Backend**: Node.js, Express, TypeScript
+- **Database**: Supabase PostgreSQL with Row Level Security
+- **ORM**: Prisma with Supabase integration
+- **Authentication**: Supabase Auth with role-based access
+- **Storage**: Supabase Storage for files and documents
+- **Real-time**: Supabase Realtime subscriptions
+- **Validation**: Zod schemas
+- **State Management**: Zustand
+- **Deployment**: Kubernetes (backend), Vercel/Netlify (frontend)
+- **QR Codes**: Dynamic generation and validation
+
+### Integration Readiness
+- RESTful API architecture for future integrations
+- Webhook support for real-time notifications
+- Export capabilities for data portability
+- Modular design for feature extensions
+
+### Compliance Considerations
+- GDPR compliance for user data
+- Financial data security standards
+- Audit trail requirements
+- Multi-jurisdiction support readiness 
