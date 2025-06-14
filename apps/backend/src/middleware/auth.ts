@@ -2,91 +2,78 @@ import { Request, Response, NextFunction } from "express";
 import { AuthService } from "../services/authService";
 import { getTenantContext } from "../lib/rls";
 import { UserRole } from "@sweetspot/shared";
-
-// Extend Express Request interface to include user and tenant context
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: string;
-        email: string;
-        tenantId: string;
-        role: UserRole;
-        clientId?: string;
-      };
-      tenant?: {
-        id: string;
-        name: string;
-        slug: string;
-      };
-    }
-  }
-}
+import { AuthenticatedRequest } from "../types/api";
+import { ResponseHelper } from "../utils/response";
+import { logger } from "../utils/logger";
+import { asyncHandler } from "./errorHandler";
 
 /**
  * Authentication middleware
  * Validates JWT token and extracts user/tenant context
  */
-export const authenticate = async (
-  req: Request,
+export const authenticate = asyncHandler(async (
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  try {
-    // Get token from Authorization header
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      res.status(401).json({
-        success: false,
-        error: "Missing or invalid authorization header",
-      });
-      return;
-    }
-
-    const token = authHeader.substring(7); // Remove "Bearer " prefix
-
-    // Handle bypass tokens for testing
-    if (token.startsWith("bypass_token_")) {
-      // Set mock user and tenant for bypass tokens
-      req.user = {
-        id: "user_1749874836637",
-        email: "admin@sweetspot.io",
-        tenantId: "tenant_1749874836546",
-        role: "SUPER_ADMIN",
-        clientId: undefined,
-      };
-      req.tenant = {
-        id: "tenant_1749874836546",
-        name: "SweetSpot HQ",
-        slug: "sweetspot-hq",
-      };
-      next();
-      return;
-    }
-
-    // Get session information for real tokens
-    const session = await AuthService.getSession(token);
-    if (!session.isValid) {
-      res.status(401).json({
-        success: false,
-        error: "Invalid or expired token",
-      });
-      return;
-    }
-
-    // Add user and tenant context to request
-    req.user = session.user;
-    req.tenant = session.tenant;
-
-    next();
-  } catch (error) {
-    console.error("Authentication error:", error);
-    res.status(401).json({
-      success: false,
-      error: "Authentication failed",
+  // Get token from Authorization header
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    logger.warn("Authentication failed: Missing or invalid authorization header", {
+      ip: req.ip,
+      userAgent: req.get("User-Agent"),
+      path: req.path,
     });
+    return ResponseHelper.unauthorized(res, "Missing or invalid authorization header");
   }
-};
+
+  const token = authHeader.substring(7); // Remove "Bearer " prefix
+
+  // Handle bypass tokens for testing
+  if (token.startsWith("bypass_token_")) {
+    logger.debug("Using bypass token for testing", { 
+      path: req.path,
+      ip: req.ip,
+    });
+    
+    // Set mock user and tenant for bypass tokens
+    req.user = {
+      id: "user_1749874836637",
+      email: "admin@sweetspot.io",
+      tenantId: "tenant_1749874836546",
+      role: "SUPER_ADMIN",
+      clientId: undefined,
+    };
+    req.tenant = {
+      id: "tenant_1749874836546",
+      name: "SweetSpot HQ",
+      slug: "sweetspot-hq",
+    };
+    return next();
+  }
+
+  // Get session information for real tokens
+  const session = await AuthService.getSession(token);
+  if (!session.isValid) {
+    logger.warn("Authentication failed: Invalid or expired token", {
+      ip: req.ip,
+      userAgent: req.get("User-Agent"),
+      path: req.path,
+    });
+    return ResponseHelper.unauthorized(res, "Invalid or expired token");
+  }
+
+  // Add user and tenant context to request
+  req.user = session.user;
+  req.tenant = session.tenant;
+
+  logger.logAuthEvent("Authentication successful", req.user.id, req.tenant?.id, {
+    userRole: req.user.role,
+    path: req.path,
+  });
+
+  next();
+});
 
 /**
  * Optional authentication middleware
@@ -137,48 +124,51 @@ export const optionalAuth = async (
  * Requires specific role or higher
  */
 export const requireRole = (requiredRole: UserRole) => {
-  return async (
-    req: Request,
+  return asyncHandler(async (
+    req: AuthenticatedRequest,
     res: Response,
     next: NextFunction
   ): Promise<void> => {
-    try {
-      if (!req.user) {
-        res.status(401).json({
-          success: false,
-          error: "Authentication required",
-        });
-        return;
-      }
-
-      // Role hierarchy
-      const roleHierarchy: Record<UserRole, number> = {
-        END_USER: 1,
-        CLIENT_ADMIN: 2,
-        COWORK_ADMIN: 3,
-        SUPER_ADMIN: 4,
-      };
-
-      const userRoleLevel = roleHierarchy[req.user.role];
-      const requiredRoleLevel = roleHierarchy[requiredRole];
-
-      if (userRoleLevel < requiredRoleLevel) {
-        res.status(403).json({
-          success: false,
-          error: `Insufficient permissions. Required role: ${requiredRole}`,
-        });
-        return;
-      }
-
-      next();
-    } catch (error) {
-      console.error("Authorization error:", error);
-      res.status(403).json({
-        success: false,
-        error: "Authorization failed",
+    if (!req.user) {
+      logger.warn("Authorization failed: No user context", {
+        path: req.path,
+        ip: req.ip,
+        requiredRole,
       });
+      return ResponseHelper.unauthorized(res, "Authentication required");
     }
-  };
+
+    // Role hierarchy
+    const roleHierarchy: Record<UserRole, number> = {
+      END_USER: 1,
+      CLIENT_ADMIN: 2,
+      COWORK_ADMIN: 3,
+      SUPER_ADMIN: 4,
+    };
+
+    const userRoleLevel = roleHierarchy[req.user.role];
+    const requiredRoleLevel = roleHierarchy[requiredRole];
+
+    if (userRoleLevel < requiredRoleLevel) {
+      logger.warn("Authorization failed: Insufficient role level", {
+        userId: req.user.id,
+        userRole: req.user.role,
+        requiredRole,
+        path: req.path,
+        ip: req.ip,
+      });
+      return ResponseHelper.forbidden(res, `Insufficient permissions. Required role: ${requiredRole}`);
+    }
+
+    logger.debug("Role authorization successful", {
+      userId: req.user.id,
+      userRole: req.user.role,
+      requiredRole,
+      path: req.path,
+    });
+
+    next();
+  });
 };
 
 /**

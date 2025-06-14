@@ -1,66 +1,240 @@
 import express from "express";
 import cors from "cors";
-import helmet from "helmet";
-import dotenv from "dotenv";
-import tenantRoutes from "./routes/tenantRoutes";
-import authRoutes from "./routes/auth";
+import { config, validateConfig } from "./config";
+import { logger } from "./utils/logger";
+import { ResponseHelper } from "./utils/response";
+import { requestLogger, correlationId } from "./middleware/requestLogger";
+import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
+import { 
+  securityHeaders, 
+  corsOptions, 
+  apiRateLimit, 
+  sanitizeInput, 
+  requestSizeLimit,
+  securityMonitoring 
+} from "./middleware/security";
 
-// Load environment variables
-dotenv.config();
+// Import routes
+import authRoutes from "./routes/auth";
+import tenantRoutes from "./routes/tenantRoutes";
+import { leadRoutes } from "./routes/leadRoutes";
+import { opportunityRoutes } from "./routes/opportunityRoutes";
+import { activityRoutes } from "./routes/activityRoutes";
+import { conversionRoutes } from "./routes/conversionRoutes";
+import { communicationRoutes } from "./routes/communicationRoutes";
+import { taskRoutes } from "./routes/taskRoutes";
+import { analyticsRoutes } from "./routes/analyticsRoutes";
+import { pricingRoutes } from "./routes/pricingRoutes";
+import { quotationRoutes } from "./routes/quotationRoutes";
+import { contractTemplateRoutes } from "./routes/contractTemplateRoutes";
+import { digitalSignatureRoutes } from "./routes/digitalSignatureRoutes";
+import { contractLifecycleRoutes } from "./routes/contractLifecycleRoutes";
+import { contractRenewalRoutes } from "./routes/contractRenewalRoutes";
+import { contractAnalyticsRoutes } from "./routes/contractAnalyticsRoutes";
+
+// Validate configuration before starting
+try {
+  validateConfig();
+} catch (error) {
+  logger.error("Configuration validation failed", {}, error as Error);
+  process.exit(1);
+}
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+
+// Trust proxy (important for getting real IP addresses behind reverse proxy)
+app.set("trust proxy", 1);
 
 // Security middleware
-app.use(helmet());
+app.use(securityHeaders);
 
 // CORS configuration
-app.use(
-  cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Tenant-ID"],
-  })
-);
+app.use(cors(corsOptions));
+
+// Request correlation ID
+app.use(correlationId);
+
+// Request logging
+app.use(requestLogger({
+  includeBody: config.environment === "development",
+  includeQuery: true,
+  excludeHealthCheck: true,
+}));
+
+// Security monitoring
+app.use(securityMonitoring);
+
+// Rate limiting
+app.use(apiRateLimit);
+
+// Request size limiting
+app.use(requestSizeLimit);
 
 // Body parsing middleware
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(express.json({ 
+  limit: `${config.upload.maxFileSize}b`,
+  strict: true,
+}));
+app.use(express.urlencoded({ 
+  extended: true, 
+  limit: `${config.upload.maxFileSize}b`,
+}));
 
-// Health check endpoint
+// Input sanitization
+app.use(sanitizeInput);
+
+// Health check endpoint (before rate limiting)
 app.get("/health", (req, res) => {
-  res.json({
+  const healthData = {
     status: "healthy",
     timestamp: new Date().toISOString(),
     service: "sweetspot-backend",
     version: "1.0.0",
+    environment: config.environment,
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    features: config.features,
+  };
+
+  logger.debug("Health check requested", { 
+    ip: req.ip,
+    userAgent: req.get("User-Agent"),
   });
+
+  return ResponseHelper.success(res, healthData);
 });
 
-// API routes
-app.use("/api/auth", authRoutes);
-app.use("/api/tenants", tenantRoutes);
+// API Info endpoint
+app.get("/api", (req, res) => {
+  const apiInfo = {
+    name: "SweetSpot Cowork API",
+    version: "1.0.0",
+    description: "Multi-tenant coworking management platform API",
+    environment: config.environment,
+    endpoints: {
+      auth: "/api/auth",
+      tenants: "/api/tenants",
+      leads: "/api/leads",
+      opportunities: "/api/opportunities",
+      activities: "/api/activities",
+      conversions: "/api/conversions",
+      communications: "/api/communications",
+      tasks: "/api/tasks",
+      analytics: "/api/analytics",
+      pricing: "/api/pricing",
+      quotations: "/api/quotations",
+      contractTemplates: "/api/contract-templates",
+      digitalSignatures: "/api/signatures",
+      contracts: "/api/contracts",
+      renewals: "/api/renewals",
+      contractAnalytics: "/api/analytics/contracts",
+      health: "/health",
+    },
+    documentation: config.features.enableSwagger ? "/api/docs" : null,
+  };
 
-// 404 handler
-app.use("*", (req, res) => {
-  res.status(404).json({
-    error: "Route not found",
-    code: "ROUTE_NOT_FOUND",
-    path: req.originalUrl,
-    method: req.method,
-  });
+  return ResponseHelper.success(res, apiInfo);
 });
 
-// Error handlers can be added here if needed
+// API v1 routes
+const apiV1 = express.Router();
+
+// Mount route modules
+apiV1.use("/auth", authRoutes);
+apiV1.use("/tenants", tenantRoutes);
+apiV1.use("/leads", leadRoutes);
+apiV1.use("/opportunities", opportunityRoutes);
+apiV1.use("/activities", activityRoutes);
+apiV1.use("/conversions", conversionRoutes);
+apiV1.use("/communications", communicationRoutes);
+apiV1.use("/tasks", taskRoutes);
+apiV1.use("/analytics", analyticsRoutes);
+apiV1.use("/pricing", pricingRoutes);
+apiV1.use("/quotations", quotationRoutes);
+apiV1.use("/contract-templates", contractTemplateRoutes);
+apiV1.use("/signatures", digitalSignatureRoutes);
+apiV1.use("/contracts", contractLifecycleRoutes);
+apiV1.use("/renewals", contractRenewalRoutes);
+apiV1.use("/analytics/contracts", contractAnalyticsRoutes);
+
+// Mount versioned API
+app.use("/api/v1", apiV1);
+app.use("/api", apiV1); // Default to v1
+
+// 404 handler for unknown routes
+app.use("*", notFoundHandler);
+
+// Global error handler (must be last)
+app.use(errorHandler);
+
+// Graceful shutdown handling
+process.on("SIGTERM", () => {
+  logger.info("SIGTERM received, shutting down gracefully");
+  process.exit(0);
+});
+
+process.on("SIGINT", () => {
+  logger.info("SIGINT received, shutting down gracefully");
+  process.exit(0);
+});
+
+// Unhandled promise rejection handler
+process.on("unhandledRejection", (reason, promise) => {
+  logger.error("Unhandled Promise Rejection", { 
+    reason: reason?.toString(),
+    promise: promise.toString(),
+  });
+  process.exit(1);
+});
+
+// Uncaught exception handler
+process.on("uncaughtException", (error) => {
+  logger.error("Uncaught Exception", {}, error);
+  process.exit(1);
+});
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`🚀 SweetSpot Backend API running on port ${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/health`);
-  console.log(`🔐 Auth API: http://localhost:${PORT}/api/auth`);
-  console.log(`🏢 Tenant API: http://localhost:${PORT}/api/tenants`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
+const server = app.listen(config.port, () => {
+  logger.info("🚀 SweetSpot Backend API started successfully", {
+    port: config.port,
+    environment: config.environment,
+    nodeVersion: process.version,
+    pid: process.pid,
+  });
+  
+  console.log(`🚀 SweetSpot Backend API running on port ${config.port}`);
+  console.log(`📊 Health check: http://localhost:${config.port}/health`);
+  console.log(`🔐 Auth API: http://localhost:${config.port}/api/auth`);
+  console.log(`🏢 Tenant API: http://localhost:${config.port}/api/tenants`);
+  console.log(`👥 Leads API: http://localhost:${config.port}/api/leads`);
+  console.log(`💼 Opportunities API: http://localhost:${config.port}/api/opportunities`);
+  console.log(`📋 Activities API: http://localhost:${config.port}/api/activities`);
+  console.log(`🔄 Conversions API: http://localhost:${config.port}/api/conversions`);
+  console.log(`📧 Communications API: http://localhost:${config.port}/api/communications`);
+  console.log(`✅ Tasks API: http://localhost:${config.port}/api/tasks`);
+  console.log(`📊 Analytics API: http://localhost:${config.port}/api/analytics`);
+  console.log(`💰 Pricing API: http://localhost:${config.port}/api/pricing`);
+  console.log(`📄 Quotations API: http://localhost:${config.port}/api/quotations`);
+  console.log(`📋 Contract Templates API: http://localhost:${config.port}/api/contract-templates`);
+  console.log(`✍️ Digital Signatures API: http://localhost:${config.port}/api/signatures`);
+  console.log(`📄 Contract Lifecycle API: http://localhost:${config.port}/api/contracts`);
+  console.log(`🔄 Contract Renewals API: http://localhost:${config.port}/api/renewals`);
+  console.log(`📈 Contract Analytics API: http://localhost:${config.port}/api/analytics/contracts`);
+  console.log(`🌍 Environment: ${config.environment}`);
+  
+  if (config.features.enableSwagger) {
+    console.log(`📚 API Docs: http://localhost:${config.port}/api/docs`);
+  }
+});
+
+// Handle server errors
+server.on("error", (error: any) => {
+  if (error.code === "EADDRINUSE") {
+    logger.error(`Port ${config.port} is already in use`);
+  } else {
+    logger.error("Server error", {}, error);
+  }
+  process.exit(1);
 });
 
 export default app;
