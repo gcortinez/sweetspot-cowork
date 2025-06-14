@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { LanguageSelector } from "@/components/ui/language-selector";
 import {
   Calendar,
   Users,
@@ -20,74 +21,81 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useI18n } from "@/lib/i18n";
 
 interface SidebarProps {
   className?: string;
+  onCloseMobile?: () => void;
 }
 
-const navigationItems = [
+const getNavigationItems = (t: (key: string) => string) => [
   {
-    title: "Dashboard",
+    title: t("nav.dashboard"),
     href: "/dashboard",
     icon: Home,
   },
   {
-    title: "Spaces",
+    title: t("nav.spaces"),
     href: "/spaces",
     icon: Building2,
   },
   {
-    title: "Bookings",
+    title: t("nav.bookings"),
     href: "/bookings",
     icon: Calendar,
   },
   {
-    title: "Members",
+    title: t("nav.members"),
     href: "/members",
     icon: Users,
   },
   {
-    title: "Analytics",
+    title: t("nav.analytics"),
     href: "/analytics",
     icon: BarChart3,
   },
 ];
 
-const accountItems = [
+const getAccountItems = (t: (key: string) => string) => [
   {
-    title: "Profile",
+    title: t("nav.profile"),
     href: "/profile",
     icon: User,
   },
   {
-    title: "Billing",
+    title: t("nav.billing"),
     href: "/billing",
     icon: CreditCard,
   },
   {
-    title: "Notifications",
+    title: t("nav.notifications"),
     href: "/notifications",
     icon: Bell,
   },
   {
-    title: "Settings",
+    title: t("nav.settings"),
     href: "/settings",
     icon: Settings,
   },
 ];
 
-const supportItems = [
+const getSupportItems = (t: (key: string) => string) => [
   {
-    title: "Help Center",
+    title: t("nav.help"),
     href: "/help",
     icon: HelpCircle,
   },
 ];
 
-export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ className, onCloseMobile }) => {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { t } = useI18n();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const navigationItems = getNavigationItems(t);
+  const accountItems = getAccountItems(t);
+  const supportItems = getSupportItems(t);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -103,27 +111,29 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   return (
     <div
       className={cn(
-        "flex h-full w-64 flex-col bg-white border-r border-gray-200",
+        "flex h-full w-64 flex-col bg-gradient-to-b from-gray-50 to-white border-r border-gray-200 shadow-sm",
         className
       )}
     >
       {/* Logo/Brand */}
-      <div className="flex h-16 items-center px-6 border-b border-gray-100">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center">
+      <div className="flex h-16 items-center px-6 border-b border-gray-200 bg-white">
+        <Link href="/dashboard" className="flex items-center gap-3 group">
+          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
             <Building2 className="h-5 w-5 text-white" />
           </div>
-          <span className="text-lg font-semibold text-gray-900">SweetSpot</span>
+          <span className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+            SweetSpot
+          </span>
         </Link>
       </div>
 
       {/* Create Button */}
       <div className="p-4 border-b border-gray-100">
         <Button
-          className="w-full justify-start"
-          leftIcon={<Plus className="h-4 w-4" />}
+          className="w-full justify-start gap-3 h-10 bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200 font-medium"
         >
-          New Booking
+          <Plus className="h-4 w-4" />
+          {t("action.newBooking")}
         </Button>
       </div>
 
@@ -139,14 +149,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={onCloseMobile}
                 className={cn(
-                  "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group",
                   isActive
-                    ? "bg-blue-100 text-blue-700"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    ? "bg-blue-100 text-blue-700 shadow-sm border border-blue-200"
+                    : "text-gray-700 hover:bg-white hover:text-gray-900 hover:shadow-sm"
                 )}
               >
-                <Icon className="h-5 w-5" />
+                <Icon className={cn(
+                  "h-5 w-5 transition-colors",
+                  isActive ? "text-blue-600" : "text-gray-500 group-hover:text-gray-700"
+                )} />
                 <span>{item.title}</span>
               </Link>
             );
@@ -156,8 +170,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
         {/* Account Section */}
         <div className="mt-8">
           <div className="px-6 py-2">
-            <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Account
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              {t("section.account")}
             </h3>
           </div>
           <nav className="space-y-1 px-3">
@@ -170,14 +184,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={onCloseMobile}
                   className={cn(
-                  "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group",
                   isActive
-                    ? "bg-blue-100 text-blue-700"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    ? "bg-blue-100 text-blue-700 shadow-sm border border-blue-200"
+                    : "text-gray-700 hover:bg-white hover:text-gray-900 hover:shadow-sm"
                 )}
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className={cn(
+                    "h-5 w-5 transition-colors",
+                    isActive ? "text-blue-600" : "text-gray-500 group-hover:text-gray-700"
+                  )} />
                   <span>{item.title}</span>
                 </Link>
               );
@@ -188,8 +206,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
         {/* Support Section */}
         <div className="mt-8">
           <div className="px-6 py-2">
-            <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Support
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              {t("section.support")}
             </h3>
           </div>
           <nav className="space-y-1 px-3">
@@ -202,14 +220,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={onCloseMobile}
                   className={cn(
-                  "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group",
                   isActive
-                    ? "bg-blue-100 text-blue-700"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    ? "bg-blue-100 text-blue-700 shadow-sm border border-blue-200"
+                    : "text-gray-700 hover:bg-white hover:text-gray-900 hover:shadow-sm"
                 )}
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className={cn(
+                    "h-5 w-5 transition-colors",
+                    isActive ? "text-blue-600" : "text-gray-500 group-hover:text-gray-700"
+                  )} />
                   <span>{item.title}</span>
                 </Link>
               );
@@ -218,32 +240,40 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
         </div>
       </div>
 
-      {/* User Profile */}
-      <div className="border-t border-gray-100 p-4">
-        <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors duration-150">
-          <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
-            <span className="text-xs font-medium text-white">
-              {user?.email?.charAt(0).toUpperCase() || "U"}
-            </span>
+      {/* Language Selector and User Profile */}
+      <div className="border-t border-gray-200 bg-white">
+        {/* Language Selector */}
+        <div className="p-3">
+          <LanguageSelector />
+        </div>
+        
+        {/* User Profile */}
+        <div className="p-4 border-t border-gray-100">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors duration-200 group">
+            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-md">
+              <span className="text-sm font-semibold text-white">
+                {user?.email?.charAt(0).toUpperCase() || "U"}
+              </span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-900 truncate">
+                {user?.email || "User"}
+              </p>
+              <p className="text-xs text-gray-600 truncate">
+                {t(`role.${user?.role}`) || t("role.Guest")}
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="text-gray-500 hover:text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors p-2 rounded-lg"
+              title={isLoggingOut ? t("action.loggingOut") : t("action.logout")}
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">
-              {user?.email || "User"}
-            </p>
-            <p className="text-xs text-gray-500 truncate">
-              {user?.role || "Guest"}
-            </p>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
-            title={isLoggingOut ? "Logging out..." : "Log out"}
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
         </div>
       </div>
     </div>
