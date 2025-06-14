@@ -19,6 +19,10 @@ import {
   Bell,
   HelpCircle,
   LogOut,
+  UserCheck,
+  Target,
+  Activity,
+  ArrowRightLeft,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/lib/i18n";
@@ -79,6 +83,29 @@ const getAccountItems = (t: (key: string) => string) => [
   },
 ];
 
+const getCrmItems = (t: (key: string) => string) => [
+  {
+    title: t("nav.leads"),
+    href: "/leads",
+    icon: UserCheck,
+  },
+  {
+    title: t("nav.opportunities"),
+    href: "/opportunities",
+    icon: Target,
+  },
+  {
+    title: t("nav.activities"),
+    href: "/activities",
+    icon: Activity,
+  },
+  {
+    title: t("nav.conversions"),
+    href: "/conversions",
+    icon: ArrowRightLeft,
+  },
+];
+
 const getSupportItems = (t: (key: string) => string) => [
   {
     title: t("nav.help"),
@@ -94,6 +121,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onCloseMobile }) =>
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const navigationItems = getNavigationItems(t);
+  const crmItems = getCrmItems(t);
   const accountItems = getAccountItems(t);
   const supportItems = getSupportItems(t);
 
@@ -166,6 +194,42 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onCloseMobile }) =>
             );
           })}
         </nav>
+
+        {/* CRM Section */}
+        <div className="mt-8">
+          <div className="px-6 py-2">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              {t("section.crm")}
+            </h3>
+          </div>
+          <nav className="space-y-1 px-3">
+            {crmItems.map((item) => {
+              const isActive =
+                pathname === item.href || pathname.startsWith(item.href + "/");
+              const Icon = item.icon;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onCloseMobile}
+                  className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group",
+                  isActive
+                    ? "bg-blue-100 text-blue-700 shadow-sm border border-blue-200"
+                    : "text-gray-700 hover:bg-white hover:text-gray-900 hover:shadow-sm"
+                )}
+                >
+                  <Icon className={cn(
+                    "h-5 w-5 transition-colors",
+                    isActive ? "text-blue-600" : "text-gray-500 group-hover:text-gray-700"
+                  )} />
+                  <span>{item.title}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
 
         {/* Account Section */}
         <div className="mt-8">
