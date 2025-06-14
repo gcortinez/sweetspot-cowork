@@ -32,8 +32,8 @@ export const getTenantContext = async (
     // Get user details from our User table
     const { data: userRecord, error: userError } = await supabaseAdmin
       .from("users")
-      .select("id, tenant_id, role, client_id")
-      .eq("supabase_id", user.id)
+      .select("id, tenantId, role, clientId")
+      .eq("supabaseId", user.id)
       .single();
 
     if (userError || !userRecord) {
@@ -42,10 +42,10 @@ export const getTenantContext = async (
     }
 
     return {
-      tenantId: userRecord.tenant_id,
+      tenantId: userRecord.tenantId,
       userId: userRecord.id,
       role: userRecord.role as UserRole,
-      clientId: userRecord.client_id || undefined,
+      clientId: userRecord.clientId || undefined,
     };
   } catch (error) {
     console.error("Error extracting tenant context:", error);
@@ -225,17 +225,23 @@ export const createUserWithTenant = async (
       return null;
     }
 
+    // Generate unique ID for user
+    const userId = `user_${Date.now()}_${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
+
     // Create user record in our User table
     const { data: userRecord, error: userError } = await supabaseAdmin
       .from("users")
       .insert({
-        supabase_id: authUser.user.id,
-        tenant_id: tenantId,
+        id: userId,
+        supabaseId: authUser.user.id,
+        tenantId: tenantId,
         email,
-        first_name: firstName,
-        last_name: lastName,
+        firstName: firstName,
+        lastName: lastName,
         role,
-        client_id: clientId,
+        clientId: clientId,
         status: "ACTIVE",
       })
       .select()
@@ -263,10 +269,10 @@ export const createUserWithTenant = async (
  */
 export const deleteUserWithCleanup = async (userId: string) => {
   try {
-    // Get user record to find supabase_id
+    // Get user record to find supabaseId
     const { data: userRecord, error: getUserError } = await supabaseAdmin
       .from("users")
-      .select("supabase_id")
+      .select("supabaseId")
       .eq("id", userId)
       .single();
 
@@ -277,7 +283,7 @@ export const deleteUserWithCleanup = async (userId: string) => {
 
     // Delete from auth
     const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(
-      userRecord.supabase_id
+      userRecord.supabaseId
     );
 
     if (authError) {
