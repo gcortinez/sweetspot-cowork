@@ -1,0 +1,26 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.taskRoutes = void 0;
+const express_1 = require("express");
+const taskController_1 = require("../controllers/taskController");
+const auth_1 = require("../middleware/auth");
+const router = (0, express_1.Router)();
+exports.taskRoutes = router;
+router.use(auth_1.authenticate);
+router.get('/stats', taskController_1.taskController.getTaskStats);
+router.get('/reminders', taskController_1.taskController.getUpcomingReminders);
+router.get('/my-tasks', taskController_1.taskController.getMyTasks);
+router.get('/overdue', taskController_1.taskController.getOverdueTasks);
+router.get('/due-today', taskController_1.taskController.getTasksDueToday);
+router.get('/dashboard', taskController_1.taskController.getTaskDashboard);
+router.get('/tags', taskController_1.taskController.getAllTags);
+router.get('/by-entity/:entityType/:entityId', taskController_1.taskController.getTasksByEntity);
+router.get('/by-tag/:tag', taskController_1.taskController.getTasksByTag);
+router.post('/bulk-update', taskController_1.taskController.bulkUpdateTasks);
+router.get('/', taskController_1.taskController.getTasks);
+router.get('/:id', taskController_1.taskController.getTaskById);
+router.post('/', taskController_1.taskController.createTask);
+router.put('/:id', taskController_1.taskController.updateTask);
+router.delete('/:id', taskController_1.taskController.deleteTask);
+router.post('/:id/complete', taskController_1.taskController.completeTask);
+//# sourceMappingURL=taskRoutes.js.map

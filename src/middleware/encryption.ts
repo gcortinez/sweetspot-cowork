@@ -76,7 +76,7 @@ export const decryptSensitiveFields = (entityType: keyof typeof ENCRYPTED_FIELDS
 /**
  * Middleware to enforce HTTPS in production
  */
-export const enforceHTTPS = (req: Request, res: Response, next: NextFunction) => {
+export const enforceHTTPS = (req: Request, res: Response, next: NextFunction): void => {
   if (process.env.NODE_ENV === 'production' && !req.secure && req.get('x-forwarded-proto') !== 'https') {
     logger.warn('Insecure HTTP request blocked', { 
       ip: req.ip, 
@@ -84,10 +84,11 @@ export const enforceHTTPS = (req: Request, res: Response, next: NextFunction) =>
       userAgent: req.get('User-Agent')
     });
     
-    return res.status(426).json({
+    res.status(426).json({
       error: 'HTTPS required',
       message: 'This endpoint requires a secure connection'
     });
+    return;
   }
   
   next();
@@ -96,7 +97,7 @@ export const enforceHTTPS = (req: Request, res: Response, next: NextFunction) =>
 /**
  * Middleware to add security headers for data in transit
  */
-export const secureDataTransit = (req: Request, res: Response, next: NextFunction) => {
+export const secureDataTransit = (req: Request, res: Response, next: NextFunction): void => {
   // Set secure headers
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
   res.setHeader('X-Content-Type-Options', 'nosniff');

@@ -4,8 +4,18 @@ import { ResponseHelper } from '../utils/response';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { visitorService } from '../services/visitorService';
-import { visitorPreRegistrationService } from '../services/visitorPreRegistrationService';
-import { VisitorPurpose, VisitorStatus, PreRegistrationStatus } from '@prisma/client';
+import { visitorNotificationService } from '../services/visitorNotificationService';
+import { visitorAnalyticsService } from '../services/visitorAnalyticsService';
+import { accessControlIntegrationService } from '../services/accessControlIntegrationService';
+import {
+  VisitorStatus,
+  VisitorPurpose,
+  PreRegistrationStatus,
+  AccessCodeType,
+  NotificationType,
+  NotificationUrgency,
+  AnalyticsPeriod
+} from '@prisma/client';
 
 // ============================================================================
 // VALIDATION SCHEMAS
@@ -23,34 +33,34 @@ const createVisitorSchema = z.object({
   hostUserId: z.string(),
   purpose: z.nativeEnum(VisitorPurpose),
   purposeDetails: z.string().optional(),
-  expectedDuration: z.number().positive().optional(),
+  expectedDuration: z.number().min(1).optional(),
   meetingRoom: z.string().optional(),
   validFrom: z.string().datetime().optional(),
   validUntil: z.string().datetime().optional(),
   accessZones: z.array(z.string()).optional(),
   preRegistrationId: z.string().optional(),
   healthDeclaration: z.record(z.any()).optional(),
-  emergencyContact: z.record(z.any()).optional(),
+  emergencyContact: z.record(z.any()).optional()
 });
 
-const updateVisitorSchema = createVisitorSchema.partial();
-
-const checkInSchema = z.object({
-  visitorId: z.string(),
-  checkInLocation: z.string().optional(),
-  photoUrl: z.string().url().optional(),
-  badgeNumber: z.string().optional(),
+const updateVisitorSchema = z.object({
+  firstName: z.string().min(1).optional(),
+  lastName: z.string().min(1).optional(),
+  email: z.string().email().optional(),
+  phone: z.string().optional(),
+  company: z.string().optional(),
+  jobTitle: z.string().optional(),
+  photoUrl: z.string().optional(),
+  documentType: z.string().optional(),
+  documentNumber: z.string().optional(),
+  purpose: z.nativeEnum(VisitorPurpose).optional(),
+  purposeDetails: z.string().optional(),
+  expectedDuration: z.number().min(1).optional(),
+  meetingRoom: z.string().optional(),
+  validUntil: z.string().datetime().optional(),
+  accessZones: z.array(z.string()).optional(),
   healthDeclaration: z.record(z.any()).optional(),
-  termsAccepted: z.boolean().optional(),
-  dataConsent: z.boolean().optional(),
-  ndaSigned: z.boolean().optional(),
-});
-
-const checkOutSchema = z.object({
-  visitorId: z.string(),
-  checkOutLocation: z.string().optional(),
-  badgeReturned: z.boolean().optional(),
-  notes: z.string().optional(),
+  emergencyContact: z.record(z.any()).optional()
 });
 
 const createPreRegistrationSchema = z.object({
@@ -62,7 +72,7 @@ const createPreRegistrationSchema = z.object({
   jobTitle: z.string().optional(),
   hostUserId: z.string(),
   expectedArrival: z.string().datetime(),
-  expectedDuration: z.number().positive().optional(),
+  expectedDuration: z.number().min(1).optional(),
   purpose: z.nativeEnum(VisitorPurpose),
   purposeDetails: z.string().optional(),
   meetingRoom: z.string().optional(),
@@ -70,36 +80,69 @@ const createPreRegistrationSchema = z.object({
   parkingRequired: z.boolean().optional(),
   requiresNDA: z.boolean().optional(),
   requiresHealthCheck: z.boolean().optional(),
-  customRequirements: z.array(z.string()).optional(),
-  autoApprove: z.boolean().optional(),
+  customRequirements: z.array(z.any()).optional()
 });
 
-const processApprovalSchema = z.object({
-  approve: z.boolean(),
-  notes: z.string().optional(),
+const checkInSchema = z.object({
+  visitorId: z.string(),
+  checkInLocation: z.string().optional(),
+  photoUrl: z.string().optional(),
+  badgeNumber: z.string().optional(),
+  healthDeclaration: z.record(z.any()).optional(),
+  termsAccepted: z.boolean().optional(),
+  dataConsent: z.boolean().optional(),
+  ndaSigned: z.boolean().optional()
+});
+
+const checkOutSchema = z.object({
+  visitorId: z.string(),
+  checkOutLocation: z.string().optional(),
+  badgeReturned: z.boolean().optional(),
+  notes: z.string().optional()
+});
+
+const generateAccessCodeSchema = z.object({
+  codeType: z.nativeEnum(AccessCodeType),
+  visitorId: z.string().optional(),
+  expiresAt: z.string().datetime(),
+  maxUses: z.number().min(1).optional(),
   accessZones: z.array(z.string()).optional(),
-  parkingSpot: z.string().optional(),
-  customRequirements: z.array(z.string()).optional(),
+  generatedFor: z.string().optional(),
+  timeRestrictions: z.record(z.any()).optional(),
+  ipRestrictions: z.array(z.string()).optional()
+});
+
+const accessAttemptSchema = z.object({
+  accessType: z.enum(['QR_CODE', 'ACCESS_CODE', 'BADGE', 'MANUAL']),
+  accessData: z.string(),
+  location: z.string().optional(),
+  accessPoint: z.string().optional(),
+  deviceInfo: z.record(z.any()).optional(),
+  ipAddress: z.string().optional(),
+  userAgent: z.string().optional()
 });
 
 // ============================================================================
-// VISITOR MANAGEMENT
+// VISITOR MANAGEMENT ENDPOINTS
 // ============================================================================
 
 export const createVisitor = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { tenantId } = req;
+    const { tenantId, userId } = req;
     const validatedData = createVisitorSchema.parse(req.body);
 
-    const createData = {
+    const visitor = await visitorService.createVisitor(tenantId, {
       ...validatedData,
       validFrom: validatedData.validFrom ? new Date(validatedData.validFrom) : undefined,
-      validUntil: validatedData.validUntil ? new Date(validatedData.validUntil) : undefined,
-    };
+      validUntil: validatedData.validUntil ? new Date(validatedData.validUntil) : undefined
+    });
 
-    const visitor = await visitorService.createVisitor(tenantId, createData);
+    logger.info('Visitor created successfully', { 
+      tenantId, 
+      visitorId: visitor.id, 
+      hostUserId: validatedData.hostUserId 
+    });
 
-    logger.info('Visitor created successfully', { tenantId, visitorId: visitor.id });
     return ResponseHelper.success(res, visitor, 201);
   } catch (error) {
     logger.error('Failed to create visitor', { tenantId: req.tenantId }, error as Error);
@@ -112,6 +155,67 @@ export const createVisitor = async (req: AuthenticatedRequest, res: Response) =>
   }
 };
 
+export const getVisitors = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { tenantId } = req;
+    const { 
+      status, 
+      hostUserId, 
+      purpose, 
+      fromDate, 
+      toDate, 
+      search, 
+      includeExpired,
+      skip, 
+      take 
+    } = req.query;
+
+    const filters: any = {};
+    if (status) {
+      filters.status = Array.isArray(status) ? status : [status];
+    }
+    if (hostUserId) filters.hostUserId = hostUserId as string;
+    if (purpose) filters.purpose = purpose;
+    if (fromDate) filters.fromDate = new Date(fromDate as string);
+    if (toDate) filters.toDate = new Date(toDate as string);
+    if (search) filters.search = search as string;
+    if (includeExpired) filters.includeExpired = includeExpired === 'true';
+
+    const pagination = {
+      skip: skip ? parseInt(skip as string) : undefined,
+      take: take ? parseInt(take as string) : undefined
+    };
+
+    const result = await visitorService.getVisitors(tenantId, filters, pagination);
+
+    return ResponseHelper.success(res, result);
+  } catch (error) {
+    logger.error('Failed to get visitors', { tenantId: req.tenantId }, error as Error);
+    return ResponseHelper.internalError(res, 'Failed to get visitors');
+  }
+};
+
+export const getVisitor = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { tenantId } = req;
+    const { visitorId } = req.params;
+
+    const visitor = await visitorService.getVisitorById(tenantId, visitorId);
+
+    if (!visitor) {
+      return ResponseHelper.notFound(res, 'Visitor not found');
+    }
+
+    return ResponseHelper.success(res, visitor);
+  } catch (error) {
+    logger.error('Failed to get visitor', { 
+      tenantId: req.tenantId, 
+      visitorId: req.params.visitorId 
+    }, error as Error);
+    return ResponseHelper.internalError(res, 'Failed to get visitor');
+  }
+};
+
 export const updateVisitor = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { tenantId } = req;
@@ -120,14 +224,17 @@ export const updateVisitor = async (req: AuthenticatedRequest, res: Response) =>
 
     const updateData = {
       ...validatedData,
-      validUntil: validatedData.validUntil ? new Date(validatedData.validUntil) : undefined,
+      validUntil: validatedData.validUntil ? new Date(validatedData.validUntil) : undefined
     };
 
     const visitor = await visitorService.updateVisitor(tenantId, visitorId, updateData);
 
     return ResponseHelper.success(res, visitor);
   } catch (error) {
-    logger.error('Failed to update visitor', { tenantId: req.tenantId, visitorId: req.params.visitorId }, error as Error);
+    logger.error('Failed to update visitor', { 
+      tenantId: req.tenantId, 
+      visitorId: req.params.visitorId 
+    }, error as Error);
     
     if (error instanceof z.ZodError) {
       return ResponseHelper.badRequest(res, 'Invalid visitor data', error.errors);
@@ -146,65 +253,22 @@ export const deleteVisitor = async (req: AuthenticatedRequest, res: Response) =>
 
     return ResponseHelper.success(res, { message: 'Visitor cancelled successfully' });
   } catch (error) {
-    logger.error('Failed to delete visitor', { tenantId: req.tenantId, visitorId: req.params.visitorId }, error as Error);
+    logger.error('Failed to delete visitor', { 
+      tenantId: req.tenantId, 
+      visitorId: req.params.visitorId 
+    }, error as Error);
     return ResponseHelper.internalError(res, 'Failed to delete visitor');
-  }
-};
-
-export const getVisitor = async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { tenantId } = req;
-    const { visitorId } = req.params;
-
-    const visitor = await visitorService.getVisitorById(tenantId, visitorId);
-
-    if (!visitor) {
-      return ResponseHelper.notFound(res, 'Visitor not found');
-    }
-
-    return ResponseHelper.success(res, visitor);
-  } catch (error) {
-    logger.error('Failed to get visitor', { tenantId: req.tenantId, visitorId: req.params.visitorId }, error as Error);
-    return ResponseHelper.internalError(res, 'Failed to get visitor');
-  }
-};
-
-export const getVisitors = async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { tenantId } = req;
-    const { status, hostUserId, purpose, fromDate, toDate, search, includeExpired, skip, take } = req.query;
-
-    const filters: any = {};
-    if (status) filters.status = Array.isArray(status) ? status as VisitorStatus[] : [status as VisitorStatus];
-    if (hostUserId) filters.hostUserId = hostUserId as string;
-    if (purpose) filters.purpose = purpose as VisitorPurpose;
-    if (fromDate) filters.fromDate = new Date(fromDate as string);
-    if (toDate) filters.toDate = new Date(toDate as string);
-    if (search) filters.search = search as string;
-    if (includeExpired) filters.includeExpired = includeExpired === 'true';
-
-    const pagination = {
-      skip: skip ? parseInt(skip as string) : undefined,
-      take: take ? parseInt(take as string) : undefined,
-    };
-
-    const result = await visitorService.getVisitors(tenantId, filters, pagination);
-
-    return ResponseHelper.success(res, result);
-  } catch (error) {
-    logger.error('Failed to get visitors', { tenantId: req.tenantId }, error as Error);
-    return ResponseHelper.internalError(res, 'Failed to get visitors');
   }
 };
 
 export const getTodaysVisitors = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { tenantId, userId } = req;
+    const { tenantId } = req;
     const { hostUserId } = req.query;
 
     const visitors = await visitorService.getTodaysVisitors(
       tenantId, 
-      hostUserId as string || undefined
+      hostUserId as string
     );
 
     return ResponseHelper.success(res, visitors);
@@ -227,26 +291,8 @@ export const getActiveVisitors = async (req: AuthenticatedRequest, res: Response
   }
 };
 
-export const getVisitorByQRCode = async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { tenantId } = req;
-    const { qrCode } = req.params;
-
-    const visitor = await visitorService.getVisitorByQRCode(tenantId, qrCode);
-
-    if (!visitor) {
-      return ResponseHelper.notFound(res, 'Visitor not found');
-    }
-
-    return ResponseHelper.success(res, visitor);
-  } catch (error) {
-    logger.error('Failed to get visitor by QR code', { tenantId: req.tenantId, qrCode: req.params.qrCode }, error as Error);
-    return ResponseHelper.internalError(res, 'Failed to get visitor by QR code');
-  }
-};
-
 // ============================================================================
-// CHECK-IN/CHECK-OUT
+// CHECK-IN/CHECK-OUT ENDPOINTS
 // ============================================================================
 
 export const checkInVisitor = async (req: AuthenticatedRequest, res: Response) => {
@@ -256,7 +302,6 @@ export const checkInVisitor = async (req: AuthenticatedRequest, res: Response) =
 
     const visitor = await visitorService.checkInVisitor(tenantId, validatedData);
 
-    logger.info('Visitor checked in successfully', { tenantId, visitorId: validatedData.visitorId });
     return ResponseHelper.success(res, visitor);
   } catch (error) {
     logger.error('Failed to check in visitor', { tenantId: req.tenantId }, error as Error);
@@ -276,7 +321,6 @@ export const checkOutVisitor = async (req: AuthenticatedRequest, res: Response) 
 
     const visitor = await visitorService.checkOutVisitor(tenantId, validatedData);
 
-    logger.info('Visitor checked out successfully', { tenantId, visitorId: validatedData.visitorId });
     return ResponseHelper.success(res, visitor);
   } catch (error) {
     logger.error('Failed to check out visitor', { tenantId: req.tenantId }, error as Error);
@@ -293,43 +337,43 @@ export const extendVisitorStay = async (req: AuthenticatedRequest, res: Response
   try {
     const { tenantId } = req;
     const { visitorId } = req.params;
-    const { validUntil, reason } = req.body;
+    const { newValidUntil, reason } = req.body;
 
-    if (!validUntil) {
-      return ResponseHelper.badRequest(res, 'validUntil is required');
+    if (!newValidUntil) {
+      return ResponseHelper.badRequest(res, 'newValidUntil is required');
     }
 
     const visitor = await visitorService.extendVisitorStay(
-      tenantId, 
-      visitorId, 
-      new Date(validUntil), 
+      tenantId,
+      visitorId,
+      new Date(newValidUntil),
       reason
     );
 
     return ResponseHelper.success(res, visitor);
   } catch (error) {
-    logger.error('Failed to extend visitor stay', { tenantId: req.tenantId, visitorId: req.params.visitorId }, error as Error);
+    logger.error('Failed to extend visitor stay', { 
+      tenantId: req.tenantId, 
+      visitorId: req.params.visitorId 
+    }, error as Error);
     return ResponseHelper.internalError(res, 'Failed to extend visitor stay');
   }
 };
 
 // ============================================================================
-// PRE-REGISTRATION
+// PRE-REGISTRATION ENDPOINTS
 // ============================================================================
 
 export const createPreRegistration = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { tenantId } = req;
+    const { tenantId, userId } = req;
     const validatedData = createPreRegistrationSchema.parse(req.body);
 
-    const createData = {
+    const preRegistration = await visitorService.createPreRegistration(tenantId, userId, {
       ...validatedData,
-      expectedArrival: new Date(validatedData.expectedArrival),
-    };
+      expectedArrival: new Date(validatedData.expectedArrival)
+    });
 
-    const preRegistration = await visitorPreRegistrationService.createPreRegistration(tenantId, createData);
-
-    logger.info('Pre-registration created successfully', { tenantId, preRegistrationId: preRegistration.id });
     return ResponseHelper.success(res, preRegistration, 201);
   } catch (error) {
     logger.error('Failed to create pre-registration', { tenantId: req.tenantId }, error as Error);
@@ -342,101 +386,236 @@ export const createPreRegistration = async (req: AuthenticatedRequest, res: Resp
   }
 };
 
-export const getPreRegistrations = async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { tenantId } = req;
-    const { status, hostUserId, fromDate, toDate, search, pendingOnly, skip, take } = req.query;
-
-    const filters: any = {};
-    if (status) filters.status = Array.isArray(status) ? status as PreRegistrationStatus[] : [status as PreRegistrationStatus];
-    if (hostUserId) filters.hostUserId = hostUserId as string;
-    if (fromDate) filters.fromDate = new Date(fromDate as string);
-    if (toDate) filters.toDate = new Date(toDate as string);
-    if (search) filters.search = search as string;
-    if (pendingOnly) filters.pendingOnly = pendingOnly === 'true';
-
-    const pagination = {
-      skip: skip ? parseInt(skip as string) : undefined,
-      take: take ? parseInt(take as string) : undefined,
-    };
-
-    const result = await visitorPreRegistrationService.getPreRegistrations(tenantId, filters, pagination);
-
-    return ResponseHelper.success(res, result);
-  } catch (error) {
-    logger.error('Failed to get pre-registrations', { tenantId: req.tenantId }, error as Error);
-    return ResponseHelper.internalError(res, 'Failed to get pre-registrations');
-  }
-};
-
-export const processPreRegistrationApproval = async (req: AuthenticatedRequest, res: Response) => {
+export const approvePreRegistration = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { tenantId, userId } = req;
     const { preRegistrationId } = req.params;
-    const validatedData = processApprovalSchema.parse(req.body);
+    const { approvalNotes } = req.body;
 
-    const preRegistration = await visitorPreRegistrationService.processApproval(
-      tenantId, 
-      preRegistrationId, 
-      userId, 
-      validatedData
+    const preRegistration = await visitorService.approvePreRegistration(
+      tenantId,
+      preRegistrationId,
+      userId,
+      approvalNotes
     );
 
-    logger.info('Pre-registration approval processed', { tenantId, preRegistrationId, approved: validatedData.approve });
     return ResponseHelper.success(res, preRegistration);
   } catch (error) {
-    logger.error('Failed to process pre-registration approval', { tenantId: req.tenantId, preRegistrationId: req.params.preRegistrationId }, error as Error);
-    
-    if (error instanceof z.ZodError) {
-      return ResponseHelper.badRequest(res, 'Invalid approval data', error.errors);
-    }
-    
-    return ResponseHelper.internalError(res, 'Failed to process approval');
-  }
-};
-
-export const sendInvitation = async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { tenantId } = req;
-    const { preRegistrationId } = req.params;
-    const { message, includeQRCode, includeDirections, includeParking } = req.body;
-
-    const result = await visitorPreRegistrationService.sendInvitation(tenantId, {
-      preRegistrationId,
-      message,
-      includeQRCode,
-      includeDirections,
-      includeParking,
-    });
-
-    return ResponseHelper.success(res, result);
-  } catch (error) {
-    logger.error('Failed to send invitation', { tenantId: req.tenantId, preRegistrationId: req.params.preRegistrationId }, error as Error);
-    return ResponseHelper.internalError(res, 'Failed to send invitation');
+    logger.error('Failed to approve pre-registration', { 
+      tenantId: req.tenantId, 
+      preRegistrationId: req.params.preRegistrationId 
+    }, error as Error);
+    return ResponseHelper.internalError(res, 'Failed to approve pre-registration');
   }
 };
 
 export const convertPreRegistrationToVisitor = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { tenantId } = req;
+    const { tenantId, userId } = req;
     const { preRegistrationId } = req.params;
-    const additionalData = req.body;
 
-    const result = await visitorPreRegistrationService.convertToVisitor(
-      tenantId, 
-      preRegistrationId, 
-      additionalData
+    const visitor = await visitorService.convertPreRegistrationToVisitor(
+      tenantId,
+      preRegistrationId,
+      userId
     );
 
-    return ResponseHelper.success(res, result);
+    return ResponseHelper.success(res, visitor, 201);
   } catch (error) {
-    logger.error('Failed to convert pre-registration to visitor', { tenantId: req.tenantId, preRegistrationId: req.params.preRegistrationId }, error as Error);
-    return ResponseHelper.internalError(res, 'Failed to convert to visitor');
+    logger.error('Failed to convert pre-registration', { 
+      tenantId: req.tenantId, 
+      preRegistrationId: req.params.preRegistrationId 
+    }, error as Error);
+    return ResponseHelper.internalError(res, 'Failed to convert pre-registration');
   }
 };
 
 // ============================================================================
-// ANALYTICS AND REPORTING
+// ACCESS CODE ENDPOINTS
+// ============================================================================
+
+export const generateAccessCode = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = req;
+    const validatedData = generateAccessCodeSchema.parse(req.body);
+
+    const accessCode = await visitorService.generateAccessCode(tenantId, userId, {
+      ...validatedData,
+      expiresAt: new Date(validatedData.expiresAt)
+    });
+
+    return ResponseHelper.success(res, accessCode, 201);
+  } catch (error) {
+    logger.error('Failed to generate access code', { tenantId: req.tenantId }, error as Error);
+    
+    if (error instanceof z.ZodError) {
+      return ResponseHelper.badRequest(res, 'Invalid access code data', error.errors);
+    }
+    
+    return ResponseHelper.internalError(res, 'Failed to generate access code');
+  }
+};
+
+export const validateAccessCode = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { tenantId } = req;
+    const { code } = req.params;
+    const { location, ipAddress } = req.query;
+
+    const validation = await visitorService.validateAccessCode(
+      tenantId,
+      code,
+      location as string,
+      ipAddress as string
+    );
+
+    return ResponseHelper.success(res, validation);
+  } catch (error) {
+    logger.error('Failed to validate access code', { 
+      tenantId: req.tenantId, 
+      code: req.params.code 
+    }, error as Error);
+    return ResponseHelper.internalError(res, 'Failed to validate access code');
+  }
+};
+
+export const useAccessCode = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = req;
+    const { code } = req.params;
+    const { visitorId, location, ipAddress, deviceInfo } = req.body;
+
+    const result = await visitorService.useAccessCode(
+      tenantId,
+      code,
+      userId,
+      visitorId,
+      location,
+      ipAddress,
+      deviceInfo
+    );
+
+    return ResponseHelper.success(res, result);
+  } catch (error) {
+    logger.error('Failed to use access code', { 
+      tenantId: req.tenantId, 
+      code: req.params.code 
+    }, error as Error);
+    return ResponseHelper.internalError(res, 'Failed to use access code');
+  }
+};
+
+// ============================================================================
+// ACCESS CONTROL ENDPOINTS
+// ============================================================================
+
+export const verifyAccess = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = req;
+    const validatedData = accessAttemptSchema.parse(req.body);
+
+    const accessAttempt = {
+      tenantId,
+      userId,
+      ...validatedData
+    };
+
+    const result = await accessControlIntegrationService.verifyAccess(tenantId, accessAttempt);
+
+    return ResponseHelper.success(res, result);
+  } catch (error) {
+    logger.error('Failed to verify access', { tenantId: req.tenantId }, error as Error);
+    
+    if (error instanceof z.ZodError) {
+      return ResponseHelper.badRequest(res, 'Invalid access attempt data', error.errors);
+    }
+    
+    return ResponseHelper.internalError(res, 'Failed to verify access');
+  }
+};
+
+export const processAccessCheckIn = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = req;
+    const { 
+      visitorId, 
+      location, 
+      accessPoint, 
+      badgeNumber, 
+      photoUrl,
+      verificationMethod,
+      verificationData,
+      healthDeclaration,
+      emergencyContact,
+      termsAccepted,
+      dataConsent
+    } = req.body;
+
+    const checkInData = {
+      visitorId,
+      location,
+      accessPoint,
+      badgeNumber,
+      photoUrl,
+      verificationMethod,
+      verificationData,
+      healthDeclaration,
+      emergencyContact,
+      termsAccepted,
+      dataConsent
+    };
+
+    const result = await accessControlIntegrationService.processCheckIn(
+      tenantId,
+      checkInData,
+      userId
+    );
+
+    return ResponseHelper.success(res, result);
+  } catch (error) {
+    logger.error('Failed to process access check-in', { tenantId: req.tenantId }, error as Error);
+    return ResponseHelper.internalError(res, 'Failed to process access check-in');
+  }
+};
+
+export const processAccessCheckOut = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = req;
+    const { 
+      visitorId, 
+      location, 
+      accessPoint, 
+      badgeReturned,
+      feedback,
+      rating,
+      notes
+    } = req.body;
+
+    const checkOutData = {
+      visitorId,
+      location,
+      accessPoint,
+      badgeReturned,
+      feedback,
+      rating,
+      notes
+    };
+
+    const result = await accessControlIntegrationService.processCheckOut(
+      tenantId,
+      checkOutData,
+      userId
+    );
+
+    return ResponseHelper.success(res, result);
+  } catch (error) {
+    logger.error('Failed to process access check-out', { tenantId: req.tenantId }, error as Error);
+    return ResponseHelper.internalError(res, 'Failed to process access check-out');
+  }
+};
+
+// ============================================================================
+// ANALYTICS ENDPOINTS
 // ============================================================================
 
 export const getVisitorStatistics = async (req: AuthenticatedRequest, res: Response) => {
@@ -444,88 +623,258 @@ export const getVisitorStatistics = async (req: AuthenticatedRequest, res: Respo
     const { tenantId } = req;
     const { startDate, endDate } = req.query;
 
-    const defaultEndDate = new Date();
-    const defaultStartDate = new Date(defaultEndDate.getTime() - 30 * 24 * 60 * 60 * 1000); // Last 30 days
+    if (!startDate || !endDate) {
+      return ResponseHelper.badRequest(res, 'startDate and endDate are required');
+    }
 
-    const statistics = await visitorService.getVisitorStatistics(
+    const stats = await visitorService.getVisitorStatistics(
       tenantId,
-      startDate ? new Date(startDate as string) : defaultStartDate,
-      endDate ? new Date(endDate as string) : defaultEndDate
+      new Date(startDate as string),
+      new Date(endDate as string)
     );
 
-    return ResponseHelper.success(res, statistics);
+    return ResponseHelper.success(res, stats);
   } catch (error) {
     logger.error('Failed to get visitor statistics', { tenantId: req.tenantId }, error as Error);
     return ResponseHelper.internalError(res, 'Failed to get visitor statistics');
   }
 };
 
-export const getVisitorHistory = async (req: AuthenticatedRequest, res: Response) => {
+export const getVisitorAnalytics = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { tenantId } = req;
-    const { visitorId } = req.params;
+    const { startDate, endDate, period, skip, take } = req.query;
 
-    const history = await visitorService.getVisitorHistory(tenantId, visitorId);
+    if (!startDate || !endDate) {
+      return ResponseHelper.badRequest(res, 'startDate and endDate are required');
+    }
 
-    return ResponseHelper.success(res, history);
+    const filters = {
+      startDate: new Date(startDate as string),
+      endDate: new Date(endDate as string),
+      period: period as AnalyticsPeriod
+    };
+
+    const pagination = {
+      skip: skip ? parseInt(skip as string) : undefined,
+      take: take ? parseInt(take as string) : undefined
+    };
+
+    const result = await visitorAnalyticsService.getAnalytics(tenantId, filters, pagination);
+
+    return ResponseHelper.success(res, result);
   } catch (error) {
-    logger.error('Failed to get visitor history', { tenantId: req.tenantId, visitorId: req.params.visitorId }, error as Error);
-    return ResponseHelper.internalError(res, 'Failed to get visitor history');
+    logger.error('Failed to get visitor analytics', { tenantId: req.tenantId }, error as Error);
+    return ResponseHelper.internalError(res, 'Failed to get visitor analytics');
   }
 };
 
-export const getPreRegistrationStatistics = async (req: AuthenticatedRequest, res: Response) => {
+export const getVisitorTrends = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { tenantId } = req;
+    const { startDate, endDate, period } = req.query;
+
+    if (!startDate || !endDate || !period) {
+      return ResponseHelper.badRequest(res, 'startDate, endDate, and period are required');
+    }
+
+    const trends = await visitorAnalyticsService.getVisitorTrends(
+      tenantId,
+      period as AnalyticsPeriod,
+      new Date(startDate as string),
+      new Date(endDate as string)
+    );
+
+    return ResponseHelper.success(res, trends);
+  } catch (error) {
+    logger.error('Failed to get visitor trends', { tenantId: req.tenantId }, error as Error);
+    return ResponseHelper.internalError(res, 'Failed to get visitor trends');
+  }
+};
+
+export const getPeakAnalysis = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { tenantId } = req;
     const { startDate, endDate } = req.query;
 
-    const defaultEndDate = new Date();
-    const defaultStartDate = new Date(defaultEndDate.getTime() - 30 * 24 * 60 * 60 * 1000); // Last 30 days
+    if (!startDate || !endDate) {
+      return ResponseHelper.badRequest(res, 'startDate and endDate are required');
+    }
 
-    const statistics = await visitorPreRegistrationService.getPreRegistrationStatistics(
+    const analysis = await visitorAnalyticsService.getPeakAnalysis(
       tenantId,
-      startDate ? new Date(startDate as string) : defaultStartDate,
-      endDate ? new Date(endDate as string) : defaultEndDate
+      new Date(startDate as string),
+      new Date(endDate as string)
     );
 
-    return ResponseHelper.success(res, statistics);
+    return ResponseHelper.success(res, analysis);
   } catch (error) {
-    logger.error('Failed to get pre-registration statistics', { tenantId: req.tenantId }, error as Error);
-    return ResponseHelper.internalError(res, 'Failed to get pre-registration statistics');
+    logger.error('Failed to get peak analysis', { tenantId: req.tenantId }, error as Error);
+    return ResponseHelper.internalError(res, 'Failed to get peak analysis');
   }
 };
 
-export const getPendingApprovals = async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { tenantId, userId } = req;
-    const { hostUserId } = req.query;
-
-    const preRegistrations = await visitorPreRegistrationService.getPendingApprovals(
-      tenantId, 
-      hostUserId as string || undefined
-    );
-
-    return ResponseHelper.success(res, preRegistrations);
-  } catch (error) {
-    logger.error('Failed to get pending approvals', { tenantId: req.tenantId }, error as Error);
-    return ResponseHelper.internalError(res, 'Failed to get pending approvals');
-  }
-};
-
-export const getUpcomingVisits = async (req: AuthenticatedRequest, res: Response) => {
+export const getHostPerformance = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { tenantId } = req;
-    const { hostUserId, days } = req.query;
+    const { startDate, endDate, hostUserId } = req.query;
 
-    const preRegistrations = await visitorPreRegistrationService.getUpcomingVisits(
+    if (!startDate || !endDate) {
+      return ResponseHelper.badRequest(res, 'startDate and endDate are required');
+    }
+
+    const performance = await visitorAnalyticsService.getHostPerformance(
       tenantId,
-      hostUserId as string || undefined,
-      days ? parseInt(days as string) : undefined
+      new Date(startDate as string),
+      new Date(endDate as string),
+      hostUserId as string
     );
 
-    return ResponseHelper.success(res, preRegistrations);
+    return ResponseHelper.success(res, performance);
   } catch (error) {
-    logger.error('Failed to get upcoming visits', { tenantId: req.tenantId }, error as Error);
-    return ResponseHelper.internalError(res, 'Failed to get upcoming visits');
+    logger.error('Failed to get host performance', { tenantId: req.tenantId }, error as Error);
+    return ResponseHelper.internalError(res, 'Failed to get host performance');
+  }
+};
+
+export const getConversionFunnel = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { tenantId } = req;
+    const { startDate, endDate } = req.query;
+
+    if (!startDate || !endDate) {
+      return ResponseHelper.badRequest(res, 'startDate and endDate are required');
+    }
+
+    const funnel = await visitorAnalyticsService.getConversionFunnel(
+      tenantId,
+      new Date(startDate as string),
+      new Date(endDate as string)
+    );
+
+    return ResponseHelper.success(res, funnel);
+  } catch (error) {
+    logger.error('Failed to get conversion funnel', { tenantId: req.tenantId }, error as Error);
+    return ResponseHelper.internalError(res, 'Failed to get conversion funnel');
+  }
+};
+
+export const getAccessControlMetrics = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { tenantId } = req;
+    const { startDate, endDate } = req.query;
+
+    if (!startDate || !endDate) {
+      return ResponseHelper.badRequest(res, 'startDate and endDate are required');
+    }
+
+    const metrics = await accessControlIntegrationService.getAccessControlMetrics(
+      tenantId,
+      new Date(startDate as string),
+      new Date(endDate as string)
+    );
+
+    return ResponseHelper.success(res, metrics);
+  } catch (error) {
+    logger.error('Failed to get access control metrics', { tenantId: req.tenantId }, error as Error);
+    return ResponseHelper.internalError(res, 'Failed to get access control metrics');
+  }
+};
+
+// ============================================================================
+// NOTIFICATION ENDPOINTS
+// ============================================================================
+
+export const getNotifications = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = req;
+    const { type, status, urgency, unreadOnly, skip, take } = req.query;
+
+    const filters: any = {
+      recipientId: userId
+    };
+
+    if (type) filters.type = Array.isArray(type) ? type : [type];
+    if (status) filters.status = Array.isArray(status) ? status : [status];
+    if (urgency) filters.urgency = Array.isArray(urgency) ? urgency : [urgency];
+    if (unreadOnly === 'true') filters.unreadOnly = true;
+
+    const pagination = {
+      skip: skip ? parseInt(skip as string) : undefined,
+      take: take ? parseInt(take as string) : undefined
+    };
+
+    const result = await visitorNotificationService.getNotifications(tenantId, filters, pagination);
+
+    return ResponseHelper.success(res, result);
+  } catch (error) {
+    logger.error('Failed to get notifications', { tenantId: req.tenantId }, error as Error);
+    return ResponseHelper.internalError(res, 'Failed to get notifications');
+  }
+};
+
+export const markNotificationAsRead = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = req;
+    const { notificationId } = req.params;
+
+    const notification = await visitorNotificationService.markAsRead(tenantId, notificationId, userId);
+
+    return ResponseHelper.success(res, notification);
+  } catch (error) {
+    logger.error('Failed to mark notification as read', { 
+      tenantId: req.tenantId, 
+      notificationId: req.params.notificationId 
+    }, error as Error);
+    return ResponseHelper.internalError(res, 'Failed to mark notification as read');
+  }
+};
+
+export const markAllNotificationsAsRead = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = req;
+
+    const count = await visitorNotificationService.markAllAsRead(tenantId, userId);
+
+    return ResponseHelper.success(res, { message: `${count} notifications marked as read` });
+  } catch (error) {
+    logger.error('Failed to mark all notifications as read', { tenantId: req.tenantId }, error as Error);
+    return ResponseHelper.internalError(res, 'Failed to mark all notifications as read');
+  }
+};
+
+export const acknowledgeNotification = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = req;
+    const { notificationId } = req.params;
+
+    const notification = await visitorNotificationService.markAsAcknowledged(tenantId, notificationId, userId);
+
+    return ResponseHelper.success(res, notification);
+  } catch (error) {
+    logger.error('Failed to acknowledge notification', { 
+      tenantId: req.tenantId, 
+      notificationId: req.params.notificationId 
+    }, error as Error);
+    return ResponseHelper.internalError(res, 'Failed to acknowledge notification');
+  }
+};
+
+export const getNotificationStats = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = req;
+    const { startDate, endDate } = req.query;
+
+    const stats = await visitorNotificationService.getNotificationStats(
+      tenantId,
+      userId,
+      startDate ? new Date(startDate as string) : undefined,
+      endDate ? new Date(endDate as string) : undefined
+    );
+
+    return ResponseHelper.success(res, stats);
+  } catch (error) {
+    logger.error('Failed to get notification stats', { tenantId: req.tenantId }, error as Error);
+    return ResponseHelper.internalError(res, 'Failed to get notification stats');
   }
 };

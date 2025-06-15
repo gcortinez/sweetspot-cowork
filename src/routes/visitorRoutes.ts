@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth';
 import { validateTenantAccess } from '../middleware/tenant';
+import { rateLimitMiddleware } from '../middleware/rateLimiting';
 import * as visitorController from '../controllers/visitorController';
 
 const router = Router();
@@ -8,6 +9,19 @@ const router = Router();
 // Apply authentication and tenant validation to all routes
 router.use(requireAuth);
 router.use(validateTenantAccess);
+
+// Rate limiting for sensitive operations
+const strictRateLimit = rateLimitMiddleware({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,
+  message: 'Too many requests from this IP, please try again later.'
+});
+
+const accessCodeRateLimit = rateLimitMiddleware({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10,
+  message: 'Too many access code requests, please try again later.'
+});
 
 // ============================================================================
 // VISITOR MANAGEMENT
@@ -18,14 +32,14 @@ router.use(validateTenantAccess);
  * @desc    Create a new visitor
  * @access  Private
  */
-router.post('/', visitorController.createVisitor);
+router.post('/', strictRateLimit, visitorController.createVisitor);
 
 /**
  * @route   PUT /api/visitors/:visitorId
  * @desc    Update visitor details
  * @access  Private
  */
-router.put('/:visitorId', visitorController.updateVisitor);
+router.put('/:visitorId', strictRateLimit, visitorController.updateVisitor);
 
 /**
  * @route   DELETE /api/visitors/:visitorId
@@ -172,5 +186,162 @@ router.get('/analytics/statistics', visitorController.getVisitorStatistics);
  * @access  Private
  */
 router.get('/analytics/pre-registrations', visitorController.getPreRegistrationStatistics);
+
+// ============================================================================
+// ACCESS CODE MANAGEMENT
+// ============================================================================
+
+/**
+ * @route   POST /api/visitors/access-codes
+ * @desc    Generate a new access code
+ * @access  Private
+ */
+router.post('/access-codes', accessCodeRateLimit, visitorController.generateAccessCode);
+
+/**
+ * @route   GET /api/visitors/access-codes/:code/validate
+ * @desc    Validate an access code
+ * @access  Private
+ * @query   location, ipAddress
+ */
+router.get('/access-codes/:code/validate', visitorController.validateAccessCode);
+
+/**
+ * @route   POST /api/visitors/access-codes/:code/use
+ * @desc    Use an access code
+ * @access  Private
+ */
+router.post('/access-codes/:code/use', accessCodeRateLimit, visitorController.useAccessCode);
+
+// ============================================================================
+// ACCESS CONTROL INTEGRATION
+// ============================================================================
+
+/**
+ * @route   POST /api/visitors/access/verify
+ * @desc    Verify access attempt (QR code, badge, etc.)
+ * @access  Private
+ */
+router.post('/access/verify', visitorController.verifyAccess);
+
+/**
+ * @route   POST /api/visitors/access/check-in
+ * @desc    Process access control check-in
+ * @access  Private
+ */
+router.post('/access/check-in', visitorController.processAccessCheckIn);
+
+/**
+ * @route   POST /api/visitors/access/check-out
+ * @desc    Process access control check-out
+ * @access  Private
+ */
+router.post('/access/check-out', visitorController.processAccessCheckOut);
+
+// ============================================================================
+// ENHANCED ANALYTICS
+// ============================================================================
+
+/**
+ * @route   GET /api/visitors/analytics/enhanced
+ * @desc    Get enhanced visitor analytics with filtering
+ * @access  Private
+ * @query   startDate, endDate, period, skip, take
+ */
+router.get('/analytics/enhanced', visitorController.getVisitorAnalytics);
+
+/**
+ * @route   GET /api/visitors/analytics/trends
+ * @desc    Get visitor trends over time
+ * @access  Private
+ * @query   startDate, endDate, period
+ */
+router.get('/analytics/trends', visitorController.getVisitorTrends);
+
+/**
+ * @route   GET /api/visitors/analytics/peak-analysis
+ * @desc    Get peak visitor analysis (hours, days, seasons)
+ * @access  Private
+ * @query   startDate, endDate
+ */
+router.get('/analytics/peak-analysis', visitorController.getPeakAnalysis);
+
+/**
+ * @route   GET /api/visitors/analytics/host-performance
+ * @desc    Get host performance metrics
+ * @access  Private
+ * @query   startDate, endDate, hostUserId
+ */
+router.get('/analytics/host-performance', visitorController.getHostPerformance);
+
+/**
+ * @route   GET /api/visitors/analytics/conversion-funnel
+ * @desc    Get visitor conversion funnel analysis
+ * @access  Private
+ * @query   startDate, endDate
+ */
+router.get('/analytics/conversion-funnel', visitorController.getConversionFunnel);
+
+/**
+ * @route   GET /api/visitors/analytics/access-control
+ * @desc    Get access control metrics
+ * @access  Private
+ * @query   startDate, endDate
+ */
+router.get('/analytics/access-control', visitorController.getAccessControlMetrics);
+
+// ============================================================================
+// NOTIFICATION MANAGEMENT
+// ============================================================================
+
+/**
+ * @route   GET /api/visitors/notifications
+ * @desc    Get visitor-related notifications
+ * @access  Private
+ * @query   type, status, urgency, unreadOnly, skip, take
+ */
+router.get('/notifications', visitorController.getNotifications);
+
+/**
+ * @route   POST /api/visitors/notifications/:notificationId/read
+ * @desc    Mark notification as read
+ * @access  Private
+ */
+router.post('/notifications/:notificationId/read', visitorController.markNotificationAsRead);
+
+/**
+ * @route   POST /api/visitors/notifications/read-all
+ * @desc    Mark all notifications as read
+ * @access  Private
+ */
+router.post('/notifications/read-all', visitorController.markAllNotificationsAsRead);
+
+/**
+ * @route   POST /api/visitors/notifications/:notificationId/acknowledge
+ * @desc    Acknowledge notification (for urgent notifications)
+ * @access  Private
+ */
+router.post('/notifications/:notificationId/acknowledge', visitorController.acknowledgeNotification);
+
+/**
+ * @route   GET /api/visitors/notifications/stats
+ * @desc    Get notification statistics
+ * @access  Private
+ * @query   startDate, endDate
+ */
+router.get('/notifications/stats', visitorController.getNotificationStats);
+
+// ============================================================================
+// ERROR HANDLING
+// ============================================================================
+
+// Handle 404 for visitor routes
+router.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Visitor API endpoint not found',
+    path: req.originalUrl
+  });
+});
 
 export default router;

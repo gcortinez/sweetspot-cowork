@@ -250,7 +250,7 @@ export const bruteForcePrevention = async (
         req.get('User-Agent')
       );
     } catch (error) {
-      logger.error('Failed to log security event', error);
+      logger.error('Failed to log security event', error as Error);
     }
 
     return res.status(429).json({

@@ -83,8 +83,8 @@ export const loadTLSCertificates = (config: TLSConfig): { key?: Buffer; cert?: B
     }
 
   } catch (error) {
-    logger.error('Failed to load TLS certificates', { error: error.message });
-    throw new Error(`TLS certificate loading failed: ${error.message}`);
+    logger.error('Failed to load TLS certificates', { error: error instanceof Error ? error.message : 'Unknown error' });
+    throw new Error(`TLS certificate loading failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 
   return result;
@@ -278,9 +278,9 @@ export const getTLSConfigFromEnv = (): TLSConfig => {
 export const isTLSConfigured = (): boolean => {
   const config = getTLSConfigFromEnv();
   
-  const hasKeyAndCert = (config.key && config.cert) || 
-                       (config.keyPath && config.certPath && 
-                        fs.existsSync(config.keyPath) && fs.existsSync(config.certPath));
+  const hasKeyAndCert = Boolean((config.key && config.cert) || 
+                                (config.keyPath && config.certPath && 
+                                 fs.existsSync(config.keyPath) && fs.existsSync(config.certPath)));
   
   return hasKeyAndCert;
 };

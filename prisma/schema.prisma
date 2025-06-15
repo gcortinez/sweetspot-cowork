@@ -85,6 +85,17 @@ model Tenant {
     visitorLogs        VisitorLog[]
     visitorBadges      VisitorBadge[]
     visitorPolicies    VisitorPolicy[]
+    visitorAccessCodes VisitorAccessCode[]
+    visitorNotifications VisitorNotification[]
+    visitorAnalytics   VisitorAnalytics[]
+    
+    // Financial management relationships
+    financialReports   FinancialReport[]
+    revenueForecasts   RevenueForcast[]
+    profitAnalyses     ProfitAnalysis[]
+    paymentReconciliations PaymentReconciliation[]
+    financialDashboards FinancialDashboard[]
+    budgetPlans        BudgetPlan[]
 
     @@map("tenants")
 }
@@ -128,7 +139,6 @@ model User {
     createdInvoices    Invoice[]            @relation("InvoiceCreatedBy")
     Membership         Membership[]
     ServiceConsumption ServiceConsumption[]
-    Visitor            Visitor[]
     assignedLeads      Lead[]               @relation("LeadAssignedTo")
     assignedOpportunities Opportunity[]     @relation("OpportunityAssignedTo")
     activities         Activity[]
@@ -154,12 +164,28 @@ model User {
     serviceReviews         ServiceReview[]
     
     // Visitor management relationships
-    hostedVisitors         Visitor[]
+    hostedVisitors         Visitor[]                    @relation("VisitorHost")
     preRegistrations       VisitorPreRegistration[]
     approvedPreRegistrations VisitorPreRegistration[] @relation("PreRegistrationApprover")
     visitorLogs            VisitorLog[]
     printedBadges          VisitorBadge[] @relation("BadgePrintedBy")
     returnedBadges         VisitorBadge[] @relation("BadgeReturnedTo")
+    generatedAccessCodes   VisitorAccessCode[] @relation("AccessCodeGenerator")
+    sentNotifications      VisitorNotification[] @relation("NotificationSender")
+    receivedNotifications  VisitorNotification[] @relation("NotificationRecipient")
+    accessCodeUsage        AccessCodeUsage[]
+    
+    // Financial management relationships
+    generatedReports       FinancialReport[]
+    createdForecasts       RevenueForcast[]
+    createdAnalyses        ProfitAnalysis[]
+    reconciledPayments     PaymentReconciliation[] @relation("PaymentReconciliationReconciler")
+    approvedReconciliations PaymentReconciliation[] @relation("PaymentReconciliationApprover")
+    matchedReconciliationItems PaymentReconciliationItem[]
+    createdDashboards      FinancialDashboard[]
+    createdBudgetPlans     BudgetPlan[] @relation("BudgetPlanCreator")
+    approvedBudgetPlans    BudgetPlan[] @relation("BudgetPlanApprover")
+    responsibleExpenses    BudgetExpense[]
 
     @@unique([tenantId, email])
     @@map("users")
@@ -1314,7 +1340,7 @@ model Visitor {
 
     // Relationships
     tenant           Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-    host             User                @relation(fields: [hostUserId], references: [id])
+    host             User                @relation("VisitorHost", fields: [hostUserId], references: [id])
     preRegistration  VisitorPreRegistration? @relation(fields: [preRegistrationId], references: [id])
     accessLogs       AccessLog[]
     qrCodes          QRCode[]
@@ -1322,6 +1348,9 @@ model Visitor {
     accessViolations AccessViolation[]
     visitorLogs      VisitorLog[]
     visitorBadges    VisitorBadge[]
+    accessCodes      VisitorAccessCode[]
+    accessCodeUsage  AccessCodeUsage[]
+    notifications    VisitorNotification[]
 
     @@index([tenantId, status])
     @@index([tenantId, hostUserId])
@@ -1404,6 +1433,7 @@ model VisitorPreRegistration {
     host            User            @relation(fields: [hostUserId], references: [id])
     approver        User?           @relation("PreRegistrationApprover", fields: [approvedBy], references: [id])
     visitors        Visitor[]
+    notifications   VisitorNotification[]
 
     @@index([tenantId, status])
     @@index([email])
@@ -1553,6 +1583,304 @@ model VisitorPolicy {
     @@map("visitor_policies")
 }
 
+// ============================================================================
+// VISITOR ACCESS CODES & TEMPORARY ACCESS
+// ============================================================================
+
+model VisitorAccessCode {
+    id              String          @id @default(cuid())
+    tenantId        String
+    
+    // Access Code Details
+    code            String          @unique // The actual access code (alphanumeric)
+    codeType        AccessCodeType  @default(TEMPORARY)
+    visitorId       String?         // Link to visitor if generated for specific visitor
+    
+    // Code Configuration
+    isActive        Boolean         @default(true)
+    expiresAt       DateTime
+    maxUses         Int?            @default(1) // Maximum number of uses
+    currentUses     Int             @default(0)
+    
+    // Access Permissions
+    accessZones     Json?           @default("[]") // Which zones this code grants access to
+    timeRestrictions Json?          @default("{}") // Time-based restrictions
+    
+    // Generation Details
+    generatedBy     String
+    generatedAt     DateTime        @default(now())
+    generatedFor    String?         // Purpose or person
+    
+    // Usage Tracking
+    lastUsedAt      DateTime?
+    lastUsedBy      String?         // User or visitor who last used it
+    lastUsedLocation String?
+    
+    // Security
+    ipRestrictions  Json?           @default("[]") // IP addresses allowed to use this code
+    deviceRestrictions Json?        @default("{}") // Device restrictions
+    
+    // Status
+    status          CodeStatus      @default(ACTIVE)
+    deactivatedBy   String?
+    deactivatedAt   DateTime?
+    deactivationReason String?
+    
+    createdAt       DateTime        @default(now())
+    updatedAt       DateTime        @updatedAt
+
+    // Relationships
+    tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    visitor         Visitor?        @relation(fields: [visitorId], references: [id])
+    generator       User            @relation("AccessCodeGenerator", fields: [generatedBy], references: [id])
+    usageLogs       AccessCodeUsage[]
+
+    @@index([tenantId, code])
+    @@index([expiresAt, isActive])
+    @@index([status])
+    @@map("visitor_access_codes")
+}
+
+model AccessCodeUsage {
+    id              String          @id @default(cuid())
+    accessCodeId    String
+    
+    // Usage Details
+    usedBy          String?         // User ID if used by logged-in user
+    visitorId       String?         // Visitor ID if used by visitor
+    usedAt          DateTime        @default(now())
+    
+    // Location & Context
+    location        String?         // Where the code was used
+    accessPoint     String?         // Specific access point
+    ipAddress       String?
+    deviceInfo      Json?           @default("{}")
+    userAgent       String?
+    
+    // Result
+    success         Boolean         @default(true)
+    accessGranted   Boolean         @default(true)
+    failureReason   String?
+    
+    // Metadata
+    metadata        Json?           @default("{}")
+    notes           String?
+
+    // Relationships
+    accessCode      VisitorAccessCode @relation(fields: [accessCodeId], references: [id], onDelete: Cascade)
+    user            User?           @relation(fields: [usedBy], references: [id])
+    visitor         Visitor?        @relation(fields: [visitorId], references: [id])
+
+    @@index([accessCodeId, usedAt])
+    @@map("access_code_usage")
+}
+
+// ============================================================================
+// VISITOR NOTIFICATIONS & HOST COMMUNICATION
+// ============================================================================
+
+model VisitorNotification {
+    id              String              @id @default(cuid())
+    tenantId        String
+    
+    // Notification Details
+    type            NotificationType
+    title           String
+    message         String
+    urgency         NotificationUrgency @default(NORMAL)
+    
+    // Recipients
+    recipientId     String              // Host user ID
+    visitorId       String?             // Related visitor
+    preRegistrationId String?           // Related pre-registration
+    
+    // Delivery Configuration
+    channels        Json                @default("[]") // email, sms, push, in_app
+    deliveryMethod  DeliveryMethod      @default(IN_APP)
+    
+    // Content
+    actionUrl       String?             // URL for action buttons
+    actionText      String?             // Text for action button
+    templateData    Json?               @default("{}")
+    
+    // Delivery Status
+    status          NotificationStatus  @default(PENDING)
+    sentAt          DateTime?
+    deliveredAt     DateTime?
+    readAt          DateTime?
+    acknowledgedAt  DateTime?
+    
+    // Tracking
+    deliveryAttempts Int                @default(0)
+    lastAttemptAt   DateTime?
+    errorMessage    String?
+    
+    // Sender Information
+    sentBy          String?             // System or user who triggered
+    isSystemGenerated Boolean           @default(true)
+    
+    // Scheduling
+    scheduledFor    DateTime?           // For delayed notifications
+    expiresAt       DateTime?           // When notification expires
+    
+    createdAt       DateTime            @default(now())
+    updatedAt       DateTime            @updatedAt
+
+    // Relationships
+    tenant          Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    recipient       User                @relation("NotificationRecipient", fields: [recipientId], references: [id])
+    visitor         Visitor?            @relation(fields: [visitorId], references: [id])
+    preRegistration VisitorPreRegistration? @relation(fields: [preRegistrationId], references: [id])
+    sender          User?               @relation("NotificationSender", fields: [sentBy], references: [id])
+
+    @@index([tenantId, recipientId, status])
+    @@index([type, status])
+    @@index([scheduledFor])
+    @@map("visitor_notifications")
+}
+
+// ============================================================================
+// VISITOR ANALYTICS & PATTERNS
+// ============================================================================
+
+model VisitorAnalytics {
+    id              String          @id @default(cuid())
+    tenantId        String
+    
+    // Time Period
+    date            DateTime        // Date for this analytics record
+    period          AnalyticsPeriod @default(DAILY)
+    
+    // Visit Metrics
+    totalVisitors   Int             @default(0)
+    uniqueVisitors  Int             @default(0)
+    returningVisitors Int           @default(0)
+    averageVisitDuration Int?       // in minutes
+    
+    // Check-in/out Metrics
+    onTimeArrivals  Int             @default(0)
+    lateArrivals    Int             @default(0)
+    earlyDepartures Int             @default(0)
+    noShows         Int             @default(0)
+    
+    // Pre-registration Metrics
+    preRegistrations Int            @default(0)
+    walkIns         Int             @default(0)
+    
+    // Visit Purposes
+    purposeBreakdown Json           @default("{}")
+    
+    // Peak Times
+    peakHour        String?         // Hour with most visits (e.g., "14:00")
+    peakDay         String?         // Day with most visits
+    busyHours       Json?           @default("[]")
+    
+    // Host Metrics
+    hostUtilization Json?           @default("{}") // Usage by host
+    
+    // Access Code Metrics
+    accessCodesGenerated Int        @default(0)
+    accessCodesUsed     Int         @default(0)
+    
+    // Geographic/Company Data
+    companyBreakdown Json?          @default("{}")
+    visitorSources   Json?          @default("{}")
+    
+    // Performance Metrics
+    averageProcessingTime Int?      // Check-in processing time in seconds
+    automationRate     Decimal?     @db.Decimal(5, 2) // % of automated processes
+    
+    // Trends
+    weekOverWeekGrowth Decimal?     @db.Decimal(5, 2)
+    monthOverMonthGrowth Decimal?   @db.Decimal(5, 2)
+    
+    createdAt       DateTime        @default(now())
+    updatedAt       DateTime        @updatedAt
+
+    // Relationships
+    tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+    @@unique([tenantId, date, period])
+    @@index([date, period])
+    @@map("visitor_analytics")
+}
+
+// ============================================================================
+// VISITOR MANAGEMENT ENUMS
+// ============================================================================
+
+enum AccessCodeType {
+    TEMPORARY       // Single-use or time-limited
+    RECURRING       // For regular visitors
+    EMERGENCY       // Emergency access
+    SERVICE         // For service providers
+    EVENT           // For event attendees
+    VIP             // For VIP visitors
+}
+
+enum CodeStatus {
+    ACTIVE          // Currently usable
+    EXPIRED         // Past expiration
+    USED_UP         // Reached max uses
+    DEACTIVATED     // Manually disabled
+    SUSPENDED       // Temporarily suspended
+}
+
+enum NotificationType {
+    VISITOR_ARRIVAL
+    VISITOR_DEPARTURE
+    VISITOR_LATE
+    VISITOR_NO_SHOW
+    PRE_REGISTRATION_REQUEST
+    PRE_REGISTRATION_APPROVED
+    PRE_REGISTRATION_DENIED
+    ACCESS_CODE_GENERATED
+    SECURITY_ALERT
+    HOST_ASSIGNMENT
+    VISIT_REMINDER
+    POLICY_VIOLATION
+    BADGE_ISSUE
+    EXTENDED_STAY
+    EMERGENCY_NOTIFICATION
+}
+
+enum NotificationUrgency {
+    LOW
+    NORMAL
+    HIGH
+    URGENT
+    CRITICAL
+}
+
+enum DeliveryMethod {
+    EMAIL
+    SMS
+    PUSH
+    IN_APP
+    SLACK
+    TEAMS
+    WEBHOOK
+}
+
+enum NotificationStatus {
+    PENDING
+    SENT
+    DELIVERED
+    READ
+    ACKNOWLEDGED
+    FAILED
+    EXPIRED
+}
+
+enum AnalyticsPeriod {
+    HOURLY
+    DAILY
+    WEEKLY
+    MONTHLY
+    QUARTERLY
+    YEARLY
+}
+
 model AccessLog {
     id        String       @id @default(cuid())
     tenantId  String
@@ -1654,6 +1982,7 @@ model Payment {
     tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
     client  Client   @relation(fields: [clientId], references: [id])
     invoice Invoice? @relation(fields: [invoiceId], references: [id])
+    reconciliationItems PaymentReconciliationItem[]
 
     @@map("payments")
 }
@@ -2430,5 +2759,405 @@ enum PaymentProvider {
 enum FeeType {
     FIXED
     PERCENTAGE
+}
+
+// ============================================================================
+// FINANCIAL MANAGEMENT & REPORTING
+// ============================================================================
+
+model FinancialReport {
+    id          String                @id @default(cuid())
+    tenantId    String
+    reportType  FinancialReportType
+    period      ReportPeriod
+    startDate   DateTime
+    endDate     DateTime
+    title       String
+    description String?
+    data        Json                  // Report data structure
+    metadata    Json                  @default("{}")
+    status      ReportStatus          @default(GENERATING)
+    generatedBy String
+    generatedAt DateTime              @default(now())
+    createdAt   DateTime              @default(now())
+    updatedAt   DateTime              @updatedAt
+
+    // Relationships
+    tenant      Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    generator   User                  @relation(fields: [generatedBy], references: [id])
+
+    @@index([tenantId, reportType])
+    @@index([startDate, endDate])
+    @@map("financial_reports")
+}
+
+model RevenueForcast {
+    id             String           @id @default(cuid())
+    tenantId       String
+    forecastType   ForecastType
+    period         ForecastPeriod
+    startDate      DateTime
+    endDate        DateTime
+    baseRevenue    Decimal          @db.Decimal(12, 2)
+    projectedRevenue Decimal        @db.Decimal(12, 2)
+    confidence     Decimal          @db.Decimal(5, 2) // Confidence percentage
+    methodology    ForecastMethod
+    parameters     Json             @default("{}")
+    assumptions    Json             @default("[]")
+    risks          Json             @default("[]")
+    trends         Json             @default("{}")
+    seasonality    Json             @default("{}")
+    accuracy       Decimal?         @db.Decimal(5, 2) // Actual vs predicted when available
+    status         ForecastStatus   @default(ACTIVE)
+    notes          String?
+    createdBy      String
+    createdAt      DateTime         @default(now())
+    updatedAt      DateTime         @updatedAt
+
+    // Relationships
+    tenant    Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    creator   User                 @relation(fields: [createdBy], references: [id])
+
+    @@index([tenantId, forecastType])
+    @@index([startDate, endDate])
+    @@map("revenue_forecasts")
+}
+
+model ProfitAnalysis {
+    id                String         @id @default(cuid())
+    tenantId          String
+    analysisType      AnalysisType
+    period            ReportPeriod
+    startDate         DateTime
+    endDate           DateTime
+    totalRevenue      Decimal        @db.Decimal(12, 2)
+    totalCosts        Decimal        @db.Decimal(12, 2)
+    grossProfit       Decimal        @db.Decimal(12, 2)
+    grossMargin       Decimal        @db.Decimal(5, 2)
+    operatingExpenses Decimal        @db.Decimal(12, 2)
+    operatingProfit   Decimal        @db.Decimal(12, 2)
+    operatingMargin   Decimal        @db.Decimal(5, 2)
+    netProfit         Decimal        @db.Decimal(12, 2)
+    netMargin         Decimal        @db.Decimal(5, 2)
+    ebitda            Decimal        @db.Decimal(12, 2)
+    costBreakdown     Json           @default("{}")
+    revenueBreakdown  Json           @default("{}")
+    profitTrends      Json           @default("{}")
+    marginAnalysis    Json           @default("{}")
+    benchmarks        Json           @default("{}")
+    kpis              Json           @default("{}")
+    insights          Json           @default("[]")
+    recommendations   Json           @default("[]")
+    createdBy         String
+    createdAt         DateTime       @default(now())
+    updatedAt         DateTime       @updatedAt
+
+    // Relationships
+    tenant    Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    creator   User                 @relation(fields: [createdBy], references: [id])
+
+    @@index([tenantId, analysisType])
+    @@index([startDate, endDate])
+    @@map("profit_analyses")
+}
+
+model PaymentReconciliation {
+    id                   String                @id @default(cuid())
+    tenantId             String
+    reconciliationType   ReconciliationType
+    period               ReportPeriod
+    startDate            DateTime
+    endDate              DateTime
+    bankStatementTotal   Decimal               @db.Decimal(12, 2)
+    recordedPaymentsTotal Decimal              @db.Decimal(12, 2)
+    variance             Decimal               @db.Decimal(12, 2)
+    status               ReconciliationStatus  @default(IN_PROGRESS)
+    matchedTransactions  Int                   @default(0)
+    unmatchedTransactions Int                  @default(0)
+    duplicateTransactions Int                  @default(0)
+    missingTransactions  Int                   @default(0)
+    discrepancies        Json                  @default("[]")
+    adjustments          Json                  @default("[]")
+    notes                String?
+    reconciliationRules  Json                  @default("{}")
+    autoMatchPercentage  Decimal               @db.Decimal(5, 2) @default(0)
+    manualReview         Boolean               @default(false)
+    approvedBy           String?
+    approvedAt           DateTime?
+    reconciledBy         String
+    reconciledAt         DateTime              @default(now())
+    createdAt            DateTime              @default(now())
+    updatedAt            DateTime              @updatedAt
+
+    // Relationships
+    tenant       Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    reconciler   User                      @relation("PaymentReconciliationReconciler", fields: [reconciledBy], references: [id])
+    approver     User?                     @relation("PaymentReconciliationApprover", fields: [approvedBy], references: [id])
+    transactions PaymentReconciliationItem[]
+
+    @@index([tenantId, reconciliationType])
+    @@index([startDate, endDate])
+    @@map("payment_reconciliations")
+}
+
+model PaymentReconciliationItem {
+    id                     String                @id @default(cuid())
+    reconciliationId       String
+    paymentId              String?
+    transactionReference   String
+    bankReference          String?
+    amount                 Decimal               @db.Decimal(10, 2)
+    currency               String                @default("USD")
+    transactionDate        DateTime
+    description            String?
+    matchStatus            MatchStatus           @default(UNMATCHED)
+    matchConfidence        Decimal               @db.Decimal(5, 2) @default(0)
+    matchedBy              String?
+    matchedAt              DateTime?
+    discrepancyType        DiscrepancyType?
+    discrepancyAmount      Decimal?              @db.Decimal(10, 2)
+    notes                  String?
+    requiresAction         Boolean               @default(false)
+    metadata               Json                  @default("{}")
+    createdAt              DateTime              @default(now())
+    updatedAt              DateTime              @updatedAt
+
+    // Relationships
+    reconciliation PaymentReconciliation     @relation(fields: [reconciliationId], references: [id], onDelete: Cascade)
+    payment        Payment?                  @relation(fields: [paymentId], references: [id])
+    matcher        User?                     @relation(fields: [matchedBy], references: [id])
+
+    @@index([reconciliationId, matchStatus])
+    @@index([transactionReference])
+    @@map("payment_reconciliation_items")
+}
+
+model FinancialDashboard {
+    id              String            @id @default(cuid())
+    tenantId        String
+    dashboardType   DashboardType
+    period          ReportPeriod
+    startDate       DateTime
+    endDate         DateTime
+    kpis            Json              @default("{}")
+    metrics         Json              @default("{}")
+    charts          Json              @default("[]")
+    alerts          Json              @default("[]")
+    trends          Json              @default("{}")
+    comparisons     Json              @default("{}")
+    targets         Json              @default("{}")
+    actuals         Json              @default("{}")
+    variances       Json              @default("{}")
+    insights        Json              @default("[]")
+    lastRefreshed   DateTime          @default(now())
+    refreshInterval Int               @default(3600) // seconds
+    isAutoRefresh   Boolean           @default(true)
+    customizations  Json              @default("{}")
+    sharedWith      Json              @default("[]")
+    isPublic        Boolean           @default(false)
+    createdBy       String
+    createdAt       DateTime          @default(now())
+    updatedAt       DateTime          @updatedAt
+
+    // Relationships
+    tenant    Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    creator   User                    @relation(fields: [createdBy], references: [id])
+
+    @@index([tenantId, dashboardType])
+    @@index([lastRefreshed])
+    @@map("financial_dashboards")
+}
+
+model BudgetPlan {
+    id                String          @id @default(cuid())
+    tenantId          String
+    name              String
+    description       String?
+    budgetYear        Int
+    budgetType        BudgetType      @default(ANNUAL)
+    totalBudget       Decimal         @db.Decimal(12, 2)
+    allocations       Json            @default("{}")
+    categories        Json            @default("[]")
+    departments       Json            @default("[]")
+    monthlyBreakdown  Json            @default("{}")
+    quarterlyTargets  Json            @default("{}")
+    actualSpending    Decimal         @db.Decimal(12, 2) @default(0)
+    variance          Decimal         @db.Decimal(12, 2) @default(0)
+    utilizationRate   Decimal         @db.Decimal(5, 2) @default(0)
+    status            BudgetStatus    @default(DRAFT)
+    approvedBy        String?
+    approvedAt        DateTime?
+    createdBy         String
+    createdAt         DateTime        @default(now())
+    updatedAt         DateTime        @updatedAt
+
+    // Relationships
+    tenant    Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    creator   User                  @relation("BudgetPlanCreator", fields: [createdBy], references: [id])
+    approver  User?                 @relation("BudgetPlanApprover", fields: [approvedBy], references: [id])
+    expenses  BudgetExpense[]
+
+    @@index([tenantId, budgetYear])
+    @@index([status])
+    @@map("budget_plans")
+}
+
+model BudgetExpense {
+    id               String          @id @default(cuid())
+    budgetPlanId     String
+    category         String
+    subcategory      String?
+    description      String
+    plannedAmount    Decimal         @db.Decimal(10, 2)
+    actualAmount     Decimal         @db.Decimal(10, 2) @default(0)
+    variance         Decimal         @db.Decimal(10, 2) @default(0)
+    variancePercent  Decimal         @db.Decimal(5, 2) @default(0)
+    monthlyAllocation Json           @default("{}")
+    responsible      String?
+    notes            String?
+    status           ExpenseStatus   @default(PLANNED)
+    createdAt        DateTime        @default(now())
+    updatedAt        DateTime        @updatedAt
+
+    // Relationships
+    budgetPlan   BudgetPlan          @relation(fields: [budgetPlanId], references: [id], onDelete: Cascade)
+    responsibleUser User?            @relation(fields: [responsible], references: [id])
+
+    @@index([budgetPlanId, category])
+    @@map("budget_expenses")
+}
+
+// ============================================================================
+// FINANCIAL MANAGEMENT ENUMS
+// ============================================================================
+
+enum FinancialReportType {
+    INCOME_STATEMENT
+    BALANCE_SHEET
+    CASH_FLOW
+    REVENUE_ANALYSIS
+    EXPENSE_BREAKDOWN
+    PROFIT_LOSS
+    BUDGET_VARIANCE
+    TAX_REPORT
+    CUSTOM
+}
+
+enum ReportPeriod {
+    DAILY
+    WEEKLY
+    MONTHLY
+    QUARTERLY
+    ANNUALLY
+    CUSTOM
+}
+
+enum ReportStatus {
+    GENERATING
+    COMPLETED
+    FAILED
+    ARCHIVED
+}
+
+enum ForecastType {
+    REVENUE
+    EXPENSE
+    PROFIT
+    CASH_FLOW
+    OCCUPANCY
+    MEMBERSHIP
+}
+
+enum ForecastPeriod {
+    MONTHLY
+    QUARTERLY
+    ANNUALLY
+    ROLLING_12_MONTHS
+    CUSTOM
+}
+
+enum ForecastMethod {
+    LINEAR_REGRESSION
+    MOVING_AVERAGE
+    EXPONENTIAL_SMOOTHING
+    SEASONAL_DECOMPOSITION
+    MACHINE_LEARNING
+    EXPERT_JUDGMENT
+}
+
+enum ForecastStatus {
+    ACTIVE
+    ARCHIVED
+    SUPERSEDED
+}
+
+enum AnalysisType {
+    PROFITABILITY
+    MARGIN_ANALYSIS
+    COST_ANALYSIS
+    BREAK_EVEN
+    ROI_ANALYSIS
+    VARIANCE_ANALYSIS
+}
+
+enum ReconciliationType {
+    BANK_RECONCILIATION
+    CREDIT_CARD_RECONCILIATION
+    PAYMENT_GATEWAY_RECONCILIATION
+    CASH_RECONCILIATION
+}
+
+enum ReconciliationStatus {
+    IN_PROGRESS
+    COMPLETED
+    REQUIRES_REVIEW
+    APPROVED
+    REJECTED
+}
+
+enum MatchStatus {
+    MATCHED
+    UNMATCHED
+    PARTIAL_MATCH
+    DISPUTED
+    MANUALLY_MATCHED
+}
+
+enum DiscrepancyType {
+    AMOUNT_MISMATCH
+    DATE_MISMATCH
+    MISSING_TRANSACTION
+    DUPLICATE_TRANSACTION
+    CURRENCY_MISMATCH
+    REFERENCE_MISMATCH
+}
+
+enum DashboardType {
+    EXECUTIVE
+    OPERATIONAL
+    FINANCIAL
+    CUSTOM
+}
+
+enum BudgetType {
+    ANNUAL
+    QUARTERLY
+    PROJECT_BASED
+    ROLLING
+}
+
+enum BudgetStatus {
+    DRAFT
+    UNDER_REVIEW
+    APPROVED
+    ACTIVE
+    ARCHIVED
+}
+
+enum ExpenseStatus {
+    PLANNED
+    COMMITTED
+    ACTUAL
+    OVERBUDGET
 }
 

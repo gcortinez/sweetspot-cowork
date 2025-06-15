@@ -1,0 +1,22 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.communicationRoutes = void 0;
+const express_1 = require("express");
+const communicationController_1 = require("../controllers/communicationController");
+const auth_1 = require("../middleware/auth");
+const router = (0, express_1.Router)();
+exports.communicationRoutes = router;
+router.use(auth_1.authenticate);
+router.get('/stats', communicationController_1.communicationController.getCommunicationStats);
+router.get('/thread', communicationController_1.communicationController.getCommunicationThread);
+router.get('/unread', communicationController_1.communicationController.getUnreadCommunications);
+router.get('/export', communicationController_1.communicationController.exportCommunications);
+router.get('/by-entity/:entityType/:entityId', communicationController_1.communicationController.getCommunicationsByEntity);
+router.post('/bulk-delete', communicationController_1.communicationController.bulkDelete);
+router.get('/', communicationController_1.communicationController.getCommunications);
+router.get('/:id', communicationController_1.communicationController.getCommunicationById);
+router.post('/', communicationController_1.communicationController.createCommunication);
+router.put('/:id', communicationController_1.communicationController.updateCommunication);
+router.delete('/:id', communicationController_1.communicationController.deleteCommunication);
+router.post('/:id/mark-read', communicationController_1.communicationController.markAsRead);
+//# sourceMappingURL=communicationRoutes.js.map

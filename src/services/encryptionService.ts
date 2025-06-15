@@ -57,7 +57,7 @@ export class EncryptionService {
       const key = this.getEncryptionKey();
       const iv = crypto.randomBytes(this.ivLength);
       
-      const cipher = crypto.createCipherGCM(this.algorithm, key, iv);
+      const cipher = crypto.createCipheriv(this.algorithm, key, iv);
       
       let encrypted = cipher.update(data, 'utf8', 'hex');
       encrypted += cipher.final('hex');
@@ -84,7 +84,7 @@ export class EncryptionService {
       const iv = Buffer.from(options.iv, 'hex');
       const tag = Buffer.from(options.tag, 'hex');
       
-      const decipher = crypto.createDecipherGCM(this.algorithm, key, iv);
+      const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
       decipher.setAuthTag(tag);
       
       let decrypted = decipher.update(options.encryptedData, 'hex', 'utf8');
@@ -197,7 +197,7 @@ export class EncryptionService {
     data: T,
     fieldsToEncrypt: string[]
   ): T {
-    const encrypted = { ...data };
+    const encrypted = { ...data } as any;
     
     fieldsToEncrypt.forEach(field => {
       if (encrypted[field] !== undefined && encrypted[field] !== null) {
@@ -205,7 +205,7 @@ export class EncryptionService {
       }
     });
     
-    return encrypted;
+    return encrypted as T;
   }
 
   /**
@@ -215,7 +215,7 @@ export class EncryptionService {
     data: T,
     fieldsToDecrypt: string[]
   ): T {
-    const decrypted = { ...data };
+    const decrypted = { ...data } as any;
     
     fieldsToDecrypt.forEach(field => {
       if (decrypted[field] !== undefined && decrypted[field] !== null) {
@@ -223,7 +223,7 @@ export class EncryptionService {
       }
     });
     
-    return decrypted;
+    return decrypted as T;
   }
 
   /**
