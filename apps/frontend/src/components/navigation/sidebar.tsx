@@ -159,6 +159,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onCloseMobile }) =>
       <div className="p-4 border-b border-gray-100">
         <Button
           className="w-full justify-start gap-3 h-10 bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200 font-medium"
+          onClick={() => alert('Funcionalidad de nueva reserva próximamente')}
         >
           <Plus className="h-4 w-4" />
           {t("action.newBooking")}

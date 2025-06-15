@@ -31,20 +31,33 @@ export interface ResponseMeta {
   };
 }
 
-// Extended Request interface with custom properties
-export interface AuthenticatedRequest extends Request {
+// Base request interface with common middleware properties
+export interface BaseRequest extends Request {
+  requestId?: string;
   user?: {
     id: string;
     email: string;
     role: string;
-    tenantId?: string;
+    tenantId: string;
+    clientId?: string;
+    firstName?: string;
+    lastName?: string;
+    supabaseId?: string;
   };
   tenant?: {
     id: string;
     name: string;
-    domain: string;
+    domain?: string;
+    slug?: string;
   };
-  requestId?: string;
+}
+
+// Extended Request interface with custom properties
+export interface AuthenticatedRequest extends BaseRequest {
+  user: NonNullable<BaseRequest['user']>;
+  tenant: NonNullable<BaseRequest['tenant']>;
+  userId: string; // Convenience property
+  tenantId: string; // Convenience property
 }
 
 // Pagination Query Parameters

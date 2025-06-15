@@ -5,7 +5,6 @@ export * from "@sweetspot/shared";
 import { 
   User,
   Tenant,
-  Workspace,
   Space,
   Booking,
   Membership,
@@ -24,20 +23,13 @@ export type UserWithRelations = User & {
 
 export type TenantWithRelations = Tenant & {
   users?: User[];
-  workspaces?: Workspace[];
+  spaces?: Space[];
   subscriptions?: any[]; // TODO: Define subscription type
   billingInfo?: any; // TODO: Define billing type
 };
 
-export type WorkspaceWithRelations = Workspace & {
-  tenant?: Tenant;
-  spaces?: Space[];
-  memberships?: Membership[];
-  bookings?: Booking[];
-};
-
 export type SpaceWithRelations = Space & {
-  workspace?: Workspace;
+  tenant?: Tenant;
   bookings?: Booking[];
   amenities?: any[]; // TODO: Define amenity type
   reviews?: any[]; // TODO: Define review type
@@ -46,13 +38,13 @@ export type SpaceWithRelations = Space & {
 export type BookingWithRelations = Booking & {
   user?: User;
   space?: SpaceWithRelations;
-  workspace?: Workspace;
+  tenant?: Tenant;
   payments?: Payment[];
 };
 
 export type MembershipWithRelations = Membership & {
   user?: User;
-  workspace?: Workspace;
+  tenant?: Tenant;
   plan?: any; // TODO: Define plan type
 };
 
@@ -296,11 +288,4 @@ export interface DatabaseConfig {
   };
 }
 
-export default {
-  UserWithRelations,
-  TenantWithRelations,
-  WorkspaceWithRelations,
-  SpaceWithRelations,
-  BookingWithRelations,
-  MembershipWithRelations,
-};
+// Export types for convenience - these are type-only exports

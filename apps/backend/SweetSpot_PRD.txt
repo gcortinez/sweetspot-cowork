@@ -1,0 +1,192 @@
+# SweetSpot Cowork - Product Requirements Document (PRD)
+
+## Project Overview
+SweetSpot Cowork is a comprehensive multi-tenant SaaS platform for coworking space management built with Next.js, TypeScript, Express, and Supabase. The platform enables coworking space owners to manage all business operations from client acquisition to billing.
+
+## Architecture
+- **Frontend**: Next.js 15.3.3, TypeScript, TailwindCSS, shadcn, Zustand
+- **Backend**: Express, TypeScript, Prisma ORM
+- **Database**: Supabase PostgreSQL with Row Level Security
+- **Multi-tenant**: 4-level hierarchy (Super Admin → Cowork Admin → Client Admin → End User)
+
+## Key Features & Tasks
+
+### Phase 1 - Foundation (Months 1-4)
+
+**Task #1: Multi-Tenant Architecture Setup**
+- Implement Supabase integration with Row Level Security
+- Create tenant management system
+- Set up database schema with Prisma
+- Configure authentication middleware
+
+**Task #2: Authentication & Authorization System**
+- Implement Supabase Auth integration
+- Create role-based access control (RBAC)
+- Set up user management with 4-level hierarchy
+- Add two-factor authentication
+- Implement session management
+
+**Task #3: Core API Foundation**
+- Build Express server with TypeScript
+- Implement Zod validation schemas
+- Create middleware for auth, tenant context, logging
+- Set up comprehensive error handling
+- Add rate limiting and security features
+
+**Task #4: Basic CRM System**
+- Create lead management system
+- Implement opportunity tracking
+- Build client management interface
+- Add activity logging and communication tracking
+
+**Task #5: User Interface Foundation**
+- Set up Next.js 15 with TypeScript
+- Implement shadcn UI components
+- Create responsive layout system
+- Build navigation and sidebar components
+- Add internationalization (i18n) support
+
+**Task #6: Space Management System**
+- Create space inventory management
+- Implement space booking system
+- Add availability calendar
+- Build space browsing and search functionality
+
+**Task #7: Digital Contracts & Quotations**
+- Implement digital signature system
+- Create quotation management
+- Build contract lifecycle management
+- Add contract templates and automation
+
+**Task #8: QR-Based Access Control System**
+- Implement QR code generation for users
+- Create access control API endpoints
+- Build real-time access logging
+- Add visitor management system
+- Implement access rule enforcement
+
+**Task #9: Meeting Room Management System** ✅ COMPLETED
+- Create room inventory and pricing system
+- Implement real-time availability calendar
+- Build booking approval workflows
+- Add QR-based room access integration
+- Implement dynamic pricing models
+
+**Task #10: Automated Billing System**
+- Create flexible pricing models
+- Implement invoice generation
+- Build payment processing integration
+- Add consumption tracking
+- Create billing automation workflows
+
+### Phase 2 - Advanced Features (Months 5-6)
+
+**Task #11: Advanced CRM Features**
+- Implement lead scoring and automation
+- Create email marketing integration
+- Build conversion tracking
+- Add pipeline analytics
+
+**Task #12: Financial Management**
+- Create comprehensive financial reports
+- Implement revenue forecasting
+- Build profit analysis tools
+- Add payment reconciliation
+
+**Task #13: Visitor Management Portal**
+- Create visitor pre-registration system
+- Implement temporary access codes
+- Build host notification system
+- Add visitor analytics
+
+**Task #14: Service Marketplace**
+- Create service catalog management
+- Implement service booking system
+- Build service consumption tracking
+- Add service billing integration
+
+**Task #15: Advanced Analytics & Reporting**
+- Implement real-time dashboards
+- Create custom report builder
+- Add predictive analytics
+- Build KPI tracking system
+
+**Task #16: Mobile Application**
+- Create React Native mobile app
+- Implement mobile-first booking interface
+- Add push notifications
+- Build offline functionality
+
+**Task #17: Integration Hub**
+- Create API gateway for third-party integrations
+- Implement webhook system
+- Build integration marketplace
+- Add common business tool connectors
+
+**Task #18: Advanced Security Features**
+- Implement audit logging system
+- Add security event monitoring
+- Create compliance reporting
+- Build data encryption at rest
+
+**Task #19: Communication System**
+- Create in-app messaging
+- Implement email notification system
+- Build announcement system
+- Add communication templates
+
+**Task #20: Membership Management**
+- Create membership tier system
+- Implement membership automation
+- Build renewal management
+- Add membership analytics
+
+**Task #21: Advanced Booking Features**
+- Create recurring booking system
+- Implement booking templates
+- Build group booking functionality
+- Add booking conflict resolution
+
+**Task #22: Resource Management**
+- Create equipment inventory system
+- Implement resource booking
+- Build maintenance scheduling
+- Add resource utilization tracking
+
+**Task #23: Advanced Pricing System**
+- Create dynamic pricing algorithms
+- Implement discount management
+- Build promotional campaigns
+- Add price optimization tools
+
+**Task #24: Business Intelligence**
+- Create data warehouse
+- Implement ETL processes
+- Build business intelligence dashboards
+- Add machine learning insights
+
+**Task #25: Scalability & Performance**
+- Implement caching strategies
+- Add database optimization
+- Create performance monitoring
+- Build auto-scaling infrastructure
+
+## Technical Requirements
+- Multi-tenant architecture with data isolation
+- Real-time updates using Supabase Realtime
+- Comprehensive API with type safety
+- Responsive web interface
+- Mobile-first design approach
+- Scalable infrastructure ready for growth
+
+## Success Metrics
+- 70% reduction in manual administrative tasks
+- <24 hours client onboarding time
+- 95% user satisfaction with booking process
+- 99.9% system uptime
+- Positive ROI within 6 months
+
+## Current Status
+- Basic infrastructure is in place
+- Task #9 (Meeting Room Management System) has been completed
+- Ready to continue with remaining tasks in logical order

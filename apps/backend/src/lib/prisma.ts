@@ -1,9 +1,30 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 import { config } from "../config";
 import { logger } from "../utils/logger";
+import { createDefaultEncryptionMiddleware } from "./prismaEncryption";
+
+// Create PrismaClient with event logging enabled
+const createPrismaClientWithEvents = () => {
+  return new PrismaClient({
+    log: [
+      { emit: "event", level: "query" },
+      { emit: "event", level: "error" },
+      { emit: "event", level: "info" },
+      { emit: "event", level: "warn" },
+    ],
+    datasources: {
+      db: {
+        url: config.database.url,
+      },
+    },
+    errorFormat: "pretty",
+  });
+};
+
+type PrismaClientWithEvents = ReturnType<typeof createPrismaClientWithEvents>;
 
 // Extend PrismaClient with custom functionality
-interface ExtendedPrismaClient extends PrismaClient {
+interface ExtendedPrismaClient extends PrismaClientWithEvents {
   $queryStats: {
     count: number;
     totalTime: number;
@@ -25,20 +46,7 @@ const SLOW_QUERY_THRESHOLD = 1000; // 1 second
 
 // Create Prisma client with custom configuration
 function createPrismaClient(): ExtendedPrismaClient {
-  const client = new PrismaClient({
-    log: [
-      { emit: "event", level: "query" },
-      { emit: "event", level: "error" },
-      { emit: "event", level: "info" },
-      { emit: "event", level: "warn" },
-    ],
-    datasources: {
-      db: {
-        url: config.database.url,
-      },
-    },
-    errorFormat: "pretty",
-  }) as ExtendedPrismaClient;
+  const client = createPrismaClientWithEvents() as ExtendedPrismaClient;
 
   // Initialize query statistics
   client.$queryStats = {
@@ -112,6 +120,9 @@ function createPrismaClient(): ExtendedPrismaClient {
     });
   });
 
+  // Add encryption middleware
+  client.$use(createDefaultEncryptionMiddleware());
+
   return client;
 }
 
@@ -163,7 +174,7 @@ export async function disconnectDatabase(): Promise<void> {
 
 // Transaction wrapper with error handling and logging
 export async function withTransaction<T>(
-  callback: (tx: PrismaClient) => Promise<T>,
+  callback: (tx: Omit<PrismaClient, "$on" | "$connect" | "$disconnect" | "$use" | "$transaction" | "$extends">) => Promise<T>,
   options?: {
     maxWait?: number;
     timeout?: number;
@@ -180,7 +191,7 @@ export async function withTransaction<T>(
       maxWait: options?.maxWait || 5000, // 5 seconds
       timeout: options?.timeout || 10000, // 10 seconds
       isolationLevel: options?.isolationLevel,
-    });
+    }) as T;
 
     const duration = Date.now() - startTime;
     logger.debug("Transaction completed successfully", {

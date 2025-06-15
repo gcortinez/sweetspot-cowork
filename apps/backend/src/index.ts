@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import cors from "cors";
 import { config, validateConfig } from "./config";
 import { logger } from "./utils/logger";
@@ -13,6 +13,16 @@ import {
   requestSizeLimit,
   securityMonitoring 
 } from "./middleware/security";
+import { 
+  httpsRedirect,
+  strictTransportSecurity,
+  validateTLSConnection,
+  secureSessionHandling 
+} from "./middleware/tls";
+import { 
+  enforceHTTPS,
+  secureDataTransit 
+} from "./middleware/encryption";
 
 // Import routes
 import authRoutes from "./routes/auth";
@@ -31,6 +41,18 @@ import { digitalSignatureRoutes } from "./routes/digitalSignatureRoutes";
 import { contractLifecycleRoutes } from "./routes/contractLifecycleRoutes";
 import { contractRenewalRoutes } from "./routes/contractRenewalRoutes";
 import { contractAnalyticsRoutes } from "./routes/contractAnalyticsRoutes";
+import accessControlRoutes from "./routes/accessControlRoutes";
+import securityRoutes from "./routes/securityRoutes";
+import spaceRoutes from "./routes/spaceRoutes";
+import bookingRoutes from "./routes/bookingRoutes";
+import billingRoutes from "./routes/billing";
+import complianceRoutes from "./routes/complianceRoutes";
+import threatDetectionRoutes from "./routes/threatDetectionRoutes";
+import visitorRoutes from "./routes/visitorRoutes";
+import roomManagementRoutes from "./routes/roomManagementRoutes";
+import bookingManagementRoutes from "./routes/bookingManagementRoutes";
+import serviceCatalogRoutes from "./routes/serviceCatalogRoutes";
+import serviceRequestRoutes from "./routes/serviceRequestRoutes";
 
 // Validate configuration before starting
 try {
@@ -44,6 +66,15 @@ const app = express();
 
 // Trust proxy (important for getting real IP addresses behind reverse proxy)
 app.set("trust proxy", 1);
+
+// HTTPS enforcement and TLS security
+app.use(httpsRedirect);
+app.use(strictTransportSecurity);
+app.use(validateTLSConnection);
+
+// Data encryption in transit
+app.use(enforceHTTPS);
+app.use(secureDataTransit);
 
 // Security middleware
 app.use(securityHeaders);
@@ -83,8 +114,11 @@ app.use(express.urlencoded({
 // Input sanitization
 app.use(sanitizeInput);
 
+// Secure session handling
+app.use(secureSessionHandling);
+
 // Health check endpoint (before rate limiting)
-app.get("/health", (req, res) => {
+app.get("/health", (req: Request, res: Response): void => {
   const healthData = {
     status: "healthy",
     timestamp: new Date().toISOString(),
@@ -101,11 +135,11 @@ app.get("/health", (req, res) => {
     userAgent: req.get("User-Agent"),
   });
 
-  return ResponseHelper.success(res, healthData);
+  ResponseHelper.success(res, healthData);
 });
 
 // API Info endpoint
-app.get("/api", (req, res) => {
+app.get("/api", (req: Request, res: Response): void => {
   const apiInfo = {
     name: "SweetSpot Cowork API",
     version: "1.0.0",
@@ -128,12 +162,23 @@ app.get("/api", (req, res) => {
       contracts: "/api/contracts",
       renewals: "/api/renewals",
       contractAnalytics: "/api/analytics/contracts",
+      accessControl: "/api/access-control",
+      security: "/api/security",
+      spaces: "/api/spaces",
+      bookings: "/api/bookings",
+      billing: "/api/billing",
+      compliance: "/api/compliance",
+      threatDetection: "/api/threat-detection",
+      rooms: "/api/rooms",
+      roomBookings: "/api/room-bookings",
+      services: "/api/services",
+      serviceRequests: "/api/service-requests",
       health: "/health",
     },
     documentation: config.features.enableSwagger ? "/api/docs" : null,
   };
 
-  return ResponseHelper.success(res, apiInfo);
+  ResponseHelper.success(res, apiInfo);
 });
 
 // API v1 routes
@@ -156,6 +201,18 @@ apiV1.use("/signatures", digitalSignatureRoutes);
 apiV1.use("/contracts", contractLifecycleRoutes);
 apiV1.use("/renewals", contractRenewalRoutes);
 apiV1.use("/analytics/contracts", contractAnalyticsRoutes);
+apiV1.use("/access-control", accessControlRoutes);
+apiV1.use("/security", securityRoutes);
+apiV1.use("/spaces", spaceRoutes);
+apiV1.use("/bookings", bookingRoutes);
+apiV1.use("/billing", billingRoutes);
+apiV1.use("/compliance", complianceRoutes);
+apiV1.use("/threat-detection", threatDetectionRoutes);
+apiV1.use("/visitors", visitorRoutes);
+apiV1.use("/rooms", roomManagementRoutes);
+apiV1.use("/room-bookings", bookingManagementRoutes);
+apiV1.use("/services", serviceCatalogRoutes);
+apiV1.use("/service-requests", serviceRequestRoutes);
 
 // Mount versioned API
 app.use("/api/v1", apiV1);
@@ -220,6 +277,17 @@ const server = app.listen(config.port, () => {
   console.log(`📄 Contract Lifecycle API: http://localhost:${config.port}/api/contracts`);
   console.log(`🔄 Contract Renewals API: http://localhost:${config.port}/api/renewals`);
   console.log(`📈 Contract Analytics API: http://localhost:${config.port}/api/analytics/contracts`);
+  console.log(`🔐 Access Control API: http://localhost:${config.port}/api/access-control`);
+  console.log(`🛡️ Security API: http://localhost:${config.port}/api/security`);
+  console.log(`🏢 Spaces API: http://localhost:${config.port}/api/spaces`);
+  console.log(`📅 Bookings API: http://localhost:${config.port}/api/bookings`);
+  console.log(`💳 Billing API: http://localhost:${config.port}/api/billing`);
+  console.log(`📋 Compliance API: http://localhost:${config.port}/api/compliance`);
+  console.log(`🔍 Threat Detection API: http://localhost:${config.port}/api/threat-detection`);
+  console.log(`🏢 Room Management API: http://localhost:${config.port}/api/rooms`);
+  console.log(`📅 Room Bookings API: http://localhost:${config.port}/api/room-bookings`);
+  console.log(`🛍️ Service Catalog API: http://localhost:${config.port}/api/services`);
+  console.log(`📋 Service Requests API: http://localhost:${config.port}/api/service-requests`);
   console.log(`🌍 Environment: ${config.environment}`);
   
   if (config.features.enableSwagger) {

@@ -148,7 +148,10 @@ export default function OpportunitiesPage() {
             <p className="text-gray-600">Track your sales pipeline</p>
           </div>
         </div>
-        <Button className="gap-2">
+        <Button 
+          className="gap-2"
+          onClick={() => alert('Funcionalidad de crear oportunidad próximamente')}
+        >
           <Plus className="h-4 w-4" />
           Add Opportunity
         </Button>

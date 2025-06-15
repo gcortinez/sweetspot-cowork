@@ -282,4 +282,6 @@ export const handleController = async <T>(
   }
 };
 
+// Export ResponseHelper as default
+
 export default ResponseHelper;

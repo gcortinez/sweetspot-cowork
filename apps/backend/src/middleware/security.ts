@@ -4,9 +4,18 @@ import helmet from "helmet";
 import { config } from "../config";
 import { ResponseHelper } from "../utils/response";
 import { logger } from "../utils/logger";
+import { 
+  generalRateLimit, 
+  authRateLimit as enhancedAuthRateLimit,
+  passwordResetRateLimit,
+  adminRateLimit,
+  exportRateLimit,
+  bruteForcePrevention,
+  progressiveDelay
+} from "./rateLimiting";
 
 // Rate limiting configurations
-export const createRateLimiter = (options?: Partial<rateLimit.Options>) => {
+export const createRateLimiter = (options?: Partial<Parameters<typeof rateLimit>[0]>) => {
   return rateLimit({
     windowMs: config.rateLimit.windowMs,
     max: config.rateLimit.maxRequests,
@@ -181,7 +190,8 @@ export const requestSizeLimit = (req: Request, res: Response, next: NextFunction
   const contentLength = req.get("Content-Length");
   
   if (contentLength && parseInt(contentLength) > config.upload.maxFileSize) {
-    return ResponseHelper.fileTooLarge(res, `${config.upload.maxFileSize / 1024 / 1024}MB`);
+    ResponseHelper.fileTooLarge(res, `${config.upload.maxFileSize / 1024 / 1024}MB`);
+    return;
   }
   
   next();
@@ -228,20 +238,37 @@ export const securityMonitoring = (req: Request, res: Response, next: NextFuncti
 // IP whitelist/blacklist middleware
 export const ipFilter = (whitelist?: string[], blacklist?: string[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
-    const clientIP = req.ip;
+    const clientIP = req.ip || 'unknown';
 
     if (blacklist && blacklist.includes(clientIP)) {
       logger.warn("Blocked IP attempt", { ip: clientIP });
-      return ResponseHelper.forbidden(res, "Access denied");
+      ResponseHelper.forbidden(res, "Access denied");
+      return;
     }
 
     if (whitelist && whitelist.length > 0 && !whitelist.includes(clientIP)) {
       logger.warn("Non-whitelisted IP attempt", { ip: clientIP });
-      return ResponseHelper.forbidden(res, "Access denied");
+      ResponseHelper.forbidden(res, "Access denied");
+      return;
     }
 
     next();
   };
+};
+
+// ============================================================================
+// ENHANCED RATE LIMITING EXPORTS
+// ============================================================================
+
+// Export enhanced rate limiting middleware
+export { 
+  generalRateLimit,
+  enhancedAuthRateLimit,
+  passwordResetRateLimit,
+  adminRateLimit,
+  exportRateLimit,
+  bruteForcePrevention,
+  progressiveDelay
 };
 
 export default {

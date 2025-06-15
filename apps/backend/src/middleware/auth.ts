@@ -6,6 +6,7 @@ import { AuthenticatedRequest } from "../types/api";
 import { ResponseHelper } from "../utils/response";
 import { logger } from "../utils/logger";
 import { asyncHandler } from "./errorHandler";
+import { securityEventService } from "../services/securityEventService";
 
 /**
  * Authentication middleware

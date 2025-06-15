@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { AuthenticatedRequest } from "../types/api";
 import { z } from "zod";
 import { AuthService } from "../services/authService";
 import { UserService } from "../services/userService";
@@ -290,7 +291,7 @@ export const getSession = async (
  * Change password
  */
 export const changePassword = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ): Promise<void> => {
   try {
@@ -437,7 +438,7 @@ export const confirmResetPassword = async (
  * Verify user permissions
  */
 export const verifyPermissions = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ): Promise<void> => {
   try {
@@ -492,7 +493,7 @@ export const verifyPermissions = async (
  * Get user profile
  */
 export const getProfile = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ): Promise<void> => {
   try {
@@ -535,7 +536,7 @@ export const getProfile = async (
  * Update user profile
  */
 export const updateProfile = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ): Promise<void> => {
   try {

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { v4 as uuidv4 } from "uuid";
 import { logger } from "../utils/logger";
-import { AuthenticatedRequest } from "../types/api";
+import { AuthenticatedRequest, BaseRequest } from "../types/api";
 
 export interface RequestLoggerOptions {
   includeBody?: boolean;
@@ -22,7 +22,7 @@ const defaultOptions: RequestLoggerOptions = {
 export const requestLogger = (options: RequestLoggerOptions = {}) => {
   const config = { ...defaultOptions, ...options };
 
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  return (req: BaseRequest, res: Response, next: NextFunction): void => {
     // Generate unique request ID
     const requestId = uuidv4();
     req.requestId = requestId;
@@ -108,7 +108,7 @@ export const requestLogger = (options: RequestLoggerOptions = {}) => {
 
       // Debug level logging for response
       if (logger.debug) {
-        const responseContext = {
+        const responseContext: Record<string, any> = {
           requestId,
           statusCode: res.statusCode,
           duration,
@@ -189,7 +189,7 @@ function sanitizeHeaders(headers: any): any {
 }
 
 // Middleware to add correlation ID to all logs in the request context
-export const correlationId = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+export const correlationId = (req: BaseRequest, res: Response, next: NextFunction): void => {
   // Use existing request ID or generate new one
   const requestId = req.requestId || uuidv4();
   req.requestId = requestId;

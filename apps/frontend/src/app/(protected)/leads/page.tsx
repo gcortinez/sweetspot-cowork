@@ -141,7 +141,10 @@ export default function LeadsPage() {
             <p className="text-gray-600">Manage your potential clients</p>
           </div>
         </div>
-        <Button className="gap-2">
+        <Button 
+          className="gap-2"
+          onClick={() => alert('Funcionalidad de crear lead próximamente')}
+        >
           <Plus className="h-4 w-4" />
           Add Lead
         </Button>

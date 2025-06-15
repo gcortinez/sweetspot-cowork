@@ -12,12 +12,17 @@ export const translations = {
       notifications: 'Notificaciones',
       settings: 'Configuración',
       help: 'Centro de Ayuda',
+      leads: 'Leads',
+      opportunities: 'Oportunidades',
+      activities: 'Actividades',
+      conversions: 'Conversiones',
     },
     
     // Sidebar Sections
     section: {
       account: 'Cuenta',
       support: 'Soporte',
+      crm: 'CRM',
     },
     
     // Actions
@@ -531,12 +536,17 @@ export const translations = {
       notifications: 'Notifications',
       settings: 'Settings',
       help: 'Help Center',
+      leads: 'Leads',
+      opportunities: 'Opportunities',
+      activities: 'Activities',
+      conversions: 'Conversions',
     },
     
     // Sidebar Sections
     section: {
       account: 'Account',
       support: 'Support',
+      crm: 'CRM',
     },
     
     // Actions

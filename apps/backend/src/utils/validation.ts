@@ -19,7 +19,7 @@ export function validate(
   target: ValidationTarget = "body",
   options: ValidationOptions = {}
 ) {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     try {
       const data = req[target];
       
@@ -37,12 +37,13 @@ export function validate(
           method: req.method,
         });
 
-        return ResponseHelper.validationError(
+        ResponseHelper.validationError(
           res,
           "Validation failed",
           { errors: validationErrors },
           validationErrors[0]?.field
         );
+        return;
       }
 
       // Replace the original data with validated/transformed data
@@ -55,7 +56,8 @@ export function validate(
         error: error instanceof Error ? error.message : "Unknown error",
       }, error as Error);
       
-      return ResponseHelper.internalError(res, "Validation processing failed");
+      ResponseHelper.internalError(res, "Validation processing failed");
+      return;
     }
   };
 }
@@ -87,7 +89,7 @@ export function formatZodErrors(error: ZodError): Array<{
     field: err.path.join("."),
     message: err.message,
     code: err.code,
-    value: err.code !== "invalid_type" ? err.input : undefined,
+    value: 'input' in err ? err.input : undefined,
   }));
 }
 
@@ -129,7 +131,7 @@ export function validateMultiple(validations: {
   params?: ZodSchema;
   headers?: ZodSchema;
 }, options: ValidationOptions = {}) {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     const errors: Array<{
       target: ValidationTarget;
       field: string;
@@ -162,12 +164,13 @@ export function validateMultiple(validations: {
         method: req.method,
       });
 
-      return ResponseHelper.validationError(
+      ResponseHelper.validationError(
         res,
         "Validation failed",
         { errors },
         errors[0]?.field
       );
+      return;
     }
 
     next();
@@ -184,7 +187,7 @@ export function validateConditional(
     if (condition(req)) {
       return validate(schema, target)(req, res, next);
     }
-    next();
+    return next();
   };
 }
 
@@ -194,7 +197,7 @@ export function validateFileUpload(options: {
   allowedMimeTypes?: string[];
   required?: boolean;
 }) {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request & { file?: any; files?: any }, res: Response, next: NextFunction) => {
     const file = req.file;
     const files = req.files;
 
@@ -220,7 +223,7 @@ export function validateFileUpload(options: {
       }
     }
 
-    next();
+    return next();
   };
 }
 
@@ -242,7 +245,6 @@ export const CommonValidations = {
   // Search query validation
   search: z.object({
     q: z.string().min(1).max(255).optional(),
-    ...CommonValidations.pagination.shape,
   }),
 
   // Date range validation
@@ -308,7 +310,7 @@ export const createValidationMiddleware = {
   }),
 
   // Create pagination middleware
-  paginated: (querySchema?: ZodSchema) => {
+  paginated: (querySchema?: z.ZodObject<any>) => {
     const schema = querySchema 
       ? querySchema.extend(CommonValidations.pagination.shape)
       : CommonValidations.pagination;
@@ -316,7 +318,7 @@ export const createValidationMiddleware = {
   },
 
   // Create search middleware
-  searchable: (querySchema?: ZodSchema) => {
+  searchable: (querySchema?: z.ZodObject<any>) => {
     const schema = querySchema
       ? querySchema.extend(CommonValidations.search.shape)
       : CommonValidations.search;

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
-import { PrismaClientKnownRequestError, PrismaClientValidationError } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { ResponseHelper } from "../utils/response";
 import { ErrorCode, HttpStatusCode } from "../types/api";
 import { logger } from "../utils/logger";
@@ -38,11 +38,11 @@ export class AppError extends Error implements CustomError {
 }
 
 export const errorHandler = (
-  error: Error | CustomError | ZodError | PrismaClientKnownRequestError,
+  error: Error | CustomError | ZodError | Prisma.PrismaClientKnownRequestError,
   req: Request,
   res: Response,
   next: NextFunction
-): Response => {
+): void => {
   // Log the error with context
   const context = {
     url: req.originalUrl,
@@ -63,21 +63,23 @@ export const errorHandler = (
       code: err.code,
     }));
 
-    return ResponseHelper.validationError(
+    ResponseHelper.validationError(
       res,
       "Validation failed",
       { errors: validationErrors },
       validationErrors[0]?.field
     );
+    return;
   }
 
   // Handle Prisma errors
-  if (error instanceof PrismaClientKnownRequestError) {
-    return handlePrismaError(error, res);
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    handlePrismaError(error, res);
+    return;
   }
 
-  if (error instanceof PrismaClientValidationError) {
-    return ResponseHelper.badRequest(res, "Invalid database operation", {
+  if (error instanceof Prisma.PrismaClientValidationError) {
+    ResponseHelper.badRequest(res, "Invalid database operation", {
       type: "PrismaValidationError",
       originalError: error.message,
     });
@@ -86,7 +88,7 @@ export const errorHandler = (
   // Handle custom application errors
   if (error instanceof AppError || (error as CustomError).statusCode) {
     const customError = error as CustomError;
-    return ResponseHelper.error(
+    ResponseHelper.error(
       res,
       (customError.code as ErrorCode) || ErrorCode.INTERNAL_ERROR,
       customError.message,
@@ -94,38 +96,40 @@ export const errorHandler = (
       customError.details,
       customError.field
     );
+    return;
   }
 
   // Handle JSON parsing errors
   if (error instanceof SyntaxError && "body" in error) {
-    return ResponseHelper.badRequest(res, "Invalid JSON format in request body");
+    ResponseHelper.badRequest(res, "Invalid JSON format in request body");
   }
 
   // Handle JWT errors
   if (error.name === "JsonWebTokenError") {
-    return ResponseHelper.unauthorized(res, "Invalid authentication token");
+    ResponseHelper.unauthorized(res, "Invalid authentication token");
   }
 
   if (error.name === "TokenExpiredError") {
-    return ResponseHelper.error(
+    ResponseHelper.error(
       res,
       ErrorCode.TOKEN_EXPIRED,
       "Authentication token has expired",
       HttpStatusCode.UNAUTHORIZED
     );
+    return;
   }
 
   // Handle multer file upload errors
   if (error.message?.includes("File too large")) {
-    return ResponseHelper.fileTooLarge(res, "10MB");
+    ResponseHelper.fileTooLarge(res, "10MB");
   }
 
   if (error.message?.includes("Unexpected field")) {
-    return ResponseHelper.badRequest(res, "Unexpected field in file upload");
+    ResponseHelper.badRequest(res, "Unexpected field in file upload");
   }
 
   // Default to internal server error
-  return ResponseHelper.internalError(
+  ResponseHelper.internalError(
     res,
     process.env.NODE_ENV === "production" 
       ? "Something went wrong" 
@@ -134,55 +138,66 @@ export const errorHandler = (
 };
 
 const handlePrismaError = (
-  error: PrismaClientKnownRequestError,
+  error: Prisma.PrismaClientKnownRequestError,
   res: Response
-): Response => {
+): void => {
   switch (error.code) {
     case "P2002":
       // Unique constraint violation
       const target = error.meta?.target as string[] | undefined;
       const field = target?.[0] || "field";
-      return ResponseHelper.conflict(res, `${field} already exists`);
+      ResponseHelper.conflict(res, `${field} already exists`);
+      return;
 
     case "P2025":
       // Record not found
-      return ResponseHelper.notFound(res);
+      ResponseHelper.notFound(res);
+      return;
 
     case "P2003":
       // Foreign key constraint violation
-      return ResponseHelper.badRequest(res, "Referenced record does not exist");
+      ResponseHelper.badRequest(res, "Referenced record does not exist");
+      return;
 
     case "P2004":
       // Constraint violation
-      return ResponseHelper.badRequest(res, "Database constraint violation");
+      ResponseHelper.badRequest(res, "Database constraint violation");
+      return;
 
     case "P2014":
       // Required relation violation
-      return ResponseHelper.badRequest(res, "Required relation missing");
+      ResponseHelper.badRequest(res, "Required relation missing");
+      return;
 
     case "P2016":
       // Query interpretation error
-      return ResponseHelper.badRequest(res, "Invalid query parameters");
+      ResponseHelper.badRequest(res, "Invalid query parameters");
+      return;
 
     case "P2021":
       // Table does not exist
-      return ResponseHelper.internalError(res, "Database schema error");
+      ResponseHelper.internalError(res, "Database schema error");
+      return;
 
     case "P2022":
       // Column does not exist
-      return ResponseHelper.internalError(res, "Database column error");
+      ResponseHelper.internalError(res, "Database column error");
+      return;
 
     case "P1001":
       // Connection timeout
-      return ResponseHelper.serviceUnavailable(res, "Database connection timeout");
+      ResponseHelper.serviceUnavailable(res, "Database connection timeout");
+      return;
 
     case "P1002":
       // Connection timeout
-      return ResponseHelper.serviceUnavailable(res, "Database connection timeout");
+      ResponseHelper.serviceUnavailable(res, "Database connection timeout");
+      return;
 
     case "P1008":
       // Timeout
-      return ResponseHelper.serviceUnavailable(res, "Database operation timeout");
+      ResponseHelper.serviceUnavailable(res, "Database operation timeout");
+      return;
 
     default:
       logger.error(`Unhandled Prisma error: ${error.code}`, {
@@ -190,13 +205,14 @@ const handlePrismaError = (
         message: error.message,
         meta: error.meta,
       });
-      return ResponseHelper.internalError(res, "Database operation failed");
+      ResponseHelper.internalError(res, "Database operation failed");
+      return;
   }
 };
 
 // 404 handler for unknown routes
-export const notFoundHandler = (req: Request, res: Response): Response => {
-  return ResponseHelper.error(
+export const notFoundHandler = (req: Request, res: Response): void => {
+  ResponseHelper.error(
     res,
     ErrorCode.INVALID_ROUTE,
     `Route ${req.method} ${req.originalUrl} not found`,
