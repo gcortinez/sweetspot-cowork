@@ -1,0 +1,20 @@
+import { Response } from 'express';
+import { AuthenticatedRequest } from '../types/api';
+export declare const generateQRCode: (req: AuthenticatedRequest, res: Response) => Promise<void>;
+export declare const scanQRCode: (req: AuthenticatedRequest, res: Response) => Promise<void>;
+export declare const getUserQRCodes: (req: AuthenticatedRequest, res: Response) => Promise<void>;
+export declare const revokeQRCode: (req: AuthenticatedRequest, res: Response) => Promise<void>;
+export declare const createAccessZone: (req: AuthenticatedRequest, res: Response) => Promise<void>;
+export declare const getAccessZones: (req: AuthenticatedRequest, res: Response) => Promise<void>;
+export declare const updateAccessZone: (req: AuthenticatedRequest, res: Response) => Promise<void>;
+export declare const createAccessRule: (req: AuthenticatedRequest, res: Response) => Promise<void>;
+export declare const getAccessRules: (req: AuthenticatedRequest, res: Response) => Promise<void>;
+export declare const updateAccessRule: (req: AuthenticatedRequest, res: Response) => Promise<void>;
+export declare const deleteAccessRule: (req: AuthenticatedRequest, res: Response) => Promise<void>;
+export declare const getCurrentOccupancy: (req: AuthenticatedRequest, res: Response) => Promise<void>;
+export declare const updateOccupancy: (req: AuthenticatedRequest, res: Response) => Promise<void>;
+export declare const getAccessLogs: (req: AuthenticatedRequest, res: Response) => Promise<void>;
+export declare const getQRCodeScans: (req: AuthenticatedRequest, res: Response) => Promise<void>;
+export declare const getAccessViolations: (req: AuthenticatedRequest, res: Response) => Promise<void>;
+export declare const resolveAccessViolation: (req: AuthenticatedRequest, res: Response) => Promise<void>;
+//# sourceMappingURL=accessControlController.d.ts.map

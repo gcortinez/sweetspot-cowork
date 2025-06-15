@@ -1,0 +1,22 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.activityRoutes = void 0;
+const express_1 = require("express");
+const activityController_1 = require("../controllers/activityController");
+const auth_1 = require("../middleware/auth");
+const router = (0, express_1.Router)();
+exports.activityRoutes = router;
+router.use(auth_1.authenticate);
+router.get('/stats', activityController_1.activityController.getActivityStats);
+router.get('/timeline', activityController_1.activityController.getActivityTimeline);
+router.get('/upcoming', activityController_1.activityController.getUpcomingActivities);
+router.get('/overdue', activityController_1.activityController.getOverdueActivities);
+router.get('/by-entity/:entityType/:entityId', activityController_1.activityController.getActivitiesByEntity);
+router.post('/bulk', activityController_1.activityController.bulkAction);
+router.get('/', activityController_1.activityController.getActivities);
+router.get('/:id', activityController_1.activityController.getActivityById);
+router.post('/', activityController_1.activityController.createActivity);
+router.put('/:id', activityController_1.activityController.updateActivity);
+router.delete('/:id', activityController_1.activityController.deleteActivity);
+router.post('/:id/complete', activityController_1.activityController.completeActivity);
+//# sourceMappingURL=activityRoutes.js.map
