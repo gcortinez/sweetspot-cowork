@@ -33,6 +33,7 @@ import {
 import CreateLeadModal from "@/components/leads/CreateLeadModal";
 import LeadDetailModal from "@/components/leads/LeadDetailModal";
 import EditLeadModal from "@/components/leads/EditLeadModal";
+import AssignUserModal from "@/components/leads/AssignUserModal";
 import { useApi } from "@/hooks/use-api";
 import { useAuthStore } from "@/stores/auth-store";
 import { useRouter } from "next/navigation";
@@ -117,6 +118,8 @@ export default function LeadsPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [updatingLeadId, setUpdatingLeadId] = useState<string | null>(null);
   const [openDropdowns, setOpenDropdowns] = useState<{ [key: string]: boolean }>({});
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [assigningLead, setAssigningLead] = useState<Lead | null>(null);
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -287,13 +290,33 @@ export default function LeadsPage() {
     }
   };
 
-  const handleAssignLead = async (lead: Lead) => {
+  const handleAssignLead = (lead: Lead) => {
     console.log('Asignar prospecto:', lead);
-    // TODO: Abrir modal para seleccionar usuario del cowork
-    toast({
-      title: "Funcionalidad próximamente disponible",
-      description: "Se abrirá un modal para seleccionar entre admins del cowork y usuarios del cowork (COWORK_USER)",
-    });
+    setAssigningLead(lead);
+    setShowAssignModal(true);
+    // Close dropdown
+    setOpenDropdowns(prev => ({
+      ...prev,
+      [lead.id]: false
+    }));
+  };
+
+  const handleUserAssigned = (updatedLead: Lead, user: any) => {
+    console.log('Usuario asignado:', user, 'a lead:', updatedLead);
+    
+    // Update the lead in the local state
+    setLeads(prevLeads => 
+      prevLeads.map(l => 
+        l.id === updatedLead.id 
+          ? updatedLead
+          : l
+      )
+    );
+
+    // Update the selected lead if it's the same one
+    if (selectedLead && selectedLead.id === updatedLead.id) {
+      setSelectedLead(updatedLead);
+    }
   };
 
   const handleCreateActivity = (leadId: string) => {
@@ -879,6 +902,17 @@ export default function LeadsPage() {
           setEditingLead(null);
         }}
         onLeadUpdated={handleLeadUpdated}
+      />
+
+      {/* Assign User Modal */}
+      <AssignUserModal
+        lead={assigningLead}
+        isOpen={showAssignModal}
+        onClose={() => {
+          setShowAssignModal(false);
+          setAssigningLead(null);
+        }}
+        onUserAssigned={handleUserAssigned}
       />
 
       {/* Confirmation Dialog */}
