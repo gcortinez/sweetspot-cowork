@@ -8,9 +8,17 @@ export function useApi() {
 
   return useMemo(() => {
     const makeRequest = async (url: string, options: RequestInit = {}) => {
-      // Convert relative URLs to absolute URLs pointing to the backend
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
-      const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
+      // For activities, use frontend proxy route to avoid CORS issues
+      let fullUrl: string;
+      if (url.includes('/api/activities')) {
+        // Use the frontend Next.js API proxy
+        fullUrl = url.startsWith('http') ? url : url;
+        console.log('Using frontend proxy for activities:', fullUrl);
+      } else {
+        // Convert relative URLs to absolute URLs pointing to the backend for other endpoints
+        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+        fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
+      }
       
       console.log('Making API request to:', fullUrl);
       const headers: HeadersInit = {
@@ -20,11 +28,11 @@ export function useApi() {
 
       // Add auth token if available (or use bypass for testing)
       if (accessToken) {
-        headers.Authorization = `Bearer ${accessToken}`;
+        (headers as Record<string, string>).Authorization = `Bearer ${accessToken}`;
       } else {
         // Use bypass token for testing when no auth token is available
         console.log('No access token available, using bypass token for testing');
-        headers.Authorization = `Bearer bypass_token_testing123`;
+        (headers as Record<string, string>).Authorization = `Bearer bypass_token_testing123`;
       }
 
       try {

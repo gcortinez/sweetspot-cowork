@@ -29,6 +29,7 @@ import {
   TrendingUp,
   Calendar,
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface Opportunity {
   id: string;
@@ -63,9 +64,9 @@ const getStageColor = (stage: string) => {
 };
 
 const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('es-CL', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'CLP',
   }).format(amount);
 };
 
@@ -74,6 +75,14 @@ export default function OpportunitiesPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStage, setSelectedStage] = useState<string>("all");
+  const { toast } = useToast();
+
+  const handleCreateOpportunity = () => {
+    toast({
+      title: "Funcionalidad próximamente disponible",
+      description: "La creación de oportunidades estará disponible en una próxima actualización",
+    });
+  };
 
   // Mock data - replace with actual API call
   useEffect(() => {
@@ -150,7 +159,7 @@ export default function OpportunitiesPage() {
         </div>
         <Button 
           className="gap-2"
-          onClick={() => alert('Funcionalidad de crear oportunidad próximamente')}
+          onClick={handleCreateOpportunity}
         >
           <Plus className="h-4 w-4" />
           Add Opportunity

@@ -35,6 +35,9 @@ import EditLeadModal from "@/components/leads/EditLeadModal";
 import { useApi } from "@/hooks/use-api";
 import { useAuthStore } from "@/stores/auth-store";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
+import { useConfirm } from "@/hooks/use-confirm";
+import { Pagination } from "@/components/ui/pagination";
 
 interface Lead {
   id: string;
@@ -111,8 +114,16 @@ export default function LeadsPage() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalLeads, setTotalLeads] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const api = useApi();
   const router = useRouter();
+  const { toast } = useToast();
+  const { confirm, ConfirmDialog } = useConfirm();
   
   // Auth state - using stable selectors
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
@@ -156,7 +167,12 @@ export default function LeadsPage() {
 
   const handleCreateOpportunity = async (lead: Lead) => {
     console.log('Convertir a oportunidad:', lead);
-    const confirmed = confirm(`¿Deseas convertir a ${lead.firstName} ${lead.lastName} en una oportunidad de negocio?\n\nEsto creará automáticamente una cotización asociada.`);
+    const confirmed = await confirm({
+      title: "¿Convertir a oportunidad?",
+      description: `¿Deseas convertir a ${lead.firstName} ${lead.lastName} en una oportunidad de negocio? Esto creará automáticamente una cotización asociada.`,
+      confirmText: "Convertir",
+      cancelText: "Cancelar"
+    });
     
     if (confirmed) {
       try {
@@ -187,11 +203,18 @@ export default function LeadsPage() {
           router.push('/opportunities');
         }
         
-        alert(`¡Éxito!\n\nSe ha creado la oportunidad y cotización para ${lead.firstName} ${lead.lastName}`);
+        toast({
+          title: "¡Conversión exitosa!",
+          description: `Se ha creado la oportunidad y cotización para ${lead.firstName} ${lead.lastName}`,
+        });
         
       } catch (error) {
         console.error('Error al convertir prospecto:', error);
-        alert('Error al convertir el prospecto a oportunidad. Por favor, inténtalo nuevamente.');
+        toast({
+          title: "Error al convertir prospecto",
+          description: "No se pudo convertir el prospecto a oportunidad. Por favor, inténtalo nuevamente.",
+          variant: "destructive",
+        });
       }
     }
   };
@@ -224,20 +247,30 @@ export default function LeadsPage() {
       console.log('Estado actualizado exitosamente');
     } catch (error) {
       console.error('Error al cambiar estado:', error);
-      alert('Error al cambiar el estado del prospecto');
+      toast({
+        title: "Error al cambiar estado",
+        description: "No se pudo cambiar el estado del prospecto",
+        variant: "destructive",
+      });
     }
   };
 
   const handleAssignLead = async (lead: Lead) => {
     console.log('Asignar prospecto:', lead);
     // TODO: Abrir modal para seleccionar usuario del cowork
-    alert(`Funcionalidad de asignación próximamente disponible\n\nSe abrirá un modal para seleccionar entre:\n- Admins del cowork\n- Usuarios del cowork (COWORK_USER)`);
+    toast({
+      title: "Funcionalidad próximamente disponible",
+      description: "Se abrirá un modal para seleccionar entre admins del cowork y usuarios del cowork (COWORK_USER)",
+    });
   };
 
   const handleCreateActivity = (leadId: string) => {
     console.log('Crear actividad para lead:', leadId);
     // TODO: Abrir modal de crear actividad o navegar a página de actividades
-    alert(`Funcionalidad de agregar actividad próximamente disponible\n\nSe abrirá un modal para crear:\n- Llamadas telefónicas\n- Reuniones\n- Notas de seguimiento\n- Emails enviados\n- Otras actividades de ventas`);
+    toast({
+      title: "Funcionalidad ya disponible",
+      description: "Puedes agregar actividades desde el detalle del prospecto en la pestaña 'Actividad'",
+    });
   };
 
   const handleUpdateScore = async (leadId: string, newScore: number) => {
@@ -286,18 +319,31 @@ export default function LeadsPage() {
 
   const handleDeleteLead = async (lead: Lead) => {
     console.log('Eliminar prospecto:', lead);
-    const confirmed = confirm(`¿Estás seguro de que deseas eliminar a ${lead.firstName} ${lead.lastName}?`);
+    const confirmed = await confirm({
+      title: "¿Eliminar prospecto?",
+      description: `¿Estás seguro de que deseas eliminar a ${lead.firstName} ${lead.lastName}? Esta acción no se puede deshacer.`,
+      confirmText: "Eliminar",
+      cancelText: "Cancelar",
+      variant: "destructive"
+    });
     if (confirmed) {
       try {
         // TODO: Llamar API para eliminar
         const response = await api.delete(`/api/leads/${lead.id}`);
         if (response.ok) {
-          alert('Prospecto eliminado exitosamente');
+          toast({
+            title: "Prospecto eliminado",
+            description: "El prospecto ha sido eliminado exitosamente",
+          });
           await fetchLeads(); // Recargar lista
         }
       } catch (error) {
         console.error('Error al eliminar prospecto:', error);
-        alert('Error al eliminar el prospecto');
+        toast({
+          title: "Error al eliminar prospecto",
+          description: "No se pudo eliminar el prospecto",
+          variant: "destructive",
+        });
       }
     }
   };
@@ -412,6 +458,7 @@ export default function LeadsPage() {
     }
   }, [isAuthenticated, accessToken, api]);
 
+  // Filter leads based on search and status
   const filteredLeads = leads.filter(lead => {
     const matchesSearch = `${lead.firstName} ${lead.lastName} ${lead.email} ${lead.company || ''}`
       .toLowerCase()
@@ -419,6 +466,32 @@ export default function LeadsPage() {
     const matchesStatus = selectedStatus === "all" || lead.status === selectedStatus;
     return matchesSearch && matchesStatus;
   });
+
+  // Pagination logic
+  const totalFilteredLeads = filteredLeads.length;
+  const totalPagesCalculated = Math.ceil(totalFilteredLeads / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedLeads = filteredLeads.slice(startIndex, endIndex);
+
+  // Update total pages when filters change
+  React.useEffect(() => {
+    setTotalPages(totalPagesCalculated);
+    setTotalLeads(totalFilteredLeads);
+    // Reset to first page if current page is beyond available pages
+    if (currentPage > totalPagesCalculated && totalPagesCalculated > 0) {
+      setCurrentPage(1);
+    }
+  }, [totalFilteredLeads, totalPagesCalculated, currentPage]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
 
   const stats = {
     total: leads.length,
@@ -590,14 +663,14 @@ export default function LeadsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredLeads.length === 0 ? (
+              {paginatedLeads.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} className="text-center py-8 text-gray-500">
                     {loading ? 'Cargando...' : 'No se encontraron prospectos'}
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredLeads.map((lead) => (
+                paginatedLeads.map((lead) => (
                 <TableRow key={lead.id}>
                   <TableCell>
                     <div>
@@ -726,6 +799,21 @@ export default function LeadsPage() {
             </TableBody>
           </Table>
         </CardContent>
+        
+        {/* Pagination */}
+        {(totalPages > 1 || totalLeads > itemsPerPage) && (
+          <div className="px-6 py-4 border-t">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              totalItems={totalLeads}
+              itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+              showPageSizeSelector={true}
+            />
+          </div>
+        )}
       </Card>
 
       {/* Lead Detail Modal */}
@@ -751,6 +839,9 @@ export default function LeadsPage() {
         }}
         onLeadUpdated={handleLeadUpdated}
       />
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog />
     </div>
   );
 }

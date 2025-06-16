@@ -118,7 +118,7 @@ const SystemSettingsPage: React.FC = () => {
       adminEmail: "admin@sweetspot.mx",
       timezone: "America/Mexico_City",
       language: "es",
-      currency: "MXN",
+      currency: "CLP",
       dateFormat: "DD/MM/YYYY",
       timeFormat: "24h",
     },
@@ -290,9 +290,10 @@ const SystemSettingsPage: React.FC = () => {
             onChange={(e) => updateSetting("general", "currency", e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="MXN">Peso Mexicano (MXN)</option>
+            <option value="CLP">Peso Chileno (CLP)</option>
             <option value="USD">Dólar Americano (USD)</option>
             <option value="EUR">Euro (EUR)</option>
+            <option value="MXN">Peso Mexicano (MXN)</option>
           </select>
         </div>
       </div>

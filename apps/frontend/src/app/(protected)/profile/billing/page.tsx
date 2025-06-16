@@ -24,7 +24,7 @@ const BillingPage: React.FC = () => {
   const [currentPlan] = useState({
     name: "Professional",
     price: 299,
-    currency: "MXN",
+    currency: "CLP",
     billing: "monthly",
     features: [
       "Acceso ilimitado a espacios",
@@ -63,7 +63,7 @@ const BillingPage: React.FC = () => {
       id: "INV-001",
       date: "2024-01-15",
       amount: 299,
-      currency: "MXN",
+      currency: "CLP",
       status: "paid",
       description: "Suscripción Professional - Enero 2024",
     },
@@ -71,7 +71,7 @@ const BillingPage: React.FC = () => {
       id: "INV-002",
       date: "2023-12-15",
       amount: 299,
-      currency: "MXN",
+      currency: "CLP",
       status: "paid",
       description: "Suscripción Professional - Diciembre 2023",
     },
@@ -79,7 +79,7 @@ const BillingPage: React.FC = () => {
       id: "INV-003",
       date: "2023-11-15",
       amount: 299,
-      currency: "MXN",
+      currency: "CLP",
       status: "paid",
       description: "Suscripción Professional - Noviembre 2023",
     },
@@ -89,7 +89,7 @@ const BillingPage: React.FC = () => {
     {
       name: "Basic",
       price: 199,
-      currency: "MXN",
+      currency: "CLP",
       features: [
         "5 días al mes",
         "2 horas de salas de reuniones",
@@ -100,7 +100,7 @@ const BillingPage: React.FC = () => {
     {
       name: "Professional",
       price: 299,
-      currency: "MXN",
+      currency: "CLP",
       features: [
         "Acceso ilimitado",
         "10 horas de salas de reuniones",
@@ -114,7 +114,7 @@ const BillingPage: React.FC = () => {
     {
       name: "Enterprise",
       price: 499,
-      currency: "MXN",
+      currency: "CLP",
       features: [
         "Todo de Professional",
         "Salas de reuniones ilimitadas",

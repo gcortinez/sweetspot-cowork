@@ -9,7 +9,7 @@ type ToastProps = {
   title?: React.ReactNode
   description?: React.ReactNode
   action?: ToastActionElement
-  variant?: "default" | "destructive"
+  variant?: "default" | "destructive" | "success" | "warning"
 }
 
 const TOAST_LIMIT = 1
@@ -20,6 +20,9 @@ type ToasterToast = ToastProps & {
   title?: React.ReactNode
   description?: React.ReactNode
   action?: ToastActionElement
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  variant?: "default" | "destructive" | "success" | "warning"
 }
 
 const actionTypes = {
@@ -160,7 +163,7 @@ function toast({ ...props }: Toast) {
       ...props,
       id,
       open: true,
-      onOpenChange: (open) => {
+      onOpenChange: (open: boolean) => {
         if (!open) dismiss()
       },
     },

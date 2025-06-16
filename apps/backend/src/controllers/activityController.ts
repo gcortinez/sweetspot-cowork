@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { z } from 'zod';
 import { activityService } from '../services/activityService';
 import { handleController } from '../utils/response';
-import { AuthenticatedRequest, ErrorCode } from '../types/api';
+import { AuthenticatedRequest, BaseRequest, ErrorCode } from '../types/api';
 
 // Create activity schema
 const createActivitySchema = z.object({
@@ -81,17 +81,33 @@ class ActivityController {
   }
 
   // POST /api/activities
-  async createActivity(req: AuthenticatedRequest, res: Response) {
+  async createActivity(req: BaseRequest, res: Response) {
     return handleController(async () => {
+      console.log('=== CREATE ACTIVITY ENDPOINT - UPDATED ===');
+      console.log('Request user:', req.user);
+      console.log('Request body:', req.body);
+      
       if (!req.user?.tenantId) {
+        console.error('No tenant context found in request');
         throw new Error('Tenant context required');
       }
       
+      if (!req.user?.id) {
+        console.error('No user ID found in request');
+        throw new Error('User context required');
+      }
+      
       const data = createActivitySchema.parse(req.body);
+      console.log('Parsed data:', data);
+      
       const tenantId = req.user.tenantId;
       const userId = req.user.id;
       
+      console.log('Creating activity with:', { tenantId, userId, data });
+      
       const activity = await activityService.createActivity(tenantId, userId, data);
+      console.log('Activity created successfully:', activity.id);
+      
       return activity;
     }, res, 201);
   }

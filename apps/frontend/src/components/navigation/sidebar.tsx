@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/lib/i18n";
+import { useToast } from "@/hooks/use-toast";
 
 interface SidebarProps {
   className?: string;
@@ -118,7 +119,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onCloseMobile }) =>
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const { t } = useI18n();
+  const { toast } = useToast();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleNewBooking = () => {
+    toast({
+      title: "Funcionalidad próximamente disponible",
+      description: "La funcionalidad de nueva reserva estará disponible en una próxima actualización",
+    });
+  };
 
   const navigationItems = getNavigationItems(t);
   const crmItems = getCrmItems(t);
@@ -159,7 +168,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onCloseMobile }) =>
       <div className="p-4 border-b border-gray-100">
         <Button
           className="w-full justify-start gap-3 h-10 bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200 font-medium"
-          onClick={() => alert('Funcionalidad de nueva reserva próximamente')}
+          onClick={handleNewBooking}
         >
           <Plus className="h-4 w-4" />
           {t("action.newBooking")}

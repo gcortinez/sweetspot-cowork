@@ -41,7 +41,7 @@ export const authenticate = async (
       
       // Set mock user and tenant for bypass tokens
       req.user = {
-        id: "user_1749874836637",
+        id: "user_1749874837193", // Use the real user ID from database
         email: "admin@sweetspot.io",
         tenantId: "tenant_1749874836546",
         role: "SUPER_ADMIN",

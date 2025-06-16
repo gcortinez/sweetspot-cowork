@@ -7,6 +7,18 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import CreateActivityModal from "./CreateActivityModal";
+import EditActivityModal from "./EditActivityModal";
+import { useActivities } from "@/hooks/use-activities";
+import { useToast } from "@/hooks/use-toast";
+import { useApi } from "@/hooks/use-api";
+import { useConfirm } from "@/hooks/use-confirm";
 import { 
   User, 
   Mail, 
@@ -28,8 +40,32 @@ import {
   Edit3,
   Save,
   X,
-  Plus
+  Plus,
+  CheckSquare,
+  Users,
+  ClipboardList,
+  Edit,
+  Trash2,
+  MoreHorizontal
 } from "lucide-react";
+
+interface Activity {
+  id: string;
+  type: 'CALL' | 'EMAIL' | 'MEETING' | 'TASK' | 'NOTE' | 'TOUR' | 'FOLLOW_UP' | 'DOCUMENT';
+  subject: string;
+  description?: string;
+  dueDate?: string;
+  duration?: number;
+  location?: string;
+  outcome?: string;
+  completedAt?: string;
+  createdAt: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+}
 
 interface Lead {
   id: string;
@@ -113,8 +149,8 @@ const getSourceLabel = (source: string) => {
 };
 
 const formatCurrency = (amount: number) => {
-  // Formatear número con separadores de miles usando puntos
-  return new Intl.NumberFormat('de-DE').format(amount);
+  // Formatear número con separadores de miles usando puntos (formato chileno)
+  return new Intl.NumberFormat('es-CL').format(amount);
 };
 
 export default function LeadDetailModal({ 
@@ -127,6 +163,18 @@ export default function LeadDetailModal({
 }: LeadDetailModalProps) {
   const [isEditingScore, setIsEditingScore] = useState(false);
   const [editScore, setEditScore] = useState(lead?.score || 0);
+  const [showCreateActivityModal, setShowCreateActivityModal] = useState(false);
+  const [showEditActivityModal, setShowEditActivityModal] = useState(false);
+  const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const { toast } = useToast();
+  const api = useApi();
+  const { confirm, ConfirmDialog } = useConfirm();
+  
+  // Fetch activities for this lead
+  const { activities, loading: activitiesLoading, refetch: refetchActivities } = useActivities({
+    leadId: lead?.id,
+    autoFetch: isOpen && !!lead?.id
+  });
 
   // Update editScore when lead changes
   React.useEffect(() => {
@@ -150,7 +198,11 @@ export default function LeadDetailModal({
 
   const handleSaveScore = async () => {
     if (editScore < 0 || editScore > 100) {
-      alert('La puntuación debe estar entre 0 y 100');
+      toast({
+        title: "Puntuación inválida",
+        description: "La puntuación debe estar entre 0 y 100",
+        variant: "destructive",
+      });
       return;
     }
     
@@ -163,7 +215,11 @@ export default function LeadDetailModal({
       } catch (error) {
         console.error('Error updating score in modal:', error);
         const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-        alert(`Error al actualizar la puntuación: ${errorMessage}`);
+        toast({
+          title: "Error al actualizar puntuación",
+          description: errorMessage,
+          variant: "destructive",
+        });
       }
     }
   };
@@ -171,6 +227,117 @@ export default function LeadDetailModal({
   const handleCancelEdit = () => {
     setEditScore(lead.score);
     setIsEditingScore(false);
+  };
+
+  const handleCreateActivityClick = () => {
+    setShowCreateActivityModal(true);
+  };
+
+  const handleActivityCreated = () => {
+    console.log('Activity created for lead:', lead.id);
+    // Refresh activities
+    refetchActivities();
+    // Call parent callback if provided
+    if (onCreateActivity) {
+      onCreateActivity(lead.id);
+    }
+  };
+
+  const handleEditActivity = (activity: Activity) => {
+    console.log('Editing activity:', activity);
+    setEditingActivity(activity);
+    setShowEditActivityModal(true);
+  };
+
+  const handleActivityUpdated = (updatedActivity: Activity) => {
+    console.log('Activity updated:', updatedActivity);
+    // Refresh activities
+    refetchActivities();
+    // Close edit modal
+    setShowEditActivityModal(false);
+    setEditingActivity(null);
+  };
+
+  const handleDeleteActivity = async (activity: Activity) => {
+    const confirmed = await confirm({
+      title: "¿Eliminar actividad?",
+      description: `¿Estás seguro de que deseas eliminar "${activity.subject}"? Esta acción no se puede deshacer.`,
+      confirmText: "Eliminar",
+      cancelText: "Cancelar",
+      variant: "destructive"
+    });
+    
+    if (!confirmed) return;
+
+    try {
+      console.log('Deleting activity:', activity.id);
+      const response = await api.delete(`/api/activities/${activity.id}`);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error response:', errorText);
+        throw new Error(`Error ${response.status}: ${errorText || 'Error al eliminar la actividad'}`);
+      }
+
+      // Refresh activities
+      refetchActivities();
+
+      toast({
+        title: "¡Actividad eliminada!",
+        description: "La actividad ha sido eliminada exitosamente",
+      });
+
+    } catch (error) {
+      console.error('Error deleting activity:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido al eliminar la actividad';
+      toast({
+        title: "Error al eliminar actividad",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getActivityTypeIcon = (type: string) => {
+    switch (type) {
+      case 'CALL': return Phone;
+      case 'EMAIL': return Mail;
+      case 'MEETING': return Calendar;
+      case 'TASK': return CheckSquare;
+      case 'NOTE': return FileText;
+      case 'TOUR': return Users;
+      case 'FOLLOW_UP': return ArrowRight;
+      case 'DOCUMENT': return ClipboardList;
+      default: return Activity;
+    }
+  };
+
+  const getActivityTypeLabel = (type: string) => {
+    switch (type) {
+      case 'CALL': return 'Llamada';
+      case 'EMAIL': return 'Email';
+      case 'MEETING': return 'Reunión';
+      case 'TASK': return 'Tarea';
+      case 'NOTE': return 'Nota';
+      case 'TOUR': return 'Tour/Visita';
+      case 'FOLLOW_UP': return 'Seguimiento';
+      case 'DOCUMENT': return 'Documento';
+      default: return type;
+    }
+  };
+
+  const getActivityTypeColor = (type: string) => {
+    switch (type) {
+      case 'CALL': return 'bg-blue-100 text-blue-600';
+      case 'EMAIL': return 'bg-purple-100 text-purple-600';
+      case 'MEETING': return 'bg-green-100 text-green-600';
+      case 'TASK': return 'bg-orange-100 text-orange-600';
+      case 'NOTE': return 'bg-gray-100 text-gray-600';
+      case 'TOUR': return 'bg-indigo-100 text-indigo-600';
+      case 'FOLLOW_UP': return 'bg-yellow-100 text-yellow-600';
+      case 'DOCUMENT': return 'bg-red-100 text-red-600';
+      default: return 'bg-gray-100 text-gray-600';
+    }
   };
 
   return (
@@ -417,7 +584,7 @@ export default function LeadDetailModal({
                       Línea de Tiempo
                     </h3>
                     <Button
-                      onClick={() => onCreateActivity && onCreateActivity(lead.id)}
+                      onClick={handleCreateActivityClick}
                       variant="outline"
                       size="sm"
                       className="text-blue-600 border-blue-600 hover:bg-blue-50"
@@ -427,6 +594,80 @@ export default function LeadDetailModal({
                     </Button>
                   </div>
                   <div className="space-y-4">
+                    {/* Loading state */}
+                    {activitiesLoading && (
+                      <div className="flex items-center justify-center py-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                        <span className="ml-2 text-sm text-gray-500">Cargando actividades...</span>
+                      </div>
+                    )}
+
+                    {/* Activities */}
+                    {!activitiesLoading && activities.map((activity) => {
+                      const IconComponent = getActivityTypeIcon(activity.type);
+                      const colorClass = getActivityTypeColor(activity.type);
+                      
+                      return (
+                        <div key={activity.id} className="flex items-start gap-3 group hover:bg-gray-50 p-3 rounded-lg transition-colors duration-200">
+                          <div className={`h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 ${colorClass}`}>
+                            <IconComponent className="h-4 w-4" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-medium">{activity.subject}</p>
+                              <Badge variant="outline" className="text-xs">
+                                {getActivityTypeLabel(activity.type)}
+                              </Badge>
+                              {activity.completedAt && (
+                                <Badge className="text-xs bg-green-100 text-green-800">
+                                  Completada
+                                </Badge>
+                              )}
+                            </div>
+                            {activity.description && (
+                              <p className="text-sm text-gray-600 mb-1">{activity.description}</p>
+                            )}
+                            {activity.outcome && (
+                              <p className="text-sm text-gray-600 mb-1">
+                                <span className="font-medium">Resultado:</span> {activity.outcome}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-4 text-xs text-gray-500">
+                              <span>{formatDate(activity.createdAt)}</span>
+                              <span>Por: {activity.user.firstName} {activity.user.lastName}</span>
+                              {activity.duration && (
+                                <span>Duración: {activity.duration} min</span>
+                              )}
+                              {activity.location && (
+                                <span>📍 {activity.location}</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 opacity-30 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditActivity(activity)}
+                              className="h-7 w-7 p-0 hover:bg-blue-100 text-blue-600"
+                              title="Editar actividad"
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteActivity(activity)}
+                              className="h-7 w-7 p-0 hover:bg-red-100 text-red-600"
+                              title="Eliminar actividad"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Static timeline items */}
                     <div className="flex items-start gap-3">
                       <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                         <Clock className="h-4 w-4 text-blue-600" />
@@ -460,6 +701,15 @@ export default function LeadDetailModal({
                         </div>
                       </div>
                     )}
+
+                    {/* Empty state */}
+                    {!activitiesLoading && activities.length === 0 && (
+                      <div className="text-center py-6">
+                        <Activity className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                        <p className="text-sm text-gray-500">No hay actividades registradas</p>
+                        <p className="text-xs text-gray-400">Haz clic en "Agregar Actividad" para comenzar</p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -467,6 +717,28 @@ export default function LeadDetailModal({
           </Tabs>
         </div>
       </DialogContent>
+      
+      {/* Create Activity Modal */}
+      <CreateActivityModal
+        leadId={lead.id}
+        isOpen={showCreateActivityModal}
+        onClose={() => setShowCreateActivityModal(false)}
+        onActivityCreated={handleActivityCreated}
+      />
+
+      {/* Edit Activity Modal */}
+      <EditActivityModal
+        activity={editingActivity}
+        isOpen={showEditActivityModal}
+        onClose={() => {
+          setShowEditActivityModal(false);
+          setEditingActivity(null);
+        }}
+        onActivityUpdated={handleActivityUpdated}
+      />
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog />
     </Dialog>
   );
 }

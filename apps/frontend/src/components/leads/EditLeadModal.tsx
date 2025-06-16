@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useApi } from "@/hooks/use-api";
+import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -83,6 +84,7 @@ export default function EditLeadModal({
 }: EditLeadModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const api = useApi();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -170,12 +172,19 @@ export default function EditLeadModal({
       onClose();
       
       // Show success message
-      alert('Prospecto actualizado exitosamente');
+      toast({
+        title: "¡Prospecto actualizado!",
+        description: "Los datos del prospecto han sido actualizados exitosamente",
+      });
       
     } catch (error) {
       console.error('Error updating lead:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido al actualizar el prospecto';
-      alert(`Error: ${errorMessage}`);
+      toast({
+        title: "Error al actualizar prospecto",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

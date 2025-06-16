@@ -19,7 +19,7 @@ const CreateLeadSchema = z.object({
 });
 
 // Helper function to get auth token from request
-function getAuthToken(request: NextRequest): string | null {
+async function getAuthToken(request: NextRequest): Promise<string | null> {
   // Try to get token from Authorization header first
   const authHeader = request.headers.get('authorization');
   if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -27,7 +27,7 @@ function getAuthToken(request: NextRequest): string | null {
   }
 
   // Try to get token from cookies as fallback
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const tokenCookie = cookieStore.get('auth-token'); // Note: hyphen not underscore
   return tokenCookie?.value || null;
 }
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     const validatedData = CreateLeadSchema.parse(body);
     
     // Get auth token
-    const token = getAuthToken(request);
+    const token = await getAuthToken(request);
     if (!token) {
       return NextResponse.json(
         { message: 'Token de autenticación requerido' },
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
     console.log('=== FRONTEND API ROUTE: GET /api/leads ===');
     
     // Get auth token from request (or use bypass for testing)
-    let token = getAuthToken(request);
+    let token = await getAuthToken(request);
     if (!token) {
       console.log('No auth token found, using bypass token for testing');
       token = 'bypass_token_testing123';

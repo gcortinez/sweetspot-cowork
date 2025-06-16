@@ -356,7 +356,7 @@ export default function CreateLeadModal({ onLeadCreated }: CreateLeadModalProps)
             <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
               <div className="space-y-2">
                 <Label htmlFor="budget" className="text-sm font-medium">
-                  Presupuesto estimado (USD)
+                  Presupuesto estimado (CLP)
                 </Label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -365,7 +365,7 @@ export default function CreateLeadModal({ onLeadCreated }: CreateLeadModalProps)
                     type="number"
                     value={formData.budget}
                     onChange={(e) => handleInputChange('budget', e.target.value)}
-                    placeholder="5000"
+                    placeholder="500000"
                     className="pl-10 h-11"
                     min="0"
                   />

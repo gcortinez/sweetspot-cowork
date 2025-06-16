@@ -238,9 +238,9 @@ const AdminAnalyticsPage: React.FC = () => {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-MX', {
+    return new Intl.NumberFormat('es-CL', {
       style: 'currency',
-      currency: 'MXN',
+      currency: 'CLP',
       minimumFractionDigits: 0,
     }).format(amount);
   };

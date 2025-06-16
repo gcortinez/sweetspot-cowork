@@ -30,8 +30,7 @@ async function debugDatabase() {
         lastName: true,
         tenantId: true,
         role: true,
-        status: true,
-        password: true
+        status: true
       }
     });
     console.log('Users found:', users);
