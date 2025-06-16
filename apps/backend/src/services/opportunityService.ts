@@ -578,8 +578,10 @@ class OpportunityService {
       'NEEDS_ANALYSIS', 
       'PROPOSAL_SENT',
       'NEGOTIATION',
+      'CONTRACT_REVIEW',
       'CLOSED_WON',
-      'CLOSED_LOST'
+      'CLOSED_LOST',
+      'ON_HOLD'
     ];
 
     const stageNames = {
@@ -587,8 +589,10 @@ class OpportunityService {
       NEEDS_ANALYSIS: 'Needs Analysis',
       PROPOSAL_SENT: 'Proposal Sent',
       NEGOTIATION: 'Negotiation',
+      CONTRACT_REVIEW: 'Contract Review',
       CLOSED_WON: 'Closed Won',
-      CLOSED_LOST: 'Closed Lost'
+      CLOSED_LOST: 'Closed Lost',
+      ON_HOLD: 'On Hold'
     };
 
     const opportunities = await prisma.opportunity.findMany({

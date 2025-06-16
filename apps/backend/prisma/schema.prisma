@@ -195,6 +195,7 @@ model User {
 enum UserRole {
     SUPER_ADMIN
     COWORK_ADMIN
+    COWORK_USER    // Administrative users of the cowork (not admins)
     CLIENT_ADMIN
     END_USER
 }
@@ -204,6 +205,11 @@ enum UserStatus {
     INACTIVE
     SUSPENDED
 }
+
+// ============================================================================
+// GDPR CONSENT MANAGEMENT
+// ============================================================================
+
 
 // ============================================================================
 // CLIENT MANAGEMENT (CRM)
@@ -308,12 +314,14 @@ enum LeadSource {
 }
 
 enum LeadStatus {
-    NEW
-    CONTACTED
-    QUALIFIED
-    UNQUALIFIED
-    CONVERTED
-    LOST
+    NEW           // Initial state when lead is created
+    CONTACTED     // First contact made
+    QUALIFIED     // Lead meets criteria and shows interest
+    UNQUALIFIED   // Lead doesn't meet criteria or not interested
+    FOLLOW_UP     // Requires follow-up contact
+    CONVERTED     // Successfully converted to opportunity
+    LOST          // Lost before becoming opportunity
+    DORMANT       // No response after multiple attempts
 }
 
 // ============================================================================
@@ -356,12 +364,14 @@ model Opportunity {
 }
 
 enum PipelineStage {
-    INITIAL_CONTACT
-    NEEDS_ANALYSIS
-    PROPOSAL_SENT
-    NEGOTIATION
-    CLOSED_WON
-    CLOSED_LOST
+    INITIAL_CONTACT   // First contact with qualified lead
+    NEEDS_ANALYSIS    // Understanding requirements
+    PROPOSAL_SENT     // Quotation/proposal sent
+    NEGOTIATION       // In negotiation phase
+    CONTRACT_REVIEW   // Contract under review
+    CLOSED_WON        // Successfully closed - client acquired
+    CLOSED_LOST       // Lost opportunity
+    ON_HOLD          // Temporarily paused
 }
 
 // ============================================================================
@@ -3191,3 +3201,8 @@ enum ExpenseStatus {
     ACTUAL
     OVERBUDGET
 }
+
+// ============================================================================
+// DATA RETENTION & GDPR COMPLIANCE
+// ============================================================================
+
