@@ -227,8 +227,12 @@ export default function LeadsPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Error al cambiar el estado');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Error al cambiar el estado');
       }
+
+      const result = await response.json();
+      console.log('Respuesta del servidor:', result);
 
       // Update the lead in the local state
       setLeads(prevLeads => 
@@ -243,6 +247,11 @@ export default function LeadsPage() {
       if (selectedLead && selectedLead.id === lead.id) {
         setSelectedLead(prev => prev ? { ...prev, status: newStatus as any } : null);
       }
+
+      toast({
+        title: "Estado actualizado",
+        description: `El estado del prospecto ha sido cambiado exitosamente`,
+      });
 
       console.log('Estado actualizado exitosamente');
     } catch (error) {
