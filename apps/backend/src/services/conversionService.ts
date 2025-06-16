@@ -19,7 +19,7 @@ interface ConvertLeadData {
     description?: string;
     value: number;
     probability: number;
-    stage: 'INITIAL_CONTACT' | 'NEEDS_ANALYSIS' | 'PROPOSAL_SENT' | 'NEGOTIATION';
+    stage: 'INITIAL_CONTACT' | 'NEEDS_ANALYSIS' | 'PROPOSAL_SENT' | 'NEGOTIATION' | 'CONTRACT_REVIEW' | 'ON_HOLD';
     expectedCloseDate?: string;
   };
   conversionNotes?: string;

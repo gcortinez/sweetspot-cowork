@@ -1,4 +1,4 @@
-import { prisma } from '../lib/prisma';
+import { prisma } from "../lib/prisma";
 import {
   VisitorStatus,
   VisitorPurpose,
@@ -10,10 +10,10 @@ import {
   NotificationUrgency,
   DeliveryMethod,
   NotificationStatus,
-  Prisma
-} from '@prisma/client';
-import { logger } from '../utils/logger';
-import crypto from 'crypto';
+  Prisma,
+} from "@prisma/client";
+import { logger } from "../utils/logger";
+import crypto from "crypto";
 
 // ============================================================================
 // INTERFACES AND TYPES
@@ -51,7 +51,6 @@ export interface VisitorData {
   emergencyContact?: Record<string, any>;
   ndaSigned: boolean;
   termsAccepted: boolean;
-  dataConsent: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -115,7 +114,6 @@ export interface CheckInRequest {
   badgeNumber?: string;
   healthDeclaration?: Record<string, any>;
   termsAccepted?: boolean;
-  dataConsent?: boolean;
   ndaSigned?: boolean;
 }
 
@@ -223,7 +221,6 @@ export interface PreRegistrationRequest {
 // ============================================================================
 
 export class VisitorService {
-
   // ============================================================================
   // VISITOR CRUD OPERATIONS
   // ============================================================================
@@ -236,7 +233,8 @@ export class VisitorService {
       // Generate default valid times if not provided
       const now = new Date();
       const validFrom = data.validFrom || now;
-      const validUntil = data.validUntil || new Date(now.getTime() + 8 * 60 * 60 * 1000); // 8 hours default
+      const validUntil =
+        data.validUntil || new Date(now.getTime() + 8 * 60 * 60 * 1000); // 8 hours default
 
       // Generate unique QR code
       const qrCode = this.generateQRCode();
@@ -302,7 +300,11 @@ export class VisitorService {
 
       return this.mapVisitorToData(visitor);
     } catch (error) {
-      logger.error('Failed to create visitor', { tenantId, data }, error as Error);
+      logger.error(
+        "Failed to create visitor",
+        { tenantId, data },
+        error as Error
+      );
       throw error;
     }
   }
@@ -329,15 +331,16 @@ export class VisitorService {
 
       return this.mapVisitorToData(visitor);
     } catch (error) {
-      logger.error('Failed to update visitor', { tenantId, visitorId, data }, error as Error);
+      logger.error(
+        "Failed to update visitor",
+        { tenantId, visitorId, data },
+        error as Error
+      );
       throw error;
     }
   }
 
-  async deleteVisitor(
-    tenantId: string,
-    visitorId: string
-  ): Promise<void> {
+  async deleteVisitor(tenantId: string, visitorId: string): Promise<void> {
     try {
       await prisma.$transaction(async (tx) => {
         // Update status to cancelled instead of hard delete
@@ -357,14 +360,18 @@ export class VisitorService {
             tenantId,
             visitorId,
             action: VisitorAction.DENIED,
-            details: 'Visitor registration cancelled',
+            details: "Visitor registration cancelled",
           },
         });
       });
 
-      logger.info('Visitor cancelled successfully', { tenantId, visitorId });
+      logger.info("Visitor cancelled successfully", { tenantId, visitorId });
     } catch (error) {
-      logger.error('Failed to delete visitor', { tenantId, visitorId }, error as Error);
+      logger.error(
+        "Failed to delete visitor",
+        { tenantId, visitorId },
+        error as Error
+      );
       throw error;
     }
   }
@@ -386,7 +393,11 @@ export class VisitorService {
 
       return visitor ? this.mapVisitorToData(visitor) : null;
     } catch (error) {
-      logger.error('Failed to get visitor by ID', { tenantId, visitorId }, error as Error);
+      logger.error(
+        "Failed to get visitor by ID",
+        { tenantId, visitorId },
+        error as Error
+      );
       throw error;
     }
   }
@@ -408,7 +419,11 @@ export class VisitorService {
 
       return visitor ? this.mapVisitorToData(visitor) : null;
     } catch (error) {
-      logger.error('Failed to get visitor by QR code', { tenantId, qrCode }, error as Error);
+      logger.error(
+        "Failed to get visitor by QR code",
+        { tenantId, qrCode },
+        error as Error
+      );
       throw error;
     }
   }
@@ -431,17 +446,16 @@ export class VisitorService {
           include: {
             host: true,
           },
-          orderBy: [
-            { checkedInAt: 'desc' },
-            { createdAt: 'desc' },
-          ],
+          orderBy: [{ checkedInAt: "desc" }, { createdAt: "desc" }],
           skip: pagination.skip || 0,
           take: pagination.take || 50,
         }),
         prisma.visitor.count({ where: whereClause }),
       ]);
 
-      const visitorData = visitors.map(visitor => this.mapVisitorToData(visitor));
+      const visitorData = visitors.map((visitor) =>
+        this.mapVisitorToData(visitor)
+      );
       const hasMore = (pagination.skip || 0) + visitorData.length < total;
 
       return {
@@ -450,7 +464,11 @@ export class VisitorService {
         hasMore,
       };
     } catch (error) {
-      logger.error('Failed to get visitors', { tenantId, filters }, error as Error);
+      logger.error(
+        "Failed to get visitors",
+        { tenantId, filters },
+        error as Error
+      );
       throw error;
     }
   }
@@ -481,19 +499,21 @@ export class VisitorService {
         include: {
           host: true,
         },
-        orderBy: { validFrom: 'asc' },
+        orderBy: { validFrom: "asc" },
       });
 
-      return visitors.map(visitor => this.mapVisitorToData(visitor));
+      return visitors.map((visitor) => this.mapVisitorToData(visitor));
     } catch (error) {
-      logger.error('Failed to get today\'s visitors', { tenantId, hostUserId }, error as Error);
+      logger.error(
+        "Failed to get today's visitors",
+        { tenantId, hostUserId },
+        error as Error
+      );
       throw error;
     }
   }
 
-  async getActiveVisitors(
-    tenantId: string
-  ): Promise<VisitorData[]> {
+  async getActiveVisitors(tenantId: string): Promise<VisitorData[]> {
     try {
       const visitors = await prisma.visitor.findMany({
         where: {
@@ -503,12 +523,16 @@ export class VisitorService {
         include: {
           host: true,
         },
-        orderBy: { checkedInAt: 'desc' },
+        orderBy: { checkedInAt: "desc" },
       });
 
-      return visitors.map(visitor => this.mapVisitorToData(visitor));
+      return visitors.map((visitor) => this.mapVisitorToData(visitor));
     } catch (error) {
-      logger.error('Failed to get active visitors', { tenantId }, error as Error);
+      logger.error(
+        "Failed to get active visitors",
+        { tenantId },
+        error as Error
+      );
       throw error;
     }
   }
@@ -538,12 +562,15 @@ export class VisitorService {
         });
 
         if (!existingVisitor) {
-          throw new Error('Visitor not found or not eligible for check-in');
+          throw new Error("Visitor not found or not eligible for check-in");
         }
 
         // Validate visit time
-        if (now < existingVisitor.validFrom || now > existingVisitor.validUntil) {
-          throw new Error('Visitor check-in outside valid time window');
+        if (
+          now < existingVisitor.validFrom ||
+          now > existingVisitor.validUntil
+        ) {
+          throw new Error("Visitor check-in outside valid time window");
         }
 
         // Update visitor record
@@ -554,9 +581,11 @@ export class VisitorService {
             checkedInAt: now,
             photoUrl: data.photoUrl || existingVisitor.photoUrl,
             badgeNumber: data.badgeNumber,
-            healthDeclaration: data.healthDeclaration || existingVisitor.healthDeclaration || undefined,
+            healthDeclaration:
+              data.healthDeclaration ||
+              existingVisitor.healthDeclaration ||
+              undefined,
             termsAccepted: data.termsAccepted || existingVisitor.termsAccepted,
-            dataConsent: data.dataConsent || existingVisitor.dataConsent,
             ndaSigned: data.ndaSigned || existingVisitor.ndaSigned,
           },
           include: {
@@ -571,7 +600,7 @@ export class VisitorService {
             visitorId: data.visitorId,
             action: VisitorAction.CHECKED_IN,
             location: data.checkInLocation,
-            details: `Checked in at ${data.checkInLocation || 'main entrance'}`,
+            details: `Checked in at ${data.checkInLocation || "main entrance"}`,
           },
         });
 
@@ -609,10 +638,17 @@ export class VisitorService {
         return updatedVisitor;
       });
 
-      logger.info('Visitor checked in successfully', { tenantId, visitorId: data.visitorId });
+      logger.info("Visitor checked in successfully", {
+        tenantId,
+        visitorId: data.visitorId,
+      });
       return this.mapVisitorToData(visitor);
     } catch (error) {
-      logger.error('Failed to check in visitor', { tenantId, data }, error as Error);
+      logger.error(
+        "Failed to check in visitor",
+        { tenantId, data },
+        error as Error
+      );
       throw error;
     }
   }
@@ -638,12 +674,15 @@ export class VisitorService {
         });
 
         if (!existingVisitor) {
-          throw new Error('Visitor not found or not checked in');
+          throw new Error("Visitor not found or not checked in");
         }
 
         // Calculate actual duration
         const actualDuration = existingVisitor.checkedInAt
-          ? Math.floor((now.getTime() - existingVisitor.checkedInAt.getTime()) / (1000 * 60))
+          ? Math.floor(
+              (now.getTime() - existingVisitor.checkedInAt.getTime()) /
+                (1000 * 60)
+            )
           : 0;
 
         // Update visitor record
@@ -666,7 +705,9 @@ export class VisitorService {
             visitorId: data.visitorId,
             action: VisitorAction.CHECKED_OUT,
             location: data.checkOutLocation,
-            details: `Checked out at ${data.checkOutLocation || 'main entrance'}`,
+            details: `Checked out at ${
+              data.checkOutLocation || "main entrance"
+            }`,
             metadata: { actualDuration, notes: data.notes },
           },
         });
@@ -705,10 +746,17 @@ export class VisitorService {
         return updatedVisitor;
       });
 
-      logger.info('Visitor checked out successfully', { tenantId, visitorId: data.visitorId });
+      logger.info("Visitor checked out successfully", {
+        tenantId,
+        visitorId: data.visitorId,
+      });
       return this.mapVisitorToData(visitor);
     } catch (error) {
-      logger.error('Failed to check out visitor', { tenantId, data }, error as Error);
+      logger.error(
+        "Failed to check out visitor",
+        { tenantId, data },
+        error as Error
+      );
       throw error;
     }
   }
@@ -741,7 +789,7 @@ export class VisitorService {
             tenantId,
             visitorId,
             action: VisitorAction.EXTENDED_STAY,
-            details: reason || 'Visit extended',
+            details: reason || "Visit extended",
             metadata: { newValidUntil: newValidUntil.toISOString() },
           },
         });
@@ -749,10 +797,18 @@ export class VisitorService {
         return updatedVisitor;
       });
 
-      logger.info('Visitor stay extended', { tenantId, visitorId, newValidUntil });
+      logger.info("Visitor stay extended", {
+        tenantId,
+        visitorId,
+        newValidUntil,
+      });
       return this.mapVisitorToData(visitor);
     } catch (error) {
-      logger.error('Failed to extend visitor stay', { tenantId, visitorId }, error as Error);
+      logger.error(
+        "Failed to extend visitor stay",
+        { tenantId, visitorId },
+        error as Error
+      );
       throw error;
     }
   }
@@ -791,57 +847,71 @@ export class VisitorService {
       today.setHours(0, 0, 0, 0);
 
       const totalVisitors = visitors.length;
-      const activeVisitors = visitors.filter(v => v.status === VisitorStatus.CHECKED_IN).length;
-      const todaysVisitors = visitors.filter(v => v.createdAt >= today).length;
+      const activeVisitors = visitors.filter(
+        (v) => v.status === VisitorStatus.CHECKED_IN
+      ).length;
+      const todaysVisitors = visitors.filter(
+        (v) => v.createdAt >= today
+      ).length;
 
       // Calculate average visit duration
-      const completedVisits = visitors.filter(v => v.actualDuration);
-      const averageVisitDuration = completedVisits.length > 0
-        ? completedVisits.reduce((sum, v) => sum + (v.actualDuration || 0), 0) / completedVisits.length
-        : 0;
+      const completedVisits = visitors.filter((v) => v.actualDuration);
+      const averageVisitDuration =
+        completedVisits.length > 0
+          ? completedVisits.reduce(
+              (sum, v) => sum + (v.actualDuration || 0),
+              0
+            ) / completedVisits.length
+          : 0;
 
       // Group by purpose
       const purposeCounts = new Map<VisitorPurpose, number>();
-      visitors.forEach(v => {
+      visitors.forEach((v) => {
         const count = purposeCounts.get(v.purpose) || 0;
         purposeCounts.set(v.purpose, count + 1);
       });
 
-      const byPurpose = Array.from(purposeCounts.entries()).map(([purpose, count]) => ({
-        purpose,
-        count,
-        percentage: totalVisitors > 0 ? (count / totalVisitors) * 100 : 0,
-      }));
+      const byPurpose = Array.from(purposeCounts.entries()).map(
+        ([purpose, count]) => ({
+          purpose,
+          count,
+          percentage: totalVisitors > 0 ? (count / totalVisitors) * 100 : 0,
+        })
+      );
 
       // Group by status
       const statusCounts = new Map<VisitorStatus, number>();
-      visitors.forEach(v => {
+      visitors.forEach((v) => {
         const count = statusCounts.get(v.status) || 0;
         statusCounts.set(v.status, count + 1);
       });
 
-      const byStatus = Array.from(statusCounts.entries()).map(([status, count]) => ({
-        status,
-        count,
-      }));
+      const byStatus = Array.from(statusCounts.entries()).map(
+        ([status, count]) => ({
+          status,
+          count,
+        })
+      );
 
       // Calculate peak hours
       const hourCounts = new Array(24).fill(0);
-      visitors.forEach(v => {
+      visitors.forEach((v) => {
         if (v.checkedInAt) {
           const hour = v.checkedInAt.getHours();
           hourCounts[hour]++;
         }
       });
 
-      const peakHours = hourCounts.map((count, hour) => ({
-        hour,
-        visitorCount: count,
-      })).filter(h => h.visitorCount > 0);
+      const peakHours = hourCounts
+        .map((count, hour) => ({
+          hour,
+          visitorCount: count,
+        }))
+        .filter((h) => h.visitorCount > 0);
 
       // Top hosts
       const hostCounts = new Map<string, { name: string; count: number }>();
-      visitors.forEach(v => {
+      visitors.forEach((v) => {
         const hostId = v.hostUserId;
         const existing = hostCounts.get(hostId) || {
           name: `${v.host.firstName} ${v.host.lastName}`,
@@ -871,7 +941,11 @@ export class VisitorService {
         topHosts,
       };
     } catch (error) {
-      logger.error('Failed to get visitor statistics', { tenantId, startDate, endDate }, error as Error);
+      logger.error(
+        "Failed to get visitor statistics",
+        { tenantId, startDate, endDate },
+        error as Error
+      );
       throw error;
     }
   }
@@ -879,13 +953,15 @@ export class VisitorService {
   async getVisitorHistory(
     tenantId: string,
     visitorId: string
-  ): Promise<Array<{
-    action: VisitorAction;
-    timestamp: Date;
-    performedBy?: string;
-    location?: string;
-    details?: string;
-  }>> {
+  ): Promise<
+    Array<{
+      action: VisitorAction;
+      timestamp: Date;
+      performedBy?: string;
+      location?: string;
+      details?: string;
+    }>
+  > {
     try {
       const logs = await prisma.visitorLog.findMany({
         where: {
@@ -900,18 +976,24 @@ export class VisitorService {
             },
           },
         },
-        orderBy: { timestamp: 'desc' },
+        orderBy: { timestamp: "desc" },
       });
 
-      return logs.map(log => ({
+      return logs.map((log) => ({
         action: log.action,
         timestamp: log.timestamp,
-        performedBy: log.user ? `${log.user.firstName} ${log.user.lastName}` : undefined,
+        performedBy: log.user
+          ? `${log.user.firstName} ${log.user.lastName}`
+          : undefined,
         location: log.location || undefined,
         details: log.details || undefined,
       }));
     } catch (error) {
-      logger.error('Failed to get visitor history', { tenantId, visitorId }, error as Error);
+      logger.error(
+        "Failed to get visitor history",
+        { tenantId, visitorId },
+        error as Error
+      );
       throw error;
     }
   }
@@ -920,7 +1002,10 @@ export class VisitorService {
   // HELPER METHODS
   // ============================================================================
 
-  private buildVisitorWhereClause(tenantId: string, filters: VisitorFilter): any {
+  private buildVisitorWhereClause(
+    tenantId: string,
+    filters: VisitorFilter
+  ): any {
     const whereClause: any = { tenantId };
 
     if (filters.status && filters.status.length > 0) {
@@ -942,10 +1027,10 @@ export class VisitorService {
 
     if (filters.search) {
       whereClause.OR = [
-        { firstName: { contains: filters.search, mode: 'insensitive' } },
-        { lastName: { contains: filters.search, mode: 'insensitive' } },
-        { email: { contains: filters.search, mode: 'insensitive' } },
-        { company: { contains: filters.search, mode: 'insensitive' } },
+        { firstName: { contains: filters.search, mode: "insensitive" } },
+        { lastName: { contains: filters.search, mode: "insensitive" } },
+        { email: { contains: filters.search, mode: "insensitive" } },
+        { company: { contains: filters.search, mode: "insensitive" } },
       ];
     }
 
@@ -983,7 +1068,9 @@ export class VisitorService {
       badgeNumber: visitor.badgeNumber,
       validFrom: visitor.validFrom,
       validUntil: visitor.validUntil,
-      accessZones: Array.isArray(visitor.accessZones) ? visitor.accessZones : [],
+      accessZones: Array.isArray(visitor.accessZones)
+        ? visitor.accessZones
+        : [],
       status: visitor.status,
       checkedInAt: visitor.checkedInAt,
       checkedOutAt: visitor.checkedOutAt,
@@ -993,7 +1080,6 @@ export class VisitorService {
       emergencyContact: visitor.emergencyContact,
       ndaSigned: visitor.ndaSigned,
       termsAccepted: visitor.termsAccepted,
-      dataConsent: visitor.dataConsent,
       createdAt: visitor.createdAt,
       updatedAt: visitor.updatedAt,
     };
@@ -1002,22 +1088,35 @@ export class VisitorService {
   async updateExpiredVisitors(tenantId: string): Promise<number> {
     try {
       const now = new Date();
-      
+
       const result = await prisma.visitor.updateMany({
         where: {
           tenantId,
           validUntil: { lt: now },
-          status: { notIn: [VisitorStatus.CHECKED_OUT, VisitorStatus.CANCELLED, VisitorStatus.EXPIRED] },
+          status: {
+            notIn: [
+              VisitorStatus.CHECKED_OUT,
+              VisitorStatus.CANCELLED,
+              VisitorStatus.EXPIRED,
+            ],
+          },
         },
         data: {
           status: VisitorStatus.EXPIRED,
         },
       });
 
-      logger.info('Updated expired visitors', { tenantId, count: result.count });
+      logger.info("Updated expired visitors", {
+        tenantId,
+        count: result.count,
+      });
       return result.count;
     } catch (error) {
-      logger.error('Failed to update expired visitors', { tenantId }, error as Error);
+      logger.error(
+        "Failed to update expired visitors",
+        { tenantId },
+        error as Error
+      );
       throw error;
     }
   }
@@ -1056,8 +1155,8 @@ export class VisitorService {
           requiresHealthCheck: request.requiresHealthCheck || false,
           customRequirements: request.customRequirements || [],
           status: PreRegistrationStatus.PENDING,
-          expiresAt
-        }
+          expiresAt,
+        },
       });
 
       // Send notification to host
@@ -1065,20 +1164,26 @@ export class VisitorService {
         type: NotificationType.PRE_REGISTRATION_REQUEST,
         recipientId: request.hostUserId,
         preRegistrationId: preRegistration.id,
-        title: 'New Visitor Pre-Registration',
-        message: `${request.firstName} ${request.lastName} has requested to visit on ${request.expectedArrival.toLocaleDateString()}`,
-        urgency: NotificationUrgency.NORMAL
+        title: "New Visitor Pre-Registration",
+        message: `${request.firstName} ${
+          request.lastName
+        } has requested to visit on ${request.expectedArrival.toLocaleDateString()}`,
+        urgency: NotificationUrgency.NORMAL,
       });
 
-      logger.info('Pre-registration created', { 
-        tenantId, 
-        preRegistrationId: preRegistration.id, 
-        hostUserId: request.hostUserId 
+      logger.info("Pre-registration created", {
+        tenantId,
+        preRegistrationId: preRegistration.id,
+        hostUserId: request.hostUserId,
       });
 
       return this.mapPreRegistrationToData(preRegistration);
     } catch (error) {
-      logger.error('Failed to create pre-registration', { tenantId }, error as Error);
+      logger.error(
+        "Failed to create pre-registration",
+        { tenantId },
+        error as Error
+      );
       throw error;
     }
   }
@@ -1097,8 +1202,8 @@ export class VisitorService {
           approvedBy: userId,
           approvedAt: new Date(),
           approvalNotes,
-          status: PreRegistrationStatus.APPROVED
-        }
+          status: PreRegistrationStatus.APPROVED,
+        },
       });
 
       // Send approval notification
@@ -1106,9 +1211,9 @@ export class VisitorService {
         type: NotificationType.PRE_REGISTRATION_APPROVED,
         recipientId: preRegistration.hostUserId,
         preRegistrationId: preRegistration.id,
-        title: 'Visitor Pre-Registration Approved',
+        title: "Visitor Pre-Registration Approved",
         message: `${preRegistration.firstName} ${preRegistration.lastName} has been approved for visit`,
-        urgency: NotificationUrgency.NORMAL
+        urgency: NotificationUrgency.NORMAL,
       });
 
       // Send invitation to visitor if email provided
@@ -1116,18 +1221,22 @@ export class VisitorService {
         await this.sendVisitorInvitation(tenantId, preRegistration.id);
       }
 
-      logger.info('Pre-registration approved', { 
-        tenantId, 
-        preRegistrationId, 
-        approvedBy: userId 
+      logger.info("Pre-registration approved", {
+        tenantId,
+        preRegistrationId,
+        approvedBy: userId,
       });
 
       return this.mapPreRegistrationToData(preRegistration);
     } catch (error) {
-      logger.error('Failed to approve pre-registration', { 
-        tenantId, 
-        preRegistrationId 
-      }, error as Error);
+      logger.error(
+        "Failed to approve pre-registration",
+        {
+          tenantId,
+          preRegistrationId,
+        },
+        error as Error
+      );
       throw error;
     }
   }
@@ -1139,17 +1248,19 @@ export class VisitorService {
   ): Promise<VisitorData> {
     try {
       const preRegistration = await prisma.visitorPreRegistration.findFirst({
-        where: { id: preRegistrationId, tenantId, isApproved: true }
+        where: { id: preRegistrationId, tenantId, isApproved: true },
       });
 
       if (!preRegistration) {
-        throw new Error('Pre-registration not found or not approved');
+        throw new Error("Pre-registration not found or not approved");
       }
 
       const validFrom = new Date();
       const validUntil = new Date(preRegistration.expectedArrival);
       if (preRegistration.expectedDuration) {
-        validUntil.setMinutes(validUntil.getMinutes() + preRegistration.expectedDuration);
+        validUntil.setMinutes(
+          validUntil.getMinutes() + preRegistration.expectedDuration
+        );
       } else {
         validUntil.setHours(validUntil.getHours() + 8); // Default 8 hours
       }
@@ -1168,9 +1279,11 @@ export class VisitorService {
         expectedDuration: preRegistration.expectedDuration || undefined,
         validFrom,
         validUntil,
-        accessZones: Array.isArray(preRegistration.accessZones) ? preRegistration.accessZones as string[] : [],
+        accessZones: Array.isArray(preRegistration.accessZones)
+          ? (preRegistration.accessZones as string[])
+          : [],
         meetingRoom: preRegistration.meetingRoom || undefined,
-        preRegistrationId: preRegistration.id
+        preRegistrationId: preRegistration.id,
       });
 
       // Update pre-registration status
@@ -1179,22 +1292,26 @@ export class VisitorService {
         data: {
           status: PreRegistrationStatus.CONVERTED,
           visitDate: new Date(),
-          visitorId: visitor.id
-        }
+          visitorId: visitor.id,
+        },
       });
 
-      logger.info('Pre-registration converted to visitor', { 
-        tenantId, 
-        preRegistrationId, 
-        visitorId: visitor.id 
+      logger.info("Pre-registration converted to visitor", {
+        tenantId,
+        preRegistrationId,
+        visitorId: visitor.id,
       });
 
       return visitor;
     } catch (error) {
-      logger.error('Failed to convert pre-registration', { 
-        tenantId, 
-        preRegistrationId 
-      }, error as Error);
+      logger.error(
+        "Failed to convert pre-registration",
+        {
+          tenantId,
+          preRegistrationId,
+        },
+        error as Error
+      );
       throw error;
     }
   }
@@ -1210,7 +1327,7 @@ export class VisitorService {
   ): Promise<AccessCodeData> {
     try {
       const code = this.generateAlphanumericCode();
-      
+
       const accessCode = await prisma.visitorAccessCode.create({
         data: {
           tenantId,
@@ -1224,37 +1341,41 @@ export class VisitorService {
           ipRestrictions: request.ipRestrictions || [],
           generatedBy: userId,
           generatedFor: request.generatedFor,
-          status: CodeStatus.ACTIVE
-        }
+          status: CodeStatus.ACTIVE,
+        },
       });
 
       // Send notification about access code generation
       if (request.visitorId) {
         const visitor = await prisma.visitor.findUnique({
-          where: { id: request.visitorId }
+          where: { id: request.visitorId },
         });
-        
+
         if (visitor) {
           await this.sendNotification(tenantId, {
             type: NotificationType.ACCESS_CODE_GENERATED,
             recipientId: visitor.hostUserId,
             visitorId: visitor.id,
-            title: 'Access Code Generated',
+            title: "Access Code Generated",
             message: `Access code ${code} generated for ${visitor.firstName} ${visitor.lastName}`,
-            urgency: NotificationUrgency.NORMAL
+            urgency: NotificationUrgency.NORMAL,
           });
         }
       }
 
-      logger.info('Access code generated', { 
-        tenantId, 
-        accessCodeId: accessCode.id, 
-        visitorId: request.visitorId 
+      logger.info("Access code generated", {
+        tenantId,
+        accessCodeId: accessCode.id,
+        visitorId: request.visitorId,
       });
 
       return this.mapAccessCodeToData(accessCode);
     } catch (error) {
-      logger.error('Failed to generate access code', { tenantId }, error as Error);
+      logger.error(
+        "Failed to generate access code",
+        { tenantId },
+        error as Error
+      );
       throw error;
     }
   }
@@ -1267,30 +1388,30 @@ export class VisitorService {
   ): Promise<{ valid: boolean; accessCode?: AccessCodeData; reason?: string }> {
     try {
       const accessCode = await prisma.visitorAccessCode.findFirst({
-        where: { tenantId, code, isActive: true }
+        where: { tenantId, code, isActive: true },
       });
 
       if (!accessCode) {
-        return { valid: false, reason: 'Access code not found' };
+        return { valid: false, reason: "Access code not found" };
       }
 
       // Check expiration
       if (accessCode.expiresAt < new Date()) {
-        await this.deactivateAccessCode(tenantId, accessCode.id, 'EXPIRED');
-        return { valid: false, reason: 'Access code expired' };
+        await this.deactivateAccessCode(tenantId, accessCode.id, "EXPIRED");
+        return { valid: false, reason: "Access code expired" };
       }
 
       // Check usage limits
       if (accessCode.maxUses && accessCode.currentUses >= accessCode.maxUses) {
-        await this.deactivateAccessCode(tenantId, accessCode.id, 'USED_UP');
-        return { valid: false, reason: 'Access code usage limit reached' };
+        await this.deactivateAccessCode(tenantId, accessCode.id, "USED_UP");
+        return { valid: false, reason: "Access code usage limit reached" };
       }
 
       // Check IP restrictions
       if (ipAddress && accessCode.ipRestrictions) {
         const allowedIPs = accessCode.ipRestrictions as string[];
         if (allowedIPs.length > 0 && !allowedIPs.includes(ipAddress)) {
-          return { valid: false, reason: 'IP address not allowed' };
+          return { valid: false, reason: "IP address not allowed" };
         }
       }
 
@@ -1298,14 +1419,18 @@ export class VisitorService {
       if (accessCode.timeRestrictions) {
         const restrictions = accessCode.timeRestrictions as any;
         if (!this.checkTimeRestrictions(restrictions)) {
-          return { valid: false, reason: 'Access not allowed at this time' };
+          return { valid: false, reason: "Access not allowed at this time" };
         }
       }
 
       return { valid: true, accessCode: this.mapAccessCodeToData(accessCode) };
     } catch (error) {
-      logger.error('Failed to validate access code', { tenantId, code }, error as Error);
-      return { valid: false, reason: 'Validation error' };
+      logger.error(
+        "Failed to validate access code",
+        { tenantId, code },
+        error as Error
+      );
+      return { valid: false, reason: "Validation error" };
     }
   }
 
@@ -1319,14 +1444,19 @@ export class VisitorService {
     deviceInfo?: any
   ): Promise<{ success: boolean; reason?: string }> {
     try {
-      const validation = await this.validateAccessCode(tenantId, code, location, ipAddress);
-      
+      const validation = await this.validateAccessCode(
+        tenantId,
+        code,
+        location,
+        ipAddress
+      );
+
       if (!validation.valid) {
         // Log failed usage
         const accessCode = await prisma.visitorAccessCode.findFirst({
-          where: { tenantId, code }
+          where: { tenantId, code },
         });
-        
+
         if (accessCode) {
           await prisma.accessCodeUsage.create({
             data: {
@@ -1338,11 +1468,11 @@ export class VisitorService {
               deviceInfo: deviceInfo || {},
               success: false,
               accessGranted: false,
-              failureReason: validation.reason
-            }
+              failureReason: validation.reason,
+            },
           });
         }
-        
+
         return { success: false, reason: validation.reason };
       }
 
@@ -1358,8 +1488,8 @@ export class VisitorService {
           ipAddress,
           deviceInfo: deviceInfo || {},
           success: true,
-          accessGranted: true
-        }
+          accessGranted: true,
+        },
       });
 
       // Update access code usage count
@@ -1369,20 +1499,24 @@ export class VisitorService {
           currentUses: { increment: 1 },
           lastUsedAt: new Date(),
           lastUsedBy: usedBy || visitorId,
-          lastUsedLocation: location
-        }
+          lastUsedLocation: location,
+        },
       });
 
-      logger.info('Access code used successfully', { 
-        tenantId, 
-        accessCodeId: accessCode.id, 
-        location 
+      logger.info("Access code used successfully", {
+        tenantId,
+        accessCodeId: accessCode.id,
+        location,
       });
 
       return { success: true };
     } catch (error) {
-      logger.error('Failed to use access code', { tenantId, code }, error as Error);
-      return { success: false, reason: 'Usage error' };
+      logger.error(
+        "Failed to use access code",
+        { tenantId, code },
+        error as Error
+      );
+      return { success: false, reason: "Usage error" };
     }
   }
 
@@ -1418,18 +1552,18 @@ export class VisitorService {
           actionUrl: notification.actionUrl,
           actionText: notification.actionText,
           deliveryMethod: DeliveryMethod.IN_APP,
-          channels: ['in_app'],
-          status: NotificationStatus.PENDING
-        }
+          channels: ["in_app"],
+          status: NotificationStatus.PENDING,
+        },
       });
 
-      logger.info('Notification sent', { 
-        tenantId, 
-        type: notification.type, 
-        recipientId: notification.recipientId 
+      logger.info("Notification sent", {
+        tenantId,
+        type: notification.type,
+        recipientId: notification.recipientId,
       });
     } catch (error) {
-      logger.error('Failed to send notification', { tenantId }, error as Error);
+      logger.error("Failed to send notification", { tenantId }, error as Error);
     }
   }
 
@@ -1442,16 +1576,20 @@ export class VisitorService {
         where: { id: preRegistrationId },
         data: {
           invitationSent: true,
-          invitationSentAt: new Date()
-        }
+          invitationSentAt: new Date(),
+        },
       });
 
-      logger.info('Visitor invitation sent', { tenantId, preRegistrationId });
+      logger.info("Visitor invitation sent", { tenantId, preRegistrationId });
     } catch (error) {
-      logger.error('Failed to send visitor invitation', { 
-        tenantId, 
-        preRegistrationId 
-      }, error as Error);
+      logger.error(
+        "Failed to send visitor invitation",
+        {
+          tenantId,
+          preRegistrationId,
+        },
+        error as Error
+      );
     }
   }
 
@@ -1460,12 +1598,12 @@ export class VisitorService {
   // ============================================================================
 
   private generateQRCode(): string {
-    return crypto.randomBytes(16).toString('hex');
+    return crypto.randomBytes(16).toString("hex");
   }
 
   private generateAlphanumericCode(length: number = 6): string {
-    const chars = 'ABCDEFGHIJKLMNPQRSTUVWXYZ123456789'; // Excluded O, 0 for clarity
-    let result = '';
+    const chars = "ABCDEFGHIJKLMNPQRSTUVWXYZ123456789"; // Excluded O, 0 for clarity
+    let result = "";
     for (let i = 0; i < length; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
@@ -1491,9 +1629,11 @@ export class VisitorService {
 
     // Check time window
     if (restrictions.startTime && restrictions.endTime) {
-      const [startHour, startMinute] = restrictions.startTime.split(':').map(Number);
-      const [endHour, endMinute] = restrictions.endTime.split(':').map(Number);
-      
+      const [startHour, startMinute] = restrictions.startTime
+        .split(":")
+        .map(Number);
+      const [endHour, endMinute] = restrictions.endTime.split(":").map(Number);
+
       const currentMinutes = currentHour * 60 + currentMinute;
       const startMinutes = startHour * 60 + startMinute;
       const endMinutes = endHour * 60 + endMinute;
@@ -1518,14 +1658,18 @@ export class VisitorService {
           isActive: false,
           status: reason as CodeStatus,
           deactivatedAt: new Date(),
-          deactivationReason: reason
-        }
+          deactivationReason: reason,
+        },
       });
     } catch (error) {
-      logger.error('Failed to deactivate access code', { 
-        tenantId, 
-        accessCodeId 
-      }, error as Error);
+      logger.error(
+        "Failed to deactivate access code",
+        {
+          tenantId,
+          accessCodeId,
+        },
+        error as Error
+      );
     }
   }
 
@@ -1547,7 +1691,7 @@ export class VisitorService {
       approvedAt: preRegistration.approvedAt,
       invitationSent: preRegistration.invitationSent,
       createdAt: preRegistration.createdAt,
-      expiresAt: preRegistration.expiresAt
+      expiresAt: preRegistration.expiresAt,
     };
   }
 
@@ -1565,7 +1709,7 @@ export class VisitorService {
       generatedBy: accessCode.generatedBy,
       generatedAt: accessCode.generatedAt,
       lastUsedAt: accessCode.lastUsedAt,
-      status: accessCode.status
+      status: accessCode.status,
     };
   }
 }

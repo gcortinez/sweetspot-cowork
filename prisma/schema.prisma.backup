@@ -96,6 +96,7 @@ model Tenant {
     paymentReconciliations PaymentReconciliation[]
     financialDashboards    FinancialDashboard[]
     budgetPlans            BudgetPlan[]
+    UserConsent            UserConsent[]
 
     @@map("tenants")
 }
@@ -187,6 +188,7 @@ model User {
     createdBudgetPlans         BudgetPlan[]                @relation("BudgetPlanCreator")
     approvedBudgetPlans        BudgetPlan[]                @relation("BudgetPlanApprover")
     responsibleExpenses        BudgetExpense[]
+    UserConsent                UserConsent[]
 
     @@unique([tenantId, email])
     @@map("users")
@@ -209,6 +211,68 @@ enum UserStatus {
 // GDPR CONSENT MANAGEMENT
 // ============================================================================
 
+model UserConsent {
+    id              String        @id @default(cuid())
+    userId          String
+    tenantId        String
+    consentType     ConsentType
+    purpose         String
+    isGranted       Boolean
+    version         String
+    source          ConsentSource
+    ipAddress       String?
+    userAgent       String?
+    consentDate     DateTime      @default(now())
+    expiryDate      DateTime?
+    withdrawnDate   DateTime?
+    legalBasis      LegalBasis
+    metadata        Json?         @default("{}")
+    parentConsentId String? // For consent updates/changes
+    createdAt       DateTime      @default(now())
+    updatedAt       DateTime      @updatedAt
+
+    // Relationships
+    user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+    tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    parentConsent UserConsent?  @relation("ConsentHistory", fields: [parentConsentId], references: [id])
+    childConsents UserConsent[] @relation("ConsentHistory")
+
+    @@index([userId, consentType])
+    @@index([tenantId, consentType])
+    @@index([expiryDate])
+    @@map("user_consents")
+}
+
+enum ConsentType {
+    ESSENTIAL // Required for service operation
+    ANALYTICS // Usage analytics and reporting
+    MARKETING // Marketing communications
+    ADVERTISING // Targeted advertising
+    COOKIES // Cookie tracking
+    DATA_PROCESSING // General data processing
+    THIRD_PARTY_SHARING // Sharing with third parties
+    PROFILING // User profiling and automated decisions
+    GEOLOCATION // Location tracking
+}
+
+enum ConsentSource {
+    WEB_FORM
+    MOBILE_APP
+    EMAIL_CONSENT
+    PHONE_CONSENT
+    API
+    ADMIN_OVERRIDE
+    MIGRATION
+}
+
+enum LegalBasis {
+    CONSENT // GDPR Article 6(1)(a)
+    CONTRACT // GDPR Article 6(1)(b)
+    LEGAL_OBLIGATION // GDPR Article 6(1)(c)
+    VITAL_INTERESTS // GDPR Article 6(1)(d)
+    PUBLIC_TASK // GDPR Article 6(1)(e)
+    LEGITIMATE_INTERESTS // GDPR Article 6(1)(f)
+}
 
 // ============================================================================
 // CLIENT MANAGEMENT (CRM)
@@ -3196,8 +3260,3 @@ enum ExpenseStatus {
     ACTUAL
     OVERBUDGET
 }
-
-// ============================================================================
-// DATA RETENTION & GDPR COMPLIANCE
-// ============================================================================
-

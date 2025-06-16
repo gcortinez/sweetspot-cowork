@@ -22,7 +22,7 @@ const leadConversionSchema = z.object({
     description: z.string().optional(),
     value: z.number().min(0, 'Value must be positive'),
     probability: z.number().min(0).max(100, 'Probability must be between 0-100').default(50),
-    stage: z.enum(['INITIAL_CONTACT', 'NEEDS_ANALYSIS', 'PROPOSAL_SENT', 'NEGOTIATION']).default('INITIAL_CONTACT'),
+    stage: z.enum(['INITIAL_CONTACT', 'NEEDS_ANALYSIS', 'PROPOSAL_SENT', 'NEGOTIATION', 'CONTRACT_REVIEW', 'ON_HOLD']).default('INITIAL_CONTACT'),
     expectedCloseDate: z.string().datetime().optional(),
   }).optional(),
   conversionNotes: z.string().optional(),

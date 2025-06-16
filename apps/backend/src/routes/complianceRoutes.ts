@@ -46,31 +46,6 @@ router.post('/sox/report', complianceController.generateSOXReport as any);
 router.post('/sox/download', complianceController.downloadSOXReport as any);
 
 // ============================================================================
-// GDPR COMPLIANCE REPORTING
-// ============================================================================
-
-/**
- * @route   POST /api/compliance/gdpr/report
- * @desc    Generate GDPR compliance report
- * @access  Private (Cowork Admin only)
- */
-router.post('/gdpr/report', complianceController.generateGDPRReport as any);
-
-/**
- * @route   POST /api/compliance/gdpr/download
- * @desc    Download GDPR compliance report as file
- * @access  Private (Cowork Admin only)
- */
-router.post('/gdpr/download', complianceController.downloadGDPRReport as any);
-
-/**
- * @route   POST /api/compliance/gdpr/data-subject/:dataSubjectId
- * @desc    Generate GDPR report for specific data subject
- * @access  Private (Cowork Admin only)
- */
-router.post('/gdpr/data-subject/:dataSubjectId', complianceController.generateDataSubjectReport as any);
-
-// ============================================================================
 // HIPAA COMPLIANCE REPORTING
 // ============================================================================
 
@@ -112,5 +87,30 @@ router.post('/pci-dss/report', complianceController.generatePCIDSSReport as any)
  * @access  Private (Cowork Admin only)
  */
 router.post('/pci-dss/download', complianceController.downloadPCIDSSReport as any);
+
+// ============================================================================
+// DATA EXPORT ENDPOINTS
+// ============================================================================
+
+/**
+ * @route   POST /api/compliance/export/request
+ * @desc    Create data export request
+ * @access  Private (Authenticated users)
+ */
+router.post('/export/request', complianceController.createDataExportRequest as any);
+
+/**
+ * @route   GET /api/compliance/export/:exportId/status
+ * @desc    Get export status
+ * @access  Private (Authenticated users)
+ */
+router.get('/export/:exportId/status', complianceController.getExportStatus as any);
+
+/**
+ * @route   GET /api/compliance/export/:exportId/download
+ * @desc    Download exported data
+ * @access  Private (Authenticated users)
+ */
+router.get('/export/:exportId/download', complianceController.downloadExport as any);
 
 export default router;

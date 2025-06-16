@@ -492,8 +492,7 @@ class AccessControlIntegrationService {
         badgeNumber: data.badgeNumber,
         photoUrl: data.photoUrl,
         healthDeclaration: data.healthDeclaration,
-        termsAccepted: data.termsAccepted,
-        dataConsent: data.dataConsent
+        termsAccepted: data.termsAccepted
       });
 
       // Log successful check-in

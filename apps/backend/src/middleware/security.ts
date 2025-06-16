@@ -51,7 +51,7 @@ export const authRateLimit = createRateLimiter({
 
 export const apiRateLimit = createRateLimiter({
   windowMs: config.rateLimit.windowMs,
-  max: config.rateLimit.maxRequests,
+  max: config.environment === 'development' ? 10000 : config.rateLimit.maxRequests, // Much higher limit in dev
 });
 
 export const strictRateLimit = createRateLimiter({

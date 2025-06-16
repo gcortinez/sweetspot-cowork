@@ -47,6 +47,10 @@ class LeadService {
     const { page, limit, search, status, source, assignedToId, sortBy, sortOrder } = query;
     const offset = (page - 1) * limit;
 
+    console.log('=== LEAD SERVICE DEBUG ===');
+    console.log('tenantId received:', tenantId);
+    console.log('query parameters:', query);
+
     // Build where clause
     const where: any = { tenantId };
     
@@ -62,6 +66,8 @@ class LeadService {
     if (status) where.status = status;
     if (source) where.source = source;
     if (assignedToId) where.assignedToId = assignedToId;
+
+    console.log('Prisma where clause:', JSON.stringify(where, null, 2));
 
     // Execute query with pagination
     const [leads, total] = await Promise.all([
@@ -97,6 +103,12 @@ class LeadService {
       }),
       prisma.lead.count({ where }),
     ]);
+
+    console.log('Query results:');
+    console.log('- Total leads found:', total);
+    console.log('- Leads returned:', leads.length);
+    console.log('- Lead details:', leads.map(l => ({ id: l.id, firstName: l.firstName, lastName: l.lastName, email: l.email, tenantId: l.tenantId })));
+    console.log('========================');
 
     return {
       leads,

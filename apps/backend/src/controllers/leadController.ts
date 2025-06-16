@@ -42,6 +42,14 @@ class LeadController {
   // GET /api/leads
   async getLeads(req: AuthenticatedRequest, res: Response) {
     return handleController(async () => {
+      console.log('=== LEAD CONTROLLER DEBUG ===');
+      console.log('User info:', {
+        userId: req.user?.id,
+        email: req.user?.email,
+        tenantId: req.user?.tenantId,
+        role: req.user?.role
+      });
+      
       if (!req.user?.tenantId) {
         throw new Error('Tenant context required');
       }
@@ -49,7 +57,14 @@ class LeadController {
       const query = queryLeadsSchema.parse(req.query);
       const tenantId = req.user.tenantId;
       
+      console.log('Calling leadService.getLeads with tenantId:', tenantId);
       const result = await leadService.getLeads(tenantId, query);
+      console.log('Result from leadService:', {
+        totalLeads: result.leads.length,
+        pagination: result.pagination
+      });
+      console.log('=============================');
+      
       return result;
     }, res);
   }

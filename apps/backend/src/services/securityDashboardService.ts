@@ -82,14 +82,12 @@ export interface ComplianceStatus {
   overall: 'COMPLIANT' | 'NON_COMPLIANT' | 'PENDING_REVIEW';
   frameworks: {
     sox: { status: string; score: number; issues: number };
-    gdpr: { status: string; score: number; issues: number };
     hipaa: { status: string; score: number; issues: number };
     pciDss: { status: string; score: number; issues: number };
   };
   dataProtection: {
     encryptionStatus: 'ENABLED' | 'PARTIAL' | 'DISABLED';
     backupStatus: 'CURRENT' | 'OUTDATED' | 'FAILED';
-    retentionCompliance: 'COMPLIANT' | 'NON_COMPLIANT';
   };
   auditTrail: {
     completeness: number; // percentage
@@ -612,9 +610,8 @@ export class SecurityDashboardService {
     const startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000); // Last 30 days
 
     // Generate compliance reports for scoring
-    const [soxReport, gdprReport, hipaaReport, pciReport] = await Promise.all([
+    const [soxReport, hipaaReport, pciReport] = await Promise.all([
       complianceReportingService.generateSOXReport({ tenantId, startDate, endDate }),
-      complianceReportingService.generateGDPRReport({ tenantId, startDate, endDate }),
       complianceReportingService.generateHIPAAReport({ tenantId, startDate, endDate }),
       complianceReportingService.generatePCIDSSReport({ tenantId, startDate, endDate }),
     ]);
@@ -624,12 +621,6 @@ export class SecurityDashboardService {
         status: soxReport.complianceViolations.length === 0 ? 'COMPLIANT' : 'NON_COMPLIANT',
         score: Math.max(0, 100 - (soxReport.complianceViolations.length * 10)),
         issues: soxReport.complianceViolations.length,
-      },
-      gdpr: {
-        status: gdprReport.complianceStatus,
-        score: gdprReport.complianceStatus === 'COMPLIANT' ? 100 : 
-               gdprReport.complianceStatus === 'PENDING_REVIEW' ? 80 : 60,
-        issues: gdprReport.summary.breachIncidents,
       },
       hipaa: {
         status: hipaaReport.violations.length === 0 ? 'COMPLIANT' : 'NON_COMPLIANT',
@@ -643,8 +634,8 @@ export class SecurityDashboardService {
       },
     };
 
-    const overallScore = (frameworks.sox.score + frameworks.gdpr.score + 
-                         frameworks.hipaa.score + frameworks.pciDss.score) / 4;
+    const overallScore = (frameworks.sox.score + 
+                         frameworks.hipaa.score + frameworks.pciDss.score) / 3;
 
     const overall = overallScore >= 90 ? 'COMPLIANT' : 
                    overallScore >= 70 ? 'PENDING_REVIEW' : 'NON_COMPLIANT';
@@ -652,7 +643,6 @@ export class SecurityDashboardService {
     const dataProtection = {
       encryptionStatus: 'ENABLED' as const,
       backupStatus: 'CURRENT' as const,
-      retentionCompliance: 'COMPLIANT' as const,
     };
 
     const auditTrail = {

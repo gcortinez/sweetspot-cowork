@@ -11,7 +11,7 @@ const createOpportunitySchema = z.object({
   value: z.number().min(0, 'Value must be positive'),
   probability: z.number().min(0).max(100, 'Probability must be between 0-100').default(50),
   expectedRevenue: z.number().min(0, 'Expected revenue must be positive'),
-  stage: z.enum(['INITIAL_CONTACT', 'NEEDS_ANALYSIS', 'PROPOSAL_SENT', 'NEGOTIATION', 'CLOSED_WON', 'CLOSED_LOST']),
+  stage: z.enum(['INITIAL_CONTACT', 'NEEDS_ANALYSIS', 'PROPOSAL_SENT', 'NEGOTIATION', 'CONTRACT_REVIEW', 'CLOSED_WON', 'CLOSED_LOST', 'ON_HOLD']),
   expectedCloseDate: z.string().datetime().optional(),
   leadId: z.string().optional(),
   clientId: z.string().optional(),
@@ -30,7 +30,7 @@ const queryOpportunitiesSchema = z.object({
   page: z.string().transform(Number).optional().default('1'),
   limit: z.string().transform(Number).optional().default('10'),
   search: z.string().optional(),
-  stage: z.enum(['INITIAL_CONTACT', 'NEEDS_ANALYSIS', 'PROPOSAL_SENT', 'NEGOTIATION', 'CLOSED_WON', 'CLOSED_LOST']).optional(),
+  stage: z.enum(['INITIAL_CONTACT', 'NEEDS_ANALYSIS', 'PROPOSAL_SENT', 'NEGOTIATION', 'CONTRACT_REVIEW', 'CLOSED_WON', 'CLOSED_LOST', 'ON_HOLD']).optional(),
   assignedToId: z.string().optional(),
   leadId: z.string().optional(),
   clientId: z.string().optional(),
@@ -42,7 +42,7 @@ const queryOpportunitiesSchema = z.object({
 
 // Stage transition schema
 const stageTransitionSchema = z.object({
-  stage: z.enum(['INITIAL_CONTACT', 'NEEDS_ANALYSIS', 'PROPOSAL_SENT', 'NEGOTIATION', 'CLOSED_WON', 'CLOSED_LOST']),
+  stage: z.enum(['INITIAL_CONTACT', 'NEEDS_ANALYSIS', 'PROPOSAL_SENT', 'NEGOTIATION', 'CONTRACT_REVIEW', 'CLOSED_WON', 'CLOSED_LOST', 'ON_HOLD']),
   reason: z.string().optional(),
   notes: z.string().optional(),
 });
