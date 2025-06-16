@@ -28,6 +28,7 @@ import {
   Mail,
   Phone,
   Star,
+  Loader2,
 } from "lucide-react";
 import CreateLeadModal from "@/components/leads/CreateLeadModal";
 import LeadDetailModal from "@/components/leads/LeadDetailModal";
@@ -114,6 +115,8 @@ export default function LeadsPage() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [updatingLeadId, setUpdatingLeadId] = useState<string | null>(null);
+  const [openDropdowns, setOpenDropdowns] = useState<{ [key: string]: boolean }>({});
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -219,8 +222,25 @@ export default function LeadsPage() {
     }
   };
 
+  const handleDropdownOpenChange = (leadId: string, open: boolean) => {
+    setOpenDropdowns(prev => ({
+      ...prev,
+      [leadId]: open
+    }));
+  };
+
   const handleChangeStatus = async (lead: Lead, newStatus: string) => {
     console.log('Cambiar estado:', lead, newStatus);
+    
+    // Close the dropdown first
+    setOpenDropdowns(prev => ({
+      ...prev,
+      [lead.id]: false
+    }));
+    
+    // Set loading state for this specific lead
+    setUpdatingLeadId(lead.id);
+    
     try {
       const response = await api.put(`/api/leads/${lead.id}`, {
         status: newStatus
@@ -250,7 +270,7 @@ export default function LeadsPage() {
 
       toast({
         title: "Estado actualizado",
-        description: `El estado del prospecto ha sido cambiado exitosamente`,
+        description: `El estado del prospecto ha sido cambiado a "${getStatusLabel(newStatus)}"`,
       });
 
       console.log('Estado actualizado exitosamente');
@@ -261,6 +281,9 @@ export default function LeadsPage() {
         description: "No se pudo cambiar el estado del prospecto",
         variant: "destructive",
       });
+    } finally {
+      // Clear loading state
+      setUpdatingLeadId(null);
     }
   };
 
@@ -744,63 +767,72 @@ export default function LeadsPage() {
                     </span>
                   </TableCell>
                   <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleViewDetails(lead)}>
-                          Ver Detalles
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleEditLead(lead)}>
-                          Editar Prospecto
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleAssignLead(lead)}>
-                          Asignar Usuario
-                        </DropdownMenuItem>
-                        
-                        {/* Status Change Submenu */}
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <DropdownMenuItem>
-                              Cambiar Estado →
-                            </DropdownMenuItem>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent side="left">
-                            <DropdownMenuItem onClick={() => handleChangeStatus(lead, 'NEW')}>
-                              Nuevo
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleChangeStatus(lead, 'CONTACTED')}>
-                              Contactado
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleChangeStatus(lead, 'QUALIFIED')}>
-                              Calificado
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleChangeStatus(lead, 'UNQUALIFIED')}>
-                              No Calificado
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleChangeStatus(lead, 'FOLLOW_UP')}>
-                              Seguimiento
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleChangeStatus(lead, 'DORMANT')}>
-                              Inactivo
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleChangeStatus(lead, 'LOST')}>
-                              Perdido
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                        
-                        <DropdownMenuItem 
-                          className="text-red-600"
-                          onClick={() => handleDeleteLead(lead)}
-                        >
-                          Eliminar Prospecto
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    {updatingLeadId === lead.id ? (
+                      <div className="flex items-center justify-center h-8 w-8">
+                        <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                      </div>
+                    ) : (
+                      <DropdownMenu 
+                        open={openDropdowns[lead.id] || false}
+                        onOpenChange={(open) => handleDropdownOpenChange(lead.id, open)}
+                      >
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleViewDetails(lead)}>
+                            Ver Detalles
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditLead(lead)}>
+                            Editar Prospecto
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleAssignLead(lead)}>
+                            Asignar Usuario
+                          </DropdownMenuItem>
+                          
+                          {/* Status Change Submenu */}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <DropdownMenuItem>
+                                Cambiar Estado →
+                              </DropdownMenuItem>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent side="left">
+                              <DropdownMenuItem onClick={() => handleChangeStatus(lead, 'NEW')}>
+                                Nuevo
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleChangeStatus(lead, 'CONTACTED')}>
+                                Contactado
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleChangeStatus(lead, 'QUALIFIED')}>
+                                Calificado
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleChangeStatus(lead, 'UNQUALIFIED')}>
+                                No Calificado
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleChangeStatus(lead, 'FOLLOW_UP')}>
+                                Seguimiento
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleChangeStatus(lead, 'DORMANT')}>
+                                Inactivo
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleChangeStatus(lead, 'LOST')}>
+                                Perdido
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                          
+                          <DropdownMenuItem 
+                            className="text-red-600"
+                            onClick={() => handleDeleteLead(lead)}
+                          >
+                            Eliminar Prospecto
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </TableCell>
                 </TableRow>
                 ))
