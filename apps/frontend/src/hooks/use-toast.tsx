@@ -13,7 +13,7 @@ type ToastProps = {
 }
 
 const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_REMOVE_DELAY = 5000
 
 type ToasterToast = ToastProps & {
   id: string
@@ -192,7 +192,15 @@ function useToast() {
   return {
     ...state,
     toast,
-    dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
+    dismiss: (toastId?: string) => {
+      console.log('Dismiss called for:', toastId);
+      dispatch({ type: "DISMISS_TOAST", toastId });
+      // Force immediate removal after a short delay
+      setTimeout(() => {
+        console.log('Force removing toast:', toastId);
+        dispatch({ type: "REMOVE_TOAST", toastId });
+      }, 200);
+    },
   }
 }
 

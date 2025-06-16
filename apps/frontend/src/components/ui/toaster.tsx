@@ -22,7 +22,9 @@ export function Toaster() {
 
   return (
     <div className="fixed top-4 right-4 z-[100] flex max-h-screen w-full max-w-[420px] flex-col gap-2">
-      {toasts.map(function ({ id, title, description, variant, onOpenChange, open, action, ...props }) {
+      {toasts
+        .filter(toast => toast.open !== false)
+        .map(function ({ id, title, description, variant, onOpenChange, open, action, ...props }) {
         return (
           <div
             key={id}
@@ -46,8 +48,15 @@ export function Toaster() {
               )}
             </div>
             <button
-              className="flex-shrink-0 rounded-md p-1 text-gray-400 opacity-0 transition-opacity hover:text-gray-900 focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100"
-              onClick={() => dismiss(id)}
+              className="flex-shrink-0 rounded-md p-1 text-gray-500 opacity-70 transition-all hover:opacity-100 hover:text-gray-900 hover:bg-gray-200 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-gray-300"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Dismissing toast:', id);
+                dismiss(id);
+              }}
+              type="button"
+              aria-label="Cerrar notificación"
             >
               <X className="h-4 w-4" />
             </button>
