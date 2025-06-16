@@ -195,7 +195,7 @@ export const passwordResetRateLimit = rateLimit({
 export const progressiveDelay = slowDown({
   windowMs: 15 * 60 * 1000, // 15 minutes
   delayAfter: 5, // allow 5 requests per windowMs without delay
-  delayMs: 500, // add 500ms delay per request after delayAfter
+  delayMs: () => 500, // add 500ms delay per request after delayAfter
   maxDelayMs: 10000, // maximum delay of 10 seconds
 });
 

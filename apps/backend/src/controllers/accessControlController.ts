@@ -2,10 +2,9 @@ import { Response } from 'express';
 import { z } from 'zod';
 import { accessControlService, CreateQRCodeRequest, ScanQRCodeRequest, AccessRuleData, ScanResultData } from '../services/accessControlService';
 import { ResponseHelper } from '../utils/response';
-import { ApiResponse } from '../types/api';
+import { ApiResponse, AuthenticatedRequest, ErrorCode, HttpStatusCode } from '../types/api';
 import { ValidationError } from '../utils/errors';
 import { prisma } from '../lib/prisma';
-import { AuthenticatedRequest } from '../types/api';
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -152,7 +151,7 @@ export const createAccessZone = async (req: AuthenticatedRequest, res: Response)
       }
     });
     
-    return ResponseHelper.success(res, zone, 'Access zone created successfully', 201);
+    return ResponseHelper.success(res, zone, 'Access zone created successfully', HttpStatusCode.CREATED);
   } catch (error) {
     return ResponseHelper.internalError(res, error instanceof Error ? error.message : 'An error occurred');
   }
@@ -223,7 +222,7 @@ export const createAccessRule = async (req: AuthenticatedRequest, res: Response)
 
     const rule = await accessControlService.createAccessRule(tenantId, ruleData);
     
-    return ResponseHelper.success(res, rule, 'Access rule created successfully', 201);
+    return ResponseHelper.success(res, rule, 'Access rule created successfully', HttpStatusCode.CREATED);
   } catch (error) {
     return ResponseHelper.internalError(res, error instanceof Error ? error.message : 'An error occurred');
   }

@@ -1,7 +1,7 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { z } from 'zod';
 import { ResponseHelper } from '../utils/response';
-import { AuthenticatedRequest } from '../middleware/auth';
+import { BaseRequest, AuthenticatedRequest, ErrorCode, HttpStatusCode } from '../types/api';
 import { logger } from '../utils/logger';
 import { visitorService } from '../services/visitorService';
 import { visitorNotificationService } from '../services/visitorNotificationService';
@@ -143,7 +143,7 @@ export const createVisitor = async (req: AuthenticatedRequest, res: Response) =>
       hostUserId: validatedData.hostUserId 
     });
 
-    return ResponseHelper.success(res, visitor, 201);
+    return ResponseHelper.success(res, visitor, 'Visitor created successfully', HttpStatusCode.CREATED);
   } catch (error) {
     logger.error('Failed to create visitor', { tenantId: req.tenantId }, error as Error);
     
@@ -374,7 +374,7 @@ export const createPreRegistration = async (req: AuthenticatedRequest, res: Resp
       expectedArrival: new Date(validatedData.expectedArrival)
     });
 
-    return ResponseHelper.success(res, preRegistration, 201);
+    return ResponseHelper.success(res, preRegistration, 'Pre-registration created successfully', HttpStatusCode.CREATED);
   } catch (error) {
     logger.error('Failed to create pre-registration', { tenantId: req.tenantId }, error as Error);
     
@@ -420,7 +420,7 @@ export const convertPreRegistrationToVisitor = async (req: AuthenticatedRequest,
       userId
     );
 
-    return ResponseHelper.success(res, visitor, 201);
+    return ResponseHelper.success(res, visitor, 'Visitor converted from pre-registration successfully', HttpStatusCode.CREATED);
   } catch (error) {
     logger.error('Failed to convert pre-registration', { 
       tenantId: req.tenantId, 
@@ -444,7 +444,7 @@ export const generateAccessCode = async (req: AuthenticatedRequest, res: Respons
       expiresAt: new Date(validatedData.expiresAt)
     });
 
-    return ResponseHelper.success(res, accessCode, 201);
+    return ResponseHelper.success(res, accessCode, 'Access code generated successfully', HttpStatusCode.CREATED);
   } catch (error) {
     logger.error('Failed to generate access code', { tenantId: req.tenantId }, error as Error);
     

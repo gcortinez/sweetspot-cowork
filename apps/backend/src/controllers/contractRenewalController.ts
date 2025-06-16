@@ -1,10 +1,11 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { z } from 'zod';
 import { contractRenewalService, RenewalTrigger, RenewalType, NotificationType } from '../services/contractRenewalService';
 import { RenewalStatus } from '../services/contractLifecycleService';
 import { ResponseHelper } from '../utils/response';
 import { logger } from '../utils/logger';
 import { AppError, ValidationError } from '../utils/errors';
+import { BaseRequest, ErrorCode, HttpStatusCode } from '../types/api';
 
 const CreateRenewalRuleSchema = z.object({
   name: z.string().min(1).max(255),
@@ -58,13 +59,13 @@ const RenewalQuerySchema = z.object({
 });
 
 export class ContractRenewalController {
-  async createRenewalRule(req: Request, res: Response): Promise<Response> {
+  async createRenewalRule(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const createdBy = req.user?.id;
 
       if (!tenantId || !createdBy) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       const validatedData = CreateRenewalRuleSchema.parse(req.body);
@@ -88,28 +89,28 @@ export class ContractRenewalController {
         ruleName: rule.name,
       });
 
-      return ResponseHelper.success(res, rule, 'Renewal rule created successfully', 201);
+      return ResponseHelper.success(res, rule, 'Renewal rule created successfully', HttpStatusCode.CREATED);
     } catch (error) {
       logger.error('Error creating renewal rule', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Validation failed', 400, error.errors);
+        return ResponseHelper.validationError(res, 'Validation failed', error.errors);
       }
 
       if (error instanceof ValidationError) {
-        return ResponseHelper.error(res, error.message, 400);
+        return ResponseHelper.error(res, ErrorCode.VALIDATION_ERROR, error.message, HttpStatusCode.BAD_REQUEST);
       }
 
-      return ResponseHelper.error(res, 'Failed to create renewal rule', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to create renewal rule', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async getRenewalRules(req: Request, res: Response): Promise<Response> {
+  async getRenewalRules(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       logger.debug('Fetching renewal rules', { tenantId });
@@ -119,17 +120,17 @@ export class ContractRenewalController {
       return ResponseHelper.success(res, rules, 'Renewal rules retrieved successfully');
     } catch (error) {
       logger.error('Error fetching renewal rules', { error });
-      return ResponseHelper.error(res, 'Failed to fetch renewal rules', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to fetch renewal rules', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async updateRenewalRule(req: Request, res: Response): Promise<Response> {
+  async updateRenewalRule(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { id } = req.params;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       const validatedData = UpdateRenewalRuleSchema.parse(req.body);
@@ -156,24 +157,24 @@ export class ContractRenewalController {
       logger.error('Error updating renewal rule', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Validation failed', 400, error.errors);
+        return ResponseHelper.validationError(res, 'Validation failed', error.errors);
       }
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, error.message, error.statusCode);
       }
 
-      return ResponseHelper.error(res, 'Failed to update renewal rule', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to update renewal rule', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async deleteRenewalRule(req: Request, res: Response): Promise<Response> {
+  async deleteRenewalRule(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { id } = req.params;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       logger.info('Deleting renewal rule', {
@@ -194,21 +195,21 @@ export class ContractRenewalController {
       logger.error('Error deleting renewal rule', { error });
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, error.message, error.statusCode);
       }
 
-      return ResponseHelper.error(res, 'Failed to delete renewal rule', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to delete renewal rule', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async createRenewalProposal(req: Request, res: Response): Promise<Response> {
+  async createRenewalProposal(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const createdBy = req.user?.id;
       const { contractId } = req.params;
 
       if (!tenantId || !createdBy) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       const { ruleId } = req.body;
@@ -234,24 +235,24 @@ export class ContractRenewalController {
         status: proposal.status,
       });
 
-      return ResponseHelper.success(res, proposal, 'Renewal proposal created successfully', 201);
+      return ResponseHelper.success(res, proposal, 'Renewal proposal created successfully', HttpStatusCode.CREATED);
     } catch (error) {
       logger.error('Error creating renewal proposal', { error });
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, error.message, error.statusCode);
       }
 
-      return ResponseHelper.error(res, 'Failed to create renewal proposal', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to create renewal proposal', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async getRenewalProposals(req: Request, res: Response): Promise<Response> {
+  async getRenewalProposals(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       const query = RenewalQuerySchema.parse(req.query);
@@ -265,21 +266,21 @@ export class ContractRenewalController {
       logger.error('Error fetching renewal proposals', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Invalid query parameters', 400, error.errors);
+        return ResponseHelper.error(res, ErrorCode.VALIDATION_ERROR, 'Invalid query parameters', HttpStatusCode.BAD_REQUEST);
       }
 
-      return ResponseHelper.error(res, 'Failed to fetch renewal proposals', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to fetch renewal proposals', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async processRenewalProposal(req: Request, res: Response): Promise<Response> {
+  async processRenewalProposal(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const processedBy = req.user?.id;
       const { id } = req.params;
 
       if (!tenantId || !processedBy) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       const validatedData = ProcessRenewalSchema.parse(req.body);
@@ -310,23 +311,23 @@ export class ContractRenewalController {
       logger.error('Error processing renewal proposal', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Validation failed', 400, error.errors);
+        return ResponseHelper.validationError(res, 'Validation failed', error.errors);
       }
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, error.message, error.statusCode);
       }
 
-      return ResponseHelper.error(res, 'Failed to process renewal proposal', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to process renewal proposal', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async checkAndCreateRenewals(req: Request, res: Response): Promise<Response> {
+  async checkAndCreateRenewals(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       logger.info('Running renewal check for tenant', { tenantId });
@@ -343,16 +344,16 @@ export class ContractRenewalController {
       return ResponseHelper.success(res, result, 'Renewal check completed successfully');
     } catch (error) {
       logger.error('Error running renewal check', { error });
-      return ResponseHelper.error(res, 'Failed to run renewal check', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to run renewal check', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async getRenewalStats(req: Request, res: Response): Promise<Response> {
+  async getRenewalStats(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       logger.debug('Fetching renewal statistics', { tenantId });
@@ -362,23 +363,23 @@ export class ContractRenewalController {
       return ResponseHelper.success(res, stats, 'Renewal statistics retrieved successfully');
     } catch (error) {
       logger.error('Error fetching renewal statistics', { error });
-      return ResponseHelper.error(res, 'Failed to fetch renewal statistics', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to fetch renewal statistics', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async toggleRuleStatus(req: Request, res: Response): Promise<Response> {
+  async toggleRuleStatus(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { id } = req.params;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       const { isActive } = req.body;
 
       if (typeof isActive !== 'boolean') {
-        return ResponseHelper.error(res, 'isActive must be a boolean', 400);
+        return ResponseHelper.error(res, ErrorCode.VALIDATION_ERROR, 'isActive must be a boolean', HttpStatusCode.BAD_REQUEST);
       }
 
       logger.info('Toggling renewal rule status', {
@@ -405,10 +406,10 @@ export class ContractRenewalController {
       logger.error('Error toggling renewal rule status', { error });
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, error.message, error.statusCode);
       }
 
-      return ResponseHelper.error(res, 'Failed to update renewal rule status', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to update renewal rule status', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 }

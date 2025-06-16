@@ -8,23 +8,23 @@ const router = Router();
 router.use(authenticate);
 
 // Analytics and special routes (before parameterized routes)
-router.get('/stats', activityController.getActivityStats);
-router.get('/timeline', activityController.getActivityTimeline);
-router.get('/upcoming', activityController.getUpcomingActivities);
-router.get('/overdue', activityController.getOverdueActivities);
-router.get('/by-entity/:entityType/:entityId', activityController.getActivitiesByEntity);
+router.get('/stats', activityController.getActivityStats as any);
+router.get('/timeline', activityController.getActivityTimeline as any);
+router.get('/upcoming', activityController.getUpcomingActivities as any);
+router.get('/overdue', activityController.getOverdueActivities as any);
+router.get('/by-entity/:entityType/:entityId', activityController.getActivitiesByEntity as any);
 
 // Bulk operations
-router.post('/bulk', activityController.bulkAction);
+router.post('/bulk', activityController.bulkAction as any);
 
 // Basic CRUD operations
-router.get('/', activityController.getActivities);
-router.get('/:id', activityController.getActivityById);
-router.post('/', activityController.createActivity);
-router.put('/:id', activityController.updateActivity);
-router.delete('/:id', activityController.deleteActivity);
+router.get('/', activityController.getActivities as any);
+router.get('/:id', activityController.getActivityById as any);
+router.post('/', activityController.createActivity as any);
+router.put('/:id', activityController.updateActivity as any);
+router.delete('/:id', activityController.deleteActivity as any);
 
 // Activity actions
-router.post('/:id/complete', activityController.completeActivity);
+router.post('/:id/complete', activityController.completeActivity as any);
 
 export { router as activityRoutes };

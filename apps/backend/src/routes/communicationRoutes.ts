@@ -8,23 +8,23 @@ const router = Router();
 router.use(authenticate);
 
 // Analytics and special routes (before parameterized routes)
-router.get('/stats', communicationController.getCommunicationStats);
-router.get('/thread', communicationController.getCommunicationThread);
-router.get('/unread', communicationController.getUnreadCommunications);
-router.get('/export', communicationController.exportCommunications);
-router.get('/by-entity/:entityType/:entityId', communicationController.getCommunicationsByEntity);
+router.get('/stats', communicationController.getCommunicationStats as any);
+router.get('/thread', communicationController.getCommunicationThread as any);
+router.get('/unread', communicationController.getUnreadCommunications as any);
+router.get('/export', communicationController.exportCommunications as any);
+router.get('/by-entity/:entityType/:entityId', communicationController.getCommunicationsByEntity as any);
 
 // Bulk operations
-router.post('/bulk-delete', communicationController.bulkDelete);
+router.post('/bulk-delete', communicationController.bulkDelete as any);
 
 // Basic CRUD operations
-router.get('/', communicationController.getCommunications);
-router.get('/:id', communicationController.getCommunicationById);
-router.post('/', communicationController.createCommunication);
-router.put('/:id', communicationController.updateCommunication);
-router.delete('/:id', communicationController.deleteCommunication);
+router.get('/', communicationController.getCommunications as any);
+router.get('/:id', communicationController.getCommunicationById as any);
+router.post('/', communicationController.createCommunication as any);
+router.put('/:id', communicationController.updateCommunication as any);
+router.delete('/:id', communicationController.deleteCommunication as any);
 
 // Communication actions
-router.post('/:id/mark-read', communicationController.markAsRead);
+router.post('/:id/mark-read', communicationController.markAsRead as any);
 
 export { router as communicationRoutes };

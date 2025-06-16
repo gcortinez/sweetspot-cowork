@@ -82,6 +82,7 @@ interface CreateRenewalRuleData {
     excludeClientIds?: string[];
   };
   metadata?: Record<string, any>;
+  isActive?: boolean;
 }
 
 interface RenewalProposal {

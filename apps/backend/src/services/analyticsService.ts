@@ -189,12 +189,12 @@ class AnalyticsService {
       prisma.user.count({ 
         where: { 
           tenantId,
-          lastActiveAt: { gte: dateRange.from }
+          lastLoginAt: { gte: dateRange.from }
         } 
       }),
     ]);
 
-    const totalRevenue = wonOpportunities.reduce((sum, opp) => sum + opp.value, 0);
+    const totalRevenue = wonOpportunities.reduce((sum, opp) => sum + opp.value.toNumber(), 0);
     const conversionRate = totalLeads > 0 ? (totalConversions / totalLeads) * 100 : 0;
     const averageDealSize = wonOpportunities.length > 0 ? totalRevenue / wonOpportunities.length : 0;
 
@@ -338,7 +338,6 @@ class AnalyticsService {
       prisma.opportunity.count({ where: { tenantId } }),
       prisma.opportunity.findMany({
         where: { tenantId, stage: 'CLOSED_WON' },
-        select: { value: true, assignedToId: true },
         include: {
           assignedTo: {
             select: { firstName: true, lastName: true },
@@ -361,23 +360,23 @@ class AnalyticsService {
       }),
     ]);
 
-    const totalValue = allOpportunities.reduce((sum, opp) => sum + opp.value, 0);
-    const wonValue = wonOpportunities.reduce((sum, opp) => sum + opp.value, 0);
-    const lostValue = lostOpportunities.reduce((sum, opp) => sum + opp.value, 0);
+    const totalValue = allOpportunities.reduce((sum, opp) => sum + opp.value.toNumber(), 0);
+    const wonValue = wonOpportunities.reduce((sum, opp) => sum + opp.value.toNumber(), 0);
+    const lostValue = lostOpportunities.reduce((sum, opp) => sum + opp.value.toNumber(), 0);
     const winRate = totalOpportunities > 0 ? (wonOpportunities.length / totalOpportunities) * 100 : 0;
     const averageDealSize = wonOpportunities.length > 0 ? wonValue / wonOpportunities.length : 0;
     const pipelineValue = allOpportunities
       .filter(opp => !['CLOSED_WON', 'CLOSED_LOST'].includes(opp.stage))
-      .reduce((sum, opp) => sum + opp.value, 0);
+      .reduce((sum, opp) => sum + opp.value.toNumber(), 0);
     const forecastedRevenue = allOpportunities
       .filter(opp => !['CLOSED_WON', 'CLOSED_LOST'].includes(opp.stage))
-      .reduce((sum, opp) => sum + (opp.value * opp.probability / 100), 0);
+      .reduce((sum, opp) => sum + (opp.value.toNumber() * opp.probability / 100), 0);
 
     // Process stage statistics
     const opportunitiesByStage = stageStats.map(({ stage, _count, _sum }) => ({
-      stage,
+      stage: stage as string,
       count: _count.stage,
-      value: _sum.value || 0,
+      value: _sum.value?.toNumber() || 0,
       percentage: totalOpportunities > 0 ? (_count.stage / totalOpportunities) * 100 : 0,
     }));
 
@@ -437,9 +436,9 @@ class AnalyticsService {
       salesTrends.push({
         date: date.toISOString().split('T')[0],
         opportunities: dayOpportunities.length,
-        value: dayOpportunities.reduce((sum, opp) => sum + opp.value, 0),
+        value: dayOpportunities.reduce((sum, opp) => sum + opp.value.toNumber(), 0),
         wonDeals: dayWonDeals.length,
-        wonValue: dayWonDeals.reduce((sum, opp) => sum + opp.value, 0),
+        wonValue: dayWonDeals.reduce((sum, opp) => sum + opp.value.toNumber(), 0),
       });
     }
 
@@ -473,13 +472,13 @@ class AnalyticsService {
       userStats,
     ] = await Promise.all([
       prisma.activity.count({ where: { tenantId } }),
-      prisma.activity.count({ where: { tenantId, status: 'COMPLETED' } }),
-      prisma.activity.count({ where: { tenantId, status: 'PENDING' } }),
+      prisma.activity.count({ where: { tenantId, completedAt: { not: null } } }),
+      prisma.activity.count({ where: { tenantId, completedAt: null } }),
       prisma.activity.count({
         where: {
           tenantId,
-          status: 'PENDING',
-          scheduledAt: { lt: new Date() },
+          completedAt: null,
+          dueDate: { lt: new Date() },
         },
       }),
       prisma.activity.groupBy({
@@ -500,7 +499,7 @@ class AnalyticsService {
     const activitiesByType = await Promise.all(
       typeStats.map(async ({ type, _count }) => {
         const completed = await prisma.activity.count({
-          where: { tenantId, type, status: 'COMPLETED' },
+          where: { tenantId, type, completedAt: { not: null } },
         });
 
         return {
@@ -523,7 +522,7 @@ class AnalyticsService {
       userStats.map(async ({ userId, _count }) => {
         const user = users.find(u => u.id === userId);
         const completed = await prisma.activity.count({
-          where: { tenantId, userId, status: 'COMPLETED' },
+          where: { tenantId, userId, completedAt: { not: null } },
         });
 
         return {
@@ -549,7 +548,6 @@ class AnalyticsService {
         prisma.activity.count({
           where: { 
             tenantId, 
-            status: 'COMPLETED',
             completedAt: { gte: date, lt: nextDate }
           }
         }),
@@ -606,7 +604,7 @@ class AnalyticsService {
             where: { tenantId, assignedToId: user.id, stage: 'CLOSED_WON' }
           }),
           prisma.activity.count({ 
-            where: { tenantId, userId: user.id, status: 'COMPLETED' }
+            where: { tenantId, userId: user.id, completedAt: { not: null } }
           }),
           prisma.activity.count({ where: { tenantId, userId: user.id } }),
         ]);
@@ -618,7 +616,7 @@ class AnalyticsService {
 
         const conversionRate = leadsAssigned > 0 ? (leadsConverted / leadsAssigned) * 100 : 0;
         const winRate = opportunitiesAssigned > 0 ? (opportunitiesWon / opportunitiesAssigned) * 100 : 0;
-        const totalRevenue = wonOpportunities.reduce((sum, opp) => sum + opp.value, 0);
+        const totalRevenue = wonOpportunities.reduce((sum, opp) => sum + opp.value.toNumber(), 0);
         const activityCompletionRate = totalActivities > 0 ? (activitiesCompleted / totalActivities) * 100 : 0;
 
         // Calculate performance score (weighted average)
@@ -748,8 +746,8 @@ class AnalyticsService {
       data: opportunities,
       summary: {
         totalOpportunities: opportunities.length,
-        totalValue: opportunities.reduce((sum, opp) => sum + opp.value, 0),
-        averageDealSize: opportunities.reduce((sum, opp) => sum + opp.value, 0) / opportunities.length || 0,
+        totalValue: opportunities.reduce((sum, opp) => sum + opp.value.toNumber(), 0),
+        averageDealSize: opportunities.reduce((sum, opp) => sum + opp.value.toNumber(), 0) / opportunities.length || 0,
         winRate: opportunities.filter(opp => opp.stage === 'CLOSED_WON').length / opportunities.length * 100 || 0,
       },
     };
@@ -787,8 +785,8 @@ class AnalyticsService {
       data: activities,
       summary: {
         totalActivities: activities.length,
-        completedActivities: activities.filter(act => act.status === 'COMPLETED').length,
-        completionRate: activities.filter(act => act.status === 'COMPLETED').length / activities.length * 100 || 0,
+        completedActivities: activities.filter(act => act.completedAt !== null).length,
+        completionRate: activities.filter(act => act.completedAt !== null).length / activities.length * 100 || 0,
       },
     };
   }
@@ -833,7 +831,7 @@ class AnalyticsService {
       summary: {
         totalConversions: conversions.length,
         averageLeadScore: conversions.reduce((sum, conv) => sum + conv.lead.score, 0) / conversions.length || 0,
-        totalOpportunityValue: conversions.reduce((sum, conv) => sum + (conv.opportunity?.value || 0), 0),
+        totalOpportunityValue: conversions.reduce((sum, conv) => sum + (conv.opportunity?.value?.toNumber() || 0), 0),
       },
     };
   }

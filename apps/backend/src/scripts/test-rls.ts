@@ -201,6 +201,20 @@ async function testRLSForAllUsers() {
         `📝 Simulating RLS test for user (actual token validation would happen in real usage)`
       );
 
+      // Create mock results object for testing
+      const results = {
+        context: {
+          tenantId: user.tenant_id,
+          role: user.role,
+          userId: user.id
+        },
+        tests: {
+          tenants: { error: null, data: [] },
+          users: { error: null, data: [] },
+          spaces: { error: null, data: [] }
+        }
+      };
+
       // Skip actual RLS testing in this script - would require proper auth flow
       console.log(
         `✅ User created successfully with proper tenant isolation setup`

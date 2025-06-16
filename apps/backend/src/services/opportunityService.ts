@@ -556,7 +556,7 @@ class OpportunityService {
         return Math.ceil((closed.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
       });
     
-    const averageSalesycle = salesCycles.length > 0 
+    const averageSalescycle = salesCycles.length > 0 
       ? salesCycles.reduce((sum, cycle) => sum + cycle, 0) / salesCycles.length 
       : 0;
 

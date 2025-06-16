@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { z } from 'zod';
 import { analyticsService } from '../services/analyticsService';
 import { handleController } from '../utils/response';
-import { AuthenticatedRequest } from '../types/api';
+import { AuthenticatedRequest, ErrorCode } from '../types/api';
 
 // Analytics query schema
 const analyticsQuerySchema = z.object({

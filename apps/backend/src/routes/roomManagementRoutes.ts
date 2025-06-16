@@ -1,13 +1,13 @@
 import { Router } from 'express';
-import { requireAuth } from '../middleware/auth';
-import { validateTenantAccess } from '../middleware/tenant';
+import { authenticate } from '../middleware/auth';
+import { tenantMiddleware } from '../middleware/tenant';
 import * as roomController from '../controllers/roomManagementController';
 
 const router = Router();
 
 // Apply authentication and tenant validation to all routes
-router.use(requireAuth);
-router.use(validateTenantAccess);
+router.use(authenticate);
+router.use(tenantMiddleware);
 
 // ============================================================================
 // ROOM INVENTORY MANAGEMENT
@@ -18,35 +18,35 @@ router.use(validateTenantAccess);
  * @desc    Create a new room
  * @access  Private (Cowork Admin only)
  */
-router.post('/', roomController.createRoom);
+router.post('/', roomController.createRoom as any);
 
 /**
  * @route   GET /api/rooms
  * @desc    Get all rooms with optional filters
  * @access  Private
  */
-router.get('/', roomController.getRooms);
+router.get('/', roomController.getRooms as any);
 
 /**
  * @route   GET /api/rooms/:roomId
  * @desc    Get room details by ID
  * @access  Private
  */
-router.get('/:roomId', roomController.getRoomById);
+router.get('/:roomId', roomController.getRoomById as any);
 
 /**
  * @route   PUT /api/rooms/:roomId
  * @desc    Update room details
  * @access  Private (Cowork Admin only)
  */
-router.put('/:roomId', roomController.updateRoom);
+router.put('/:roomId', roomController.updateRoom as any);
 
 /**
  * @route   DELETE /api/rooms/:roomId
  * @desc    Delete/deactivate a room
  * @access  Private (Cowork Admin only)
  */
-router.delete('/:roomId', roomController.deleteRoom);
+router.delete('/:roomId', roomController.deleteRoom as any);
 
 // ============================================================================
 // ROOM FEATURES MANAGEMENT
@@ -57,14 +57,14 @@ router.delete('/:roomId', roomController.deleteRoom);
  * @desc    Create a new room feature
  * @access  Private (Cowork Admin only)
  */
-router.post('/features', roomController.createRoomFeature);
+router.post('/features', roomController.createRoomFeature as any);
 
 /**
  * @route   GET /api/rooms/features
  * @desc    Get all room features
  * @access  Private
  */
-router.get('/features', roomController.getRoomFeatures);
+router.get('/features', roomController.getRoomFeatures as any);
 
 // ============================================================================
 // AVAILABILITY MANAGEMENT
@@ -75,14 +75,14 @@ router.get('/features', roomController.getRoomFeatures);
  * @desc    Check if a room is available for a specific time slot
  * @access  Private
  */
-router.post('/availability/check', roomController.checkAvailability);
+router.post('/availability/check', roomController.checkAvailability as any);
 
 /**
  * @route   GET /api/rooms/:roomId/availability
  * @desc    Get available time slots for a room on a specific date
  * @access  Private
  */
-router.get('/:roomId/availability', roomController.getAvailableSlots);
+router.get('/:roomId/availability', roomController.getAvailableSlots as any);
 
 // ============================================================================
 // DYNAMIC PRICING
@@ -93,21 +93,21 @@ router.get('/:roomId/availability', roomController.getAvailableSlots);
  * @desc    Calculate price for a room booking
  * @access  Private
  */
-router.post('/pricing/calculate', roomController.calculatePrice);
+router.post('/pricing/calculate', roomController.calculatePrice as any);
 
 /**
  * @route   POST /api/rooms/pricing/rules
  * @desc    Create a new pricing rule
  * @access  Private (Cowork Admin only)
  */
-router.post('/pricing/rules', roomController.createPricingRule);
+router.post('/pricing/rules', roomController.createPricingRule as any);
 
 /**
  * @route   GET /api/rooms/pricing/rules
  * @desc    Get all pricing rules
  * @access  Private (Cowork Admin only)
  */
-router.get('/pricing/rules', roomController.getPricingRules);
+router.get('/pricing/rules', roomController.getPricingRules as any);
 
 // ============================================================================
 // ANALYTICS
@@ -118,6 +118,6 @@ router.get('/pricing/rules', roomController.getPricingRules);
  * @desc    Get room usage analytics
  * @access  Private (Cowork Admin only)
  */
-router.get('/analytics', roomController.getRoomAnalytics);
+router.get('/analytics', roomController.getRoomAnalytics as any);
 
 export default router;

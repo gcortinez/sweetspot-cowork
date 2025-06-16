@@ -205,7 +205,7 @@ export class UserService {
           return null; // User not found
         }
         console.error("Error getting user by ID:", error);
-        throw new Error(`Failed to get user: ${error.message}`);
+        throw new Error(`Failed to get user: ${(error as Error).message}`);
       }
 
       return this.formatUserResponse(user);
@@ -241,7 +241,7 @@ export class UserService {
           return null; // User not found
         }
         console.error("Error getting user by email:", error);
-        throw new Error(`Failed to get user: ${error.message}`);
+        throw new Error(`Failed to get user: ${(error as Error).message}`);
       }
 
       return this.formatUserResponse(user);
@@ -304,7 +304,7 @@ export class UserService {
 
       if (error) {
         console.error("Error getting users by tenant:", error);
-        throw new Error(`Failed to get users: ${error.message}`);
+        throw new Error(`Failed to get users: ${(error as Error).message}`);
       }
 
       const formattedUsers: UserResponse[] = users.map((user) =>
@@ -349,7 +349,7 @@ export class UserService {
 
       if (error) {
         console.error("Error updating user:", error);
-        throw new Error(`Failed to update user: ${error.message}`);
+        throw new Error(`Failed to update user: ${(error as Error).message}`);
       }
 
       console.log(`✅ Updated user: ${user.email}`);
@@ -376,7 +376,7 @@ export class UserService {
 
       if (error) {
         console.error("Error updating last login:", error);
-        throw new Error(`Failed to update last login: ${error.message}`);
+        throw new Error(`Failed to update last login: ${(error as Error).message}`);
       }
     } catch (error) {
       console.error("Error in updateLastLogin:", error);
@@ -424,7 +424,7 @@ export class UserService {
 
         if (error) {
           console.error("Error hard deleting user:", error);
-          throw new Error(`Failed to delete user: ${error.message}`);
+          throw new Error(`Failed to delete user: ${(error as Error).message}`);
         }
 
         console.log(`🗑️ Hard deleted user: ${userId}`);

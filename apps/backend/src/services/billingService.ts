@@ -430,7 +430,7 @@ export class BillingService {
       } catch (error) {
         results.push({ 
           success: false, 
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: (error as Error).message,
           recurringInvoiceId: recurringInvoice.id,
         });
       }

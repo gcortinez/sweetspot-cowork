@@ -8,16 +8,16 @@ const router = Router();
 router.use(authenticate);
 
 // Lead management routes
-router.get('/stats', leadController.getLeadStats);
-router.get('/', leadController.getLeads);
-router.get('/:id', leadController.getLeadById);
-router.post('/', leadController.createLead);
-router.put('/:id', leadController.updateLead);
-router.delete('/:id', leadController.deleteLead);
+router.get('/stats', leadController.getLeadStats as any);
+router.get('/', leadController.getLeads as any);
+router.get('/:id', leadController.getLeadById as any);
+router.post('/', leadController.createLead as any);
+router.put('/:id', leadController.updateLead as any);
+router.delete('/:id', leadController.deleteLead as any);
 
 // Lead action routes
-router.post('/:id/assign', leadController.assignLead);
-router.post('/:id/update-score', leadController.updateLeadScore);
-router.post('/:id/add-note', leadController.addLeadNote);
+router.post('/:id/assign', leadController.assignLead as any);
+router.post('/:id/update-score', leadController.updateLeadScore as any);
+router.post('/:id/add-note', leadController.addLeadNote as any);
 
 export { router as leadRoutes };

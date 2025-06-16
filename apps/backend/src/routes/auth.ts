@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import {
   login,
   register,
@@ -13,6 +13,7 @@ import {
   updateProfile,
 } from "../controllers/authController";
 import { authenticate, optionalAuth } from "../middleware/auth";
+import { BaseRequest } from "../types/api";
 
 const router = Router();
 
@@ -23,8 +24,8 @@ const router = Router();
 // POST /auth/login - User login
 router.post("/login", login);
 
-// TEMPORARY: Bypass login for testing
-router.post("/bypass-login", (req: any, res: any) => {
+// TEMPORARY: Bypass login for testing  
+router.post("/bypass-login", ((req: Request, res: Response) => {
   const { email, password } = req.body;
   
   if (email === "admin@sweetspot.io" && password === "Admin123!") {
@@ -53,7 +54,7 @@ router.post("/bypass-login", (req: any, res: any) => {
     success: false,
     error: "Invalid credentials"
   });
-});
+}) as any);
 
 // POST /auth/register - User registration
 router.post("/register", register);
@@ -72,29 +73,29 @@ router.post("/confirm-reset-password", confirmResetPassword);
  */
 
 // POST /auth/logout - User logout
-router.post("/logout", authenticate, logout);
+router.post("/logout", authenticate, logout as any);
 
 // GET /auth/session - Get current session
-router.get("/session", authenticate, getSession);
+router.get("/session", authenticate, getSession as any);
 
 // GET /auth/profile - Get user profile
-router.get("/profile", authenticate, getProfile);
+router.get("/profile", authenticate, getProfile as any);
 
 // PUT /auth/profile - Update user profile
-router.put("/profile", authenticate, updateProfile);
+router.put("/profile", authenticate, updateProfile as any);
 
 // POST /auth/change-password - Change password
-router.post("/change-password", authenticate, changePassword);
+router.post("/change-password", authenticate, changePassword as any);
 
 // GET /auth/permissions - Verify user permissions
-router.get("/permissions", authenticate, verifyPermissions);
+router.get("/permissions", authenticate, verifyPermissions as any);
 
 /**
  * Optional authentication routes (authentication optional)
  */
 
 // GET /auth/me - Get current user (if authenticated)
-router.get("/me", optionalAuth, (req, res) => {
+router.get("/me", optionalAuth, (req: BaseRequest, res: Response) => {
   if (req.user) {
     res.json({
       success: true,

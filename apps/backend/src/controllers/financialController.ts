@@ -1,7 +1,7 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { z } from 'zod';
 import { ResponseHelper } from '../utils/response';
-import { AuthenticatedRequest } from '../middleware/auth';
+import { BaseRequest, AuthenticatedRequest, ErrorCode, HttpStatusCode } from '../types/api';
 import { logger } from '../utils/logger';
 import { financialReportService } from '../services/financialReportService';
 import { revenueForecastService } from '../services/revenueForecastService';
@@ -154,7 +154,7 @@ export const createFinancialReport = async (req: AuthenticatedRequest, res: Resp
     const report = await financialReportService.generateReport(tenantId, userId, request);
 
     logger.info('Financial report created successfully', { tenantId, reportId: report.id, reportType: request.reportType });
-    return ResponseHelper.success(res, report, 201);
+    return ResponseHelper.success(res, report, 'Financial report created successfully', HttpStatusCode.CREATED);
   } catch (error) {
     logger.error('Failed to create financial report', { tenantId: req.tenantId }, error as Error);
     
@@ -243,7 +243,7 @@ export const createRevenueForecast = async (req: AuthenticatedRequest, res: Resp
     const forecast = await revenueForecastService.generateForecast(tenantId, userId, request);
 
     logger.info('Revenue forecast created successfully', { tenantId, forecastId: forecast.id, methodology: request.methodology });
-    return ResponseHelper.success(res, forecast, 201);
+    return ResponseHelper.success(res, forecast, 'Revenue forecast created successfully', HttpStatusCode.CREATED);
   } catch (error) {
     logger.error('Failed to create revenue forecast', { tenantId: req.tenantId }, error as Error);
     
@@ -321,7 +321,7 @@ export const createProfitAnalysis = async (req: AuthenticatedRequest, res: Respo
     const analysis = await profitAnalysisService.generateProfitAnalysis(tenantId, userId, request);
 
     logger.info('Profit analysis created successfully', { tenantId, analysisId: analysis.id, analysisType: request.analysisType });
-    return ResponseHelper.success(res, analysis, 201);
+    return ResponseHelper.success(res, analysis, 'Profit analysis created successfully', HttpStatusCode.CREATED);
   } catch (error) {
     logger.error('Failed to create profit analysis', { tenantId: req.tenantId }, error as Error);
     
@@ -351,7 +351,7 @@ export const createPaymentReconciliation = async (req: AuthenticatedRequest, res
     const reconciliation = await paymentReconciliationService.createReconciliation(tenantId, userId, request);
 
     logger.info('Payment reconciliation created successfully', { tenantId, reconciliationId: reconciliation.id });
-    return ResponseHelper.success(res, reconciliation, 201);
+    return ResponseHelper.success(res, reconciliation, 'Payment reconciliation created successfully', HttpStatusCode.CREATED);
   } catch (error) {
     logger.error('Failed to create payment reconciliation', { tenantId: req.tenantId }, error as Error);
     
@@ -548,7 +548,7 @@ export const createFinancialDashboard = async (req: AuthenticatedRequest, res: R
     const dashboard = await financialDashboardService.createDashboard(tenantId, userId, request);
 
     logger.info('Financial dashboard created successfully', { tenantId, dashboardId: dashboard.id, dashboardType: request.dashboardType });
-    return ResponseHelper.success(res, dashboard, 201);
+    return ResponseHelper.success(res, dashboard, 'Financial dashboard created successfully', HttpStatusCode.CREATED);
   } catch (error) {
     logger.error('Failed to create financial dashboard', { tenantId: req.tenantId }, error as Error);
     

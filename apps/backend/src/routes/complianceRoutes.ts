@@ -1,13 +1,13 @@
 import { Router } from 'express';
-import { requireAuth } from '../middleware/auth';
-import { validateTenantAccess } from '../middleware/tenant';
+import { authenticate } from '../middleware/auth';
+import { tenantMiddleware } from '../middleware/tenant';
 import * as complianceController from '../controllers/complianceController';
 
 const router = Router();
 
 // Apply authentication and tenant validation to all routes
-router.use(requireAuth);
-router.use(validateTenantAccess);
+router.use(authenticate);
+router.use(tenantMiddleware);
 
 // ============================================================================
 // COMPLIANCE DASHBOARD
@@ -18,14 +18,14 @@ router.use(validateTenantAccess);
  * @desc    Get comprehensive compliance dashboard
  * @access  Private (Cowork Admin only)
  */
-router.get('/dashboard', complianceController.getComplianceDashboard);
+router.get('/dashboard', complianceController.getComplianceDashboard as any);
 
 /**
  * @route   GET /api/compliance/alerts
  * @desc    Get compliance alerts and warnings
  * @access  Private (Cowork Admin only)
  */
-router.get('/alerts', complianceController.getComplianceAlerts);
+router.get('/alerts', complianceController.getComplianceAlerts as any);
 
 // ============================================================================
 // SOX COMPLIANCE REPORTING
@@ -36,14 +36,14 @@ router.get('/alerts', complianceController.getComplianceAlerts);
  * @desc    Generate SOX compliance report
  * @access  Private (Cowork Admin only)
  */
-router.post('/sox/report', complianceController.generateSOXReport);
+router.post('/sox/report', complianceController.generateSOXReport as any);
 
 /**
  * @route   POST /api/compliance/sox/download
  * @desc    Download SOX compliance report as file
  * @access  Private (Cowork Admin only)
  */
-router.post('/sox/download', complianceController.downloadSOXReport);
+router.post('/sox/download', complianceController.downloadSOXReport as any);
 
 // ============================================================================
 // GDPR COMPLIANCE REPORTING
@@ -54,21 +54,21 @@ router.post('/sox/download', complianceController.downloadSOXReport);
  * @desc    Generate GDPR compliance report
  * @access  Private (Cowork Admin only)
  */
-router.post('/gdpr/report', complianceController.generateGDPRReport);
+router.post('/gdpr/report', complianceController.generateGDPRReport as any);
 
 /**
  * @route   POST /api/compliance/gdpr/download
  * @desc    Download GDPR compliance report as file
  * @access  Private (Cowork Admin only)
  */
-router.post('/gdpr/download', complianceController.downloadGDPRReport);
+router.post('/gdpr/download', complianceController.downloadGDPRReport as any);
 
 /**
  * @route   POST /api/compliance/gdpr/data-subject/:dataSubjectId
  * @desc    Generate GDPR report for specific data subject
  * @access  Private (Cowork Admin only)
  */
-router.post('/gdpr/data-subject/:dataSubjectId', complianceController.generateDataSubjectReport);
+router.post('/gdpr/data-subject/:dataSubjectId', complianceController.generateDataSubjectReport as any);
 
 // ============================================================================
 // HIPAA COMPLIANCE REPORTING
@@ -79,21 +79,21 @@ router.post('/gdpr/data-subject/:dataSubjectId', complianceController.generateDa
  * @desc    Generate HIPAA compliance report
  * @access  Private (Cowork Admin only)
  */
-router.post('/hipaa/report', complianceController.generateHIPAAReport);
+router.post('/hipaa/report', complianceController.generateHIPAAReport as any);
 
 /**
  * @route   POST /api/compliance/hipaa/download
  * @desc    Download HIPAA compliance report as file
  * @access  Private (Cowork Admin only)
  */
-router.post('/hipaa/download', complianceController.downloadHIPAAReport);
+router.post('/hipaa/download', complianceController.downloadHIPAAReport as any);
 
 /**
  * @route   POST /api/compliance/hipaa/patient/:patientId
  * @desc    Generate HIPAA access log for specific patient
  * @access  Private (Cowork Admin only)
  */
-router.post('/hipaa/patient/:patientId', complianceController.generatePatientAccessLog);
+router.post('/hipaa/patient/:patientId', complianceController.generatePatientAccessLog as any);
 
 // ============================================================================
 // PCI DSS COMPLIANCE REPORTING
@@ -104,13 +104,13 @@ router.post('/hipaa/patient/:patientId', complianceController.generatePatientAcc
  * @desc    Generate PCI DSS compliance report
  * @access  Private (Cowork Admin only)
  */
-router.post('/pci-dss/report', complianceController.generatePCIDSSReport);
+router.post('/pci-dss/report', complianceController.generatePCIDSSReport as any);
 
 /**
  * @route   POST /api/compliance/pci-dss/download
  * @desc    Download PCI DSS compliance report as file
  * @access  Private (Cowork Admin only)
  */
-router.post('/pci-dss/download', complianceController.downloadPCIDSSReport);
+router.post('/pci-dss/download', complianceController.downloadPCIDSSReport as any);
 
 export default router;

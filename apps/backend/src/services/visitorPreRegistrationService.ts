@@ -41,7 +41,7 @@ export interface PreRegistrationData {
   reminderSent: boolean;
   requiresNDA: boolean;
   requiresHealthCheck: boolean;
-  customRequirements: string[];
+  customRequirements: Prisma.JsonValue;
   status: PreRegistrationStatus;
   visitDate?: Date;
   visitorId?: string;
@@ -67,7 +67,7 @@ export interface CreatePreRegistrationRequest {
   parkingRequired?: boolean;
   requiresNDA?: boolean;
   requiresHealthCheck?: boolean;
-  customRequirements?: string[];
+  customRequirements?: Prisma.JsonValue;
   autoApprove?: boolean;
 }
 
@@ -88,7 +88,7 @@ export interface UpdatePreRegistrationRequest {
   parkingSpot?: string;
   requiresNDA?: boolean;
   requiresHealthCheck?: boolean;
-  customRequirements?: string[];
+  customRequirements?: Prisma.JsonValue;
 }
 
 export interface ApprovalRequest {
@@ -96,7 +96,7 @@ export interface ApprovalRequest {
   notes?: string;
   accessZones?: string[];
   parkingSpot?: string;
-  customRequirements?: string[];
+  customRequirements?: Prisma.JsonValue;
 }
 
 export interface PreRegistrationFilter {
@@ -238,7 +238,23 @@ export class VisitorPreRegistrationService {
           status: { in: [PreRegistrationStatus.PENDING, PreRegistrationStatus.APPROVED] },
         },
         data: {
-          ...data,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          phone: data.phone,
+          company: data.company,
+          jobTitle: data.jobTitle,
+          expectedArrival: data.expectedArrival,
+          expectedDuration: data.expectedDuration,
+          purpose: data.purpose,
+          purposeDetails: data.purposeDetails,
+          meetingRoom: data.meetingRoom,
+          accessZones: data.accessZones,
+          parkingRequired: data.parkingRequired,
+          parkingSpot: data.parkingSpot,
+          requiresNDA: data.requiresNDA,
+          requiresHealthCheck: data.requiresHealthCheck,
+          customRequirements: data.customRequirements,
           updatedAt: new Date(),
         },
         include: {
@@ -449,9 +465,9 @@ export class VisitorPreRegistrationService {
             approvedAt: new Date(),
             approvalNotes: data.notes,
             ...(data.approve && {
-              accessZones: data.accessZones || preReg.accessZones,
+              accessZones: data.accessZones !== undefined ? data.accessZones : preReg.accessZones,
               parkingSpot: data.parkingSpot,
-              customRequirements: data.customRequirements || preReg.customRequirements,
+              customRequirements: data.customRequirements !== undefined ? data.customRequirements : preReg.customRequirements,
             }),
           },
           include: {
@@ -915,7 +931,7 @@ export class VisitorPreRegistrationService {
       reminderSent: preReg.reminderSent,
       requiresNDA: preReg.requiresNDA,
       requiresHealthCheck: preReg.requiresHealthCheck,
-      customRequirements: Array.isArray(preReg.customRequirements) ? preReg.customRequirements : [],
+      customRequirements: Array.isArray(preReg.customRequirements) ? preReg.customRequirements as string[] : [],
       status: preReg.status,
       visitDate: preReg.visitDate,
       visitorId: preReg.visitorId,

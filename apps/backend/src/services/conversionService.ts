@@ -246,7 +246,7 @@ class ConversionService {
       } catch (error) {
         errors.push({ 
           leadId, 
-          error: error instanceof Error ? error.message : 'Unknown error' 
+          error: (error as Error).message 
         });
       }
     }
@@ -414,7 +414,7 @@ class ConversionService {
       weeklyConversions,
       totalLeads,
       conversionsByUser,
-      conversionsBySource,
+      conversionsBySourceRaw,
       recentConversions,
     ] = await Promise.all([
       // Total conversions
@@ -447,7 +447,7 @@ class ConversionService {
         INNER JOIN lead_conversions lc ON l.id = lc.lead_id
         WHERE l.tenant_id = ${tenantId}
         GROUP BY l.source
-      ` as Array<{ source: string; conversions: bigint }>,
+      `,
       
       // Recent conversions
       prisma.leadConversion.findMany({
@@ -475,6 +475,9 @@ class ConversionService {
         take: 10,
       }),
     ]);
+
+    // Type conversion for raw query result
+    const conversionsBySource = conversionsBySourceRaw as Array<{ source: string; conversions: bigint }>;
 
     // Calculate conversion rate
     const conversionRate = totalLeads > 0 ? (totalConversions / totalLeads) * 100 : 0;

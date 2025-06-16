@@ -368,7 +368,7 @@ export class ComplianceReportingService {
         action: { in: [AuditAction.CREATE, AuditAction.UPDATE] },
         details: {
           path: ['consent'],
-          not: null,
+          not: undefined,
         },
       },
       include: {
@@ -531,7 +531,7 @@ export class ComplianceReportingService {
         action: AuditAction.EXPORT_DATA,
         details: {
           path: ['phi'], // Protected Health Information
-          not: null,
+          not: undefined,
         },
       },
       include: {

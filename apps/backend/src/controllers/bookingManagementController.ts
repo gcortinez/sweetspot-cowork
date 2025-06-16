@@ -1,7 +1,7 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { z } from 'zod';
 import { bookingManagementService } from '../services/bookingManagementService';
-import { AuthenticatedRequest } from '../types/api';
+import { BaseRequest, AuthenticatedRequest, ErrorCode } from '../types/api';
 import { BookingStatus } from '@prisma/client';
 
 // ============================================================================
@@ -77,7 +77,7 @@ export const createBooking = async (req: AuthenticatedRequest, res: Response) =>
     
     const booking = await bookingManagementService.createBooking(req.tenant!.id, bookingData);
     
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       data: booking,
       message: 'Booking created successfully',
@@ -86,12 +86,12 @@ export const createBooking = async (req: AuthenticatedRequest, res: Response) =>
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         success: false,
-        error: 'Validation failed',
+        error: ErrorCode.VALIDATION_ERROR,
         details: error.errors,
       });
     }
     
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to create booking',
     });
@@ -110,7 +110,7 @@ export const updateBooking = async (req: AuthenticatedRequest, res: Response) =>
       updates
     );
     
-    res.json({
+    return res.json({
       success: true,
       data: booking,
       message: 'Booking updated successfully',
@@ -119,12 +119,12 @@ export const updateBooking = async (req: AuthenticatedRequest, res: Response) =>
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         success: false,
-        error: 'Validation failed',
+        error: ErrorCode.VALIDATION_ERROR,
         details: error.errors,
       });
     }
     
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to update booking',
     });
@@ -143,7 +143,7 @@ export const cancelBooking = async (req: AuthenticatedRequest, res: Response) =>
       reason
     );
     
-    res.json({
+    return res.json({
       success: true,
       data: booking,
       message: 'Booking cancelled successfully',
@@ -152,12 +152,12 @@ export const cancelBooking = async (req: AuthenticatedRequest, res: Response) =>
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         success: false,
-        error: 'Validation failed',
+        error: ErrorCode.VALIDATION_ERROR,
         details: error.errors,
       });
     }
     
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to cancel booking',
     });
@@ -170,7 +170,7 @@ export const getBookings = async (req: AuthenticatedRequest, res: Response) => {
     
     const result = await bookingManagementService.getBookings(req.tenant!.id, filters);
     
-    res.json({
+    return res.json({
       success: true,
       data: result.bookings,
       pagination: {
@@ -184,12 +184,12 @@ export const getBookings = async (req: AuthenticatedRequest, res: Response) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid filters',
+        error: ErrorCode.INVALID_INPUT,
         details: error.errors,
       });
     }
     
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get bookings',
     });
@@ -205,16 +205,16 @@ export const getBookingById = async (req: AuthenticatedRequest, res: Response) =
     if (!booking) {
       return res.status(404).json({
         success: false,
-        error: 'Booking not found',
+        error: ErrorCode.RESOURCE_NOT_FOUND,
       });
     }
     
-    res.json({
+    return res.json({
       success: true,
       data: booking,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get booking',
     });
@@ -228,7 +228,7 @@ export const getMyBookings = async (req: AuthenticatedRequest, res: Response) =>
     
     const result = await bookingManagementService.getBookings(req.tenant!.id, filters);
     
-    res.json({
+    return res.json({
       success: true,
       data: result.bookings,
       pagination: {
@@ -242,12 +242,12 @@ export const getMyBookings = async (req: AuthenticatedRequest, res: Response) =>
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid filters',
+        error: ErrorCode.INVALID_INPUT,
         details: error.errors,
       });
     }
     
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get bookings',
     });
@@ -269,7 +269,7 @@ export const processBookingApproval = async (req: AuthenticatedRequest, res: Res
       ...approvalData,
     });
     
-    res.json({
+    return res.json({
       success: true,
       data: booking,
       message: `Booking ${approvalData.status === 'approve' ? 'approved' : 'rejected'} successfully`,
@@ -278,12 +278,12 @@ export const processBookingApproval = async (req: AuthenticatedRequest, res: Res
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         success: false,
-        error: 'Validation failed',
+        error: ErrorCode.VALIDATION_ERROR,
         details: error.errors,
       });
     }
     
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to process approval',
     });
@@ -297,13 +297,13 @@ export const getPendingApprovals = async (req: AuthenticatedRequest, res: Respon
       req.user!.id
     );
     
-    res.json({
+    return res.json({
       success: true,
       data: approvals,
       total: approvals.length,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get pending approvals',
     });
@@ -324,7 +324,7 @@ export const checkInToRoom = async (req: AuthenticatedRequest, res: Response) =>
       ...checkInData,
     });
     
-    res.json({
+    return res.json({
       success: true,
       data: checkIn,
       message: 'Checked in successfully',
@@ -333,12 +333,12 @@ export const checkInToRoom = async (req: AuthenticatedRequest, res: Response) =>
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         success: false,
-        error: 'Validation failed',
+        error: ErrorCode.VALIDATION_ERROR,
         details: error.errors,
       });
     }
     
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to check in',
     });
@@ -355,7 +355,7 @@ export const checkOutFromRoom = async (req: AuthenticatedRequest, res: Response)
       ...checkOutData,
     });
     
-    res.json({
+    return res.json({
       success: true,
       data: checkOut,
       message: 'Checked out successfully',
@@ -364,12 +364,12 @@ export const checkOutFromRoom = async (req: AuthenticatedRequest, res: Response)
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         success: false,
-        error: 'Validation failed',
+        error: ErrorCode.VALIDATION_ERROR,
         details: error.errors,
       });
     }
     
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to check out',
     });
@@ -389,13 +389,13 @@ export const quickCheckIn = async (req: AuthenticatedRequest, res: Response) => 
       userId: req.user!.id,
     });
     
-    res.json({
+    return res.json({
       success: true,
       data: checkIn,
       message: 'Quick check-in successful',
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to check in',
     });
@@ -411,7 +411,7 @@ export const qrCheckIn = async (req: AuthenticatedRequest, res: Response) => {
     if (!qrCode.startsWith('booking:')) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid QR code format',
+        error: ErrorCode.INVALID_INPUT,
       });
     }
     
@@ -423,13 +423,13 @@ export const qrCheckIn = async (req: AuthenticatedRequest, res: Response) => {
       qrCodeUsed: qrCode,
     });
     
-    res.json({
+    return res.json({
       success: true,
       data: checkIn,
       message: 'QR check-in successful',
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to check in with QR code',
     });
@@ -451,12 +451,12 @@ export const getBookingStatistics = async (req: AuthenticatedRequest, res: Respo
       endDate ? new Date(endDate as string) : undefined
     );
     
-    res.json({
+    return res.json({
       success: true,
       data: statistics,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get booking statistics',
     });
@@ -480,13 +480,13 @@ export const getUpcomingBookings = async (req: AuthenticatedRequest, res: Respon
     
     const result = await bookingManagementService.getBookings(req.tenant!.id, filters);
     
-    res.json({
+    return res.json({
       success: true,
       data: result.bookings,
       total: result.total,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get upcoming bookings',
     });
@@ -510,14 +510,14 @@ export const getTodaysBookings = async (req: AuthenticatedRequest, res: Response
     
     const result = await bookingManagementService.getBookings(req.tenant!.id, filters);
     
-    res.json({
+    return res.json({
       success: true,
       data: result.bookings,
       total: result.total,
       date: today.toISOString().split('T')[0],
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get today\'s bookings',
     });

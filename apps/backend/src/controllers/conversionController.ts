@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { z } from 'zod';
 import { conversionService } from '../services/conversionService';
 import { handleController } from '../utils/response';
-import { AuthenticatedRequest } from '../types/api';
+import { BaseRequest, ErrorCode } from '../types/api';
 
 // Lead conversion schema
 const leadConversionSchema = z.object({
@@ -53,10 +53,10 @@ const queryConversionsSchema = z.object({
 
 class ConversionController {
   // POST /api/conversions/lead-to-client
-  async convertLeadToClient(req: AuthenticatedRequest, res: Response) {
+  async convertLeadToClient(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const data = leadConversionSchema.parse(req.body);
@@ -69,10 +69,10 @@ class ConversionController {
   }
 
   // POST /api/conversions/batch-convert
-  async batchConvertLeads(req: AuthenticatedRequest, res: Response) {
+  async batchConvertLeads(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const data = batchConversionSchema.parse(req.body);
@@ -85,10 +85,10 @@ class ConversionController {
   }
 
   // GET /api/conversions
-  async getConversions(req: AuthenticatedRequest, res: Response) {
+  async getConversions(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const query = queryConversionsSchema.parse(req.query);
@@ -100,10 +100,10 @@ class ConversionController {
   }
 
   // GET /api/conversions/:id
-  async getConversionById(req: AuthenticatedRequest, res: Response) {
+  async getConversionById(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const { id } = req.params;
@@ -115,10 +115,10 @@ class ConversionController {
   }
 
   // GET /api/conversions/stats
-  async getConversionStats(req: AuthenticatedRequest, res: Response) {
+  async getConversionStats(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const tenantId = req.user.tenantId;
@@ -128,10 +128,10 @@ class ConversionController {
   }
 
   // GET /api/conversions/conversion-funnel
-  async getConversionFunnel(req: AuthenticatedRequest, res: Response) {
+  async getConversionFunnel(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const query = z.object({
@@ -145,10 +145,10 @@ class ConversionController {
   }
 
   // GET /api/conversions/qualified-leads
-  async getQualifiedLeads(req: AuthenticatedRequest, res: Response) {
+  async getQualifiedLeads(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const query = z.object({
@@ -165,10 +165,10 @@ class ConversionController {
   }
 
   // POST /api/conversions/preview
-  async previewConversion(req: AuthenticatedRequest, res: Response) {
+  async previewConversion(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const { leadId } = z.object({ leadId: z.string() }).parse(req.body);
@@ -180,10 +180,10 @@ class ConversionController {
   }
 
   // GET /api/conversions/performance/:userId
-  async getUserConversionPerformance(req: AuthenticatedRequest, res: Response) {
+  async getUserConversionPerformance(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const { userId } = req.params;

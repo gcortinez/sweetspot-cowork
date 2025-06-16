@@ -1,23 +1,29 @@
-import { prisma } from '../lib/prisma';
-import { BillingService } from './billingService';
-import { paymentService } from './paymentService';
-import { consumptionTrackingService } from './consumptionTrackingService';
-import { 
-  SubscriptionStatus, 
-  BillingStatus, 
-  InvoiceStatus, 
+import { prisma } from "../lib/prisma";
+import { BillingService } from "./billingService";
+import { paymentService } from "./paymentService";
+import { consumptionTrackingService } from "./consumptionTrackingService";
+import {
+  SubscriptionStatus,
+  BillingStatus,
+  InvoiceStatus,
   PaymentStatus,
-  RecurringInvoiceStatus 
-} from '@prisma/client';
+  RecurringInvoiceStatus,
+  PaymentMethod,
+} from "@prisma/client";
 
 export interface AutomationRule {
   id: string;
   name: string;
   description: string;
-  trigger: 'schedule' | 'event' | 'threshold';
+  trigger: "schedule" | "event" | "threshold";
   conditions: Record<string, any>;
   actions: Array<{
-    type: 'generate_invoice' | 'send_reminder' | 'suspend_service' | 'collect_payment' | 'send_notification';
+    type:
+      | "generate_invoice"
+      | "send_reminder"
+      | "suspend_service"
+      | "collect_payment"
+      | "send_notification";
     parameters: Record<string, any>;
   }>;
   isActive: boolean;
@@ -25,11 +31,16 @@ export interface AutomationRule {
 
 export interface BillingJob {
   id: string;
-  type: 'invoice_generation' | 'payment_collection' | 'subscription_renewal' | 'usage_processing' | 'dunning';
+  type:
+    | "invoice_generation"
+    | "payment_collection"
+    | "subscription_renewal"
+    | "usage_processing"
+    | "dunning";
   tenantId: string;
   scheduledFor: Date;
   data: Record<string, any>;
-  status: 'pending' | 'running' | 'completed' | 'failed';
+  status: "pending" | "running" | "completed" | "failed";
   attempts: number;
   maxAttempts: number;
   lastAttempt?: Date;
@@ -57,7 +68,9 @@ export class BillingAutomationService {
   // AUTOMATED INVOICE GENERATION
   // ============================================================================
 
-  async runInvoiceGenerationWorkflow(tenantId: string): Promise<BillingWorkflowResult> {
+  async runInvoiceGenerationWorkflow(
+    tenantId: string
+  ): Promise<BillingWorkflowResult> {
     const result: BillingWorkflowResult = {
       success: true,
       jobsCreated: 0,
@@ -69,10 +82,12 @@ export class BillingAutomationService {
 
     try {
       // Get billing settings
-      const billingSettings = await this.billingService.getBillingSettings(tenantId);
-      
+      const billingSettings = await this.billingService.getBillingSettings(
+        tenantId
+      );
+
       if (!billingSettings.autoGenerateInvoices) {
-        result.warnings.push('Auto invoice generation is disabled');
+        result.warnings.push("Auto invoice generation is disabled");
         return result;
       }
 
@@ -95,14 +110,15 @@ export class BillingAutomationService {
       for (const subscription of dueSubscriptions) {
         try {
           // Generate invoice for subscription
-          const invoice = await this.billingService.generateInvoiceForSubscription(
-            tenantId,
-            subscription.id,
-            {
-              includeUsage: true,
-              autoSend: billingSettings.autoSendInvoices,
-            }
-          );
+          const invoice =
+            await this.billingService.generateInvoiceForSubscription(
+              tenantId,
+              subscription.id,
+              {
+                includeUsage: true,
+                autoSend: billingSettings.autoSendInvoices,
+              }
+            );
 
           result.invoicesGenerated++;
 
@@ -131,18 +147,22 @@ export class BillingAutomationService {
           if (billingSettings.autoSendInvoices) {
             await this.sendInvoiceNotification(tenantId, invoice.id);
           }
-
         } catch (error) {
-          result.errors.push(`Failed to generate invoice for subscription ${subscription.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          result.errors.push(
+            `Failed to generate invoice for subscription ${subscription.id}: ${
+              (error as Error).message
+            }`
+          );
           result.success = false;
         }
       }
 
       return result;
-
     } catch (error) {
       result.success = false;
-      result.errors.push(`Invoice generation workflow failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      result.errors.push(
+        `Invoice generation workflow failed: ${(error as Error).message}`
+      );
       return result;
     }
   }
@@ -151,7 +171,9 @@ export class BillingAutomationService {
   // AUTOMATED PAYMENT COLLECTION
   // ============================================================================
 
-  async runPaymentCollectionWorkflow(tenantId: string): Promise<BillingWorkflowResult> {
+  async runPaymentCollectionWorkflow(
+    tenantId: string
+  ): Promise<BillingWorkflowResult> {
     const result: BillingWorkflowResult = {
       success: true,
       jobsCreated: 0,
@@ -162,10 +184,12 @@ export class BillingAutomationService {
     };
 
     try {
-      const billingSettings = await this.billingService.getBillingSettings(tenantId);
-      
+      const billingSettings = await this.billingService.getBillingSettings(
+        tenantId
+      );
+
       if (!billingSettings.autoCollectPayments) {
-        result.warnings.push('Auto payment collection is disabled');
+        result.warnings.push("Auto payment collection is disabled");
         return result;
       }
 
@@ -174,8 +198,10 @@ export class BillingAutomationService {
         where: {
           tenantId,
           status: { in: [InvoiceStatus.SENT, InvoiceStatus.OVERDUE] },
-          dueDate: { 
-            gte: new Date(Date.now() - billingSettings.gracePeriodDays * 24 * 60 * 60 * 1000) 
+          dueDate: {
+            gte: new Date(
+              Date.now() - billingSettings.gracePeriodDays * 24 * 60 * 60 * 1000
+            ),
           },
         },
         include: {
@@ -194,20 +220,21 @@ export class BillingAutomationService {
       for (const invoice of unpaidInvoices) {
         try {
           if (invoice.client.paymentMethods.length === 0) {
-            result.warnings.push(`No payment method found for client ${invoice.client.name}`);
+            result.warnings.push(
+              `No payment method found for client ${invoice.client.name}`
+            );
             continue;
           }
 
           // Attempt to collect payment
-          const payment = await paymentService.processPayment(
-            tenantId,
-            invoice.clientId,
-            {
-              amount: parseFloat(invoice.total.toString()),
-              currency: invoice.currency,
-              description: `Payment for invoice ${invoice.number}`,
-            }
-          );
+          const payment = await paymentService.createPayment(tenantId, {
+            clientId: invoice.clientId,
+            invoiceId: invoice.id,
+            amount: parseFloat(invoice.total.toString()),
+            currency: invoice.currency,
+            method: PaymentMethod.BANK_TRANSFER, // Default method
+            reference: `INV-${invoice.number}`,
+          });
 
           if (payment.status === PaymentStatus.COMPLETED) {
             // Update invoice as paid
@@ -221,24 +248,30 @@ export class BillingAutomationService {
 
             result.paymentsProcessed++;
           } else {
-            result.warnings.push(`Payment failed for invoice ${invoice.number}`);
-            
+            result.warnings.push(
+              `Payment failed for invoice ${invoice.number}`
+            );
+
             // Schedule retry if enabled
             if (billingSettings.retryFailedPayments) {
               await this.schedulePaymentRetry(tenantId, invoice.id, payment.id);
             }
           }
-
         } catch (error) {
-          result.errors.push(`Failed to collect payment for invoice ${invoice.number}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          result.errors.push(
+            `Failed to collect payment for invoice ${invoice.number}: ${
+              (error as Error).message
+            }`
+          );
         }
       }
 
       return result;
-
     } catch (error) {
       result.success = false;
-      result.errors.push(`Payment collection workflow failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      result.errors.push(
+        `Payment collection workflow failed: ${(error as Error).message}`
+      );
       return result;
     }
   }
@@ -247,7 +280,9 @@ export class BillingAutomationService {
   // SUBSCRIPTION MANAGEMENT
   // ============================================================================
 
-  async runSubscriptionMaintenanceWorkflow(tenantId: string): Promise<BillingWorkflowResult> {
+  async runSubscriptionMaintenanceWorkflow(
+    tenantId: string
+  ): Promise<BillingWorkflowResult> {
     const result: BillingWorkflowResult = {
       success: true,
       jobsCreated: 0,
@@ -274,7 +309,11 @@ export class BillingAutomationService {
             await this.renewSubscription(tenantId, subscription.id);
             result.jobsCreated++;
           } catch (error) {
-            result.errors.push(`Failed to renew subscription ${subscription.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            result.errors.push(
+              `Failed to renew subscription ${subscription.id}: ${
+                (error as Error).message
+              }`
+            );
           }
         } else {
           // Cancel subscription
@@ -300,23 +339,28 @@ export class BillingAutomationService {
       for (const subscription of pastDueSubscriptions) {
         // Check if subscription should be suspended
         const daysPastDue = this.getDaysPastDue(subscription.nextBillingDate);
-        const billingSettings = await this.billingService.getBillingSettings(tenantId);
-        
+        const billingSettings = await this.billingService.getBillingSettings(
+          tenantId
+        );
+
         if (daysPastDue > billingSettings.gracePeriodDays) {
           await prisma.subscription.update({
             where: { id: subscription.id },
             data: { billingStatus: BillingStatus.SUSPENDED },
           });
-          
-          result.warnings.push(`Subscription ${subscription.id} suspended due to non-payment`);
+
+          result.warnings.push(
+            `Subscription ${subscription.id} suspended due to non-payment`
+          );
         }
       }
 
       return result;
-
     } catch (error) {
       result.success = false;
-      result.errors.push(`Subscription maintenance workflow failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      result.errors.push(
+        `Subscription maintenance workflow failed: ${(error as Error).message}`
+      );
       return result;
     }
   }
@@ -336,10 +380,12 @@ export class BillingAutomationService {
     };
 
     try {
-      const billingSettings = await this.billingService.getBillingSettings(tenantId);
-      
+      const billingSettings = await this.billingService.getBillingSettings(
+        tenantId
+      );
+
       if (!billingSettings.dunningEnabled) {
-        result.warnings.push('Dunning process is disabled');
+        result.warnings.push("Dunning process is disabled");
         return result;
       }
 
@@ -357,33 +403,38 @@ export class BillingAutomationService {
 
       for (const invoice of overdueInvoices) {
         const daysPastDue = this.getDaysPastDue(invoice.dueDate);
-        
+
         // Determine dunning stage based on days past due
-        let dunningStage: 'reminder' | 'warning' | 'final_notice' | 'suspend';
-        
+        let dunningStage: "reminder" | "warning" | "final_notice" | "suspend";
+
         if (daysPastDue <= 7) {
-          dunningStage = 'reminder';
+          dunningStage = "reminder";
         } else if (daysPastDue <= 14) {
-          dunningStage = 'warning';
+          dunningStage = "warning";
         } else if (daysPastDue <= 30) {
-          dunningStage = 'final_notice';
+          dunningStage = "final_notice";
         } else {
-          dunningStage = 'suspend';
+          dunningStage = "suspend";
         }
 
         try {
           await this.executeDunningAction(tenantId, invoice.id, dunningStage);
           result.jobsCreated++;
         } catch (error) {
-          result.errors.push(`Dunning action failed for invoice ${invoice.number}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          result.errors.push(
+            `Dunning action failed for invoice ${invoice.number}: ${
+              (error as Error).message
+            }`
+          );
         }
       }
 
       return result;
-
     } catch (error) {
       result.success = false;
-      result.errors.push(`Dunning workflow failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      result.errors.push(
+        `Dunning workflow failed: ${(error as Error).message}`
+      );
       return result;
     }
   }
@@ -392,7 +443,9 @@ export class BillingAutomationService {
   // USAGE PROCESSING
   // ============================================================================
 
-  async runUsageProcessingWorkflow(tenantId: string): Promise<BillingWorkflowResult> {
+  async runUsageProcessingWorkflow(
+    tenantId: string
+  ): Promise<BillingWorkflowResult> {
     const result: BillingWorkflowResult = {
       success: true,
       jobsCreated: 0,
@@ -404,12 +457,14 @@ export class BillingAutomationService {
 
     try {
       // Process unbilled usage records
-      const unbilledUsage = await consumptionTrackingService.getUnbilledUsage(tenantId);
-      
+      const unbilledUsage = await consumptionTrackingService.getUnbilledUsage(
+        tenantId
+      );
+
       // Group by client and billing period
       const groupedUsage = unbilledUsage.reduce((acc, record) => {
         const key = `${record.clientId}_${record.billingPeriod}`;
-        
+
         if (!acc[key]) {
           acc[key] = {
             clientId: record.clientId,
@@ -417,7 +472,7 @@ export class BillingAutomationService {
             records: [],
           };
         }
-        
+
         acc[key].records.push(record);
         return acc;
       }, {} as Record<string, any>);
@@ -426,25 +481,31 @@ export class BillingAutomationService {
       for (const [key, group] of Object.entries(groupedUsage)) {
         try {
           // Check if we should generate an invoice for this usage
-          const shouldInvoice = await this.shouldGenerateUsageInvoice(tenantId, group);
-          
+          const shouldInvoice = await this.shouldGenerateUsageInvoice(
+            tenantId,
+            group
+          );
+
           if (shouldInvoice) {
             // Generate usage-only invoice
             await this.generateUsageInvoice(tenantId, group);
             result.invoicesGenerated++;
           }
-          
+
           result.jobsCreated++;
         } catch (error) {
-          result.errors.push(`Failed to process usage for ${key}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          result.errors.push(
+            `Failed to process usage for ${key}: ${(error as Error).message}`
+          );
         }
       }
 
       return result;
-
     } catch (error) {
       result.success = false;
-      result.errors.push(`Usage processing workflow failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      result.errors.push(
+        `Usage processing workflow failed: ${(error as Error).message}`
+      );
       return result;
     }
   }
@@ -453,30 +514,39 @@ export class BillingAutomationService {
   // AUTOMATION ORCHESTRATION
   // ============================================================================
 
-  async runAllAutomationWorkflows(tenantId: string): Promise<Record<string, BillingWorkflowResult>> {
+  async runAllAutomationWorkflows(
+    tenantId: string
+  ): Promise<Record<string, BillingWorkflowResult>> {
     const results: Record<string, BillingWorkflowResult> = {};
 
     // Run workflows in sequence
-    results.invoiceGeneration = await this.runInvoiceGenerationWorkflow(tenantId);
-    results.paymentCollection = await this.runPaymentCollectionWorkflow(tenantId);
-    results.subscriptionMaintenance = await this.runSubscriptionMaintenanceWorkflow(tenantId);
+    results.invoiceGeneration = await this.runInvoiceGenerationWorkflow(
+      tenantId
+    );
+    results.paymentCollection = await this.runPaymentCollectionWorkflow(
+      tenantId
+    );
+    results.subscriptionMaintenance =
+      await this.runSubscriptionMaintenanceWorkflow(tenantId);
     results.dunning = await this.runDunningWorkflow(tenantId);
     results.usageProcessing = await this.runUsageProcessingWorkflow(tenantId);
 
     return results;
   }
 
-  async scheduleAutomationJob(job: Omit<BillingJob, 'id'>): Promise<string> {
+  async scheduleAutomationJob(job: Omit<BillingJob, "id">): Promise<string> {
     // In a real implementation, this would use a job queue like Bull, Agenda, or similar
     // For now, we'll just store the job and process it immediately if scheduled for now
-    
-    const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
+    const jobId = `job_${Date.now()}_${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
+
     // Store job (in real implementation, this would go to a job queue)
     const storedJob: BillingJob = {
       id: jobId,
       ...job,
-      status: 'pending',
+      status: "pending",
       attempts: 0,
     };
 
@@ -494,42 +564,41 @@ export class BillingAutomationService {
 
   private async processJob(job: BillingJob): Promise<void> {
     try {
-      job.status = 'running';
+      job.status = "running";
       job.attempts++;
       job.lastAttempt = new Date();
 
       let result: any;
 
       switch (job.type) {
-        case 'invoice_generation':
+        case "invoice_generation":
           result = await this.runInvoiceGenerationWorkflow(job.tenantId);
           break;
-        case 'payment_collection':
+        case "payment_collection":
           result = await this.runPaymentCollectionWorkflow(job.tenantId);
           break;
-        case 'subscription_renewal':
+        case "subscription_renewal":
           result = await this.runSubscriptionMaintenanceWorkflow(job.tenantId);
           break;
-        case 'usage_processing':
+        case "usage_processing":
           result = await this.runUsageProcessingWorkflow(job.tenantId);
           break;
-        case 'dunning':
+        case "dunning":
           result = await this.runDunningWorkflow(job.tenantId);
           break;
         default:
           throw new Error(`Unknown job type: ${job.type}`);
       }
 
-      job.status = 'completed';
+      job.status = "completed";
       job.result = result;
-
     } catch (error) {
-      job.status = 'failed';
-      job.error = error instanceof Error ? error.message : 'Unknown error';
+      job.status = "failed";
+      job.error = (error as Error).message;
 
       // Retry if under max attempts
       if (job.attempts < job.maxAttempts) {
-        job.status = 'pending';
+        job.status = "pending";
         // Schedule retry (in real implementation)
       }
     }
@@ -537,28 +606,28 @@ export class BillingAutomationService {
 
   private calculateNextBillingDate(currentDate: Date, billingCycle: any): Date {
     const date = new Date(currentDate);
-    
+
     switch (billingCycle.cycle) {
-      case 'DAILY':
+      case "DAILY":
         date.setDate(date.getDate() + 1);
         break;
-      case 'WEEKLY':
+      case "WEEKLY":
         date.setDate(date.getDate() + 7);
         break;
-      case 'MONTHLY':
+      case "MONTHLY":
         date.setMonth(date.getMonth() + 1);
         if (billingCycle.dayOfMonth) {
           date.setDate(billingCycle.dayOfMonth);
         }
         break;
-      case 'QUARTERLY':
+      case "QUARTERLY":
         date.setMonth(date.getMonth() + 3);
         break;
-      case 'YEARLY':
+      case "YEARLY":
         date.setFullYear(date.getFullYear() + 1);
         break;
     }
-    
+
     return date;
   }
 
@@ -568,26 +637,29 @@ export class BillingAutomationService {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   }
 
-  private async renewSubscription(tenantId: string, subscriptionId: string): Promise<void> {
+  private async renewSubscription(
+    tenantId: string,
+    subscriptionId: string
+  ): Promise<void> {
     const subscription = await prisma.subscription.findFirst({
       where: { id: subscriptionId, tenantId },
       include: { billingCycle: true },
     });
 
     if (!subscription) {
-      throw new Error('Subscription not found');
+      throw new Error("Subscription not found");
     }
 
     const newEndDate = new Date(subscription.endDate!);
-    
+
     switch (subscription.billingCycle.cycle) {
-      case 'MONTHLY':
+      case "MONTHLY":
         newEndDate.setMonth(newEndDate.getMonth() + 1);
         break;
-      case 'QUARTERLY':
+      case "QUARTERLY":
         newEndDate.setMonth(newEndDate.getMonth() + 3);
         break;
-      case 'YEARLY':
+      case "YEARLY":
         newEndDate.setFullYear(newEndDate.getFullYear() + 1);
         break;
     }
@@ -602,12 +674,16 @@ export class BillingAutomationService {
     });
   }
 
-  private async executeDunningAction(tenantId: string, invoiceId: string, stage: string): Promise<void> {
+  private async executeDunningAction(
+    tenantId: string,
+    invoiceId: string,
+    stage: string
+  ): Promise<void> {
     // In a real implementation, this would send emails, SMS, etc.
     // For now, we'll just log the action
     console.log(`Executing dunning action ${stage} for invoice ${invoiceId}`);
-    
-    if (stage === 'suspend') {
+
+    if (stage === "suspend") {
       // Suspend client services
       const invoice = await prisma.invoice.findFirst({
         where: { id: invoiceId, tenantId },
@@ -629,9 +705,14 @@ export class BillingAutomationService {
     }
   }
 
-  private async shouldGenerateUsageInvoice(tenantId: string, group: any): Promise<boolean> {
-    const totalCost = group.records.reduce((sum: number, record: any) => 
-      sum + parseFloat(record.totalCost.toString()), 0
+  private async shouldGenerateUsageInvoice(
+    tenantId: string,
+    group: any
+  ): Promise<boolean> {
+    const totalCost = group.records.reduce(
+      (sum: number, record: any) =>
+        sum + parseFloat(record.totalCost.toString()),
+      0
     );
 
     // Only generate invoice if usage cost exceeds minimum threshold
@@ -639,12 +720,19 @@ export class BillingAutomationService {
     return totalCost >= minimumInvoiceAmount;
   }
 
-  private async generateUsageInvoice(tenantId: string, group: any): Promise<void> {
-    const billingSettings = await this.billingService.getBillingSettings(tenantId);
+  private async generateUsageInvoice(
+    tenantId: string,
+    group: any
+  ): Promise<void> {
+    const billingSettings = await this.billingService.getBillingSettings(
+      tenantId
+    );
     const invoiceNumber = await this.generateInvoiceNumber(tenantId);
-    
-    const totalCost = group.records.reduce((sum: number, record: any) => 
-      sum + parseFloat(record.totalCost.toString()), 0
+
+    const totalCost = group.records.reduce(
+      (sum: number, record: any) =>
+        sum + parseFloat(record.totalCost.toString()),
+      0
     );
 
     const tax = totalCost * parseFloat(billingSettings.taxRate.toString());
@@ -662,8 +750,10 @@ export class BillingAutomationService {
         tax,
         total,
         currency: billingSettings.currency,
-        dueDate: new Date(Date.now() + billingSettings.paymentTermsDays * 24 * 60 * 60 * 1000),
-        createdById: 'system', // TODO: Get from context
+        dueDate: new Date(
+          Date.now() + billingSettings.paymentTermsDays * 24 * 60 * 60 * 1000
+        ),
+        createdById: "system", // TODO: Get from context
         items: {
           create: group.records.map((record: any) => ({
             description: `${record.resourceType} - ${record.unit}`,
@@ -687,43 +777,57 @@ export class BillingAutomationService {
     const settings = await this.billingService.getBillingSettings(tenantId);
     const lastInvoice = await prisma.invoice.findFirst({
       where: { tenantId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     let nextNumber = settings.invoiceNumberStart;
     if (lastInvoice) {
-      const lastNumber = parseInt(lastInvoice.number.replace(settings.invoicePrefix, ''));
-      nextNumber = isNaN(lastNumber) ? settings.invoiceNumberStart : lastNumber + 1;
+      const lastNumber = parseInt(
+        lastInvoice.number.replace(settings.invoicePrefix, "")
+      );
+      nextNumber = isNaN(lastNumber)
+        ? settings.invoiceNumberStart
+        : lastNumber + 1;
     }
 
     return `${settings.invoicePrefix}${nextNumber}`;
   }
 
-  private async schedulePaymentCollection(tenantId: string, invoiceId: string): Promise<void> {
-    // Schedule payment collection job
+  private async schedulePaymentCollection(
+    tenantId: string,
+    invoiceId: string
+  ): Promise<void> {
     await this.scheduleAutomationJob({
-      type: 'payment_collection',
+      type: "payment_collection",
       tenantId,
-      scheduledFor: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes from now
+      scheduledFor: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours later
       data: { invoiceId },
+      status: "pending",
+      attempts: 0,
       maxAttempts: 3,
     });
   }
 
-  private async schedulePaymentRetry(tenantId: string, invoiceId: string, paymentId: string): Promise<void> {
-    const billingSettings = await this.billingService.getBillingSettings(tenantId);
-    const retryDate = new Date(Date.now() + billingSettings.retryIntervalDays * 24 * 60 * 60 * 1000);
-
+  private async schedulePaymentRetry(
+    tenantId: string,
+    invoiceId: string,
+    paymentId: string
+  ): Promise<void> {
     await this.scheduleAutomationJob({
-      type: 'payment_collection',
+      type: "payment_collection",
       tenantId,
-      scheduledFor: retryDate,
+      scheduledFor: new Date(Date.now() + 6 * 60 * 60 * 1000), // 6 hours later
       data: { invoiceId, paymentId, isRetry: true },
-      maxAttempts: billingSettings.maxRetryAttempts,
+      status: "pending",
+      attempts: 0,
+      maxAttempts: 3,
     });
   }
 
-  private async sendInvoiceNotification(tenantId: string, invoiceId: string): Promise<void> {
+  private async sendInvoiceNotification(
+    tenantId: string,
+    invoiceId: string
+  ): Promise<void> {
     // In a real implementation, this would send email notifications
     console.log(`Sending invoice notification for ${invoiceId}`);
   }

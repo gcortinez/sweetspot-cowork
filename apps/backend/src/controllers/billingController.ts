@@ -1,10 +1,10 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { z } from 'zod';
 import { BillingService } from '../services/billingService';
 import { paymentService } from '../services/paymentService';
 import { consumptionTrackingService } from '../services/consumptionTrackingService';
 import { billingAutomationService } from '../services/billingAutomationService';
-import { AuthenticatedRequest } from '../types/api';
+import { AuthenticatedRequest, ErrorCode } from '../types/api';
 import { 
   BillingCycle, 
   SubscriptionStatus, 
@@ -102,7 +102,7 @@ export const createBillingCycle = async (req: AuthenticatedRequest, res: Respons
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };
@@ -118,7 +118,7 @@ export const getBillingCycles = async (req: AuthenticatedRequest, res: Response)
   } catch (error) {
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };
@@ -139,7 +139,7 @@ export const createSubscription = async (req: AuthenticatedRequest, res: Respons
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };
@@ -166,7 +166,7 @@ export const getSubscriptions = async (req: AuthenticatedRequest, res: Response)
   } catch (error) {
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };
@@ -185,7 +185,7 @@ export const updateSubscription = async (req: AuthenticatedRequest, res: Respons
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };
@@ -208,7 +208,7 @@ export const cancelSubscription = async (req: AuthenticatedRequest, res: Respons
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };
@@ -229,7 +229,7 @@ export const trackConsumption = async (req: AuthenticatedRequest, res: Response)
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };
@@ -260,7 +260,7 @@ export const getUsageRecords = async (req: AuthenticatedRequest, res: Response) 
   } catch (error) {
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };
@@ -273,7 +273,7 @@ export const getConsumptionSummary = async (req: AuthenticatedRequest, res: Resp
     if (!startDate || !endDate) {
       return res.status(400).json({
         success: false,
-        error: 'Start date and end date are required',
+        error: ErrorCode.MISSING_REQUIRED_FIELD,
       });
     }
 
@@ -284,14 +284,14 @@ export const getConsumptionSummary = async (req: AuthenticatedRequest, res: Resp
       new Date(endDate as string)
     );
     
-    res.json({
+    return res.json({
       success: true,
       data: summary,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };
@@ -304,7 +304,7 @@ export const getUsageReport = async (req: AuthenticatedRequest, res: Response) =
     if (!period) {
       return res.status(400).json({
         success: false,
-        error: 'Period is required (format: YYYY-MM)',
+        error: ErrorCode.MISSING_REQUIRED_FIELD,
       });
     }
 
@@ -314,14 +314,14 @@ export const getUsageReport = async (req: AuthenticatedRequest, res: Response) =
       period as string
     );
     
-    res.json({
+    return res.json({
       success: true,
       data: report,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };
@@ -348,7 +348,7 @@ export const generateInvoice = async (req: AuthenticatedRequest, res: Response) 
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };
@@ -364,7 +364,7 @@ export const generateRecurringInvoices = async (req: AuthenticatedRequest, res: 
   } catch (error) {
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };
@@ -385,7 +385,7 @@ export const createPaymentMethod = async (req: AuthenticatedRequest, res: Respon
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };
@@ -393,7 +393,7 @@ export const createPaymentMethod = async (req: AuthenticatedRequest, res: Respon
 export const getPaymentMethods = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { clientId } = req.params;
-    const paymentMethods = await paymentService.getPaymentMethods(req.tenantId!, clientId);
+    const paymentMethods = await paymentService.getPaymentMethods(req.tenantId!);
     
     res.json({
       success: true,
@@ -402,7 +402,7 @@ export const getPaymentMethods = async (req: AuthenticatedRequest, res: Response
   } catch (error) {
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };
@@ -421,7 +421,7 @@ export const updatePaymentMethod = async (req: AuthenticatedRequest, res: Respon
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };
@@ -438,7 +438,7 @@ export const deletePaymentMethod = async (req: AuthenticatedRequest, res: Respon
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };
@@ -461,7 +461,7 @@ export const processPayment = async (req: AuthenticatedRequest, res: Response) =
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };
@@ -471,11 +471,7 @@ export const refundPayment = async (req: AuthenticatedRequest, res: Response) =>
     const { paymentId } = req.params;
     const { amount, reason, metadata } = req.body;
     
-    const result = await paymentService.refundPayment(req.tenantId!, paymentId, {
-      amount,
-      reason,
-      metadata,
-    });
+    const result = await paymentService.refundPayment(req.tenantId!, paymentId, amount);
     
     res.json({
       success: true,
@@ -484,7 +480,7 @@ export const refundPayment = async (req: AuthenticatedRequest, res: Response) =>
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };
@@ -501,7 +497,7 @@ export const createPaymentIntent = async (req: AuthenticatedRequest, res: Respon
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };
@@ -521,7 +517,7 @@ export const getBillingSettings = async (req: AuthenticatedRequest, res: Respons
   } catch (error) {
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };
@@ -538,7 +534,7 @@ export const updateBillingSettings = async (req: AuthenticatedRequest, res: Resp
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };
@@ -558,7 +554,7 @@ export const runAutomationWorkflows = async (req: AuthenticatedRequest, res: Res
   } catch (error) {
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };
@@ -574,7 +570,7 @@ export const runInvoiceGenerationWorkflow = async (req: AuthenticatedRequest, re
   } catch (error) {
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };
@@ -590,7 +586,7 @@ export const runPaymentCollectionWorkflow = async (req: AuthenticatedRequest, re
   } catch (error) {
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };
@@ -606,7 +602,7 @@ export const getBillingReport = async (req: AuthenticatedRequest, res: Response)
     if (!startDate || !endDate) {
       return res.status(400).json({
         success: false,
-        error: 'Start date and end date are required',
+        error: ErrorCode.MISSING_REQUIRED_FIELD,
       });
     }
 
@@ -616,14 +612,14 @@ export const getBillingReport = async (req: AuthenticatedRequest, res: Response)
       new Date(endDate as string)
     );
     
-    res.json({
+    return res.json({
       success: true,
       data: report,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };
@@ -635,24 +631,20 @@ export const getPaymentAnalytics = async (req: AuthenticatedRequest, res: Respon
     if (!startDate || !endDate) {
       return res.status(400).json({
         success: false,
-        error: 'Start date and end date are required',
+        error: ErrorCode.MISSING_REQUIRED_FIELD,
       });
     }
 
-    const analytics = await paymentService.getPaymentAnalytics(
-      req.tenantId!,
-      new Date(startDate as string),
-      new Date(endDate as string)
-    );
+    const analytics = await paymentService.getPaymentAnalytics(req.tenantId!);
     
-    res.json({
+    return res.json({
       success: true,
       data: analytics,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };
@@ -664,24 +656,23 @@ export const reconcilePayments = async (req: AuthenticatedRequest, res: Response
     if (!startDate || !endDate) {
       return res.status(400).json({
         success: false,
-        error: 'Start date and end date are required',
+        error: ErrorCode.MISSING_REQUIRED_FIELD,
       });
     }
 
-    const reconciliation = await paymentService.reconcilePayments(
-      req.tenantId!,
-      new Date(startDate as string),
-      new Date(endDate as string)
-    );
+    const reconciliation = await paymentService.reconcilePayments(req.tenantId!, {
+      startDate: new Date(startDate as string),
+      endDate: new Date(endDate as string)
+    });
     
-    res.json({
+    return res.json({
       success: true,
       data: reconciliation,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: (error as Error).message,
     });
   }
 };

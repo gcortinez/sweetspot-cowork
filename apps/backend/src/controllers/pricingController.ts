@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { z } from 'zod';
 import { pricingService } from '../services/pricingService';
 import { handleController } from '../utils/response';
-import { AuthenticatedRequest } from '../types/api';
+import { BaseRequest, ErrorCode } from '../types/api';
 
 // Pricing tier schemas
 const createPricingTierSchema = z.object({
@@ -28,8 +28,8 @@ const createPricingRuleSchema = z.object({
   tierId: z.string(),
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
-  ruleType: z.enum(['TIME_BASED', 'VOLUME_BASED', 'DURATION_BASED', 'SPACE_BASED', 'SEASONAL', 'MEMBERSHIP', 'DYNAMIC']),
-  spaceType: z.enum(['HOT_DESK', 'DEDICATED_DESK', 'PRIVATE_OFFICE', 'MEETING_ROOM', 'PHONE_BOOTH', 'LOUNGE', 'KITCHEN', 'CONFERENCE_ROOM', 'EVENT_SPACE']).optional(),
+  ruleType: z.enum(['TIME_BASED', 'USAGE_BASED', 'MEMBER_BASED', 'LOCATION_BASED', 'SEASONAL', 'PROMOTIONAL']),
+  spaceType: z.enum(['MEETING_ROOM', 'CONFERENCE_ROOM', 'PHONE_BOOTH', 'EVENT_SPACE', 'COMMON_AREA', 'KITCHEN', 'LOUNGE']).optional(),
   planType: z.enum(['HOT_DESK', 'DEDICATED_DESK', 'PRIVATE_OFFICE', 'MEETING_ROOM', 'VIRTUAL_OFFICE', 'CUSTOM']).optional(),
   timeSlots: z.array(z.object({
     start: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format'),
@@ -39,7 +39,7 @@ const createPricingRuleSchema = z.object({
   conditions: z.record(z.any()).default({}),
   basePrice: z.number().min(0, 'Base price must be positive'),
   modifier: z.number().min(0, 'Modifier must be positive'),
-  modifierType: z.enum(['MULTIPLIER', 'FIXED_AMOUNT', 'REPLACEMENT']).default('MULTIPLIER'),
+  modifierType: z.enum(['MULTIPLIER', 'ADDITION', 'DISCOUNT', 'REPLACEMENT']).default('MULTIPLIER'),
   isActive: z.boolean().optional().default(true),
   validFrom: z.string().datetime().optional(),
   validTo: z.string().datetime().optional(),
@@ -50,7 +50,7 @@ const updatePricingRuleSchema = createPricingRuleSchema.partial().omit({ tierId:
 // Price calculation schema
 const priceCalculationSchema = z.object({
   planType: z.enum(['HOT_DESK', 'DEDICATED_DESK', 'PRIVATE_OFFICE', 'MEETING_ROOM', 'VIRTUAL_OFFICE', 'CUSTOM']),
-  spaceType: z.enum(['HOT_DESK', 'DEDICATED_DESK', 'PRIVATE_OFFICE', 'MEETING_ROOM', 'PHONE_BOOTH', 'LOUNGE', 'KITCHEN', 'CONFERENCE_ROOM', 'EVENT_SPACE']).optional(),
+  spaceType: z.enum(['MEETING_ROOM', 'CONFERENCE_ROOM', 'PHONE_BOOTH', 'EVENT_SPACE', 'COMMON_AREA', 'KITCHEN', 'LOUNGE']).optional(),
   billingCycle: z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY']),
   pricingTierId: z.string().optional(),
   quantity: z.number().int().min(1).optional().default(1),
@@ -75,10 +75,10 @@ const bulkPriceUpdateSchema = z.object({
 
 class PricingController {
   // POST /api/pricing/tiers
-  async createPricingTier(req: AuthenticatedRequest, res: Response) {
+  async createPricingTier(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const data = createPricingTierSchema.parse(req.body);
@@ -90,10 +90,10 @@ class PricingController {
   }
 
   // GET /api/pricing/tiers
-  async getPricingTiers(req: AuthenticatedRequest, res: Response) {
+  async getPricingTiers(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const includeInactive = req.query.includeInactive === 'true';
@@ -105,10 +105,10 @@ class PricingController {
   }
 
   // GET /api/pricing/tiers/:id
-  async getPricingTierById(req: AuthenticatedRequest, res: Response) {
+  async getPricingTierById(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const { id } = req.params;
@@ -120,10 +120,10 @@ class PricingController {
   }
 
   // PUT /api/pricing/tiers/:id
-  async updatePricingTier(req: AuthenticatedRequest, res: Response) {
+  async updatePricingTier(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const { id } = req.params;
@@ -136,10 +136,10 @@ class PricingController {
   }
 
   // DELETE /api/pricing/tiers/:id
-  async deletePricingTier(req: AuthenticatedRequest, res: Response) {
+  async deletePricingTier(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const { id } = req.params;
@@ -151,10 +151,10 @@ class PricingController {
   }
 
   // POST /api/pricing/rules
-  async createPricingRule(req: AuthenticatedRequest, res: Response) {
+  async createPricingRule(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const data = createPricingRuleSchema.parse(req.body);
@@ -166,10 +166,10 @@ class PricingController {
   }
 
   // GET /api/pricing/rules
-  async getPricingRules(req: AuthenticatedRequest, res: Response) {
+  async getPricingRules(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const tierId = req.query.tierId as string;
@@ -181,10 +181,10 @@ class PricingController {
   }
 
   // PUT /api/pricing/rules/:id
-  async updatePricingRule(req: AuthenticatedRequest, res: Response) {
+  async updatePricingRule(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const { id } = req.params;
@@ -197,10 +197,10 @@ class PricingController {
   }
 
   // DELETE /api/pricing/rules/:id
-  async deletePricingRule(req: AuthenticatedRequest, res: Response) {
+  async deletePricingRule(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const { id } = req.params;
@@ -212,10 +212,10 @@ class PricingController {
   }
 
   // POST /api/pricing/calculate
-  async calculatePrice(req: AuthenticatedRequest, res: Response) {
+  async calculatePrice(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const data = priceCalculationSchema.parse(req.body);
@@ -227,10 +227,10 @@ class PricingController {
   }
 
   // GET /api/pricing/plans
-  async getPlansWithPricing(req: AuthenticatedRequest, res: Response) {
+  async getPlansWithPricing(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const pricingTierId = req.query.pricingTierId as string;
@@ -242,10 +242,10 @@ class PricingController {
   }
 
   // POST /api/pricing/bulk-update
-  async bulkUpdatePrices(req: AuthenticatedRequest, res: Response) {
+  async bulkUpdatePrices(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const data = bulkPriceUpdateSchema.parse(req.body);
@@ -257,10 +257,10 @@ class PricingController {
   }
 
   // GET /api/pricing/preview/:planType
-  async getPreviewPricing(req: AuthenticatedRequest, res: Response) {
+  async getPreviewPricing(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const { planType } = req.params;
@@ -276,7 +276,7 @@ class PricingController {
       // Validate plan type
       const validPlanTypes = ['HOT_DESK', 'DEDICATED_DESK', 'PRIVATE_OFFICE', 'MEETING_ROOM', 'VIRTUAL_OFFICE', 'CUSTOM'];
       if (!validPlanTypes.includes(planType)) {
-        throw new Error('Invalid plan type');
+        throw new Error(ErrorCode.INVALID_INPUT);
       }
       
       const calculation = await pricingService.calculatePrice(tenantId, {
@@ -292,10 +292,10 @@ class PricingController {
   }
 
   // GET /api/pricing/tiers/:tierId/rules
-  async getRulesByTier(req: AuthenticatedRequest, res: Response) {
+  async getRulesByTier(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const { tierId } = req.params;
@@ -307,10 +307,10 @@ class PricingController {
   }
 
   // POST /api/pricing/rules/validate
-  async validatePricingRule(req: AuthenticatedRequest, res: Response) {
+  async validatePricingRule(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const data = createPricingRuleSchema.parse(req.body);

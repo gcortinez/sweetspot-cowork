@@ -1,6 +1,6 @@
 import express from 'express';
 import { digitalSignatureController } from '../controllers/digitalSignatureController';
-import { authenticate, authorize } from '../middleware/auth';
+import { authenticate, requireRole } from '../middleware/auth';
 
 const router = express.Router();
 
@@ -22,8 +22,8 @@ router.use(authenticate);
  * @query {string} sortOrder - Sort order: asc or desc (default: desc)
  */
 router.get('/', 
-  authorize(['ADMIN', 'MANAGER', 'EMPLOYEE']),
-  digitalSignatureController.getWorkflows.bind(digitalSignatureController)
+  requireRole('CLIENT_ADMIN'),
+  digitalSignatureController.getWorkflows.bind(digitalSignatureController) as any
 );
 
 /**
@@ -33,8 +33,8 @@ router.get('/',
  * @body {CreateSignatureWorkflowData} Workflow data
  */
 router.post('/',
-  authorize(['ADMIN', 'MANAGER']),
-  digitalSignatureController.createWorkflow.bind(digitalSignatureController)
+  requireRole('COWORK_ADMIN'),
+  digitalSignatureController.createWorkflow.bind(digitalSignatureController) as any
 );
 
 /**
@@ -44,8 +44,8 @@ router.post('/',
  * @param {string} id - Workflow ID
  */
 router.get('/:id',
-  authorize(['ADMIN', 'MANAGER', 'EMPLOYEE']),
-  digitalSignatureController.getWorkflowById.bind(digitalSignatureController)
+  requireRole('CLIENT_ADMIN'),
+  digitalSignatureController.getWorkflowById.bind(digitalSignatureController) as any
 );
 
 /**
@@ -56,8 +56,8 @@ router.get('/:id',
  * @body {UpdateSignatureWorkflowData} Updated workflow data
  */
 router.put('/:id',
-  authorize(['ADMIN', 'MANAGER']),
-  digitalSignatureController.updateWorkflow.bind(digitalSignatureController)
+  requireRole('COWORK_ADMIN'),
+  digitalSignatureController.updateWorkflow.bind(digitalSignatureController) as any
 );
 
 /**
@@ -68,8 +68,8 @@ router.put('/:id',
  * @body {object} { reason?: string }
  */
 router.post('/:id/cancel',
-  authorize(['ADMIN', 'MANAGER']),
-  digitalSignatureController.cancelWorkflow.bind(digitalSignatureController)
+  requireRole('COWORK_ADMIN'),
+  digitalSignatureController.cancelWorkflow.bind(digitalSignatureController) as any
 );
 
 /**
@@ -79,8 +79,8 @@ router.post('/:id/cancel',
  * @param {string} id - Workflow ID
  */
 router.get('/:id/audit',
-  authorize(['ADMIN', 'MANAGER']),
-  digitalSignatureController.getAuditTrail.bind(digitalSignatureController)
+  requireRole('COWORK_ADMIN'),
+  digitalSignatureController.getAuditTrail.bind(digitalSignatureController) as any
 );
 
 /**
@@ -92,7 +92,7 @@ router.get('/:id/audit',
  */
 router.get('/:workflowId/signer/:signerId',
   // Note: This endpoint might need special authentication for external signers
-  digitalSignatureController.getSignerView.bind(digitalSignatureController)
+  digitalSignatureController.getSignerView.bind(digitalSignatureController) as any
 );
 
 /**
@@ -105,7 +105,7 @@ router.get('/:workflowId/signer/:signerId',
  */
 router.post('/:workflowId/signer/:signerId/sign',
   // Note: This endpoint might need special authentication for external signers
-  digitalSignatureController.signDocument.bind(digitalSignatureController)
+  digitalSignatureController.signDocument.bind(digitalSignatureController) as any
 );
 
 /**
@@ -118,7 +118,7 @@ router.post('/:workflowId/signer/:signerId/sign',
  */
 router.post('/:workflowId/signer/:signerId/decline',
   // Note: This endpoint might need special authentication for external signers
-  digitalSignatureController.declineSignature.bind(digitalSignatureController)
+  digitalSignatureController.declineSignature.bind(digitalSignatureController) as any
 );
 
 /**
@@ -129,8 +129,8 @@ router.post('/:workflowId/signer/:signerId/decline',
  * @param {string} signatureId - Signature ID
  */
 router.get('/:workflowId/signature/:signatureId/verify',
-  authorize(['ADMIN', 'MANAGER', 'EMPLOYEE']),
-  digitalSignatureController.verifySignature.bind(digitalSignatureController)
+  requireRole('CLIENT_ADMIN'),
+  digitalSignatureController.verifySignature.bind(digitalSignatureController) as any
 );
 
 export { router as digitalSignatureRoutes };

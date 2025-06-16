@@ -1,9 +1,9 @@
-import { prisma } from '../lib/prisma';
-import { BookingStatus } from '@prisma/client';
-import { logger } from '../utils/logger';
-import { ValidationError } from '../utils/errors';
-import { spaceService } from './spaceService';
-import { auditLogService } from './auditLogService';
+import { prisma } from "../lib/prisma";
+import { BookingStatus } from "@prisma/client";
+import { logger } from "../utils/logger";
+import { ValidationError } from "../utils/errors";
+import { spaceService } from "./spaceService";
+import { auditLogService } from "./auditLogService";
 
 export interface CreateBookingData {
   spaceId: string;
@@ -23,6 +23,7 @@ export interface UpdateBookingData {
   startTime?: Date;
   endTime?: Date;
   status?: BookingStatus;
+  cost?: number;
   attendees?: string[];
   equipment?: string[];
   catering?: boolean;
@@ -82,13 +83,16 @@ export class BookingService {
 
       if (!availability.isAvailable) {
         throw new ValidationError(
-          `Space is not available for the requested time. ${availability.conflictingBookings?.length || 0} conflicting booking(s) found.`
+          `Space is not available for the requested time. ${
+            availability.conflictingBookings?.length || 0
+          } conflicting booking(s) found.`
         );
       }
 
       // Calculate cost based on space hourly rate
       const space = availability.space!;
-      const durationHours = (data.endTime.getTime() - data.startTime.getTime()) / (1000 * 60 * 60);
+      const durationHours =
+        (data.endTime.getTime() - data.startTime.getTime()) / (1000 * 60 * 60);
       const cost = space.hourlyRate ? space.hourlyRate * durationHours : 0;
 
       // Create booking
@@ -101,13 +105,13 @@ export class BookingService {
           description: data.description,
           startTime: data.startTime,
           endTime: data.endTime,
-          status: 'CONFIRMED', // Default to confirmed for now
+          status: "CONFIRMED", // Default to confirmed for now
           cost: cost > 0 ? cost : undefined,
           // Additional fields that may not be in current schema
           ...(data.attendees && { attendees: JSON.stringify(data.attendees) }),
           ...(data.equipment && { equipment: JSON.stringify(data.equipment) }),
           ...(data.catering !== undefined && { catering: data.catering }),
-          ...(data.notes && { notes: data.notes })
+          ...(data.notes && { notes: data.notes }),
         },
         include: {
           space: true,
@@ -116,48 +120,48 @@ export class BookingService {
               id: true,
               firstName: true,
               lastName: true,
-              email: true
-            }
-          }
-        }
+              email: true,
+            },
+          },
+        },
       });
 
       // Log the booking creation
       await auditLogService.log({
         tenantId,
         userId,
-        action: 'CREATE',
-        entityType: 'Booking',
+        action: "CREATE",
+        entityType: "Booking",
         entityId: booking.id,
         newValues: {
           spaceId: data.spaceId,
           title: data.title,
           startTime: data.startTime,
           endTime: data.endTime,
-          cost
+          cost,
         },
         details: {
-          action: 'Booking created',
+          action: "Booking created",
           spaceName: space.name,
-          duration: `${durationHours} hours`
-        }
+          duration: `${durationHours} hours`,
+        },
       });
 
-      logger.info('Booking created successfully', {
+      logger.info("Booking created successfully", {
         bookingId: booking.id,
         tenantId,
         userId,
         spaceId: data.spaceId,
         duration: durationHours,
-        cost
+        cost,
       });
 
       return this.formatBookingResponse(booking);
     } catch (error) {
-      logger.error('Failed to create booking', {
+      logger.error("Failed to create booking", {
         tenantId,
         userId,
-        error: (error as Error).message
+        error: (error as Error).message,
       });
       throw error;
     }
@@ -191,7 +195,7 @@ export class BookingService {
       // Date filtering
       if (filters.startDate || filters.endDate || filters.upcoming) {
         const dateFilter: any = {};
-        
+
         if (filters.upcoming) {
           dateFilter.endTime = { gte: new Date() };
         } else {
@@ -202,7 +206,7 @@ export class BookingService {
             dateFilter.endTime = { lte: filters.endDate };
           }
         }
-        
+
         Object.assign(whereClause, dateFilter);
       }
 
@@ -219,31 +223,33 @@ export class BookingService {
               id: true,
               firstName: true,
               lastName: true,
-              email: true
-            }
-          }
+              email: true,
+            },
+          },
         },
-        orderBy: { startTime: 'asc' },
+        orderBy: { startTime: "asc" },
         skip: (page - 1) * limit,
-        take: limit
+        take: limit,
       });
 
       const totalPages = Math.ceil(total / limit);
 
       return {
-        bookings: bookings.map(booking => this.formatBookingResponse(booking)),
+        bookings: bookings.map((booking) =>
+          this.formatBookingResponse(booking)
+        ),
         pagination: {
           page,
           limit,
           total,
-          totalPages
-        }
+          totalPages,
+        },
       };
     } catch (error) {
-      logger.error('Failed to get bookings', {
+      logger.error("Failed to get bookings", {
         tenantId,
         filters,
-        error: (error as Error).message
+        error: (error as Error).message,
       });
       throw error;
     }
@@ -260,7 +266,7 @@ export class BookingService {
       const booking = await prisma.booking.findFirst({
         where: {
           id: bookingId,
-          tenantId
+          tenantId,
         },
         include: {
           space: true,
@@ -269,10 +275,10 @@ export class BookingService {
               id: true,
               firstName: true,
               lastName: true,
-              email: true
-            }
-          }
-        }
+              email: true,
+            },
+          },
+        },
       });
 
       if (!booking) {
@@ -281,10 +287,10 @@ export class BookingService {
 
       return this.formatBookingResponse(booking);
     } catch (error) {
-      logger.error('Failed to get booking by ID', {
+      logger.error("Failed to get booking by ID", {
         bookingId,
         tenantId,
-        error: (error as Error).message
+        error: (error as Error).message,
       });
       throw error;
     }
@@ -303,13 +309,13 @@ export class BookingService {
       // Get existing booking
       const existingBooking = await this.getBookingById(tenantId, bookingId);
       if (!existingBooking) {
-        throw new ValidationError('Booking not found');
+        throw new ValidationError("Booking not found");
       }
 
       // Check permissions (user can only edit their own bookings, unless admin)
       if (existingBooking.userId !== userId) {
         // TODO: Add admin role check here
-        throw new ValidationError('You can only edit your own bookings');
+        throw new ValidationError("You can only edit your own bookings");
       }
 
       // If time is being changed, check availability
@@ -318,7 +324,7 @@ export class BookingService {
         const newEndTime = data.endTime || existingBooking.endTime;
 
         if (newStartTime >= newEndTime) {
-          throw new ValidationError('Start time must be before end time');
+          throw new ValidationError("Start time must be before end time");
         }
 
         // Check availability (excluding current booking)
@@ -327,31 +333,34 @@ export class BookingService {
             spaceId: existingBooking.spaceId,
             tenantId,
             id: { not: bookingId },
-            status: { in: ['PENDING', 'CONFIRMED'] },
+            status: { in: ["PENDING", "CONFIRMED"] },
             OR: [
               {
-                startTime: { gte: newStartTime, lt: newEndTime }
+                startTime: { gte: newStartTime, lt: newEndTime },
               },
               {
-                endTime: { gt: newStartTime, lte: newEndTime }
+                endTime: { gt: newStartTime, lte: newEndTime },
               },
               {
                 AND: [
                   { startTime: { lte: newStartTime } },
-                  { endTime: { gte: newEndTime } }
-                ]
-              }
-            ]
-          }
+                  { endTime: { gte: newEndTime } },
+                ],
+              },
+            ],
+          },
         });
 
         if (conflictingBookings.length > 0) {
-          throw new ValidationError('Space is not available for the new time slot');
+          throw new ValidationError(
+            "Space is not available for the new time slot"
+          );
         }
 
         // Recalculate cost if time changed
         if (existingBooking.space?.hourlyRate) {
-          const durationHours = (newEndTime.getTime() - newStartTime.getTime()) / (1000 * 60 * 60);
+          const durationHours =
+            (newEndTime.getTime() - newStartTime.getTime()) / (1000 * 60 * 60);
           data.cost = existingBooking.space.hourlyRate * durationHours;
         }
       }
@@ -359,7 +368,8 @@ export class BookingService {
       // Prepare update data
       const updateData: any = {};
       if (data.title) updateData.title = data.title;
-      if (data.description !== undefined) updateData.description = data.description;
+      if (data.description !== undefined)
+        updateData.description = data.description;
       if (data.startTime) updateData.startTime = data.startTime;
       if (data.endTime) updateData.endTime = data.endTime;
       if (data.status) updateData.status = data.status;
@@ -380,46 +390,46 @@ export class BookingService {
               id: true,
               firstName: true,
               lastName: true,
-              email: true
-            }
-          }
-        }
+              email: true,
+            },
+          },
+        },
       });
 
       // Log the update
       await auditLogService.log({
         tenantId,
         userId,
-        action: 'UPDATE',
-        entityType: 'Booking',
+        action: "UPDATE",
+        entityType: "Booking",
         entityId: bookingId,
         oldValues: {
           title: existingBooking.title,
           startTime: existingBooking.startTime,
           endTime: existingBooking.endTime,
-          status: existingBooking.status
+          status: existingBooking.status,
         },
         newValues: updateData,
         details: {
-          action: 'Booking updated',
-          updatedFields: Object.keys(updateData)
-        }
+          action: "Booking updated",
+          updatedFields: Object.keys(updateData),
+        },
       });
 
-      logger.info('Booking updated successfully', {
+      logger.info("Booking updated successfully", {
         bookingId,
         tenantId,
         userId,
-        updatedFields: Object.keys(updateData)
+        updatedFields: Object.keys(updateData),
       });
 
       return this.formatBookingResponse(updatedBooking);
     } catch (error) {
-      logger.error('Failed to update booking', {
+      logger.error("Failed to update booking", {
         bookingId,
         tenantId,
         userId,
-        error: (error as Error).message
+        error: (error as Error).message,
       });
       throw error;
     }
@@ -437,60 +447,60 @@ export class BookingService {
     try {
       const booking = await this.getBookingById(tenantId, bookingId);
       if (!booking) {
-        throw new ValidationError('Booking not found');
+        throw new ValidationError("Booking not found");
       }
 
       // Check permissions
       if (booking.userId !== userId) {
         // TODO: Add admin role check here
-        throw new ValidationError('You can only cancel your own bookings');
+        throw new ValidationError("You can only cancel your own bookings");
       }
 
       // Check if booking can be cancelled
-      if (booking.status === 'CANCELLED') {
-        throw new ValidationError('Booking is already cancelled');
+      if (booking.status === "CANCELLED") {
+        throw new ValidationError("Booking is already cancelled");
       }
 
-      if (booking.status === 'COMPLETED') {
-        throw new ValidationError('Cannot cancel completed booking');
+      if (booking.status === "COMPLETED") {
+        throw new ValidationError("Cannot cancel completed booking");
       }
 
       // Update booking status
       await prisma.booking.update({
         where: { id: bookingId },
         data: {
-          status: 'CANCELLED',
-          ...(reason && { notes: reason })
-        }
+          status: "CANCELLED",
+          ...(reason && { notes: reason }),
+        },
       });
 
       // Log the cancellation
       await auditLogService.log({
         tenantId,
         userId,
-        action: 'UPDATE',
-        entityType: 'Booking',
+        action: "UPDATE",
+        entityType: "Booking",
         entityId: bookingId,
         oldValues: { status: booking.status },
-        newValues: { status: 'CANCELLED' },
+        newValues: { status: "CANCELLED" },
         details: {
-          action: 'Booking cancelled',
-          reason: reason || 'No reason provided'
-        }
+          action: "Booking cancelled",
+          reason: reason || "No reason provided",
+        },
       });
 
-      logger.info('Booking cancelled successfully', {
+      logger.info("Booking cancelled successfully", {
         bookingId,
         tenantId,
         userId,
-        reason
+        reason,
       });
     } catch (error) {
-      logger.error('Failed to cancel booking', {
+      logger.error("Failed to cancel booking", {
         bookingId,
         tenantId,
         userId,
-        error: (error as Error).message
+        error: (error as Error).message,
       });
       throw error;
     }
@@ -507,9 +517,9 @@ export class BookingService {
     try {
       const whereClause: any = {
         tenantId,
-        status: { in: ['PENDING', 'CONFIRMED'] },
+        status: { in: ["PENDING", "CONFIRMED"] },
         startTime: { gte: new Date() },
-        ...(userId && { userId })
+        ...(userId && { userId }),
       };
 
       const bookings = await prisma.booking.findMany({
@@ -521,20 +531,20 @@ export class BookingService {
               id: true,
               firstName: true,
               lastName: true,
-              email: true
-            }
-          }
+              email: true,
+            },
+          },
         },
-        orderBy: { startTime: 'asc' },
-        take: limit
+        orderBy: { startTime: "asc" },
+        take: limit,
       });
 
-      return bookings.map(booking => this.formatBookingResponse(booking));
+      return bookings.map((booking) => this.formatBookingResponse(booking));
     } catch (error) {
-      logger.error('Failed to get upcoming bookings', {
+      logger.error("Failed to get upcoming bookings", {
         tenantId,
         userId,
-        error: (error as Error).message
+        error: (error as Error).message,
       });
       throw error;
     }
@@ -553,14 +563,18 @@ export class BookingService {
     cancelledBookings: number;
     totalRevenue: number;
     averageBookingDuration: number;
-    popularSpaces: Array<{ spaceId: string; spaceName: string; bookingCount: number }>;
+    popularSpaces: Array<{
+      spaceId: string;
+      spaceName: string;
+      bookingCount: number;
+    }>;
     bookingsByStatus: Array<{ status: BookingStatus; count: number }>;
   }> {
     try {
       const whereClause: any = {
         tenantId,
         ...(startDate && { startTime: { gte: startDate } }),
-        ...(endDate && { endTime: { lte: endDate } })
+        ...(endDate && { endTime: { lte: endDate } }),
       };
 
       const bookings = await prisma.booking.findMany({
@@ -569,35 +583,44 @@ export class BookingService {
           space: {
             select: {
               id: true,
-              name: true
-            }
-          }
-        }
+              name: true,
+            },
+          },
+        },
       });
 
       const totalBookings = bookings.length;
-      const confirmedBookings = bookings.filter(b => b.status === 'CONFIRMED').length;
-      const cancelledBookings = bookings.filter(b => b.status === 'CANCELLED').length;
+      const confirmedBookings = bookings.filter(
+        (b) => b.status === "CONFIRMED"
+      ).length;
+      const cancelledBookings = bookings.filter(
+        (b) => b.status === "CANCELLED"
+      ).length;
 
       const totalRevenue = bookings.reduce((sum, booking) => {
         return sum + (booking.cost ? parseFloat(booking.cost.toString()) : 0);
       }, 0);
 
       const totalDuration = bookings.reduce((sum, booking) => {
-        const duration = (booking.endTime.getTime() - booking.startTime.getTime()) / (1000 * 60 * 60);
+        const duration =
+          (booking.endTime.getTime() - booking.startTime.getTime()) /
+          (1000 * 60 * 60);
         return sum + duration;
       }, 0);
 
-      const averageBookingDuration = totalBookings > 0 ? totalDuration / totalBookings : 0;
+      const averageBookingDuration =
+        totalBookings > 0 ? totalDuration / totalBookings : 0;
 
       // Popular spaces
-      const spaceBookingCounts: { [key: string]: { name: string; count: number } } = {};
-      bookings.forEach(booking => {
+      const spaceBookingCounts: {
+        [key: string]: { name: string; count: number };
+      } = {};
+      bookings.forEach((booking) => {
         const spaceId = booking.spaceId;
         if (!spaceBookingCounts[spaceId]) {
           spaceBookingCounts[spaceId] = {
             name: booking.space.name,
-            count: 0
+            count: 0,
           };
         }
         spaceBookingCounts[spaceId].count++;
@@ -607,7 +630,7 @@ export class BookingService {
         .map(([spaceId, data]) => ({
           spaceId,
           spaceName: data.name,
-          bookingCount: data.count
+          bookingCount: data.count,
         }))
         .sort((a, b) => b.bookingCount - a.bookingCount)
         .slice(0, 5);
@@ -618,16 +641,18 @@ export class BookingService {
         CONFIRMED: 0,
         CANCELLED: 0,
         COMPLETED: 0,
-        NO_SHOW: 0
+        NO_SHOW: 0,
+        CHECKED_IN: 0,
+        CHECKED_OUT: 0,
       };
 
-      bookings.forEach(booking => {
+      bookings.forEach((booking) => {
         statusCounts[booking.status]++;
       });
 
       const bookingsByStatus = Object.entries(statusCounts)
         .map(([status, count]) => ({ status: status as BookingStatus, count }))
-        .filter(item => item.count > 0);
+        .filter((item) => item.count > 0);
 
       return {
         totalBookings,
@@ -636,12 +661,12 @@ export class BookingService {
         totalRevenue,
         averageBookingDuration,
         popularSpaces,
-        bookingsByStatus
+        bookingsByStatus,
       };
     } catch (error) {
-      logger.error('Failed to get booking statistics', {
+      logger.error("Failed to get booking statistics", {
         tenantId,
-        error: (error as Error).message
+        error: (error as Error).message,
       });
       throw error;
     }
@@ -652,27 +677,28 @@ export class BookingService {
    */
   private async validateBookingData(data: CreateBookingData): Promise<void> {
     if (!data.title || data.title.trim().length === 0) {
-      throw new ValidationError('Booking title is required');
+      throw new ValidationError("Booking title is required");
     }
 
     if (data.startTime >= data.endTime) {
-      throw new ValidationError('Start time must be before end time');
+      throw new ValidationError("Start time must be before end time");
     }
 
     if (data.startTime < new Date()) {
-      throw new ValidationError('Cannot book in the past');
+      throw new ValidationError("Cannot book in the past");
     }
 
     // Check minimum booking duration (e.g., 30 minutes)
-    const durationMinutes = (data.endTime.getTime() - data.startTime.getTime()) / (1000 * 60);
+    const durationMinutes =
+      (data.endTime.getTime() - data.startTime.getTime()) / (1000 * 60);
     if (durationMinutes < 30) {
-      throw new ValidationError('Minimum booking duration is 30 minutes');
+      throw new ValidationError("Minimum booking duration is 30 minutes");
     }
 
     // Check maximum booking duration (e.g., 8 hours)
     const durationHours = durationMinutes / 60;
     if (durationHours > 8) {
-      throw new ValidationError('Maximum booking duration is 8 hours');
+      throw new ValidationError("Maximum booking duration is 8 hours");
     }
   }
 
@@ -695,7 +721,7 @@ export class BookingService {
       createdAt: booking.createdAt,
       updatedAt: booking.updatedAt,
       space: booking.space,
-      user: booking.user
+      user: booking.user,
     };
   }
 }

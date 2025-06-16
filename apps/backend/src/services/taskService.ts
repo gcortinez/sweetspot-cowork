@@ -1,4 +1,4 @@
-import { PrismaClient, Task, TaskPriority, TaskStatus } from '@prisma/client';
+import { PrismaClient, Task, TaskPriority, TaskStatus, Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { AppError, NotFoundError, ValidationError } from '../utils/errors';
 
@@ -6,16 +6,15 @@ interface CreateTaskData {
   title: string;
   description?: string;
   priority: TaskPriority;
-  dueDate?: string;
+  dueDate: string;
   reminderDate?: string;
   assignedToId?: string;
   leadId?: string;
   clientId?: string;
   opportunityId?: string;
-  activityId?: string;
   tags?: string[];
   estimatedHours?: number;
-  metadata?: Record<string, any>;
+  metadata?: Prisma.InputJsonValue;
 }
 
 interface UpdateTaskData {
@@ -30,7 +29,7 @@ interface UpdateTaskData {
   estimatedHours?: number;
   actualHours?: number;
   completedAt?: string;
-  metadata?: Record<string, any>;
+  metadata?: Prisma.InputJsonValue;
 }
 
 interface TasksQuery {
@@ -140,14 +139,21 @@ class TaskService {
 
     const task = await prisma.task.create({
       data: {
-        ...data,
+        title: data.title,
+        description: data.description,
+        priority: data.priority,
         tenantId,
         createdById,
-        dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
+        assignedById: createdById,
+        dueDate: data.dueDate ? new Date(data.dueDate) : new Date(),
         reminderDate: data.reminderDate ? new Date(data.reminderDate) : undefined,
         tags: data.tags || [],
         metadata: data.metadata || {},
         status: 'PENDING',
+        leadId: data.leadId,
+        clientId: data.clientId,
+        opportunityId: data.opportunityId,
+        assignedToId: data.assignedToId,
       },
       include: {
         assignedTo: {
@@ -177,11 +183,6 @@ class TaskService {
         opportunity: {
           select: {
             title: true,
-          },
-        },
-        activity: {
-          select: {
-            subject: true,
           },
         },
       },
@@ -226,9 +227,6 @@ class TaskService {
         case 'OPPORTUNITY':
           where.opportunityId = entityId;
           break;
-        case 'ACTIVITY':
-          where.activityId = entityId;
-          break;
       }
     }
 
@@ -251,7 +249,7 @@ class TaskService {
     }
 
     if (tags && tags.length > 0) {
-      where.tags = { hasSome: tags };
+      where.tags = { array_contains: tags };
     }
 
     const [tasks, total] = await Promise.all([
@@ -285,11 +283,6 @@ class TaskService {
           opportunity: {
             select: {
               title: true,
-            },
-          },
-          activity: {
-            select: {
-              subject: true,
             },
           },
         },
@@ -349,12 +342,6 @@ class TaskService {
             title: true,
           },
         },
-        activity: {
-          select: {
-            id: true,
-            subject: true,
-          },
-        },
       },
     });
 
@@ -398,8 +385,8 @@ class TaskService {
         dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
         reminderDate: data.reminderDate ? new Date(data.reminderDate) : undefined,
         completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
-        tags: data.tags || existingTask.tags,
-        metadata: data.metadata || existingTask.metadata,
+        tags: data.tags ?? (existingTask.tags ?? undefined),
+        metadata: data.metadata !== undefined ? data.metadata : (existingTask.metadata ?? undefined),
       },
       include: {
         assignedTo: {
@@ -747,7 +734,7 @@ class TaskService {
     const tasks = await prisma.task.findMany({
       where: {
         tenantId,
-        tags: { has: tag },
+        tags: { array_contains: [tag] },
       },
       include: {
         assignedTo: {
@@ -769,8 +756,8 @@ class TaskService {
       select: { tags: true },
     });
 
-    const allTags = tasks.flatMap(task => task.tags);
-    const uniqueTags = [...new Set(allTags)];
+    const allTags = tasks.flatMap(task => Array.isArray(task.tags) ? task.tags as string[] : []);
+    const uniqueTags = Array.from(new Set(allTags));
 
     // Count usage of each tag
     const tagCounts = uniqueTags.map(tag => ({

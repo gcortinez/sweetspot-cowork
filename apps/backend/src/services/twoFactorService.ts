@@ -1,5 +1,5 @@
-import speakeasy from 'speakeasy';
-import QRCode from 'qrcode';
+import * as speakeasy from 'speakeasy';
+import * as QRCode from 'qrcode';
 import { randomBytes } from 'crypto';
 import { prisma } from '../lib/prisma';
 import { ValidationError, UnauthorizedError } from '../utils/errors';
@@ -55,7 +55,8 @@ export class TwoFactorService {
         manualEntryKey: secret.base32
       };
     } catch (error) {
-      throw new ValidationError(`Failed to setup 2FA: ${error.message}`);
+      const errorMessage = (error as Error).message;
+      throw new ValidationError(`Failed to setup 2FA: ${errorMessage}`);
     }
   }
 
@@ -97,7 +98,8 @@ export class TwoFactorService {
         details: { message: '2FA enabled successfully' }
       });
     } catch (error) {
-      throw new ValidationError(`Failed to enable 2FA: ${error.message}`);
+      const errorMessage = (error as Error).message;
+      throw new ValidationError(`Failed to enable 2FA: ${errorMessage}`);
     }
   }
 
@@ -141,7 +143,8 @@ export class TwoFactorService {
         details: { message: '2FA disabled' }
       });
     } catch (error) {
-      throw new ValidationError(`Failed to disable 2FA: ${error.message}`);
+      const errorMessage = (error as Error).message;
+      throw new ValidationError(`Failed to disable 2FA: ${errorMessage}`);
     }
   }
 
@@ -220,7 +223,8 @@ export class TwoFactorService {
       // Both TOTP and backup code verification failed
       return { success: false };
     } catch (error) {
-      throw new ValidationError(`Failed to verify 2FA: ${error.message}`);
+      const errorMessage = (error as Error).message;
+      throw new ValidationError(`Failed to verify 2FA: ${errorMessage}`);
     }
   }
 
@@ -255,7 +259,8 @@ export class TwoFactorService {
 
       return backupCodes;
     } catch (error) {
-      throw new ValidationError(`Failed to generate backup codes: ${error.message}`);
+      const errorMessage = (error as Error).message;
+      throw new ValidationError(`Failed to generate backup codes: ${errorMessage}`);
     }
   }
 

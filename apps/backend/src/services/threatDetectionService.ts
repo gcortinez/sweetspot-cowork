@@ -300,7 +300,7 @@ export class ThreatDetectionService {
     });
 
     // Detect IP-based brute force
-    for (const [ip, ipEvents] of groupedByIp) {
+    for (const [ip, ipEvents] of Array.from(groupedByIp)) {
       if (ipEvents.length >= 10) { // 10+ failed attempts from same IP
         patterns.push({
           id: `brute_force_ip_${ip}_${Date.now()}`,
@@ -318,7 +318,7 @@ export class ThreatDetectionService {
     }
 
     // Detect user-based attacks
-    for (const [userId, userEvents] of groupedByUser) {
+    for (const [userId, userEvents] of Array.from(groupedByUser)) {
       if (userEvents.length >= 5) { // 5+ failed attempts for same user
         patterns.push({
           id: `brute_force_user_${userId}_${Date.now()}`,
@@ -357,7 +357,7 @@ export class ThreatDetectionService {
 
     const patterns: SecurityPattern[] = [];
 
-    for (const [userId, userEvents] of userEscalations) {
+    for (const [userId, userEvents] of Array.from(userEscalations)) {
       if (userEvents.length >= 2) {
         const timeSpread = Math.max(...userEvents.map(e => e.timestamp.getTime())) - 
                           Math.min(...userEvents.map(e => e.timestamp.getTime()));
@@ -402,7 +402,7 @@ export class ThreatDetectionService {
       }
     });
 
-    for (const [userId, userEvents] of userDataAccess) {
+    for (const [userId, userEvents] of Array.from(userDataAccess)) {
       if (userEvents.length >= 5) {
         const totalVolume = userEvents.reduce((sum, event) => 
           sum + (event.metadata?.dataVolume || 0), 0
@@ -449,7 +449,7 @@ export class ThreatDetectionService {
       resourceViolations.get(resource)!.push(event);
     });
 
-    for (const [resource, resourceEvents] of resourceViolations) {
+    for (const [resource, resourceEvents] of Array.from(resourceViolations)) {
       if (resourceEvents.length >= 3) {
         patterns.push({
           id: `access_violation_${resource}_${Date.now()}`,
@@ -604,7 +604,7 @@ export class ThreatDetectionService {
 
     const suspiciousUsers = [];
 
-    for (const [userId, userEvents] of userActivity) {
+    for (const [userId, userEvents] of Array.from(userActivity)) {
       const riskScore = this.calculateInsiderThreatScore(userEvents);
       if (riskScore > 0.5) {
         suspiciousUsers.push({ userId, riskScore, eventCount: userEvents.length });
@@ -787,7 +787,7 @@ export class ThreatDetectionService {
         data: {
           id: alert.id,
           tenantId,
-          userId,
+          performedById: userId,
           eventType: 'THREAT_DETECTED',
           severity,
           description: title,

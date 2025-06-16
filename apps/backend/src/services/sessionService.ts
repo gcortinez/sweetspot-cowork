@@ -1,10 +1,10 @@
-import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
-import { prisma } from '../lib/prisma';
-import { logger } from '../utils/logger';
-import { encryptionService } from './encryptionService';
-import { auditLogService } from './auditLogService';
-import { securityEventService } from './securityEventService';
+import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import { prisma } from "../lib/prisma";
+import { logger } from "../utils/logger";
+import { encryptionService } from "./encryptionService";
+import { auditLogService } from "./auditLogService";
+import { securityEventService } from "./securityEventService";
 
 export interface SessionData {
   id: string;
@@ -39,19 +39,22 @@ export class SessionService {
   private readonly accessTokenSecret: string;
   private readonly refreshTokenSecret: string;
   private readonly defaultConfig: SessionConfig = {
-    accessTokenExpiry: '15m',
-    refreshTokenExpiry: '7d',
+    accessTokenExpiry: "15m",
+    refreshTokenExpiry: "7d",
     maxConcurrentSessions: 5,
     requireTwoFactor: false,
-    trackLocation: true
+    trackLocation: true,
   };
 
   constructor() {
-    this.accessTokenSecret = process.env.JWT_SECRET || 'fallback-secret';
-    this.refreshTokenSecret = process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret';
-    
+    this.accessTokenSecret = process.env.JWT_SECRET || "fallback-secret";
+    this.refreshTokenSecret =
+      process.env.JWT_REFRESH_SECRET || "fallback-refresh-secret";
+
     if (!process.env.JWT_SECRET || !process.env.JWT_REFRESH_SECRET) {
-      logger.warn('JWT secrets not configured properly in environment variables');
+      logger.warn(
+        "JWT secrets not configured properly in environment variables"
+      );
     }
   }
 
@@ -69,16 +72,21 @@ export class SessionService {
   }> {
     const mergedConfig = { ...this.defaultConfig, ...config };
     const sessionId = this.generateSecureSessionId();
-    
+
     try {
       // Check for maximum concurrent sessions
       if (mergedConfig.maxConcurrentSessions) {
-        await this.enforceSessionLimit(sessionData.userId, mergedConfig.maxConcurrentSessions);
+        await this.enforceSessionLimit(
+          sessionData.userId,
+          mergedConfig.maxConcurrentSessions
+        );
       }
 
       // Create session record in database
-      const expiresAt = new Date(Date.now() + this.parseExpiryTime(mergedConfig.refreshTokenExpiry));
-      
+      const expiresAt = new Date(
+        Date.now() + this.parseExpiryTime(mergedConfig.refreshTokenExpiry)
+      );
+
       await prisma.userSession.create({
         data: {
           id: sessionId,
@@ -90,47 +98,51 @@ export class SessionService {
           userAgent: sessionData.userAgent,
           expiresAt,
           lastActivity: new Date(),
-          isActive: true
-        }
+          isActive: true,
+        },
       });
 
       // Generate JWT tokens
-      const accessToken = this.generateAccessToken(sessionData, sessionId, mergedConfig);
+      const accessToken = this.generateAccessToken(
+        sessionData,
+        sessionId,
+        mergedConfig
+      );
       const refreshToken = this.generateRefreshToken(sessionId, mergedConfig);
 
       // Log session creation
       await auditLogService.log({
         tenantId: sessionData.tenantId,
         userId: sessionData.userId,
-        action: 'CREATE',
-        entityType: 'Session',
+        action: "CREATE",
+        entityType: "Session",
         entityId: sessionId,
         details: {
-          action: 'Session created',
+          action: "Session created",
           deviceInfo: sessionData.deviceInfo,
-          ipAddress: sessionData.ipAddress
-        }
+          ipAddress: sessionData.ipAddress,
+        },
       });
 
-      logger.info('Session created successfully', {
+      logger.info("Session created successfully", {
         sessionId,
         userId: sessionData.userId,
         tenantId: sessionData.tenantId,
-        ipAddress: sessionData.ipAddress
+        ipAddress: sessionData.ipAddress,
       });
 
       return {
         accessToken,
         refreshToken,
         sessionId,
-        expiresAt
+        expiresAt,
       };
     } catch (error) {
-      logger.error('Session creation failed', {
+      logger.error("Session creation failed", {
         userId: sessionData.userId,
-        error: error.message
+        error: (error as Error).message,
       });
-      throw new Error('Failed to create session');
+      throw new Error("Failed to create session");
     }
   }
 
@@ -145,7 +157,7 @@ export class SessionService {
   }> {
     try {
       const decoded = jwt.verify(token, this.accessTokenSecret) as any;
-      
+
       if (!decoded.sessionId || !decoded.userId) {
         return { isValid: false };
       }
@@ -157,8 +169,8 @@ export class SessionService {
           userId: decoded.userId,
           isActive: true,
           expiresAt: {
-            gt: new Date()
-          }
+            gt: new Date(),
+          },
         },
         include: {
           user: {
@@ -167,10 +179,10 @@ export class SessionService {
               email: true,
               role: true,
               tenantId: true,
-              clientId: true
-            }
-          }
-        }
+              clientId: true,
+            },
+          },
+        },
       });
 
       if (!session) {
@@ -185,27 +197,29 @@ export class SessionService {
         userId: session.userId,
         tenantId: session.tenantId,
         role: session.user.role,
-        clientId: session.user.clientId,
-        deviceInfo: session.deviceInfo,
-        ipAddress: session.ipAddress,
-        userAgent: session.userAgent
+        clientId: session.user.clientId ?? undefined,
+        deviceInfo: session.deviceInfo ?? undefined,
+        ipAddress: session.ipAddress ?? undefined,
+        userAgent: session.userAgent ?? undefined,
       };
 
       // Check if token is close to expiry (within 5 minutes)
-      const needsRefresh = decoded.exp && (decoded.exp - Date.now() / 1000) < 300;
+      const needsRefresh = decoded.exp && decoded.exp - Date.now() / 1000 < 300;
 
       return {
         isValid: true,
         sessionData,
         sessionId: decoded.sessionId,
-        needsRefresh
+        needsRefresh,
       };
     } catch (error) {
-      if (error.name === 'TokenExpiredError') {
+      if (error instanceof Error && error.name === "TokenExpiredError") {
         return { isValid: false, needsRefresh: true };
       }
-      
-      logger.error('Session validation failed', { error: error.message });
+
+      logger.error("Session validation failed", {
+        error: (error as Error).message,
+      });
       return { isValid: false };
     }
   }
@@ -220,7 +234,7 @@ export class SessionService {
   } | null> {
     try {
       const decoded = jwt.verify(refreshToken, this.refreshTokenSecret) as any;
-      
+
       if (!decoded.sessionId) {
         return null;
       }
@@ -230,8 +244,8 @@ export class SessionService {
           id: decoded.sessionId,
           isActive: true,
           expiresAt: {
-            gt: new Date()
-          }
+            gt: new Date(),
+          },
         },
         include: {
           user: {
@@ -240,10 +254,10 @@ export class SessionService {
               email: true,
               role: true,
               tenantId: true,
-              clientId: true
-            }
-          }
-        }
+              clientId: true,
+            },
+          },
+        },
       });
 
       if (!session) {
@@ -256,13 +270,16 @@ export class SessionService {
         userId: session.userId,
         tenantId: session.tenantId,
         role: session.user.role,
-        clientId: session.user.clientId,
-        deviceInfo: session.deviceInfo,
-        ipAddress: session.ipAddress,
-        userAgent: session.userAgent
+        clientId: session.user.clientId ?? undefined,
+        deviceInfo: session.deviceInfo ?? undefined,
+        ipAddress: session.ipAddress ?? undefined,
+        userAgent: session.userAgent ?? undefined,
       };
 
-      const newAccessToken = this.generateAccessToken(sessionData, decoded.sessionId);
+      const newAccessToken = this.generateAccessToken(
+        sessionData,
+        decoded.sessionId
+      );
       const newRefreshToken = this.generateRefreshToken(decoded.sessionId);
 
       // Update session activity
@@ -272,21 +289,23 @@ export class SessionService {
       await auditLogService.log({
         tenantId: session.tenantId,
         userId: session.userId,
-        action: 'UPDATE',
-        entityType: 'Session',
+        action: "UPDATE",
+        entityType: "Session",
         entityId: session.id,
         details: {
-          action: 'Session refreshed'
-        }
+          action: "Session refreshed",
+        },
       });
 
       return {
         accessToken: newAccessToken,
         newRefreshToken,
-        sessionId: decoded.sessionId
+        sessionId: decoded.sessionId,
       };
     } catch (error) {
-      logger.error('Session refresh failed', { error: error.message });
+      logger.error("Session refresh failed", {
+        error: (error as Error).message,
+      });
       return null;
     }
   }
@@ -299,8 +318,8 @@ export class SessionService {
       const session = await prisma.userSession.findFirst({
         where: {
           id: sessionId,
-          ...(userId && { userId })
-        }
+          ...(userId && { userId }),
+        },
       });
 
       if (!session) {
@@ -312,28 +331,28 @@ export class SessionService {
         where: { id: sessionId },
         data: {
           isActive: false,
-          endedAt: new Date()
-        }
+          endedAt: new Date(),
+        },
       });
 
       // Log session invalidation
       await auditLogService.log({
         tenantId: session.tenantId,
         userId: session.userId,
-        action: 'DELETE',
-        entityType: 'Session',
+        action: "DELETE",
+        entityType: "Session",
         entityId: sessionId,
         details: {
-          action: 'Session invalidated'
-        }
+          action: "Session invalidated",
+        },
       });
 
-      logger.info('Session invalidated', { sessionId, userId });
+      logger.info("Session invalidated", { sessionId, userId });
     } catch (error) {
-      logger.error('Session invalidation failed', {
+      logger.error("Session invalidation failed", {
         sessionId,
         userId,
-        error: error.message
+        error: (error as Error).message,
       });
     }
   }
@@ -341,11 +360,14 @@ export class SessionService {
   /**
    * Invalidate all sessions for a user
    */
-  async invalidateAllUserSessions(userId: string, exceptSessionId?: string): Promise<void> {
+  async invalidateAllUserSessions(
+    userId: string,
+    exceptSessionId?: string
+  ): Promise<void> {
     try {
       const whereClause: any = {
         userId,
-        isActive: true
+        isActive: true,
       };
 
       if (exceptSessionId) {
@@ -354,7 +376,7 @@ export class SessionService {
 
       const sessions = await prisma.userSession.findMany({
         where: whereClause,
-        select: { id: true, tenantId: true }
+        select: { id: true, tenantId: true },
       });
 
       // Mark all sessions as inactive
@@ -362,8 +384,8 @@ export class SessionService {
         where: whereClause,
         data: {
           isActive: false,
-          endedAt: new Date()
-        }
+          endedAt: new Date(),
+        },
       });
 
       // Log session invalidations
@@ -371,24 +393,24 @@ export class SessionService {
         await auditLogService.log({
           tenantId: session.tenantId,
           userId,
-          action: 'DELETE',
-          entityType: 'Session',
+          action: "DELETE",
+          entityType: "Session",
           entityId: session.id,
           details: {
-            action: 'Session invalidated (bulk)'
-          }
+            action: "Session invalidated (bulk)",
+          },
         });
       }
 
-      logger.info('All user sessions invalidated', {
+      logger.info("All user sessions invalidated", {
         userId,
         exceptSessionId,
-        invalidatedCount: sessions.length
+        invalidatedCount: sessions.length,
       });
     } catch (error) {
-      logger.error('Bulk session invalidation failed', {
+      logger.error("Bulk session invalidation failed", {
         userId,
-        error: error.message
+        error: (error as Error).message,
       });
     }
   }
@@ -403,8 +425,8 @@ export class SessionService {
           userId,
           isActive: true,
           expiresAt: {
-            gt: new Date()
-          }
+            gt: new Date(),
+          },
         },
         select: {
           id: true,
@@ -413,18 +435,26 @@ export class SessionService {
           ipAddress: true,
           lastActivity: true,
           createdAt: true,
-          isActive: true
+          isActive: true,
         },
         orderBy: {
-          lastActivity: 'desc'
-        }
+          lastActivity: "desc",
+        },
       });
 
-      return sessions;
+      return sessions.map((session) => ({
+        id: session.id,
+        userId: session.userId,
+        deviceInfo: session.deviceInfo ?? undefined,
+        ipAddress: session.ipAddress ?? undefined,
+        lastActivity: session.lastActivity,
+        createdAt: session.createdAt,
+        isActive: session.isActive,
+      }));
     } catch (error) {
-      logger.error('Failed to get user active sessions', {
+      logger.error("Failed to get user active sessions", {
         userId,
-        error: error.message
+        error: (error as Error).message,
       });
       return [];
     }
@@ -439,55 +469,68 @@ export class SessionService {
         where: {
           OR: [
             { expiresAt: { lt: new Date() } },
-            { lastActivity: { lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } } // 30 days inactive
+            {
+              lastActivity: {
+                lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+              },
+            }, // 30 days inactive
           ],
-          isActive: true
+          isActive: true,
         },
         data: {
           isActive: false,
-          endedAt: new Date()
-        }
+          endedAt: new Date(),
+        },
       });
 
       if (expiredCount.count > 0) {
-        logger.info('Expired sessions cleaned up', { count: expiredCount.count });
+        logger.info("Expired sessions cleaned up", {
+          count: expiredCount.count,
+        });
       }
     } catch (error) {
-      logger.error('Session cleanup failed', { error: error.message });
+      logger.error("Session cleanup failed", {
+        error: (error as Error).message,
+      });
     }
   }
 
   /**
    * Detect suspicious session activity
    */
-  async detectSuspiciousActivity(sessionId: string, currentIp: string): Promise<boolean> {
+  async detectSuspiciousActivity(
+    sessionId: string,
+    currentIp: string
+  ): Promise<boolean> {
     try {
       const session = await prisma.userSession.findUnique({
-        where: { id: sessionId }
+        where: { id: sessionId },
       });
 
       if (!session) return false;
 
       // Check for IP address changes
       if (session.ipAddress && session.ipAddress !== currentIp) {
-        await securityEventService.logSuspiciousActivity(
-          session.tenantId,
-          'IP_ADDRESS_CHANGE',
-          session.userId,
-          currentIp,
-          session.userAgent,
-          {
+        await securityEventService.logEvent({
+          tenantId: session.tenantId,
+          eventType: "SUSPICIOUS_LOGIN",
+          severity: "MEDIUM",
+          performedById: session.userId,
+          ipAddress: currentIp,
+          userAgent: session.userAgent ?? undefined,
+          description: "IP address change detected",
+          metadata: {
             originalIp: session.ipAddress,
             newIp: currentIp,
-            sessionId
-          }
-        );
+            sessionId,
+          },
+        });
 
-        logger.warn('Suspicious session activity detected - IP change', {
+        logger.warn("Suspicious session activity detected - IP change", {
           sessionId,
           userId: session.userId,
           originalIp: session.ipAddress,
-          newIp: currentIp
+          newIp: currentIp,
         });
 
         return true;
@@ -495,9 +538,9 @@ export class SessionService {
 
       return false;
     } catch (error) {
-      logger.error('Suspicious activity detection failed', {
+      logger.error("Suspicious activity detection failed", {
         sessionId,
-        error: error.message
+        error: (error as Error).message,
       });
       return false;
     }
@@ -507,48 +550,57 @@ export class SessionService {
    * Private helper methods
    */
   private generateSecureSessionId(): string {
-    return crypto.randomBytes(32).toString('hex');
+    return crypto.randomBytes(32).toString("hex");
   }
 
-  private generateAccessToken(sessionData: SessionData, sessionId: string, config: SessionConfig = {}): string {
+  private generateAccessToken(
+    sessionData: SessionData,
+    sessionId: string,
+    config: SessionConfig = {}
+  ): string {
     const payload = {
       userId: sessionData.userId,
       tenantId: sessionData.tenantId,
       role: sessionData.role,
       clientId: sessionData.clientId,
       sessionId,
-      type: 'access'
+      type: "access",
     };
 
     return jwt.sign(payload, this.accessTokenSecret, {
-      expiresIn: config.accessTokenExpiry || this.defaultConfig.accessTokenExpiry,
-      issuer: 'sweetspot-api',
-      audience: 'sweetspot-app'
-    });
+      expiresIn:
+        config.accessTokenExpiry || this.defaultConfig.accessTokenExpiry,
+      issuer: "sweetspot-api",
+      audience: "sweetspot-app",
+    } as jwt.SignOptions);
   }
 
-  private generateRefreshToken(sessionId: string, config: SessionConfig = {}): string {
+  private generateRefreshToken(
+    sessionId: string,
+    config: SessionConfig = {}
+  ): string {
     const payload = {
       sessionId,
-      type: 'refresh'
+      type: "refresh",
     };
 
     return jwt.sign(payload, this.refreshTokenSecret, {
-      expiresIn: config.refreshTokenExpiry || this.defaultConfig.refreshTokenExpiry,
-      issuer: 'sweetspot-api',
-      audience: 'sweetspot-app'
-    });
+      expiresIn:
+        config.refreshTokenExpiry || this.defaultConfig.refreshTokenExpiry,
+      issuer: "sweetspot-api",
+      audience: "sweetspot-app",
+    } as jwt.SignOptions);
   }
 
   private parseExpiryTime(expiry: string | number | undefined): number {
-    if (typeof expiry === 'number') return expiry;
+    if (typeof expiry === "number") return expiry;
     if (!expiry) return 7 * 24 * 60 * 60 * 1000; // 7 days default
 
     const units: Record<string, number> = {
-      's': 1000,
-      'm': 60 * 1000,
-      'h': 60 * 60 * 1000,
-      'd': 24 * 60 * 60 * 1000
+      s: 1000,
+      m: 60 * 1000,
+      h: 60 * 60 * 1000,
+      d: 24 * 60 * 60 * 1000,
     };
 
     const match = expiry.match(/^(\d+)([smhd])$/);
@@ -558,20 +610,26 @@ export class SessionService {
     return parseInt(number) * units[unit];
   }
 
-  private async enforceSessionLimit(userId: string, maxSessions: number): Promise<void> {
+  private async enforceSessionLimit(
+    userId: string,
+    maxSessions: number
+  ): Promise<void> {
     const activeSessions = await prisma.userSession.findMany({
       where: {
         userId,
         isActive: true,
-        expiresAt: { gt: new Date() }
+        expiresAt: { gt: new Date() },
       },
-      orderBy: { lastActivity: 'asc' }
+      orderBy: { lastActivity: "asc" },
     });
 
     if (activeSessions.length >= maxSessions) {
       // Remove oldest sessions
-      const sessionsToRemove = activeSessions.slice(0, activeSessions.length - maxSessions + 1);
-      
+      const sessionsToRemove = activeSessions.slice(
+        0,
+        activeSessions.length - maxSessions + 1
+      );
+
       for (const session of sessionsToRemove) {
         await this.invalidateSession(session.id);
       }
@@ -582,13 +640,13 @@ export class SessionService {
     try {
       await prisma.userSession.update({
         where: { id: sessionId },
-        data: { lastActivity: new Date() }
+        data: { lastActivity: new Date() },
       });
     } catch (error) {
       // Don't fail the request if activity update fails
-      logger.error('Failed to update session activity', {
+      logger.error("Failed to update session activity", {
         sessionId,
-        error: error.message
+        error: (error as Error).message,
       });
     }
   }

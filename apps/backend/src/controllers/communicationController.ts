@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { z } from 'zod';
 import { communicationService } from '../services/communicationService';
 import { handleController } from '../utils/response';
-import { AuthenticatedRequest } from '../types/api';
+import { AuthenticatedRequest, ErrorCode } from '../types/api';
 
 // Communication creation schema
 const createCommunicationSchema = z.object({
@@ -295,7 +295,7 @@ class CommunicationController {
           : 'Unknown',
         userName: `${comm.user.firstName} ${comm.user.lastName}`,
         createdAt: comm.createdAt,
-        attachments: comm.attachments?.length || 0,
+        attachments: Array.isArray(comm.attachments) ? comm.attachments.length : 0,
       }));
       
       return {

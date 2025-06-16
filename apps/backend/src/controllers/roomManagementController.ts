@@ -1,7 +1,7 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { z } from 'zod';
 import { roomManagementService } from '../services/roomManagementService';
-import { AuthenticatedRequest } from '../types/api';
+import { BaseRequest, AuthenticatedRequest, ErrorCode } from '../types/api';
 import { SpaceType, FeatureCategory, PriceModifierType, PricingRuleType } from '@prisma/client';
 
 // ============================================================================
@@ -83,7 +83,7 @@ export const createRoom = async (req: AuthenticatedRequest, res: Response) => {
     
     const room = await roomManagementService.createRoom(req.tenant!.id, roomData);
     
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       data: room,
       message: 'Room created successfully',
@@ -97,7 +97,7 @@ export const createRoom = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
     
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to create room',
     });
@@ -111,7 +111,7 @@ export const updateRoom = async (req: AuthenticatedRequest, res: Response) => {
     
     const room = await roomManagementService.updateRoom(req.tenant!.id, roomId, updates);
     
-    res.json({
+    return res.json({
       success: true,
       data: room,
       message: 'Room updated successfully',
@@ -125,7 +125,7 @@ export const updateRoom = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
     
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to update room',
     });
@@ -138,13 +138,13 @@ export const deleteRoom = async (req: AuthenticatedRequest, res: Response) => {
     
     const room = await roomManagementService.deleteRoom(req.tenant!.id, roomId);
     
-    res.json({
+    return res.json({
       success: true,
       data: room,
       message: 'Room deleted successfully',
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to delete room',
     });
@@ -157,7 +157,7 @@ export const getRooms = async (req: AuthenticatedRequest, res: Response) => {
     
     const rooms = await roomManagementService.getRooms(req.tenant!.id, filters);
     
-    res.json({
+    return res.json({
       success: true,
       data: rooms,
       total: rooms.length,
@@ -171,7 +171,7 @@ export const getRooms = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
     
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get rooms',
     });
@@ -191,12 +191,12 @@ export const getRoomById = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
     
-    res.json({
+    return res.json({
       success: true,
       data: room,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get room',
     });
@@ -213,7 +213,7 @@ export const createRoomFeature = async (req: AuthenticatedRequest, res: Response
     
     const feature = await roomManagementService.createRoomFeature(req.tenant!.id, featureData);
     
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       data: feature,
       message: 'Room feature created successfully',
@@ -227,7 +227,7 @@ export const createRoomFeature = async (req: AuthenticatedRequest, res: Response
       });
     }
     
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to create room feature',
     });
@@ -241,13 +241,13 @@ export const getRoomFeatures = async (req: AuthenticatedRequest, res: Response) 
     
     const features = await roomManagementService.getRoomFeatures(req.tenant!.id, categoryFilter);
     
-    res.json({
+    return res.json({
       success: true,
       data: features,
       total: features.length,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get room features',
     });
@@ -264,7 +264,7 @@ export const checkAvailability = async (req: AuthenticatedRequest, res: Response
     
     const isAvailable = await roomManagementService.checkAvailability(req.tenant!.id, availabilityData);
     
-    res.json({
+    return res.json({
       success: true,
       data: {
         isAvailable,
@@ -282,7 +282,7 @@ export const checkAvailability = async (req: AuthenticatedRequest, res: Response
       });
     }
     
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to check availability',
     });
@@ -311,7 +311,7 @@ export const getAvailableSlots = async (req: AuthenticatedRequest, res: Response
       durationMinutes
     );
     
-    res.json({
+    return res.json({
       success: true,
       data: {
         date: requestDate,
@@ -321,7 +321,7 @@ export const getAvailableSlots = async (req: AuthenticatedRequest, res: Response
       },
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get available slots',
     });
@@ -338,7 +338,7 @@ export const calculatePrice = async (req: AuthenticatedRequest, res: Response) =
     
     const price = await roomManagementService.calculatePrice(req.tenant!.id, pricingData);
     
-    res.json({
+    return res.json({
       success: true,
       data: {
         price,
@@ -357,7 +357,7 @@ export const calculatePrice = async (req: AuthenticatedRequest, res: Response) =
       });
     }
     
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to calculate price',
     });
@@ -370,7 +370,7 @@ export const createPricingRule = async (req: AuthenticatedRequest, res: Response
     
     const rule = await roomManagementService.createPricingRule(req.tenant!.id, ruleData);
     
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       data: rule,
       message: 'Pricing rule created successfully',
@@ -384,7 +384,7 @@ export const createPricingRule = async (req: AuthenticatedRequest, res: Response
       });
     }
     
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to create pricing rule',
     });
@@ -400,13 +400,13 @@ export const getPricingRules = async (req: AuthenticatedRequest, res: Response) 
       spaceId as string
     );
     
-    res.json({
+    return res.json({
       success: true,
       data: rules,
       total: rules.length,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get pricing rules',
     });
@@ -423,7 +423,7 @@ export const getRoomAnalytics = async (req: AuthenticatedRequest, res: Response)
     
     const analytics = await roomManagementService.getRoomAnalytics(req.tenant!.id, analyticsData);
     
-    res.json({
+    return res.json({
       success: true,
       data: analytics,
       total: analytics.length,
@@ -442,7 +442,7 @@ export const getRoomAnalytics = async (req: AuthenticatedRequest, res: Response)
       });
     }
     
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get room analytics',
     });

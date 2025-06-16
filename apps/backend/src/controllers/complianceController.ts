@@ -1,7 +1,11 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { z } from 'zod';
 import { complianceReportingService } from '../services/complianceReportingService';
-import { AuthenticatedRequest } from '../types/api';
+import { dataAnonymizationService } from '../services/dataAnonymizationService';
+import { consentManagementService, ConsentType, ConsentSource, LegalBasis } from '../services/consentManagementService';
+import { dataExportService, ExportFormat, ExportRequestType } from '../services/dataExportService';
+import { dataRetentionService, RetentionAction } from '../services/dataRetentionService';
+import { BaseRequest, AuthenticatedRequest, ErrorCode } from '../types/api';
 
 // ============================================================================
 // VALIDATION SCHEMAS
@@ -21,6 +25,53 @@ const gdprReportSchema = complianceReportSchema.extend({
 
 const hipaaReportSchema = complianceReportSchema.extend({
   patientId: z.string().optional(),
+});
+
+// New GDPR/CCPA compliance schemas
+const anonymizeUserSchema = z.object({
+  userId: z.string(),
+  reason: z.string().optional().default('GDPR_REQUEST')
+});
+
+const consentRequestSchema = z.object({
+  userId: z.string(),
+  consentType: z.nativeEnum(ConsentType),
+  purpose: z.string(),
+  isGranted: z.boolean(),
+  version: z.string(),
+  source: z.nativeEnum(ConsentSource),
+  legalBasis: z.nativeEnum(LegalBasis),
+  expiryDays: z.number().optional(),
+  metadata: z.record(z.any()).optional()
+});
+
+const withdrawConsentSchema = z.object({
+  userId: z.string(),
+  consentType: z.nativeEnum(ConsentType),
+  reason: z.string().optional()
+});
+
+const exportRequestSchema = z.object({
+  userId: z.string(),
+  requestType: z.nativeEnum(ExportRequestType),
+  format: z.nativeEnum(ExportFormat).optional().default(ExportFormat.JSON),
+  includeRelatedData: z.boolean().optional().default(true)
+});
+
+const retentionPolicySchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  entityType: z.string(),
+  retentionPeriodDays: z.number().min(1),
+  action: z.nativeEnum(RetentionAction),
+  legalBasis: z.string(),
+  criteria: z.object({
+    field: z.string(),
+    operation: z.enum(['older_than', 'equals', 'not_accessed_since']),
+    value: z.union([z.string(), z.number(), z.date()]),
+    additionalConditions: z.record(z.any()).optional()
+  }),
+  exceptions: z.array(z.string()).optional().default([])
 });
 
 // ============================================================================
@@ -43,7 +94,7 @@ export const generateSOXReport = async (req: AuthenticatedRequest, res: Response
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : ErrorCode.INTERNAL_ERROR,
     });
   }
 };
@@ -65,7 +116,7 @@ export const downloadSOXReport = async (req: AuthenticatedRequest, res: Response
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : ErrorCode.INTERNAL_ERROR,
     });
   }
 };
@@ -90,7 +141,7 @@ export const generateGDPRReport = async (req: AuthenticatedRequest, res: Respons
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : ErrorCode.INTERNAL_ERROR,
     });
   }
 };
@@ -112,7 +163,7 @@ export const downloadGDPRReport = async (req: AuthenticatedRequest, res: Respons
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : ErrorCode.INTERNAL_ERROR,
     });
   }
 };
@@ -135,7 +186,7 @@ export const generateDataSubjectReport = async (req: AuthenticatedRequest, res: 
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : ErrorCode.INTERNAL_ERROR,
     });
   }
 };
@@ -160,7 +211,7 @@ export const generateHIPAAReport = async (req: AuthenticatedRequest, res: Respon
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : ErrorCode.INTERNAL_ERROR,
     });
   }
 };
@@ -182,7 +233,7 @@ export const downloadHIPAAReport = async (req: AuthenticatedRequest, res: Respon
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : ErrorCode.INTERNAL_ERROR,
     });
   }
 };
@@ -214,7 +265,7 @@ export const generatePatientAccessLog = async (req: AuthenticatedRequest, res: R
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : ErrorCode.INTERNAL_ERROR,
     });
   }
 };
@@ -239,7 +290,7 @@ export const generatePCIDSSReport = async (req: AuthenticatedRequest, res: Respo
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : ErrorCode.INTERNAL_ERROR,
     });
   }
 };
@@ -261,7 +312,346 @@ export const downloadPCIDSSReport = async (req: AuthenticatedRequest, res: Respo
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : ErrorCode.INTERNAL_ERROR,
+    });
+  }
+};
+
+// ============================================================================
+// GDPR/CCPA DATA PROTECTION ENDPOINTS
+// ============================================================================
+
+/**
+ * Data Anonymization Endpoints
+ */
+
+export const anonymizeUser = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { userId, reason } = anonymizeUserSchema.parse(req.body);
+    
+    const result = await dataAnonymizationService.anonymizeUser(
+      req.tenant!.id,
+      userId,
+      req.user!.id,
+      reason
+    );
+
+    if (result.success) {
+      res.json({
+        success: true,
+        data: {
+          anonymizedFields: result.anonymizedFields,
+          message: 'User data anonymized successfully'
+        }
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: ErrorCode.INTERNAL_ERROR,
+        details: result.errors
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to anonymize user data'
+    });
+  }
+};
+
+export const getAnonymizationReport = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const report = await dataAnonymizationService.generateAnonymizationReport(req.tenant!.id);
+
+    res.json({
+      success: true,
+      data: report
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to generate anonymization report'
+    });
+  }
+};
+
+/**
+ * Consent Management Endpoints
+ */
+
+export const recordConsent = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const consentData = consentRequestSchema.parse(req.body);
+    
+    const result = await consentManagementService.recordConsent({
+      ...consentData,
+      tenantId: req.tenant!.id,
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
+    if (result.success) {
+      res.json({
+        success: true,
+        data: {
+          consentId: result.consentId,
+          message: 'Consent recorded successfully'
+        }
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: result.error
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to record consent'
+    });
+  }
+};
+
+export const withdrawConsent = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { userId, consentType, reason } = withdrawConsentSchema.parse(req.body);
+    
+    const result = await consentManagementService.withdrawConsent(
+      userId,
+      req.tenant!.id,
+      consentType,
+      reason,
+      req.ip
+    );
+
+    if (result.success) {
+      res.json({
+        success: true,
+        message: 'Consent withdrawn successfully'
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: result.error
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to withdraw consent'
+    });
+  }
+};
+
+export const getUserConsentStatus = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { userId } = req.params;
+    
+    const consentStatus = await consentManagementService.getUserConsentStatus(
+      userId,
+      req.tenant!.id
+    );
+
+    res.json({
+      success: true,
+      data: consentStatus
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get consent status'
+    });
+  }
+};
+
+/**
+ * Data Export Endpoints
+ */
+
+export const createDataExportRequest = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { userId, requestType, format, includeRelatedData } = exportRequestSchema.parse(req.body);
+    
+    const result = await dataExportService.createExportRequest(
+      userId,
+      req.tenant!.id,
+      req.user!.id,
+      requestType,
+      format,
+      includeRelatedData
+    );
+
+    if (result.success) {
+      res.json({
+        success: true,
+        data: {
+          exportId: result.exportId,
+          estimatedCompletionTime: result.estimatedCompletionTime,
+          message: 'Export request created successfully'
+        }
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: result.error
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create export request'
+    });
+  }
+};
+
+export const getExportStatus = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { exportId } = req.params;
+    
+    const status = await dataExportService.getExportStatus(exportId);
+
+    if (status) {
+      res.json({
+        success: true,
+        data: status
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        error: ErrorCode.RESOURCE_NOT_FOUND
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get export status'
+    });
+  }
+};
+
+export const downloadExport = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { exportId } = req.params;
+    
+    const result = await dataExportService.downloadExport(exportId, req.user!.id);
+
+    if (result.success && result.filePath) {
+      res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
+      res.setHeader('Content-Type', result.contentType || 'application/octet-stream');
+      res.sendFile(result.filePath);
+    } else {
+      res.status(400).json({
+        success: false,
+        error: result.error
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to download export'
+    });
+  }
+};
+
+/**
+ * Data Retention Endpoints
+ */
+
+export const createRetentionPolicy = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const policyData = retentionPolicySchema.parse(req.body);
+    
+    const result = await dataRetentionService.createRetentionPolicy(
+      req.tenant!.id,
+      policyData.name,
+      policyData.description,
+      policyData.entityType,
+      policyData.retentionPeriodDays,
+      policyData.action,
+      policyData.legalBasis,
+      policyData.criteria,
+      req.user!.id,
+      policyData.exceptions
+    );
+
+    if (result.success) {
+      res.json({
+        success: true,
+        data: {
+          policyId: result.policyId,
+          message: 'Retention policy created successfully'
+        }
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: result.error
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create retention policy'
+    });
+  }
+};
+
+export const executeRetentionPolicies = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const executions = await dataRetentionService.executeRetentionPolicies(
+      req.tenant!.id,
+      req.user!.id
+    );
+
+    res.json({
+      success: true,
+      data: {
+        executions,
+        message: 'Retention policies executed successfully'
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to execute retention policies'
+    });
+  }
+};
+
+export const getRetentionReport = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const report = await dataRetentionService.generateRetentionReport(req.tenant!.id);
+
+    res.json({
+      success: true,
+      data: report
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to generate retention report'
+    });
+  }
+};
+
+export const createDefaultRetentionPolicies = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const result = await dataRetentionService.createDefaultRetentionPolicies(
+      req.tenant!.id,
+      req.user!.id
+    );
+
+    res.json({
+      success: result.success,
+      data: {
+        policiesCreated: result.policiesCreated,
+        errors: result.errors
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create default retention policies'
     });
   }
 };
@@ -280,7 +670,7 @@ export const getComplianceDashboard = async (req: AuthenticatedRequest, res: Res
     startDate.setDate(endDate.getDate() - days);
 
     // Generate all compliance reports for the dashboard
-    const [soxReport, gdprReport, hipaaReport, pciReport] = await Promise.all([
+    const [soxReport, gdprReport, hipaaReport, pciReport, anonymizationReport, consentReport, retentionReport] = await Promise.all([
       complianceReportingService.generateSOXReport({
         tenantId: req.tenant!.id,
         startDate,
@@ -301,6 +691,9 @@ export const getComplianceDashboard = async (req: AuthenticatedRequest, res: Res
         startDate,
         endDate,
       }),
+      dataAnonymizationService.generateAnonymizationReport(req.tenant!.id),
+      consentManagementService.generateConsentComplianceReport(req.tenant!.id),
+      dataRetentionService.generateRetentionReport(req.tenant!.id)
     ]);
 
     const dashboard = {
@@ -314,7 +707,7 @@ export const getComplianceDashboard = async (req: AuthenticatedRequest, res: Res
         gdprReport,
         hipaaReport,
         pciReport,
-      ]),
+      ], anonymizationReport, consentReport, retentionReport),
       frameworks: {
         sox: {
           status: soxReport.complianceViolations.length === 0 ? 'COMPLIANT' : 'NON_COMPLIANT',
@@ -348,12 +741,41 @@ export const getComplianceDashboard = async (req: AuthenticatedRequest, res: Res
           summary: pciReport.summary,
         },
       },
+      dataProtection: {
+        anonymization: {
+          totalUsers: anonymizationReport.totalUsers,
+          anonymizedUsers: anonymizationReport.anonymizedUsers,
+          pseudonymizedRecords: anonymizationReport.pseudonymizedRecords,
+          retentionCompliance: anonymizationReport.retentionCompliance,
+          anonymizationRate: anonymizationReport.totalUsers > 0 
+            ? (anonymizationReport.anonymizedUsers / anonymizationReport.totalUsers * 100) 
+            : 0
+        },
+        consent: {
+          totalUsers: consentReport.totalUsers,
+          usersWithValidConsents: consentReport.usersWithValidConsents,
+          complianceScore: consentReport.complianceScore,
+          expiredConsents: consentReport.expiredConsents,
+          withdrawnConsents: consentReport.withdrawnConsents,
+          consentsByType: consentReport.consentsByType
+        },
+        retention: {
+          activePolicies: retentionReport.activePolicies,
+          totalRecordsReviewed: retentionReport.totalRecordsReviewed,
+          recordsDeleted: retentionReport.recordsDeleted,
+          recordsAnonymized: retentionReport.recordsAnonymized,
+          recordsArchived: retentionReport.recordsArchived,
+          complianceScore: retentionReport.complianceScore,
+          upcomingActions: retentionReport.upcomingActions,
+          violations: retentionReport.violations
+        }
+      },
       trends: {
         securityEvents: await getSecurityEventTrends(req.tenant!.id, startDate, endDate),
         auditActivity: await getAuditActivityTrends(req.tenant!.id, startDate, endDate),
         complianceScore: await getComplianceScoreTrends(req.tenant!.id, days),
       },
-      alerts: await getComplianceAlerts(req.tenant!.id),
+      alerts: await fetchComplianceAlerts(req.tenant!.id),
       recommendations: await getComplianceRecommendations([
         soxReport,
         gdprReport,
@@ -369,14 +791,14 @@ export const getComplianceDashboard = async (req: AuthenticatedRequest, res: Res
   } catch (error) {
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : ErrorCode.INTERNAL_ERROR,
     });
   }
 };
 
 export const getComplianceAlerts = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const alerts = await getComplianceAlerts(req.tenant!.id);
+    const alerts = await fetchComplianceAlerts(req.tenant!.id);
 
     res.json({
       success: true,
@@ -385,7 +807,7 @@ export const getComplianceAlerts = async (req: AuthenticatedRequest, res: Respon
   } catch (error) {
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : ErrorCode.INTERNAL_ERROR,
     });
   }
 };
@@ -394,7 +816,12 @@ export const getComplianceAlerts = async (req: AuthenticatedRequest, res: Respon
 // UTILITY FUNCTIONS
 // ============================================================================
 
-function calculateOverallComplianceScore(reports: any[]): number {
+function calculateOverallComplianceScore(
+  reports: any[], 
+  anonymizationReport: any, 
+  consentReport: any, 
+  retentionReport: any
+): number {
   let totalScore = 0;
   let frameworks = 0;
 
@@ -404,9 +831,18 @@ function calculateOverallComplianceScore(reports: any[]): number {
   totalScore += soxScore;
   frameworks++;
 
-  // GDPR Score
+  // GDPR Score (enhanced with data protection metrics)
   const gdprStatus = reports[1].complianceStatus;
-  const gdprScore = gdprStatus === 'COMPLIANT' ? 100 : gdprStatus === 'PENDING_REVIEW' ? 80 : 60;
+  let gdprScore = gdprStatus === 'COMPLIANT' ? 100 : gdprStatus === 'PENDING_REVIEW' ? 80 : 60;
+  
+  // Adjust GDPR score based on data protection compliance
+  const dataProtectionScore = (
+    (anonymizationReport.retentionCompliance ? 100 : 70) +
+    consentReport.complianceScore +
+    retentionReport.complianceScore
+  ) / 3;
+  
+  gdprScore = Math.round((gdprScore + dataProtectionScore) / 2);
   totalScore += gdprScore;
   frameworks++;
 
@@ -419,6 +855,10 @@ function calculateOverallComplianceScore(reports: any[]): number {
   // PCI DSS Score
   const pciScore = reports[3].summary.complianceScore;
   totalScore += pciScore;
+  frameworks++;
+
+  // Data Protection Score (separate framework)
+  totalScore += dataProtectionScore;
   frameworks++;
 
   return Math.round(totalScore / frameworks);
@@ -475,7 +915,7 @@ async function getComplianceScoreTrends(tenantId: string, days: number) {
   return trends;
 }
 
-async function getComplianceAlerts(tenantId: string) {
+async function fetchComplianceAlerts(tenantId: string) {
   const { prisma } = require('../lib/prisma');
   
   // Get recent high-severity security events

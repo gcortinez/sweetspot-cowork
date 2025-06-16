@@ -1,9 +1,10 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { z } from 'zod';
 import { contractLifecycleService, ContractStatus, ContractType } from '../services/contractLifecycleService';
 import { ResponseHelper } from '../utils/response';
 import { logger } from '../utils/logger';
 import { AppError, ValidationError } from '../utils/errors';
+import { BaseRequest, AuthenticatedRequest, ErrorCode, HttpStatusCode } from '../types/api';
 
 const ContractPartySchema = z.object({
   id: z.string().min(1),
@@ -71,13 +72,13 @@ const CancelContractSchema = z.object({
 });
 
 export class ContractLifecycleController {
-  async createContract(req: Request, res: Response): Promise<Response> {
+  async createContract(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const createdBy = req.user?.id;
 
       if (!tenantId || !createdBy) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       const validatedData = CreateContractSchema.parse(req.body);
@@ -101,28 +102,28 @@ export class ContractLifecycleController {
         type: contract.type,
       });
 
-      return ResponseHelper.success(res, contract, 'Contract created successfully', 201);
+      return ResponseHelper.success(res, contract, 'Contract created successfully', HttpStatusCode.CREATED);
     } catch (error) {
       logger.error('Error creating contract', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Validation failed', 400, error.errors);
+        return ResponseHelper.validationError(res, 'Validation failed', error.errors);
       }
 
       if (error instanceof ValidationError) {
-        return ResponseHelper.error(res, error.message, 400);
+        return ResponseHelper.error(res, ErrorCode.VALIDATION_ERROR, error.message, HttpStatusCode.BAD_REQUEST);
       }
 
-      return ResponseHelper.error(res, 'Failed to create contract', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to create contract', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async getContracts(req: Request, res: Response): Promise<Response> {
+  async getContracts(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       const query = ContractQuerySchema.parse(req.query);
@@ -136,20 +137,20 @@ export class ContractLifecycleController {
       logger.error('Error fetching contracts', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Invalid query parameters', 400, error.errors);
+        return ResponseHelper.error(res, ErrorCode.VALIDATION_ERROR, 'Invalid query parameters', HttpStatusCode.BAD_REQUEST);
       }
 
-      return ResponseHelper.error(res, 'Failed to fetch contracts', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to fetch contracts', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async getContractById(req: Request, res: Response): Promise<Response> {
+  async getContractById(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { id } = req.params;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       logger.debug('Fetching contract by ID', { tenantId, contractId: id });
@@ -161,20 +162,20 @@ export class ContractLifecycleController {
       logger.error('Error fetching contract', { error });
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, error.message, error.statusCode);
       }
 
-      return ResponseHelper.error(res, 'Failed to fetch contract', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to fetch contract', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async updateContract(req: Request, res: Response): Promise<Response> {
+  async updateContract(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { id } = req.params;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       const validatedData = UpdateContractSchema.parse(req.body);
@@ -201,25 +202,25 @@ export class ContractLifecycleController {
       logger.error('Error updating contract', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Validation failed', 400, error.errors);
+        return ResponseHelper.validationError(res, 'Validation failed', error.errors);
       }
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, error.message, error.statusCode);
       }
 
-      return ResponseHelper.error(res, 'Failed to update contract', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to update contract', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async activateContract(req: Request, res: Response): Promise<Response> {
+  async activateContract(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { id } = req.params;
       const activatedBy = req.user?.id;
 
       if (!tenantId || !activatedBy) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       logger.info('Activating contract', {
@@ -244,21 +245,21 @@ export class ContractLifecycleController {
       logger.error('Error activating contract', { error });
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, error.message, error.statusCode);
       }
 
-      return ResponseHelper.error(res, 'Failed to activate contract', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to activate contract', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async suspendContract(req: Request, res: Response): Promise<Response> {
+  async suspendContract(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { id } = req.params;
       const suspendedBy = req.user?.id;
 
       if (!tenantId || !suspendedBy) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       const { reason } = SuspendContractSchema.parse(req.body);
@@ -287,25 +288,25 @@ export class ContractLifecycleController {
       logger.error('Error suspending contract', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Validation failed', 400, error.errors);
+        return ResponseHelper.validationError(res, 'Validation failed', error.errors);
       }
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, error.message, error.statusCode);
       }
 
-      return ResponseHelper.error(res, 'Failed to suspend contract', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to suspend contract', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async reactivateContract(req: Request, res: Response): Promise<Response> {
+  async reactivateContract(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { id } = req.params;
       const reactivatedBy = req.user?.id;
 
       if (!tenantId || !reactivatedBy) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       logger.info('Reactivating contract', {
@@ -330,21 +331,21 @@ export class ContractLifecycleController {
       logger.error('Error reactivating contract', { error });
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, error.message, error.statusCode);
       }
 
-      return ResponseHelper.error(res, 'Failed to reactivate contract', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to reactivate contract', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async terminateContract(req: Request, res: Response): Promise<Response> {
+  async terminateContract(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { id } = req.params;
       const terminatedBy = req.user?.id;
 
       if (!tenantId || !terminatedBy) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       const { reason, terminationDate } = TerminateContractSchema.parse(req.body);
@@ -375,25 +376,25 @@ export class ContractLifecycleController {
       logger.error('Error terminating contract', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Validation failed', 400, error.errors);
+        return ResponseHelper.validationError(res, 'Validation failed', error.errors);
       }
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, error.message, error.statusCode);
       }
 
-      return ResponseHelper.error(res, 'Failed to terminate contract', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to terminate contract', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async cancelContract(req: Request, res: Response): Promise<Response> {
+  async cancelContract(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { id } = req.params;
       const cancelledBy = req.user?.id;
 
       if (!tenantId || !cancelledBy) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       const { reason } = CancelContractSchema.parse(req.body);
@@ -422,24 +423,24 @@ export class ContractLifecycleController {
       logger.error('Error cancelling contract', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Validation failed', 400, error.errors);
+        return ResponseHelper.validationError(res, 'Validation failed', error.errors);
       }
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, error.message, error.statusCode);
       }
 
-      return ResponseHelper.error(res, 'Failed to cancel contract', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to cancel contract', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async getContractActivity(req: Request, res: Response): Promise<Response> {
+  async getContractActivity(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { id } = req.params;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       logger.debug('Fetching contract activity', { tenantId, contractId: id });
@@ -451,19 +452,19 @@ export class ContractLifecycleController {
       logger.error('Error fetching contract activity', { error });
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, error.message, error.statusCode);
       }
 
-      return ResponseHelper.error(res, 'Failed to fetch contract activity', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to fetch contract activity', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async getContractStats(req: Request, res: Response): Promise<Response> {
+  async getContractStats(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       logger.debug('Fetching contract statistics', { tenantId });
@@ -473,22 +474,22 @@ export class ContractLifecycleController {
       return ResponseHelper.success(res, stats, 'Contract statistics retrieved successfully');
     } catch (error) {
       logger.error('Error fetching contract statistics', { error });
-      return ResponseHelper.error(res, 'Failed to fetch contract statistics', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to fetch contract statistics', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async getExpiringContracts(req: Request, res: Response): Promise<Response> {
+  async getExpiringContracts(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       const days = req.query.days ? parseInt(req.query.days as string) : 30;
 
       if (isNaN(days) || days < 1 || days > 365) {
-        return ResponseHelper.error(res, 'Invalid days parameter. Must be between 1 and 365', 400);
+        return ResponseHelper.error(res, ErrorCode.VALIDATION_ERROR, 'Invalid days parameter. Must be between 1 and 365', HttpStatusCode.BAD_REQUEST);
       }
 
       logger.debug('Fetching expiring contracts', { tenantId, days });
@@ -498,18 +499,18 @@ export class ContractLifecycleController {
       return ResponseHelper.success(res, contracts, `Contracts expiring in ${days} days retrieved successfully`);
     } catch (error) {
       logger.error('Error fetching expiring contracts', { error });
-      return ResponseHelper.error(res, 'Failed to fetch expiring contracts', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to fetch expiring contracts', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async sendContractForSignature(req: Request, res: Response): Promise<Response> {
+  async sendContractForSignature(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { id } = req.params;
       const sentBy = req.user?.id;
 
       if (!tenantId || !sentBy) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       logger.info('Sending contract for signature', {
@@ -535,10 +536,10 @@ export class ContractLifecycleController {
       logger.error('Error sending contract for signature', { error });
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, error.message, error.statusCode);
       }
 
-      return ResponseHelper.error(res, 'Failed to send contract for signature', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to send contract for signature', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 }

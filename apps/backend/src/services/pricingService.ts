@@ -128,7 +128,14 @@ class PricingService {
       orderBy: { level: 'asc' },
     });
 
-    return tiers;
+    return tiers.map(tier => ({
+      ...tier,
+      planTiers: tier.planTiers.map(pt => ({
+        plan: pt.plan,
+        basePrice: pt.basePrice.toNumber(),
+        features: Array.isArray(pt.features) ? pt.features.map(f => String(f)) : []
+      }))
+    }));
   }
 
   async getPricingTierById(tenantId: string, tierId: string): Promise<PricingTierWithRules> {
@@ -150,7 +157,14 @@ class PricingService {
       throw new NotFoundError('Pricing tier not found');
     }
 
-    return tier;
+    return {
+      ...tier,
+      planTiers: tier.planTiers.map(pt => ({
+        plan: pt.plan,
+        basePrice: pt.basePrice.toNumber(),
+        features: Array.isArray(pt.features) ? pt.features.map(f => String(f)) : []
+      }))
+    };
   }
 
   async updatePricingTier(tenantId: string, tierId: string, data: Partial<CreatePricingTierData>): Promise<PricingTier> {
@@ -267,8 +281,8 @@ class PricingService {
       where: { id: ruleId },
       data: {
         ...data,
-        timeSlots: data.timeSlots || rule.timeSlots,
-        conditions: data.conditions || rule.conditions,
+        timeSlots: data.timeSlots ?? (rule.timeSlots ?? undefined),
+        conditions: data.conditions !== undefined ? data.conditions : rule.conditions || {},
         validFrom: data.validFrom ? new Date(data.validFrom) : undefined,
         validTo: data.validTo ? new Date(data.validTo) : undefined,
       },
@@ -477,7 +491,7 @@ class PricingService {
           percentage: (modifier - 1) * 100,
         };
 
-      case 'FIXED_AMOUNT':
+      case 'ADDITION':
         const newPriceFixed = currentPrice + modifier;
         return {
           newPrice: Math.max(0, newPriceFixed),
@@ -640,7 +654,7 @@ class PricingService {
         results.errors.push({
           planId: update.planId,
           tierId: update.tierId,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: (error as Error).message,
         });
       }
     }

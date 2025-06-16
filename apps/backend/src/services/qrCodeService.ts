@@ -487,9 +487,7 @@ export class QRCodeService {
           tenantId,
           qrCodeId: validation.qrCodeData!.id,
           userId,
-          spaceId: validation.booking.spaceId,
-          scanType: 'CHECK_IN',
-          success: true,
+          result: 'SUCCESS',
           metadata: additionalData || {},
         },
       });
@@ -590,9 +588,7 @@ export class QRCodeService {
           tenantId,
           qrCodeId: validation.qrCodeData!.id,
           userId,
-          spaceId: validation.booking.spaceId,
-          scanType: 'CHECK_OUT',
-          success: true,
+          result: 'SUCCESS',
           metadata: {
             ...additionalData,
             actualDuration,
@@ -658,14 +654,15 @@ export class QRCodeService {
               email: true,
             },
           },
-          space: {
+          visitor: {
             select: {
-              name: true,
-              type: true,
+              firstName: true,
+              lastName: true,
+              email: true,
             },
           },
         },
-        orderBy: { timestamp: 'desc' },
+        orderBy: { scannedAt: 'desc' },
       });
     } catch (error) {
       logger.error('Failed to get QR code usage history', { tenantId, qrCodeId }, error as Error);
@@ -682,8 +679,8 @@ export class QRCodeService {
     successfulScans: number;
     failedScans: number;
     successRate: number;
-    scansByType: Record<string, number>;
-    scansBySpace: Array<{ spaceId: string; spaceName: string; scans: number }>;
+    scansByResult: Record<string, number>;
+    scansByLocation: Array<{ location: string; scans: number }>;
     scansByHour: Array<{ hour: number; scans: number }>;
     topUsers: Array<{ userId: string; userName: string; scans: number }>;
   }> {
@@ -691,7 +688,7 @@ export class QRCodeService {
       const scans = await prisma.qRCodeScan.findMany({
         where: {
           tenantId,
-          timestamp: {
+          scannedAt: {
             gte: startDate,
             lte: endDate,
           },
@@ -703,47 +700,44 @@ export class QRCodeService {
               lastName: true,
             },
           },
-          space: {
+          visitor: {
             select: {
-              name: true,
+              firstName: true,
+              lastName: true,
             },
           },
         },
       });
 
       const totalScans = scans.length;
-      const successfulScans = scans.filter(scan => scan.success).length;
+      const successfulScans = scans.filter(scan => scan.result === 'SUCCESS').length;
       const failedScans = totalScans - successfulScans;
       const successRate = totalScans > 0 ? successfulScans / totalScans : 0;
 
-      // Group by scan type
-      const scansByType: Record<string, number> = {};
+      // Group by scan result
+      const scansByResult: Record<string, number> = {};
       scans.forEach(scan => {
-        scansByType[scan.scanType] = (scansByType[scan.scanType] || 0) + 1;
+        scansByResult[scan.result] = (scansByResult[scan.result] || 0) + 1;
       });
 
-      // Group by space
-      const spaceScans = new Map<string, { name: string; count: number }>();
+      // Group by location
+      const locationScans = new Map<string, number>();
       scans.forEach(scan => {
-        if (scan.spaceId) {
-          const key = scan.spaceId;
-          if (!spaceScans.has(key)) {
-            spaceScans.set(key, { name: scan.space?.name || 'Unknown', count: 0 });
-          }
-          spaceScans.get(key)!.count++;
+        if (scan.location) {
+          const key = scan.location;
+          locationScans.set(key, (locationScans.get(key) || 0) + 1);
         }
       });
 
-      const scansBySpace = Array.from(spaceScans.entries()).map(([spaceId, data]) => ({
-        spaceId,
-        spaceName: data.name,
-        scans: data.count,
+      const scansByLocation = Array.from(locationScans.entries()).map(([location, count]) => ({
+        location,
+        scans: count,
       }));
 
       // Group by hour
       const hourlyScans = new Array(24).fill(0);
       scans.forEach(scan => {
-        const hour = scan.timestamp.getHours();
+        const hour = scan.scannedAt.getHours();
         hourlyScans[hour]++;
       });
 
@@ -776,8 +770,8 @@ export class QRCodeService {
         successfulScans,
         failedScans,
         successRate,
-        scansByType,
-        scansBySpace,
+        scansByResult,
+        scansByLocation,
         scansByHour,
         topUsers,
       };

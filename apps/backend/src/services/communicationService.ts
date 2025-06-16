@@ -1,10 +1,10 @@
-import { PrismaClient, Communication, CommunicationType, CommunicationDirection } from '@prisma/client';
+import { PrismaClient, Communication, CommunicationType, CommDirection } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { AppError, NotFoundError, ValidationError } from '../utils/errors';
 
 interface CreateCommunicationData {
   type: CommunicationType;
-  direction: CommunicationDirection;
+  direction: CommDirection;
   subject: string;
   content?: string;
   fromEmail?: string;
@@ -30,7 +30,7 @@ interface CommunicationsQuery {
   page: number;
   limit: number;
   type?: CommunicationType;
-  direction?: CommunicationDirection;
+  direction?: CommDirection;
   entityType?: 'LEAD' | 'CLIENT' | 'OPPORTUNITY';
   entityId?: string;
   dateFrom?: string;
@@ -48,7 +48,7 @@ interface CommunicationStats {
     percentage: number;
   }>;
   byDirection: Array<{
-    direction: CommunicationDirection;
+    direction: CommDirection;
     count: number;
     percentage: number;
   }>;
@@ -63,7 +63,7 @@ interface CommunicationStats {
   recentCommunications: Array<{
     id: string;
     type: CommunicationType;
-    direction: CommunicationDirection;
+    direction: CommDirection;
     subject: string;
     entityName: string;
     userName: string;
@@ -78,7 +78,7 @@ interface CommunicationThread {
   communications: Array<{
     id: string;
     type: CommunicationType;
-    direction: CommunicationDirection;
+    direction: CommDirection;
     subject: string;
     content?: string;
     fromEmail?: string;
@@ -134,7 +134,7 @@ class CommunicationService {
         tenantId,
         userId,
         attachments: data.attachments || [],
-        metadata: data.metadata || {},
+        metadata: data.metadata as any || {},
       },
       include: {
         user: {
@@ -160,11 +160,6 @@ class CommunicationService {
         opportunity: {
           select: {
             title: true,
-          },
-        },
-        activity: {
-          select: {
-            subject: true,
           },
         },
       },
@@ -303,12 +298,6 @@ class CommunicationService {
             title: true,
           },
         },
-        activity: {
-          select: {
-            id: true,
-            subject: true,
-          },
-        },
       },
     });
 
@@ -332,8 +321,8 @@ class CommunicationService {
       where: { id: communicationId },
       data: {
         ...data,
-        attachments: data.attachments || existingCommunication.attachments,
-        metadata: data.metadata || existingCommunication.metadata,
+        attachments: data.attachments || (existingCommunication.attachments as any),
+        metadata: (data.metadata as any) || existingCommunication.metadata,
       },
       include: {
         user: {

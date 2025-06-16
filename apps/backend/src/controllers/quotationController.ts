@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { z } from 'zod';
 import { quotationService } from '../services/quotationService';
 import { handleController } from '../utils/response';
-import { AuthenticatedRequest } from '../types/api';
+import { BaseRequest, ErrorCode } from '../types/api';
 
 // Quotation item schema
 const quotationItemSchema = z.object({
@@ -74,10 +74,10 @@ const convertToContractSchema = z.object({
 
 class QuotationController {
   // POST /api/quotations
-  async createQuotation(req: AuthenticatedRequest, res: Response) {
+  async createQuotation(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const data = createQuotationSchema.parse(req.body);
@@ -90,10 +90,10 @@ class QuotationController {
   }
 
   // GET /api/quotations
-  async getQuotations(req: AuthenticatedRequest, res: Response) {
+  async getQuotations(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const query = queryQuotationsSchema.parse(req.query);
@@ -105,10 +105,10 @@ class QuotationController {
   }
 
   // GET /api/quotations/:id
-  async getQuotationById(req: AuthenticatedRequest, res: Response) {
+  async getQuotationById(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const { id } = req.params;
@@ -120,10 +120,10 @@ class QuotationController {
   }
 
   // PUT /api/quotations/:id
-  async updateQuotation(req: AuthenticatedRequest, res: Response) {
+  async updateQuotation(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const { id } = req.params;
@@ -136,10 +136,10 @@ class QuotationController {
   }
 
   // DELETE /api/quotations/:id
-  async deleteQuotation(req: AuthenticatedRequest, res: Response) {
+  async deleteQuotation(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const { id } = req.params;
@@ -151,10 +151,10 @@ class QuotationController {
   }
 
   // POST /api/quotations/:id/send
-  async sendQuotation(req: AuthenticatedRequest, res: Response) {
+  async sendQuotation(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const { id } = req.params;
@@ -166,10 +166,10 @@ class QuotationController {
   }
 
   // POST /api/quotations/:id/accept
-  async acceptQuotation(req: AuthenticatedRequest, res: Response) {
+  async acceptQuotation(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const { id } = req.params;
@@ -182,10 +182,10 @@ class QuotationController {
   }
 
   // POST /api/quotations/:id/reject
-  async rejectQuotation(req: AuthenticatedRequest, res: Response) {
+  async rejectQuotation(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const { id } = req.params;
@@ -198,10 +198,10 @@ class QuotationController {
   }
 
   // POST /api/quotations/:id/view
-  async markAsViewed(req: AuthenticatedRequest, res: Response) {
+  async markAsViewed(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const { id } = req.params;
@@ -213,10 +213,10 @@ class QuotationController {
   }
 
   // POST /api/quotations/:id/convert-to-contract
-  async convertToContract(req: AuthenticatedRequest, res: Response) {
+  async convertToContract(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const { id } = req.params;
@@ -230,10 +230,10 @@ class QuotationController {
   }
 
   // POST /api/quotations/:id/duplicate
-  async duplicateQuotation(req: AuthenticatedRequest, res: Response) {
+  async duplicateQuotation(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const { id } = req.params;
@@ -246,10 +246,10 @@ class QuotationController {
   }
 
   // GET /api/quotations/stats
-  async getQuotationStats(req: AuthenticatedRequest, res: Response) {
+  async getQuotationStats(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const tenantId = req.user.tenantId;
@@ -259,10 +259,10 @@ class QuotationController {
   }
 
   // GET /api/quotations/by-client/:clientId
-  async getQuotationsByClient(req: AuthenticatedRequest, res: Response) {
+  async getQuotationsByClient(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const { clientId } = req.params;
@@ -278,10 +278,10 @@ class QuotationController {
   }
 
   // GET /api/quotations/by-opportunity/:opportunityId
-  async getQuotationsByOpportunity(req: AuthenticatedRequest, res: Response) {
+  async getQuotationsByOpportunity(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const { opportunityId } = req.params;
@@ -297,10 +297,10 @@ class QuotationController {
   }
 
   // GET /api/quotations/expiring
-  async getExpiringQuotations(req: AuthenticatedRequest, res: Response) {
+  async getExpiringQuotations(req: BaseRequest, res: Response) {
     return handleController(async () => {
       if (!req.user?.tenantId) {
-        throw new Error('Tenant context required');
+        throw new Error(ErrorCode.UNAUTHORIZED_ACCESS);
       }
       
       const daysAhead = parseInt(req.query.days as string) || 7;

@@ -1,13 +1,13 @@
 import { Router } from 'express';
-import { requireAuth } from '../middleware/auth';
-import { validateTenantAccess } from '../middleware/tenant';
+import { authenticate } from '../middleware/auth';
+import { tenantMiddleware } from '../middleware/tenant';
 import * as serviceCatalogController from '../controllers/serviceCatalogController';
 
 const router = Router();
 
 // Apply authentication and tenant validation to all routes
-router.use(requireAuth);
-router.use(validateTenantAccess);
+router.use(authenticate);
+router.use(tenantMiddleware);
 
 // ============================================================================
 // SERVICE REQUEST MANAGEMENT
@@ -18,28 +18,28 @@ router.use(validateTenantAccess);
  * @desc    Create a new service request
  * @access  Private
  */
-router.post('/', serviceCatalogController.createServiceRequest);
+router.post('/', serviceCatalogController.createServiceRequest as any);
 
 /**
  * @route   PUT /api/service-requests/:requestId
  * @desc    Update a service request
  * @access  Private (Owner only)
  */
-router.put('/:requestId', serviceCatalogController.updateServiceRequest);
+router.put('/:requestId', serviceCatalogController.updateServiceRequest as any);
 
 /**
  * @route   POST /api/service-requests/:requestId/cancel
  * @desc    Cancel a service request
  * @access  Private (Owner only)
  */
-router.post('/:requestId/cancel', serviceCatalogController.cancelServiceRequest);
+router.post('/:requestId/cancel', serviceCatalogController.cancelServiceRequest as any);
 
 /**
  * @route   GET /api/service-requests/:requestId
  * @desc    Get service request details by ID
  * @access  Private
  */
-router.get('/:requestId', serviceCatalogController.getServiceRequest);
+router.get('/:requestId', serviceCatalogController.getServiceRequest as any);
 
 /**
  * @route   GET /api/service-requests
@@ -47,21 +47,21 @@ router.get('/:requestId', serviceCatalogController.getServiceRequest);
  * @access  Private
  * @query   status, priority, serviceId, userId, assignedTo, search, skip, take
  */
-router.get('/', serviceCatalogController.getServiceRequests);
+router.get('/', serviceCatalogController.getServiceRequests as any);
 
 /**
  * @route   GET /api/service-requests/my/requests
  * @desc    Get current user's service requests
  * @access  Private
  */
-router.get('/my/requests', serviceCatalogController.getMyServiceRequests);
+router.get('/my/requests', serviceCatalogController.getMyServiceRequests as any);
 
 /**
  * @route   GET /api/service-requests/my/assigned
  * @desc    Get service requests assigned to current user
  * @access  Private
  */
-router.get('/my/assigned', serviceCatalogController.getAssignedRequests);
+router.get('/my/assigned', serviceCatalogController.getAssignedRequests as any);
 
 // ============================================================================
 // APPROVAL WORKFLOW
@@ -72,14 +72,14 @@ router.get('/my/assigned', serviceCatalogController.getAssignedRequests);
  * @desc    Get pending service request approvals
  * @access  Private (Cowork Admin, Client Admin)
  */
-router.get('/approvals/pending', serviceCatalogController.getPendingApprovals);
+router.get('/approvals/pending', serviceCatalogController.getPendingApprovals as any);
 
 /**
  * @route   POST /api/service-requests/:requestId/approve
  * @desc    Approve or reject a service request
  * @access  Private (Cowork Admin, Client Admin)
  */
-router.post('/:requestId/approve', serviceCatalogController.processApproval);
+router.post('/:requestId/approve', serviceCatalogController.processApproval as any);
 
 // ============================================================================
 // ASSIGNMENT AND PROGRESS TRACKING
@@ -90,20 +90,20 @@ router.post('/:requestId/approve', serviceCatalogController.processApproval);
  * @desc    Assign a service request to a provider/staff member
  * @access  Private (Cowork Admin, Service Manager)
  */
-router.post('/:requestId/assign', serviceCatalogController.assignServiceRequest);
+router.post('/:requestId/assign', serviceCatalogController.assignServiceRequest as any);
 
 /**
  * @route   PUT /api/service-requests/:requestId/progress
  * @desc    Update progress on a service request
  * @access  Private (Assigned user only)
  */
-router.put('/:requestId/progress', serviceCatalogController.updateProgress);
+router.put('/:requestId/progress', serviceCatalogController.updateProgress as any);
 
 /**
  * @route   POST /api/service-requests/:requestId/complete
  * @desc    Mark a service request as completed
  * @access  Private (Assigned user only)
  */
-router.post('/:requestId/complete', serviceCatalogController.completeServiceRequest);
+router.post('/:requestId/complete', serviceCatalogController.completeServiceRequest as any);
 
 export default router;

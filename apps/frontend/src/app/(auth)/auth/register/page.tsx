@@ -25,8 +25,8 @@ export default function RegisterPage() {
   return (
     <GuestOnly>
       <AuthLayout
-        title="Join SweetSpot"
-        description="Create your account and start managing your coworking space with powerful tools and insights."
+        title="Únete a SweetSpot"
+        description="Crea tu cuenta y comienza a gestionar tu espacio de coworking con herramientas potentes y análisis en tiempo real. Es gratis empezar."
       >
         <RegisterForm
           onSuccess={handleRegisterSuccess}

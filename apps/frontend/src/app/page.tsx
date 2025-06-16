@@ -41,7 +41,7 @@ export default function HomePage() {
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-gray-600">Cargando...</p>
         </div>
       </div>
     );
@@ -58,26 +58,27 @@ export default function HomePage() {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-3">
-              <div className="h-10 w-10 rounded-lg bg-blue-600 flex items-center justify-center">
+            <a href="/" className="flex items-center space-x-3 group">
+              <div className="h-10 w-10 rounded-lg bg-blue-600 flex items-center justify-center group-hover:bg-blue-700 transition-colors">
                 <Building2 className="h-6 w-6 text-white" />
               </div>
               <span className="text-xl font-bold text-gray-900">SweetSpot</span>
-            </div>
+            </a>
             <div className="flex items-center space-x-4">
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => router.push("/auth/login")}
-                className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-md transition-colors"
+                className="text-gray-600 hover:text-gray-900"
               >
-                Sign In
-              </button>
-              <button
+                Iniciar Sesión
+              </Button>
+              <Button
                 onClick={() => router.push("/auth/register")}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md flex items-center space-x-2 transition-colors"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
               >
-                <span>Get Started</span>
-                <ArrowRight className="h-4 w-4" />
-              </button>
+                <span>Comenzar</span>
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
             </div>
           </div>
         </div>
@@ -88,32 +89,35 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-4xl mx-auto">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              The modern way to manage your{" "}
+              La forma moderna de gestionar tu{" "}
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                coworking space
+                espacio de coworking
               </span>
             </h1>
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-              Streamline operations, manage members, and grow your business with
-              our comprehensive coworking space management platform trusted by
-              500+ spaces worldwide.
+              Optimiza las operaciones, gestiona miembros y haz crecer tu
+              negocio con nuestra plataforma integral de gestión de espacios de
+              coworking diseñada para el éxito de tu negocio.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <button
+              <Button
+                size="lg"
                 onClick={() => router.push("/auth/register")}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg text-lg font-medium flex items-center justify-center space-x-2 transition-colors shadow-lg hover:shadow-xl"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg shadow-lg hover:shadow-xl"
               >
-                <Zap className="h-5 w-5" />
-                <span>Start Free Trial</span>
-              </button>
-              <button
+                <Zap className="h-5 w-5 mr-2" />
+                <span>Prueba Gratis</span>
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
                 onClick={() => router.push("/auth/login")}
-                className="border border-gray-300 text-gray-700 hover:bg-gray-50 px-8 py-4 rounded-lg text-lg font-medium flex items-center justify-center space-x-2 transition-colors"
+                className="border-gray-300 text-gray-700 hover:bg-gray-50 px-8 py-6 text-lg"
               >
-                <Play className="h-5 w-5" />
-                <span>Watch Demo</span>
-              </button>
+                <Play className="h-5 w-5 mr-2" />
+                <span>Ver Demo</span>
+              </Button>
             </div>
 
             {/* Social Proof */}
@@ -127,7 +131,7 @@ export default function HomePage() {
                 ))}
               </div>
               <span className="text-sm font-medium">
-                4.9/5 from 500+ coworking spaces
+                Plataforma nueva con tecnología de vanguardia
               </span>
             </div>
           </div>
@@ -139,11 +143,12 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Everything you need to run your space
+              Todo lo que necesitas para gestionar tu espacio
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              From member management to space booking, we've got you covered
-              with powerful features designed for modern coworking spaces.
+              Desde la gestión de miembros hasta la reserva de espacios, te
+              ofrecemos funciones potentes diseñadas para espacios de coworking
+              modernos.
             </p>
           </div>
 
@@ -153,11 +158,11 @@ export default function HomePage() {
                 <Building2 className="h-8 w-8 text-blue-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Multi-Tenant
+                Multi-Inquilino
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                Isolated workspaces for different organizations with complete
-                data separation and security.
+                Espacios de trabajo aislados para diferentes organizaciones con
+                completa separación de datos y seguridad.
               </p>
             </div>
 
@@ -166,11 +171,11 @@ export default function HomePage() {
                 <Shield className="h-8 w-8 text-green-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Role-Based Access
+                Acceso Basado en Roles
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                Granular permissions and access control for different user roles
-                and responsibilities.
+                Permisos granulares y control de acceso para diferentes roles y
+                responsabilidades de usuario.
               </p>
             </div>
 
@@ -179,11 +184,11 @@ export default function HomePage() {
                 <Zap className="h-8 w-8 text-yellow-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Real-Time Updates
+                Actualizaciones en Tiempo Real
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                Live notifications and updates keep everyone informed about
-                space availability.
+                Notificaciones y actualizaciones en vivo mantienen a todos
+                informados sobre la disponibilidad de espacios.
               </p>
             </div>
 
@@ -192,11 +197,11 @@ export default function HomePage() {
                 <BarChart3 className="h-8 w-8 text-purple-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Analytics & Reports
+                Análisis e Informes
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                Detailed insights and reports to help you make data-driven
-                decisions.
+                Información detallada e informes para ayudarte a tomar
+                decisiones basadas en datos.
               </p>
             </div>
           </div>
@@ -209,20 +214,21 @@ export default function HomePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
-                Simplify your coworking operations
+                Simplifica las operaciones de tu coworking
               </h2>
               <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                Stop juggling multiple tools and spreadsheets. SweetSpot brings
-                everything together in one powerful, intuitive platform.
+                Deja de hacer malabares con múltiples herramientas y hojas de
+                cálculo. SweetSpot reúne todo en una plataforma potente e
+                intuitiva.
               </p>
 
               <div className="space-y-4 mb-8">
                 {[
-                  "Automated booking and scheduling",
-                  "Member management and billing",
-                  "Space utilization tracking",
-                  "Mobile-friendly interface",
-                  "24/7 customer support",
+                  "Reservas y programación automatizadas",
+                  "Gestión de miembros y facturación",
+                  "Seguimiento de utilización de espacios",
+                  "Interfaz adaptada a móviles",
+                  "Soporte al cliente 24/7",
                 ].map((benefit, index) => (
                   <div key={index} className="flex items-center space-x-3">
                     <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
@@ -231,13 +237,14 @@ export default function HomePage() {
                 ))}
               </div>
 
-              <button
+              <Button
+                size="lg"
                 onClick={() => router.push("/auth/register")}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg text-lg font-medium flex items-center space-x-2 transition-colors shadow-lg hover:shadow-xl"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg shadow-lg hover:shadow-xl"
               >
-                <span>Start Your Free Trial</span>
-                <ArrowRight className="h-5 w-5" />
-              </button>
+                <span>Comienza tu Prueba Gratis</span>
+                <ArrowRight className="h-5 w-5 ml-2" />
+              </Button>
             </div>
 
             <div className="relative">
@@ -249,30 +256,30 @@ export default function HomePage() {
                     </div>
                     <div>
                       <h4 className="text-lg font-semibold text-gray-900">
-                        Today's Bookings
+                        Reservas de Hoy
                       </h4>
-                      <p className="text-gray-600">12 active reservations</p>
+                      <p className="text-gray-600">12 reservas activas</p>
                     </div>
                   </div>
 
                   <div className="space-y-3">
                     {[
                       {
-                        name: "Meeting Room A",
+                        name: "Sala de Reuniones A",
                         time: "9:00 AM - 11:00 AM",
-                        status: "occupied",
+                        status: "ocupada",
                         color: "green",
                       },
                       {
-                        name: "Hot Desk #5",
+                        name: "Escritorio Flexible #5",
                         time: "10:00 AM - 6:00 PM",
-                        status: "occupied",
+                        status: "ocupado",
                         color: "green",
                       },
                       {
-                        name: "Phone Booth 2",
+                        name: "Cabina Telefónica 2",
                         time: "2:00 PM - 3:00 PM",
-                        status: "available",
+                        status: "disponible",
                         color: "blue",
                       },
                     ].map((booking, index) => (
@@ -321,21 +328,21 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             <div>
               <div className="text-4xl md:text-5xl font-bold text-white mb-2">
-                500+
+                100%
               </div>
-              <div className="text-blue-100 text-lg">Coworking Spaces</div>
+              <div className="text-blue-100 text-lg">En la Nube</div>
             </div>
             <div>
               <div className="text-4xl md:text-5xl font-bold text-white mb-2">
-                50K+
+                24/7
               </div>
-              <div className="text-blue-100 text-lg">Active Members</div>
+              <div className="text-blue-100 text-lg">Soporte Disponible</div>
             </div>
             <div>
               <div className="text-4xl md:text-5xl font-bold text-white mb-2">
-                99.9%
+                0€
               </div>
-              <div className="text-blue-100 text-lg">Uptime</div>
+              <div className="text-blue-100 text-lg">Para Empezar</div>
             </div>
           </div>
         </div>
@@ -345,26 +352,29 @@ export default function HomePage() {
       <section className="py-20 bg-gray-900">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Ready to transform your coworking space?
+            ¿Listo para transformar tu espacio de coworking?
           </h2>
           <p className="text-xl text-gray-300 mb-8">
-            Join hundreds of coworking spaces already using SweetSpot to
-            streamline their operations and grow their business.
+            Sé de los primeros en usar SweetSpot para optimizar las operaciones
+            de tu espacio de coworking y hacer crecer tu negocio.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
+            <Button
+              size="lg"
               onClick={() => router.push("/auth/register")}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg text-lg font-medium flex items-center justify-center space-x-2 transition-colors shadow-lg hover:shadow-xl"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg shadow-lg hover:shadow-xl"
             >
-              <Zap className="h-5 w-5" />
-              <span>Start Free Trial</span>
-            </button>
-            <button
+              <Zap className="h-5 w-5 mr-2" />
+              <span>Prueba Gratis</span>
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
               onClick={() => router.push("/auth/login")}
-              className="border border-gray-600 text-gray-300 hover:bg-gray-800 px-8 py-4 rounded-lg text-lg font-medium transition-colors"
+              className="border-gray-600 text-gray-300 hover:bg-gray-800 px-8 py-6 text-lg"
             >
-              Sign In
-            </button>
+              Iniciar Sesión
+            </Button>
           </div>
         </div>
       </section>
@@ -373,19 +383,22 @@ export default function HomePage() {
       <footer className="border-t border-gray-200 bg-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between">
-            <div className="flex items-center space-x-3 mb-4 md:mb-0">
-              <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center">
+            <a
+              href="/"
+              className="flex items-center space-x-3 mb-4 md:mb-0 group"
+            >
+              <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center group-hover:bg-blue-700 transition-colors">
                 <Building2 className="h-5 w-5 text-white" />
               </div>
               <span className="text-lg font-bold text-gray-900">SweetSpot</span>
-            </div>
+            </a>
             <div className="flex items-center space-x-6 text-gray-600">
               <Globe className="h-5 w-5" />
               <Smartphone className="h-5 w-5" />
               <Shield className="h-5 w-5" />
             </div>
             <p className="text-gray-600 mt-4 md:mt-0">
-              © 2024 SweetSpot. All rights reserved.
+              © 2024 SweetSpot. Todos los derechos reservados.
             </p>
           </div>
         </div>

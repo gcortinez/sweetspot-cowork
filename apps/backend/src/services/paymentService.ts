@@ -1,6 +1,12 @@
-import { PrismaClient, Payment, PaymentMethod, PaymentStatus, Invoice } from '@prisma/client';
-import { prisma } from '../lib/prisma';
-import { AppError, NotFoundError, ValidationError } from '../utils/errors';
+import {
+  PrismaClient,
+  Payment,
+  PaymentMethod,
+  PaymentStatus,
+  Invoice,
+} from "@prisma/client";
+import { prisma } from "../lib/prisma";
+import { AppError, NotFoundError, ValidationError } from "../utils/errors";
 
 interface CreatePaymentData {
   clientId: string;
@@ -28,7 +34,7 @@ interface PaymentQuery {
   dateFrom?: string;
   dateTo?: string;
   sortBy: string;
-  sortOrder: 'asc' | 'desc';
+  sortOrder: "asc" | "desc";
 }
 
 interface PaymentStats {
@@ -75,18 +81,21 @@ interface PaymentWithRelations extends Payment {
     number: string;
     total: number;
     status: string;
-  };
+  } | null;
 }
 
 class PaymentService {
-  async createPayment(tenantId: string, data: CreatePaymentData): Promise<Payment> {
+  async createPayment(
+    tenantId: string,
+    data: CreatePaymentData
+  ): Promise<Payment> {
     // Validate client exists
     const client = await prisma.client.findFirst({
       where: { id: data.clientId, tenantId },
     });
 
     if (!client) {
-      throw new NotFoundError('Client not found');
+      throw new NotFoundError("Client not found");
     }
 
     // Validate invoice if provided
@@ -96,12 +105,12 @@ class PaymentService {
       });
 
       if (!invoice) {
-        throw new NotFoundError('Invoice not found');
+        throw new NotFoundError("Invoice not found");
       }
 
       // Check if invoice is already paid
-      if (invoice.status === 'PAID') {
-        throw new ValidationError('Invoice is already paid');
+      if (invoice.status === "PAID") {
+        throw new ValidationError("Invoice is already paid");
       }
     }
 
@@ -111,10 +120,10 @@ class PaymentService {
         clientId: data.clientId,
         invoiceId: data.invoiceId,
         amount: data.amount,
-        currency: data.currency || 'USD',
+        currency: data.currency || "USD",
         method: data.method,
         reference: data.reference,
-        status: 'PENDING',
+        status: "PENDING",
       },
       include: {
         client: {
@@ -138,7 +147,11 @@ class PaymentService {
     return payment;
   }
 
-  async processPayment(tenantId: string, paymentId: string, data: ProcessPaymentData): Promise<Payment> {
+  async processPayment(
+    tenantId: string,
+    paymentId: string,
+    data: ProcessPaymentData
+  ): Promise<Payment> {
     const payment = await prisma.payment.findFirst({
       where: { id: paymentId, tenantId },
       include: {
@@ -147,42 +160,42 @@ class PaymentService {
     });
 
     if (!payment) {
-      throw new NotFoundError('Payment not found');
+      throw new NotFoundError("Payment not found");
     }
 
-    if (payment.status !== 'PENDING') {
-      throw new ValidationError('Payment is not in pending status');
+    if (payment.status !== "PENDING") {
+      throw new ValidationError("Payment is not in pending status");
     }
 
     // Simulate payment processing based on method
-    let status: PaymentStatus = 'COMPLETED';
+    let status: PaymentStatus = "COMPLETED";
     let processedAt = new Date();
 
     // In a real implementation, this would integrate with payment gateways
     switch (payment.method) {
-      case 'STRIPE':
+      case "STRIPE":
         // Simulate Stripe processing
-        status = Math.random() > 0.1 ? 'COMPLETED' : 'FAILED';
+        status = Math.random() > 0.1 ? "COMPLETED" : "FAILED";
         break;
-      case 'PAYPAL':
+      case "PAYPAL":
         // Simulate PayPal processing
-        status = Math.random() > 0.05 ? 'COMPLETED' : 'FAILED';
+        status = Math.random() > 0.05 ? "COMPLETED" : "FAILED";
         break;
-      case 'CREDIT_CARD':
-      case 'DEBIT_CARD':
+      case "CREDIT_CARD":
+      case "DEBIT_CARD":
         // Simulate card processing
-        status = Math.random() > 0.08 ? 'COMPLETED' : 'FAILED';
+        status = Math.random() > 0.08 ? "COMPLETED" : "FAILED";
         break;
-      case 'BANK_TRANSFER':
+      case "BANK_TRANSFER":
         // Bank transfers might be pending longer
-        status = Math.random() > 0.5 ? 'COMPLETED' : 'PENDING';
+        status = Math.random() > 0.5 ? "COMPLETED" : "PENDING";
         break;
-      case 'CASH':
+      case "CASH":
         // Cash payments are immediately completed
-        status = 'COMPLETED';
+        status = "COMPLETED";
         break;
       default:
-        status = 'COMPLETED';
+        status = "COMPLETED";
     }
 
     const updatedPayment = await prisma.$transaction(async (tx) => {
@@ -191,7 +204,7 @@ class PaymentService {
         where: { id: paymentId },
         data: {
           status,
-          processedAt: status === 'COMPLETED' ? processedAt : null,
+          processedAt: status === "COMPLETED" ? processedAt : null,
           reference: data.transactionId || payment.reference,
         },
         include: {
@@ -214,11 +227,11 @@ class PaymentService {
       });
 
       // If payment is completed and has an invoice, update invoice status
-      if (status === 'COMPLETED' && payment.invoice) {
+      if (status === "COMPLETED" && payment.invoice) {
         const totalPaid = await tx.payment.aggregate({
           where: {
             invoiceId: payment.invoiceId,
-            status: 'COMPLETED',
+            status: "COMPLETED",
           },
           _sum: {
             amount: true,
@@ -232,7 +245,7 @@ class PaymentService {
           await tx.invoice.update({
             where: { id: payment.invoiceId! },
             data: {
-              status: 'PAID',
+              status: "PAID",
               paidAt: new Date(),
             },
           });
@@ -245,7 +258,10 @@ class PaymentService {
     return updatedPayment;
   }
 
-  async getPayments(tenantId: string, query: PaymentQuery): Promise<{
+  async getPayments(
+    tenantId: string,
+    query: PaymentQuery
+  ): Promise<{
     payments: PaymentWithRelations[];
     pagination: { page: number; limit: number; total: number; pages: number };
   }> {
@@ -304,7 +320,16 @@ class PaymentService {
     ]);
 
     return {
-      payments,
+      payments: payments.map((payment) => ({
+        ...payment,
+        invoice: payment.invoice
+          ? {
+              ...payment.invoice,
+              total: payment.invoice.total.toNumber(),
+              status: payment.invoice.status as string,
+            }
+          : undefined,
+      })),
       pagination: {
         page,
         limit,
@@ -314,7 +339,10 @@ class PaymentService {
     };
   }
 
-  async getPaymentById(tenantId: string, paymentId: string): Promise<PaymentWithRelations> {
+  async getPaymentById(
+    tenantId: string,
+    paymentId: string
+  ): Promise<PaymentWithRelations> {
     const payment = await prisma.payment.findFirst({
       where: { id: paymentId, tenantId },
       include: {
@@ -339,13 +367,27 @@ class PaymentService {
     });
 
     if (!payment) {
-      throw new NotFoundError('Payment not found');
+      throw new NotFoundError("Payment not found");
     }
 
-    return payment;
+    return {
+      ...payment,
+      invoice: payment.invoice
+        ? {
+            id: payment.invoice.id,
+            number: payment.invoice.number,
+            total: payment.invoice.total.toNumber(),
+            status: payment.invoice.status as string,
+          }
+        : undefined,
+    };
   }
 
-  async refundPayment(tenantId: string, paymentId: string, amount?: number): Promise<Payment> {
+  async refundPayment(
+    tenantId: string,
+    paymentId: string,
+    amount?: number
+  ): Promise<Payment> {
     const payment = await prisma.payment.findFirst({
       where: { id: paymentId, tenantId },
       include: {
@@ -354,16 +396,16 @@ class PaymentService {
     });
 
     if (!payment) {
-      throw new NotFoundError('Payment not found');
+      throw new NotFoundError("Payment not found");
     }
 
-    if (payment.status !== 'COMPLETED') {
-      throw new ValidationError('Only completed payments can be refunded');
+    if (payment.status !== "COMPLETED") {
+      throw new ValidationError("Only completed payments can be refunded");
     }
 
     const refundAmount = amount || payment.amount.toNumber();
     if (refundAmount > payment.amount.toNumber()) {
-      throw new ValidationError('Refund amount cannot exceed payment amount');
+      throw new ValidationError("Refund amount cannot exceed payment amount");
     }
 
     const updatedPayment = await prisma.$transaction(async (tx) => {
@@ -371,7 +413,10 @@ class PaymentService {
       const updated = await tx.payment.update({
         where: { id: paymentId },
         data: {
-          status: refundAmount === payment.amount.toNumber() ? 'REFUNDED' : 'COMPLETED',
+          status:
+            refundAmount === payment.amount.toNumber()
+              ? "REFUNDED"
+              : "COMPLETED",
           // In a real implementation, you'd track partial refunds differently
         },
         include: {
@@ -398,7 +443,7 @@ class PaymentService {
         await tx.invoice.update({
           where: { id: payment.invoiceId! },
           data: {
-            status: 'SENT', // Reset to sent status
+            status: "SENT", // Reset to sent status
             paidAt: null,
           },
         });
@@ -431,13 +476,13 @@ class PaymentService {
         _sum: { amount: true },
       }),
       prisma.payment.groupBy({
-        by: ['method'],
+        by: ["method"],
         where: { tenantId },
         _count: { method: true },
         _sum: { amount: true },
       }),
       prisma.payment.groupBy({
-        by: ['status'],
+        by: ["status"],
         where: { tenantId },
         _count: { status: true },
         _sum: { amount: true },
@@ -459,7 +504,7 @@ class PaymentService {
             select: { name: true },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         take: 10,
       }),
     ]);
@@ -493,7 +538,7 @@ class PaymentService {
         count: weeklyPayments._count,
         amount: weeklyPayments._sum.amount?.toNumber() || 0,
       },
-      recentPayments: recentPayments.map(p => ({
+      recentPayments: recentPayments.map((p) => ({
         id: p.id,
         amount: p.amount.toNumber(),
         method: p.method,
@@ -510,16 +555,16 @@ class PaymentService {
     });
 
     if (!payment) {
-      throw new NotFoundError('Payment not found');
+      throw new NotFoundError("Payment not found");
     }
 
-    if (payment.status !== 'PENDING') {
-      throw new ValidationError('Only pending payments can be cancelled');
+    if (payment.status !== "PENDING") {
+      throw new ValidationError("Only pending payments can be cancelled");
     }
 
     const updatedPayment = await prisma.payment.update({
       where: { id: paymentId },
-      data: { status: 'CANCELLED' },
+      data: { status: "CANCELLED" },
       include: {
         client: {
           select: {
@@ -548,17 +593,17 @@ class PaymentService {
     });
 
     if (!payment) {
-      throw new NotFoundError('Payment not found');
+      throw new NotFoundError("Payment not found");
     }
 
-    if (payment.status !== 'FAILED') {
-      throw new ValidationError('Only failed payments can be retried');
+    if (payment.status !== "FAILED") {
+      throw new ValidationError("Only failed payments can be retried");
     }
 
     const updatedPayment = await prisma.payment.update({
       where: { id: paymentId },
-      data: { 
-        status: 'PENDING',
+      data: {
+        status: "PENDING",
         processedAt: null,
       },
       include: {
@@ -583,7 +628,10 @@ class PaymentService {
     return updatedPayment;
   }
 
-  async getClientPayments(tenantId: string, clientId: string): Promise<Payment[]> {
+  async getClientPayments(
+    tenantId: string,
+    clientId: string
+  ): Promise<Payment[]> {
     const payments = await prisma.payment.findMany({
       where: { tenantId, clientId },
       include: {
@@ -596,13 +644,16 @@ class PaymentService {
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     return payments;
   }
 
-  async getInvoicePayments(tenantId: string, invoiceId: string): Promise<Payment[]> {
+  async getInvoicePayments(
+    tenantId: string,
+    invoiceId: string
+  ): Promise<Payment[]> {
     const payments = await prisma.payment.findMany({
       where: { tenantId, invoiceId },
       include: {
@@ -614,10 +665,54 @@ class PaymentService {
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     return payments;
+  }
+
+  async createPaymentMethod(tenantId: string, data: any): Promise<any> {
+    // Placeholder implementation for payment method creation
+    return { id: "temp", ...data, tenantId };
+  }
+
+  async getPaymentMethods(tenantId: string): Promise<any[]> {
+    // Placeholder implementation for getting payment methods
+    return [];
+  }
+
+  async updatePaymentMethod(
+    tenantId: string,
+    methodId: string,
+    data: any
+  ): Promise<any> {
+    // Placeholder implementation for updating payment method
+    return { id: methodId, ...data, tenantId };
+  }
+
+  async deletePaymentMethod(tenantId: string, methodId: string): Promise<void> {
+    // Placeholder implementation for deleting payment method
+    return;
+  }
+
+  async createPaymentIntent(tenantId: string, data: any): Promise<any> {
+    // Placeholder implementation for creating payment intent
+    return { id: "temp-intent", ...data, tenantId };
+  }
+
+  async getPaymentAnalytics(tenantId: string): Promise<any> {
+    // Placeholder implementation for payment analytics
+    return {
+      totalPayments: 0,
+      totalAmount: 0,
+      pendingPayments: 0,
+      completedPayments: 0,
+    };
+  }
+
+  async reconcilePayments(tenantId: string, data: any): Promise<any> {
+    // Placeholder implementation for payment reconciliation
+    return { reconciled: 0, errors: [] };
   }
 }
 

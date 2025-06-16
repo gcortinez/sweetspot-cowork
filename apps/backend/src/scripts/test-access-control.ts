@@ -82,7 +82,7 @@ async function testQRCodeGeneration(user: TestUser) {
         name: 'John Visitor',
         email: 'visitor@example.com',
         hostUserId: user.id,
-        purpose: 'Business meeting',
+        purpose: 'MEETING',
         qrCode: 'visitor-' + Date.now(),
         validFrom: new Date(),
         validUntil: new Date(Date.now() + 4 * 60 * 60 * 1000), // 4 hours

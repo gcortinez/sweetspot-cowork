@@ -90,12 +90,7 @@ export class SpaceService {
           capacity: data.capacity,
           amenities: JSON.stringify(data.amenities || []),
           hourlyRate: data.hourlyRate,
-          isActive: data.isActive ?? true,
-          // Additional fields that may not be in current schema
-          ...(data.location && { location: data.location }),
-          ...(data.floor && { floor: data.floor }),
-          ...(data.equipment && { equipment: JSON.stringify(data.equipment) }),
-          ...(data.features && { features: JSON.stringify(data.features) })
+          isActive: data.isActive ?? true
         }
       });
 
@@ -147,7 +142,7 @@ export class SpaceService {
             orderBy: { startTime: 'asc' }
           },
           occupancyTracking: {
-            orderBy: { timestamp: 'desc' },
+            orderBy: { updatedAt: 'desc' },
             take: 1
           }
         },
@@ -204,7 +199,7 @@ export class SpaceService {
             orderBy: { startTime: 'asc' }
           },
           occupancyTracking: {
-            orderBy: { timestamp: 'desc' },
+            orderBy: { updatedAt: 'desc' },
             take: 10
           }
         }

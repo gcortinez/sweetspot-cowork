@@ -358,7 +358,7 @@ export class SecurityDashboardService {
 
   private async getAccessMetrics(tenantId: string, today: Date) {
     const [qrScans, violations] = await Promise.all([
-      prisma.qrCodeScan.count({
+      prisma.qRCodeScan.count({
         where: {
           tenantId,
           scannedAt: { gte: today },
@@ -372,7 +372,7 @@ export class SecurityDashboardService {
       }),
     ]);
 
-    const authorized = await prisma.qrCodeScan.count({
+    const authorized = await prisma.qRCodeScan.count({
       where: {
         tenantId,
         scannedAt: { gte: today },

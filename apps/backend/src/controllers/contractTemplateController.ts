@@ -1,9 +1,10 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { z } from 'zod';
 import { contractTemplateService } from '../services/contractTemplateService';
 import { ResponseHelper } from '../utils/response';
 import { logger } from '../utils/logger';
 import { AppError, ValidationError } from '../utils/errors';
+import { BaseRequest, ErrorCode, HttpStatusCode } from '../types/api';
 
 const ContractTemplateVariableSchema = z.object({
   name: z.string().min(1).regex(/^[a-zA-Z_][a-zA-Z0-9_]*$/, 'Invalid variable name'),
@@ -67,13 +68,13 @@ const DuplicateTemplateSchema = z.object({
 });
 
 export class ContractTemplateController {
-  async createTemplate(req: Request, res: Response): Promise<Response> {
+  async createTemplate(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const createdBy = req.user?.id;
 
       if (!tenantId || !createdBy) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       const validatedData = CreateContractTemplateSchema.parse(req.body);
@@ -96,28 +97,28 @@ export class ContractTemplateController {
         templateName: template.name,
       });
 
-      return ResponseHelper.success(res, template, 'Contract template created successfully', 201);
+      return ResponseHelper.success(res, template, 'Contract template created successfully', HttpStatusCode.CREATED);
     } catch (error) {
       logger.error('Error creating contract template', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Validation failed', 400, error.errors);
+        return ResponseHelper.validationError(res, 'Validation failed', error.errors);
       }
 
       if (error instanceof ValidationError) {
-        return ResponseHelper.error(res, error.message, 400);
+        return ResponseHelper.error(res, ErrorCode.VALIDATION_ERROR, error.message, HttpStatusCode.BAD_REQUEST);
       }
 
-      return ResponseHelper.error(res, 'Failed to create contract template', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to create contract template', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async getTemplates(req: Request, res: Response): Promise<Response> {
+  async getTemplates(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       const query = ContractTemplateQuerySchema.parse(req.query);
@@ -131,20 +132,20 @@ export class ContractTemplateController {
       logger.error('Error fetching contract templates', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Invalid query parameters', 400, error.errors);
+        return ResponseHelper.error(res, ErrorCode.VALIDATION_ERROR, 'Invalid query parameters', HttpStatusCode.BAD_REQUEST);
       }
 
-      return ResponseHelper.error(res, 'Failed to fetch contract templates', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to fetch contract templates', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async getTemplateById(req: Request, res: Response): Promise<Response> {
+  async getTemplateById(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { id } = req.params;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       logger.debug('Fetching contract template by ID', { tenantId, templateId: id });
@@ -156,20 +157,20 @@ export class ContractTemplateController {
       logger.error('Error fetching contract template', { error });
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, error.message, error.statusCode);
       }
 
-      return ResponseHelper.error(res, 'Failed to fetch contract template', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to fetch contract template', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async updateTemplate(req: Request, res: Response): Promise<Response> {
+  async updateTemplate(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { id } = req.params;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       const validatedData = UpdateContractTemplateSchema.parse(req.body);
@@ -196,24 +197,24 @@ export class ContractTemplateController {
       logger.error('Error updating contract template', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Validation failed', 400, error.errors);
+        return ResponseHelper.validationError(res, 'Validation failed', error.errors);
       }
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, error.message, error.statusCode);
       }
 
-      return ResponseHelper.error(res, 'Failed to update contract template', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to update contract template', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async deleteTemplate(req: Request, res: Response): Promise<Response> {
+  async deleteTemplate(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { id } = req.params;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       logger.info('Deleting contract template', {
@@ -234,19 +235,19 @@ export class ContractTemplateController {
       logger.error('Error deleting contract template', { error });
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, error.message, error.statusCode);
       }
 
-      return ResponseHelper.error(res, 'Failed to delete contract template', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to delete contract template', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async generateContract(req: Request, res: Response): Promise<Response> {
+  async generateContract(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       const validatedData = GenerateContractSchema.parse(req.body);
@@ -273,23 +274,23 @@ export class ContractTemplateController {
       logger.error('Error generating contract', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Validation failed', 400, error.errors);
+        return ResponseHelper.validationError(res, 'Validation failed', error.errors);
       }
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, error.message, error.statusCode);
       }
 
-      return ResponseHelper.error(res, 'Failed to generate contract', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to generate contract', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async getTemplateCategories(req: Request, res: Response): Promise<Response> {
+  async getTemplateCategories(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       logger.debug('Fetching contract template categories', { tenantId });
@@ -299,17 +300,17 @@ export class ContractTemplateController {
       return ResponseHelper.success(res, categories, 'Template categories retrieved successfully');
     } catch (error) {
       logger.error('Error fetching template categories', { error });
-      return ResponseHelper.error(res, 'Failed to fetch template categories', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to fetch template categories', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async validateTemplate(req: Request, res: Response): Promise<Response> {
+  async validateTemplate(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { id } = req.params;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       logger.debug('Validating contract template', { tenantId, templateId: id });
@@ -321,20 +322,20 @@ export class ContractTemplateController {
       logger.error('Error validating template', { error });
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, error.message, error.statusCode);
       }
 
-      return ResponseHelper.error(res, 'Failed to validate template', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to validate template', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async duplicateTemplate(req: Request, res: Response): Promise<Response> {
+  async duplicateTemplate(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { id } = req.params;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       const { newName } = DuplicateTemplateSchema.parse(req.body);
@@ -363,24 +364,24 @@ export class ContractTemplateController {
       logger.error('Error duplicating contract template', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Validation failed', 400, error.errors);
+        return ResponseHelper.validationError(res, 'Validation failed', error.errors);
       }
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, error.message, error.statusCode);
       }
 
-      return ResponseHelper.error(res, 'Failed to duplicate contract template', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to duplicate contract template', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async previewTemplate(req: Request, res: Response): Promise<Response> {
+  async previewTemplate(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { id } = req.params;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       const sampleData = req.body.sampleData || {};
@@ -398,10 +399,10 @@ export class ContractTemplateController {
       logger.error('Error generating template preview', { error });
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, error.message, error.statusCode);
       }
 
-      return ResponseHelper.error(res, 'Failed to generate template preview', 500);
+      return ResponseHelper.error(res, ErrorCode.DATABASE_ERROR, 'Failed to generate template preview', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 }

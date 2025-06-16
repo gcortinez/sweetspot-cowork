@@ -4,25 +4,28 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Loader2,
+  Mail,
+  Lock,
+  Building2,
+  ArrowRight,
+  AlertCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/use-auth";
-import { useI18n } from "@/lib/i18n";
 import type { LoginRequest } from "@sweetspot/shared";
 
 const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  email: z.string().email("Por favor ingresa un email válido"),
+  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
   tenantSlug: z.string().optional(),
+  rememberMe: z.boolean().optional(),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -31,6 +34,34 @@ interface LoginFormProps {
   onSuccess?: (user: any, accessToken: string) => void;
   onError?: (error: string) => void;
   defaultTenantSlug?: string;
+}
+
+// Mapeo de errores comunes a mensajes amigables
+const errorMessages: Record<string, string> = {
+  "Invalid credentials": "Email o contraseña incorrectos",
+  "User not found": "No existe una cuenta con este email",
+  "Invalid password": "La contraseña es incorrecta",
+  "Account disabled":
+    "Tu cuenta ha sido deshabilitada. Contacta al administrador",
+  "Account locked": "Tu cuenta está bloqueada temporalmente por seguridad",
+  "Email not verified": "Por favor verifica tu email antes de iniciar sesión",
+  "Invalid tenant": "El espacio de trabajo especificado no existe",
+  "User not member of tenant": "No tienes acceso a este espacio de trabajo",
+  "Network request failed": "Error de conexión. Verifica tu internet",
+  "Failed to fetch": "No se pudo conectar con el servidor",
+  "Too many requests": "Demasiados intentos. Por favor espera unos minutos",
+};
+
+function getErrorMessage(error: string): string {
+  // Buscar coincidencias parciales en el mensaje de error
+  for (const [key, value] of Object.entries(errorMessages)) {
+    if (error.toLowerCase().includes(key.toLowerCase())) {
+      return value;
+    }
+  }
+
+  // Si no hay coincidencia, devolver un mensaje genérico
+  return "Error al iniciar sesión. Por favor intenta nuevamente";
 }
 
 export function LoginForm({
@@ -43,7 +74,6 @@ export function LoginForm({
     !!defaultTenantSlug
   );
   const { login, isLoading, error, clearError } = useAuth();
-  const { t } = useI18n();
 
   const {
     register,
@@ -54,6 +84,7 @@ export function LoginForm({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       tenantSlug: defaultTenantSlug || "",
+      rememberMe: true,
     },
   });
 
@@ -66,150 +97,238 @@ export function LoginForm({
       if (result.success) {
         onSuccess?.(null, ""); // Auth context handles user data
       } else {
-        const errorMessage = result.error || "Login failed";
+        const errorMessage = getErrorMessage(
+          result.error || "Error al iniciar sesión"
+        );
         setError("root", { message: errorMessage });
         onError?.(errorMessage);
       }
     } catch (err) {
       const errorMessage =
-        err instanceof Error ? err.message : "An unexpected error occurred";
+        err instanceof Error
+          ? getErrorMessage(err.message)
+          : "Ocurrió un error inesperado. Por favor intenta más tarde";
       setError("root", { message: errorMessage });
       onError?.(errorMessage);
     }
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-center">
-          {t("auth.welcomeBack")}
-        </CardTitle>
-        <CardDescription className="text-center">
-          {t("auth.signInDescription")}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Workspace Slug - Optional */}
-          {showWorkspaceField && (
-            <div className="space-y-2">
-              <Label htmlFor="tenantSlug">{t("auth.workspace")} ({t("auth.optional")})</Label>
-              <Input
-                id="tenantSlug"
-                type="text"
-                placeholder={t("auth.workspacePlaceholder")}
-                {...register("tenantSlug")}
-                disabled={isLoading}
-              />
-              {errors.tenantSlug && (
-                <p className="text-sm text-destructive">
-                  {errors.tenantSlug.message}
-                </p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                {t("auth.workspaceHelper")}
-              </p>
-            </div>
-          )}
+    <div className="w-full">
+      {/* Header */}
+      <div className="text-center mb-4">
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">
+          Inicia sesión en tu cuenta
+        </h2>
+        <p className="text-gray-600">
+          Gestiona tu espacio de coworking de forma eficiente
+        </p>
+      </div>
 
-          {/* Email */}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        {/* Workspace Slug - Optional */}
+        {showWorkspaceField && (
           <div className="space-y-2">
-            <Label htmlFor="email">{t("auth.email")}</Label>
+            <Label htmlFor="tenantSlug" className="text-gray-700 font-medium">
+              <div className="flex items-center space-x-2 mb-1">
+                <Building2 className="h-4 w-4 text-gray-500" />
+                <span>Espacio de trabajo (Opcional)</span>
+              </div>
+            </Label>
             <Input
-              id="email"
-              type="email"
-              placeholder={t("auth.emailPlaceholder")}
-              {...register("email")}
+              id="tenantSlug"
+              type="text"
+              placeholder="mi-coworking"
+              {...register("tenantSlug")}
+              disabled={isLoading}
+              className="h-12 px-4 bg-gray-50 border-gray-200 focus:bg-white transition-colors"
+            />
+            {errors.tenantSlug && (
+              <p className="text-sm text-red-600 flex items-center">
+                <AlertCircle className="h-4 w-4 mr-1" />
+                {errors.tenantSlug.message}
+              </p>
+            )}
+            <p className="text-xs text-gray-500">
+              Deja vacío si no perteneces a un espacio específico
+            </p>
+          </div>
+        )}
+
+        {/* Email */}
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-gray-700 font-medium">
+            <div className="flex items-center space-x-2 mb-1">
+              <Mail className="h-4 w-4 text-gray-500" />
+              <span>Correo electrónico</span>
+            </div>
+          </Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="tu@email.com"
+            {...register("email")}
+            disabled={isLoading}
+            className={`h-12 px-4 bg-gray-50 border-gray-200 focus:bg-white transition-colors ${
+              errors.email ? "border-red-500" : ""
+            }`}
+            autoComplete="email"
+          />
+          {errors.email && (
+            <p className="text-sm text-red-600 flex items-center">
+              <AlertCircle className="h-4 w-4 mr-1" />
+              {errors.email.message}
+            </p>
+          )}
+        </div>
+
+        {/* Password */}
+        <div className="space-y-2">
+          <Label htmlFor="password" className="text-gray-700 font-medium">
+            <div className="flex items-center space-x-2 mb-1">
+              <Lock className="h-4 w-4 text-gray-500" />
+              <span>Contraseña</span>
+            </div>
+          </Label>
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="••••••••"
+              {...register("password")}
+              disabled={isLoading}
+              className={`h-12 px-4 pr-12 bg-gray-50 border-gray-200 focus:bg-white transition-colors ${
+                errors.password ? "border-red-500" : ""
+              }`}
+              autoComplete="current-password"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+              onClick={() => setShowPassword(!showPassword)}
+              disabled={isLoading}
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4 text-gray-500" />
+              ) : (
+                <Eye className="h-4 w-4 text-gray-500" />
+              )}
+              <span className="sr-only">
+                {showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              </span>
+            </Button>
+          </div>
+          {errors.password && (
+            <p className="text-sm text-red-600 flex items-center">
+              <AlertCircle className="h-4 w-4 mr-1" />
+              {errors.password.message}
+            </p>
+          )}
+        </div>
+
+        {/* Remember Me & Forgot Password */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="rememberMe"
+              {...register("rememberMe")}
               disabled={isLoading}
             />
-            {errors.email && (
-              <p className="text-sm text-destructive">{errors.email.message}</p>
-            )}
+            <Label
+              htmlFor="rememberMe"
+              className="text-sm text-gray-600 cursor-pointer"
+            >
+              Recordarme
+            </Label>
           </div>
+          <a
+            href="/auth/reset"
+            className="text-sm text-blue-600 hover:text-blue-700 hover:underline"
+          >
+            ¿Olvidaste tu contraseña?
+          </a>
+        </div>
 
-          {/* Password */}
-          <div className="space-y-2">
-            <Label htmlFor="password">{t("auth.password")}</Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                placeholder={t("auth.passwordPlaceholder")}
-                {...register("password")}
-                disabled={isLoading}
-                className="pr-10"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                onClick={() => setShowPassword(!showPassword)}
-                disabled={isLoading}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-                <span className="sr-only">
-                  {showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
-                </span>
-              </Button>
-            </div>
-            {errors.password && (
-              <p className="text-sm text-destructive">
-                {errors.password.message}
+        {/* Global Error */}
+        {errors.root && (
+          <div className="rounded-lg bg-red-50 border border-red-200 p-4 flex items-start space-x-3">
+            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-red-800">
+                {errors.root.message}
               </p>
-            )}
-          </div>
-
-          {/* Global Error */}
-          {errors.root && (
-            <div className="rounded-md bg-destructive/15 p-3">
-              <p className="text-sm text-destructive">{errors.root.message}</p>
+              {errors.root.message?.includes("contraseña incorrectos") && (
+                <p className="text-xs text-red-600 mt-1">
+                  Asegúrate de que tu email y contraseña sean correctos
+                </p>
+              )}
+              {errors.root.message?.includes("conexión") && (
+                <p className="text-xs text-red-600 mt-1">
+                  Verifica tu conexión a internet e intenta nuevamente
+                </p>
+              )}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Submit Button */}
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {t("auth.signingIn")}
-              </>
-            ) : (
-              t("auth.signIn")
-            )}
-          </Button>
-        </form>
+        {/* Submit Button */}
+        <Button
+          type="submit"
+          className="w-full h-12 text-base font-medium bg-blue-600 hover:bg-blue-700 transition-colors"
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              Iniciando sesión...
+            </>
+          ) : (
+            <>
+              Iniciar Sesión
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </>
+          )}
+        </Button>
 
         {/* Toggle workspace field */}
         {!defaultTenantSlug && (
-          <div className="mt-4 text-center">
+          <div className="text-center">
             <button
               type="button"
               onClick={() => setShowWorkspaceField(!showWorkspaceField)}
-              className="text-sm text-primary hover:underline"
+              className="text-sm text-gray-600 hover:text-gray-800 hover:underline transition-colors"
             >
-              {showWorkspaceField ? t("auth.hideWorkspace") : t("auth.showWorkspace")}
+              {showWorkspaceField
+                ? "Ocultar campo de espacio de trabajo"
+                : "¿Tienes un espacio de trabajo específico?"}
             </button>
           </div>
         )}
 
-        {/* Footer Links */}
-        <div className="mt-6 text-center text-sm">
-          <a href="/auth/reset" className="text-primary hover:underline">
-            {t("auth.forgotPassword")}
+        {/* Divider */}
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-200"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-4 bg-white text-gray-500">
+              ¿Nuevo en SweetSpot?
+            </span>
+          </div>
+        </div>
+
+        {/* Sign Up Link */}
+        <div className="text-center">
+          <a
+            href="/auth/register"
+            className="inline-flex items-center justify-center w-full h-12 px-6 text-base font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+          >
+            Crear una cuenta gratis
           </a>
         </div>
-        <div className="mt-2 text-center text-sm text-muted-foreground">
-          {t("auth.noAccount")}{" "}
-          <a href="/auth/register" className="text-primary hover:underline">
-            {t("auth.signUp")}
-          </a>
-        </div>
-      </CardContent>
-    </Card>
+      </form>
+    </div>
   );
 }

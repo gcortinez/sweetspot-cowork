@@ -1,6 +1,6 @@
 import express from 'express';
 import { contractAnalyticsController } from '../controllers/contractAnalyticsController';
-import { authenticate, authorize } from '../middleware/auth';
+import { authenticate, requireRole } from '../middleware/auth';
 
 const router = express.Router();
 
@@ -21,8 +21,8 @@ router.use(authenticate);
  * @query {string} groupBy - Group results by period
  */
 router.get('/overview', 
-  authorize(['ADMIN', 'MANAGER', 'EMPLOYEE']),
-  contractAnalyticsController.getContractOverview.bind(contractAnalyticsController)
+  requireRole('CLIENT_ADMIN'),
+  contractAnalyticsController.getContractOverview.bind(contractAnalyticsController) as any
 );
 
 /**
@@ -36,8 +36,8 @@ router.get('/overview',
  * @query {string} groupBy - Group results by period
  */
 router.get('/revenue',
-  authorize(['ADMIN', 'MANAGER']),
-  contractAnalyticsController.getRevenueAnalysis.bind(contractAnalyticsController)
+  requireRole('COWORK_ADMIN'),
+  contractAnalyticsController.getRevenueAnalysis.bind(contractAnalyticsController) as any
 );
 
 /**
@@ -50,8 +50,8 @@ router.get('/revenue',
  * @query {string[]} clientIds - Filter by client IDs
  */
 router.get('/clients',
-  authorize(['ADMIN', 'MANAGER']),
-  contractAnalyticsController.getClientAnalysis.bind(contractAnalyticsController)
+  requireRole('COWORK_ADMIN'),
+  contractAnalyticsController.getClientAnalysis.bind(contractAnalyticsController) as any
 );
 
 /**
@@ -64,8 +64,8 @@ router.get('/clients',
  * @query {string[]} contractTypes - Filter by contract types
  */
 router.get('/renewals',
-  authorize(['ADMIN', 'MANAGER', 'EMPLOYEE']),
-  contractAnalyticsController.getRenewalPerformance.bind(contractAnalyticsController)
+  requireRole('CLIENT_ADMIN'),
+  contractAnalyticsController.getRenewalPerformance.bind(contractAnalyticsController) as any
 );
 
 /**
@@ -78,8 +78,8 @@ router.get('/renewals',
  * @query {string[]} contractTypes - Filter by contract types
  */
 router.get('/lifecycle',
-  authorize(['ADMIN', 'MANAGER']),
-  contractAnalyticsController.getContractLifecycleMetrics.bind(contractAnalyticsController)
+  requireRole('COWORK_ADMIN'),
+  contractAnalyticsController.getContractLifecycleMetrics.bind(contractAnalyticsController) as any
 );
 
 /**
@@ -88,8 +88,8 @@ router.get('/lifecycle',
  * @access Private (Admin, Manager, Employee)
  */
 router.get('/expiry-forecast',
-  authorize(['ADMIN', 'MANAGER', 'EMPLOYEE']),
-  contractAnalyticsController.getExpiryForecast.bind(contractAnalyticsController)
+  requireRole('CLIENT_ADMIN'),
+  contractAnalyticsController.getExpiryForecast.bind(contractAnalyticsController) as any
 );
 
 /**
@@ -98,8 +98,8 @@ router.get('/expiry-forecast',
  * @access Private (Admin, Manager, Employee)
  */
 router.get('/dashboard',
-  authorize(['ADMIN', 'MANAGER', 'EMPLOYEE']),
-  contractAnalyticsController.getDashboardMetrics.bind(contractAnalyticsController)
+  requireRole('CLIENT_ADMIN'),
+  contractAnalyticsController.getDashboardMetrics.bind(contractAnalyticsController) as any
 );
 
 /**
@@ -111,8 +111,8 @@ router.get('/dashboard',
  * @query {string} dateTo - End date for custom range
  */
 router.get('/kpis',
-  authorize(['ADMIN', 'MANAGER']),
-  contractAnalyticsController.getKPIs.bind(contractAnalyticsController)
+  requireRole('COWORK_ADMIN'),
+  contractAnalyticsController.getKPIs.bind(contractAnalyticsController) as any
 );
 
 /**
@@ -122,8 +122,8 @@ router.get('/kpis',
  * @body {GenerateReportOptions} Report generation options
  */
 router.post('/reports',
-  authorize(['ADMIN', 'MANAGER']),
-  contractAnalyticsController.generateReport.bind(contractAnalyticsController)
+  requireRole('COWORK_ADMIN'),
+  contractAnalyticsController.generateReport.bind(contractAnalyticsController) as any
 );
 
 /**
@@ -132,8 +132,8 @@ router.post('/reports',
  * @access Private (Admin, Manager, Employee)
  */
 router.get('/reports',
-  authorize(['ADMIN', 'MANAGER', 'EMPLOYEE']),
-  contractAnalyticsController.getReportHistory.bind(contractAnalyticsController)
+  requireRole('CLIENT_ADMIN'),
+  contractAnalyticsController.getReportHistory.bind(contractAnalyticsController) as any
 );
 
 /**
@@ -143,8 +143,8 @@ router.get('/reports',
  * @param {string} reportId - Report ID
  */
 router.get('/reports/:reportId/download',
-  authorize(['ADMIN', 'MANAGER', 'EMPLOYEE']),
-  contractAnalyticsController.downloadReport.bind(contractAnalyticsController)
+  requireRole('CLIENT_ADMIN'),
+  contractAnalyticsController.downloadReport.bind(contractAnalyticsController) as any
 );
 
 export { router as contractAnalyticsRoutes };

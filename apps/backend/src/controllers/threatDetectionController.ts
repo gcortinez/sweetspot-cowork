@@ -1,7 +1,7 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { z } from 'zod';
 import { threatDetectionService } from '../services/threatDetectionService';
-import { AuthenticatedRequest } from '../types/api';
+import { BaseRequest, AuthenticatedRequest, ErrorCode } from '../types/api';
 
 // ============================================================================
 // VALIDATION SCHEMAS
@@ -91,12 +91,12 @@ export const getUserBehaviorProfile = async (req: AuthenticatedRequest, res: Res
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: profile,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
     });
@@ -429,19 +429,19 @@ export const getThreatStatistics = async (req: AuthenticatedRequest, res: Respon
 
     // Calculate statistics
     const totalEvents = events.length;
-    const threatEvents = events.filter(e => e.eventType === 'THREAT_DETECTED');
-    const resolvedThreats = threatEvents.filter(e => e.resolved);
-    const criticalThreats = threatEvents.filter(e => e.severity === 'CRITICAL');
-    const highThreats = threatEvents.filter(e => e.severity === 'HIGH');
+    const threatEvents = events.filter((e: any) => e.eventType === 'THREAT_DETECTED');
+    const resolvedThreats = threatEvents.filter((e: any) => e.resolved);
+    const criticalThreats = threatEvents.filter((e: any) => e.severity === 'CRITICAL');
+    const highThreats = threatEvents.filter((e: any) => e.severity === 'HIGH');
 
     // Group by event type
-    const eventsByType = events.reduce((acc: any, event) => {
+    const eventsByType = events.reduce((acc: any, event: any) => {
       acc[event.eventType] = (acc[event.eventType] || 0) + 1;
       return acc;
     }, {});
 
     // Group by day for trends
-    const eventsByDay = events.reduce((acc: any, event) => {
+    const eventsByDay = events.reduce((acc: any, event: any) => {
       const day = event.timestamp.toISOString().split('T')[0];
       acc[day] = (acc[day] || 0) + 1;
       return acc;
@@ -465,8 +465,8 @@ export const getThreatStatistics = async (req: AuthenticatedRequest, res: Respon
         severity: {
           critical: criticalThreats.length,
           high: highThreats.length,
-          medium: threatEvents.filter(e => e.severity === 'MEDIUM').length,
-          low: threatEvents.filter(e => e.severity === 'LOW').length,
+          medium: threatEvents.filter((e: any) => e.severity === 'MEDIUM').length,
+          low: threatEvents.filter((e: any) => e.severity === 'LOW').length,
         },
         trends: {
           eventsByType,

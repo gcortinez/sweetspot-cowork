@@ -24,8 +24,8 @@ export default function LoginPage() {
   return (
     <GuestOnly>
       <AuthLayout
-        title="Welcome Back"
-        description="Sign in to access your coworking workspace and manage your space efficiently."
+        title="Bienvenido de vuelta"
+        description="Accede a tu espacio de trabajo y gestiona tu coworking de manera eficiente. Tu productividad te está esperando."
       >
         <LoginForm onSuccess={handleLoginSuccess} onError={handleLoginError} />
       </AuthLayout>

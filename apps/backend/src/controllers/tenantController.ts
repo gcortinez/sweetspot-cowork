@@ -1,4 +1,5 @@
-import { Request, Response } from "express";
+import { Response } from "express";
+import { BaseRequest, ErrorCode } from "../types/api";
 import {
   TenantService,
   CreateTenantRequest,
@@ -60,7 +61,7 @@ export class TenantController {
    * Create a new tenant
    * POST /api/tenants
    */
-  static async createTenant(req: Request, res: Response): Promise<void> {
+  static async createTenant(req: BaseRequest, res: Response): Promise<void> {
     try {
       // Validate request body
       const validatedData = createTenantSchema.parse(req.body);
@@ -97,9 +98,9 @@ export class TenantController {
       }
 
       if (error instanceof Error) {
-        if (error.message.includes("already exists")) {
+        if (error instanceof Error && error.message.includes("already exists")) {
           res.status(409).json({
-            error: error.message,
+            error: (error as Error).message,
             code: "TENANT_ALREADY_EXISTS",
           });
           return;
@@ -117,7 +118,7 @@ export class TenantController {
    * Get all tenants (super admin only)
    * GET /api/tenants
    */
-  static async getAllTenants(req: Request, res: Response): Promise<void> {
+  static async getAllTenants(req: BaseRequest, res: Response): Promise<void> {
     try {
       // Validate query parameters
       const {
@@ -162,7 +163,7 @@ export class TenantController {
    * Get tenant by ID
    * GET /api/tenants/:tenantId
    */
-  static async getTenantById(req: Request, res: Response): Promise<void> {
+  static async getTenantById(req: BaseRequest, res: Response): Promise<void> {
     try {
       const { tenantId } = req.params;
 
@@ -201,7 +202,7 @@ export class TenantController {
    * Get tenant by slug
    * GET /api/tenants/slug/:slug
    */
-  static async getTenantBySlug(req: Request, res: Response): Promise<void> {
+  static async getTenantBySlug(req: BaseRequest, res: Response): Promise<void> {
     try {
       const { slug } = req.params;
 
@@ -240,7 +241,7 @@ export class TenantController {
    * Update tenant
    * PUT /api/tenants/:tenantId
    */
-  static async updateTenant(req: Request, res: Response): Promise<void> {
+  static async updateTenant(req: BaseRequest, res: Response): Promise<void> {
     try {
       const { tenantId } = req.params;
 
@@ -290,14 +291,14 @@ export class TenantController {
       }
 
       if (error instanceof Error) {
-        if (error.message.includes("already exists")) {
+        if (error instanceof Error && error.message.includes("already exists")) {
           res.status(409).json({
-            error: error.message,
+            error: (error as Error).message,
             code: "TENANT_ALREADY_EXISTS",
           });
           return;
         }
-        if (error.message.includes("Failed to get tenant")) {
+        if (error instanceof Error && error.message.includes("Failed to get tenant")) {
           res.status(404).json({
             error: "Tenant not found",
             code: "TENANT_NOT_FOUND",
@@ -317,7 +318,7 @@ export class TenantController {
    * Delete tenant (soft delete)
    * DELETE /api/tenants/:tenantId
    */
-  static async deleteTenant(req: Request, res: Response): Promise<void> {
+  static async deleteTenant(req: BaseRequest, res: Response): Promise<void> {
     try {
       const { tenantId } = req.params;
       const { hard } = req.query;
@@ -362,7 +363,7 @@ export class TenantController {
    * Suspend tenant
    * POST /api/tenants/:tenantId/suspend
    */
-  static async suspendTenant(req: Request, res: Response): Promise<void> {
+  static async suspendTenant(req: BaseRequest, res: Response): Promise<void> {
     try {
       const { tenantId } = req.params;
 
@@ -403,7 +404,7 @@ export class TenantController {
    * Activate tenant
    * POST /api/tenants/:tenantId/activate
    */
-  static async activateTenant(req: Request, res: Response): Promise<void> {
+  static async activateTenant(req: BaseRequest, res: Response): Promise<void> {
     try {
       const { tenantId } = req.params;
 
@@ -444,7 +445,7 @@ export class TenantController {
    * Get tenant statistics
    * GET /api/tenants/:tenantId/stats
    */
-  static async getTenantStats(req: Request, res: Response): Promise<void> {
+  static async getTenantStats(req: BaseRequest, res: Response): Promise<void> {
     try {
       const { tenantId } = req.params;
 
@@ -475,7 +476,7 @@ export class TenantController {
    * Generate slug from name
    * POST /api/tenants/generate-slug
    */
-  static async generateSlug(req: Request, res: Response): Promise<void> {
+  static async generateSlug(req: BaseRequest, res: Response): Promise<void> {
     try {
       const { name } = req.body;
 
@@ -507,7 +508,7 @@ export class TenantController {
    * GET /api/tenants/check-slug/:slug
    */
   static async checkSlugAvailability(
-    req: Request,
+    req: BaseRequest,
     res: Response
   ): Promise<void> {
     try {

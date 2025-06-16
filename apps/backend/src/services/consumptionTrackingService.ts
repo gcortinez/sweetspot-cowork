@@ -1,5 +1,5 @@
-import { prisma } from '../lib/prisma';
-import { UsageResourceType } from '@prisma/client';
+import { prisma } from "../lib/prisma";
+import { UsageResourceType } from "@prisma/client";
 
 export interface TrackConsumptionData {
   clientId: string;
@@ -23,7 +23,7 @@ export interface ConsumptionSummary {
   averageUnitPrice: number;
   usageCount: number;
   lastUsed: Date;
-  trend: 'increasing' | 'decreasing' | 'stable';
+  trend: "increasing" | "decreasing" | "stable";
 }
 
 export interface UsageReport {
@@ -31,11 +31,14 @@ export interface UsageReport {
   clientId: string;
   clientName: string;
   totalCost: number;
-  byResourceType: Record<UsageResourceType, {
-    quantity: number;
-    cost: number;
-    percentage: number;
-  }>;
+  byResourceType: Record<
+    UsageResourceType,
+    {
+      quantity: number;
+      cost: number;
+      percentage: number;
+    }
+  >;
   topResources: Array<{
     resourceId: string;
     resourceName: string;
@@ -51,7 +54,6 @@ export interface UsageReport {
 }
 
 export class ConsumptionTrackingService {
-
   // ============================================================================
   // CONSUMPTION TRACKING
   // ============================================================================
@@ -59,9 +61,13 @@ export class ConsumptionTrackingService {
   async trackConsumption(tenantId: string, data: TrackConsumptionData) {
     // Get pricing information if not provided
     let unitPrice = data.unitPrice;
-    
+
     if (!unitPrice) {
-      unitPrice = await this.getResourcePrice(tenantId, data.resourceType, data.resourceId);
+      unitPrice = await this.getResourcePrice(
+        tenantId,
+        data.resourceType,
+        data.resourceId
+      );
     }
 
     const totalCost = data.quantity * unitPrice;
@@ -95,15 +101,22 @@ export class ConsumptionTrackingService {
     return usageRecord;
   }
 
-  async trackSpaceUsage(tenantId: string, spaceId: string, userId: string, startTime: Date, endTime: Date) {
-    const duration = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60); // hours
-    
+  async trackSpaceUsage(
+    tenantId: string,
+    spaceId: string,
+    userId: string,
+    startTime: Date,
+    endTime: Date
+  ) {
+    const duration =
+      (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60); // hours
+
     const space = await prisma.space.findFirst({
       where: { id: spaceId, tenantId },
     });
 
     if (!space) {
-      throw new Error('Space not found');
+      throw new Error("Space not found");
     }
 
     const user = await prisma.user.findFirst({
@@ -112,17 +125,19 @@ export class ConsumptionTrackingService {
     });
 
     if (!user || !user.client) {
-      throw new Error('User or client not found');
+      throw new Error("User or client not found");
     }
 
-    const unitPrice = space.hourlyRate ? parseFloat(space.hourlyRate.toString()) : 0;
+    const unitPrice = space.hourlyRate
+      ? parseFloat(space.hourlyRate.toString())
+      : 0;
 
     return await this.trackConsumption(tenantId, {
       clientId: user.clientId!,
       resourceType: UsageResourceType.SPACE_BOOKING,
       resourceId: spaceId,
       quantity: duration,
-      unit: 'hours',
+      unit: "hours",
       unitPrice,
       usageDate: startTime,
       metadata: {
@@ -134,13 +149,18 @@ export class ConsumptionTrackingService {
     });
   }
 
-  async trackServiceUsage(tenantId: string, serviceId: string, userId: string, quantity: number) {
+  async trackServiceUsage(
+    tenantId: string,
+    serviceId: string,
+    userId: string,
+    quantity: number
+  ) {
     const service = await prisma.service.findFirst({
       where: { id: serviceId, tenantId },
     });
 
     if (!service) {
-      throw new Error('Service not found');
+      throw new Error("Service not found");
     }
 
     const user = await prisma.user.findFirst({
@@ -149,7 +169,7 @@ export class ConsumptionTrackingService {
     });
 
     if (!user || !user.client) {
-      throw new Error('User or client not found');
+      throw new Error("User or client not found");
     }
 
     const unitPrice = parseFloat(service.price.toString());
@@ -169,7 +189,11 @@ export class ConsumptionTrackingService {
     });
   }
 
-  async trackMembershipUsage(tenantId: string, membershipId: string, billingPeriod: string) {
+  async trackMembershipUsage(
+    tenantId: string,
+    membershipId: string,
+    billingPeriod: string
+  ) {
     const membership = await prisma.membership.findFirst({
       where: { id: membershipId, tenantId },
       include: {
@@ -179,7 +203,7 @@ export class ConsumptionTrackingService {
     });
 
     if (!membership) {
-      throw new Error('Membership not found');
+      throw new Error("Membership not found");
     }
 
     const unitPrice = parseFloat(membership.plan.price.toString());
@@ -189,7 +213,7 @@ export class ConsumptionTrackingService {
       resourceType: UsageResourceType.MEMBERSHIP_PLAN,
       resourceId: membership.planId,
       quantity: 1,
-      unit: 'month',
+      unit: "month",
       unitPrice,
       metadata: {
         membershipId,
@@ -205,9 +229,9 @@ export class ConsumptionTrackingService {
   // ============================================================================
 
   async getConsumptionSummary(
-    tenantId: string, 
-    clientId: string, 
-    startDate: Date, 
+    tenantId: string,
+    clientId: string,
+    startDate: Date,
     endDate: Date
   ): Promise<ConsumptionSummary[]> {
     const usageRecords = await prisma.usageRecord.findMany({
@@ -219,13 +243,13 @@ export class ConsumptionTrackingService {
           lte: endDate,
         },
       },
-      orderBy: { usageDate: 'desc' },
+      orderBy: { usageDate: "desc" },
     });
 
     // Group by resource
     const groupedUsage = usageRecords.reduce((acc, record) => {
       const key = `${record.resourceType}_${record.resourceId}`;
-      
+
       if (!acc[key]) {
         acc[key] = {
           resourceType: record.resourceType,
@@ -236,20 +260,24 @@ export class ConsumptionTrackingService {
           unit: record.unit,
         };
       }
-      
+
       acc[key].records.push(record);
       acc[key].totalQuantity += parseFloat(record.quantity.toString());
       acc[key].totalCost += parseFloat(record.totalCost.toString());
-      
+
       return acc;
     }, {} as Record<string, any>);
 
     const summaries: ConsumptionSummary[] = [];
 
     for (const [key, group] of Object.entries(groupedUsage)) {
-      const resourceName = await this.getResourceName(tenantId, group.resourceType, group.resourceId);
+      const resourceName = await this.getResourceName(
+        tenantId,
+        group.resourceType,
+        group.resourceId
+      );
       const trend = this.calculateUsageTrend(group.records);
-      
+
       summaries.push({
         resourceType: group.resourceType,
         resourceId: group.resourceId,
@@ -259,7 +287,9 @@ export class ConsumptionTrackingService {
         unit: group.unit,
         averageUnitPrice: group.totalCost / group.totalQuantity,
         usageCount: group.records.length,
-        lastUsed: new Date(Math.max(...group.records.map((r: any) => r.usageDate.getTime()))),
+        lastUsed: new Date(
+          Math.max(...group.records.map((r: any) => r.usageDate.getTime()))
+        ),
         trend,
       });
     }
@@ -268,12 +298,13 @@ export class ConsumptionTrackingService {
   }
 
   async getUsageReport(
-    tenantId: string, 
-    clientId: string, 
+    tenantId: string,
+    clientId: string,
     period: string
   ): Promise<UsageReport> {
     const { startDate, endDate } = this.parsePeriod(period);
-    const { startDate: prevStartDate, endDate: prevEndDate } = this.getPreviousPeriod(period);
+    const { startDate: prevStartDate, endDate: prevEndDate } =
+      this.getPreviousPeriod(period);
 
     const client = await prisma.client.findFirst({
       where: { id: clientId, tenantId },
@@ -281,7 +312,7 @@ export class ConsumptionTrackingService {
     });
 
     if (!client) {
-      throw new Error('Client not found');
+      throw new Error("Client not found");
     }
 
     const [currentUsage, previousUsage] = await Promise.all([
@@ -301,12 +332,14 @@ export class ConsumptionTrackingService {
       }),
     ]);
 
-    const totalCost = currentUsage.reduce((sum, record) => 
-      sum + parseFloat(record.totalCost.toString()), 0
+    const totalCost = currentUsage.reduce(
+      (sum, record) => sum + parseFloat(record.totalCost.toString()),
+      0
     );
 
-    const previousTotalCost = previousUsage.reduce((sum, record) => 
-      sum + parseFloat(record.totalCost.toString()), 0
+    const previousTotalCost = previousUsage.reduce(
+      (sum, record) => sum + parseFloat(record.totalCost.toString()),
+      0
     );
 
     const byResourceType = this.groupByResourceType(currentUsage, totalCost);
@@ -314,7 +347,8 @@ export class ConsumptionTrackingService {
 
     const costChange = totalCost - previousTotalCost;
     const quantityChange = currentUsage.length - previousUsage.length;
-    const percentageChange = previousTotalCost > 0 ? (costChange / previousTotalCost) * 100 : 0;
+    const percentageChange =
+      previousTotalCost > 0 ? (costChange / previousTotalCost) * 100 : 0;
 
     return {
       period,
@@ -332,8 +366,8 @@ export class ConsumptionTrackingService {
   }
 
   async getConsumptionTrends(
-    tenantId: string, 
-    clientId?: string, 
+    tenantId: string,
+    clientId?: string,
     resourceType?: UsageResourceType,
     months: number = 12
   ) {
@@ -351,13 +385,13 @@ export class ConsumptionTrackingService {
 
     const usageRecords = await prisma.usageRecord.findMany({
       where,
-      orderBy: { usageDate: 'asc' },
+      orderBy: { usageDate: "asc" },
     });
 
     // Group by month
     const monthlyData = usageRecords.reduce((acc, record) => {
       const monthKey = record.usageDate.toISOString().substring(0, 7); // YYYY-MM
-      
+
       if (!acc[monthKey]) {
         acc[monthKey] = {
           month: monthKey,
@@ -366,15 +400,15 @@ export class ConsumptionTrackingService {
           recordCount: 0,
         };
       }
-      
+
       acc[monthKey].totalQuantity += parseFloat(record.quantity.toString());
       acc[monthKey].totalCost += parseFloat(record.totalCost.toString());
       acc[monthKey].recordCount += 1;
-      
+
       return acc;
     }, {} as Record<string, any>);
 
-    return Object.values(monthlyData).sort((a: any, b: any) => 
+    return Object.values(monthlyData).sort((a: any, b: any) =>
       a.month.localeCompare(b.month)
     );
   }
@@ -383,7 +417,11 @@ export class ConsumptionTrackingService {
   // BILLING INTEGRATION
   // ============================================================================
 
-  async getUnbilledUsage(tenantId: string, clientId?: string, billingPeriod?: string) {
+  async getUnbilledUsage(
+    tenantId: string,
+    clientId?: string,
+    billingPeriod?: string
+  ) {
     const where: any = {
       tenantId,
       invoiced: false,
@@ -398,11 +436,15 @@ export class ConsumptionTrackingService {
         client: true,
         subscription: true,
       },
-      orderBy: { usageDate: 'desc' },
+      orderBy: { usageDate: "desc" },
     });
   }
 
-  async markUsageAsBilled(tenantId: string, usageRecordIds: string[], invoiceId: string) {
+  async markUsageAsBilled(
+    tenantId: string,
+    usageRecordIds: string[],
+    invoiceId: string
+  ) {
     return await prisma.usageRecord.updateMany({
       where: {
         id: { in: usageRecordIds },
@@ -415,7 +457,11 @@ export class ConsumptionTrackingService {
     });
   }
 
-  async getUsageForBilling(tenantId: string, subscriptionId: string, billingPeriod: string) {
+  async getUsageForBilling(
+    tenantId: string,
+    subscriptionId: string,
+    billingPeriod: string
+  ) {
     return await prisma.usageRecord.findMany({
       where: {
         tenantId,
@@ -434,7 +480,11 @@ export class ConsumptionTrackingService {
   // UTILITY METHODS
   // ============================================================================
 
-  private async getResourcePrice(tenantId: string, resourceType: UsageResourceType, resourceId: string): Promise<number> {
+  private async getResourcePrice(
+    tenantId: string,
+    resourceType: UsageResourceType,
+    resourceId: string
+  ): Promise<number> {
     switch (resourceType) {
       case UsageResourceType.SPACE_BOOKING:
         const space = await prisma.space.findFirst({
@@ -459,78 +509,102 @@ export class ConsumptionTrackingService {
     }
   }
 
-  private async getResourceName(tenantId: string, resourceType: UsageResourceType, resourceId: string): Promise<string> {
+  private async getResourceName(
+    tenantId: string,
+    resourceType: UsageResourceType,
+    resourceId: string
+  ): Promise<string> {
     switch (resourceType) {
       case UsageResourceType.SPACE_BOOKING:
         const space = await prisma.space.findFirst({
           where: { id: resourceId, tenantId },
           select: { name: true },
         });
-        return space?.name || 'Unknown Space';
+        return space?.name || "Unknown Space";
 
       case UsageResourceType.SERVICE_CONSUMPTION:
         const service = await prisma.service.findFirst({
           where: { id: resourceId, tenantId },
           select: { name: true },
         });
-        return service?.name || 'Unknown Service';
+        return service?.name || "Unknown Service";
 
       case UsageResourceType.MEMBERSHIP_PLAN:
         const plan = await prisma.plan.findFirst({
           where: { id: resourceId, tenantId },
           select: { name: true },
         });
-        return plan?.name || 'Unknown Plan';
+        return plan?.name || "Unknown Plan";
 
       default:
-        return 'Unknown Resource';
+        return "Unknown Resource";
     }
   }
 
   private getBillingPeriod(date: Date): string {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+      2,
+      "0"
+    )}`;
   }
 
   private parsePeriod(period: string): { startDate: Date; endDate: Date } {
-    const [year, month] = period.split('-').map(Number);
+    const [year, month] = period.split("-").map(Number);
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0, 23, 59, 59);
     return { startDate, endDate };
   }
 
-  private getPreviousPeriod(period: string): { startDate: Date; endDate: Date } {
-    const [year, month] = period.split('-').map(Number);
+  private getPreviousPeriod(period: string): {
+    startDate: Date;
+    endDate: Date;
+  } {
+    const [year, month] = period.split("-").map(Number);
     const prevMonth = month === 1 ? 12 : month - 1;
     const prevYear = month === 1 ? year - 1 : year;
-    
+
     const startDate = new Date(prevYear, prevMonth - 1, 1);
     const endDate = new Date(prevYear, prevMonth, 0, 23, 59, 59);
     return { startDate, endDate };
   }
 
-  private calculateUsageTrend(records: any[]): 'increasing' | 'decreasing' | 'stable' {
-    if (records.length < 2) return 'stable';
-    
-    const sortedRecords = records.sort((a, b) => a.usageDate.getTime() - b.usageDate.getTime());
+  private calculateUsageTrend(
+    records: any[]
+  ): "increasing" | "decreasing" | "stable" {
+    if (records.length < 2) return "stable";
+
+    const sortedRecords = records.sort(
+      (a, b) => a.usageDate.getTime() - b.usageDate.getTime()
+    );
     const midpoint = Math.floor(records.length / 2);
-    
+
     const firstHalf = sortedRecords.slice(0, midpoint);
     const secondHalf = sortedRecords.slice(midpoint);
-    
-    const firstHalfAvg = firstHalf.reduce((sum, r) => sum + parseFloat(r.quantity.toString()), 0) / firstHalf.length;
-    const secondHalfAvg = secondHalf.reduce((sum, r) => sum + parseFloat(r.quantity.toString()), 0) / secondHalf.length;
-    
+
+    const firstHalfAvg =
+      firstHalf.reduce((sum, r) => sum + parseFloat(r.quantity.toString()), 0) /
+      firstHalf.length;
+    const secondHalfAvg =
+      secondHalf.reduce(
+        (sum, r) => sum + parseFloat(r.quantity.toString()),
+        0
+      ) / secondHalf.length;
+
     const changeThreshold = 0.1; // 10% change threshold
-    const percentageChange = Math.abs(secondHalfAvg - firstHalfAvg) / firstHalfAvg;
-    
-    if (percentageChange < changeThreshold) return 'stable';
-    return secondHalfAvg > firstHalfAvg ? 'increasing' : 'decreasing';
+    const percentageChange =
+      Math.abs(secondHalfAvg - firstHalfAvg) / firstHalfAvg;
+
+    if (percentageChange < changeThreshold) return "stable";
+    return secondHalfAvg > firstHalfAvg ? "increasing" : "decreasing";
   }
 
-  private groupByResourceType(records: any[], totalCost: number): Record<UsageResourceType, any> {
+  private groupByResourceType(
+    records: any[],
+    totalCost: number
+  ): Record<UsageResourceType, any> {
     const grouped = records.reduce((acc, record) => {
       const type = record.resourceType;
-      
+
       if (!acc[type]) {
         acc[type] = {
           quantity: 0,
@@ -538,27 +612,31 @@ export class ConsumptionTrackingService {
           percentage: 0,
         };
       }
-      
+
       acc[type].quantity += parseFloat(record.quantity.toString());
       acc[type].cost += parseFloat(record.totalCost.toString());
-      
+
       return acc;
     }, {} as Record<UsageResourceType, any>);
 
     // Calculate percentages
-    Object.keys(grouped).forEach(type => {
-      grouped[type as UsageResourceType].percentage = totalCost > 0 
-        ? (grouped[type as UsageResourceType].cost / totalCost) * 100 
-        : 0;
+    Object.keys(grouped).forEach((type) => {
+      grouped[type as UsageResourceType].percentage =
+        totalCost > 0
+          ? (grouped[type as UsageResourceType].cost / totalCost) * 100
+          : 0;
     });
 
     return grouped;
   }
 
-  private async getTopResources(tenantId: string, records: any[]): Promise<any[]> {
+  private async getTopResources(
+    tenantId: string,
+    records: any[]
+  ): Promise<any[]> {
     const resourceTotals = records.reduce((acc, record) => {
       const key = record.resourceId;
-      
+
       if (!acc[key]) {
         acc[key] = {
           resourceId: record.resourceId,
@@ -567,10 +645,10 @@ export class ConsumptionTrackingService {
           cost: 0,
         };
       }
-      
+
       acc[key].quantity += parseFloat(record.quantity.toString());
       acc[key].cost += parseFloat(record.totalCost.toString());
-      
+
       return acc;
     }, {} as Record<string, any>);
 
@@ -579,10 +657,10 @@ export class ConsumptionTrackingService {
       .slice(0, 10);
 
     // Add resource names
-    for (const resource of topResources) {
+    for (const resource of topResources as any[]) {
       resource.resourceName = await this.getResourceName(
-        tenantId, 
-        resource.resourceType, 
+        tenantId,
+        resource.resourceType,
         resource.resourceId
       );
     }
@@ -590,7 +668,10 @@ export class ConsumptionTrackingService {
     return topResources;
   }
 
-  private async updateConsumptionMetrics(tenantId: string, data: TrackConsumptionData) {
+  private async updateConsumptionMetrics(
+    tenantId: string,
+    data: TrackConsumptionData
+  ) {
     // This could update real-time metrics, quotas, alerts, etc.
     // For now, we'll keep it simple but this is where you'd add:
     // - Quota checks

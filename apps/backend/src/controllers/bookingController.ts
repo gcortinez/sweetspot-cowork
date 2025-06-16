@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { AuthenticatedRequest } from '../types/api';
+import { AuthenticatedRequest, ErrorCode } from '../types/api';
 import { bookingService } from '../services/bookingService';
 import { ResponseHelper } from '../utils/response';
 import { logger } from '../utils/logger';
@@ -196,11 +196,16 @@ export const updateBooking = async (req: AuthenticatedRequest, res: Response) =>
       }
     }
 
-    const booking = await bookingService.updateBooking(tenantId, bookingId, userId, {
-      ...validatedData,
-      ...(validatedData.startTime && { startTime: new Date(validatedData.startTime) }),
-      ...(validatedData.endTime && { endTime: new Date(validatedData.endTime) })
-    });
+    // Convert string dates to Date objects
+    const updateData: any = { ...validatedData };
+    if (updateData.startTime) {
+      updateData.startTime = new Date(updateData.startTime);
+    }
+    if (updateData.endTime) {
+      updateData.endTime = new Date(updateData.endTime);
+    }
+
+    const booking = await bookingService.updateBooking(tenantId, bookingId, userId, updateData);
 
     logger.info('Booking updated via API', {
       bookingId,

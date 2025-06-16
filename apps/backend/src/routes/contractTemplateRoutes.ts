@@ -1,6 +1,6 @@
 import express from 'express';
 import { contractTemplateController } from '../controllers/contractTemplateController';
-import { authenticate, authorize } from '../middleware/auth';
+import { authenticate, requireRole } from '../middleware/auth';
 
 const router = express.Router();
 
@@ -20,8 +20,8 @@ router.use(authenticate);
  * @query {string} sortOrder - Sort order: asc or desc (default: asc)
  */
 router.get('/', 
-  authorize(['ADMIN', 'MANAGER']),
-  contractTemplateController.getTemplates.bind(contractTemplateController)
+  requireRole('COWORK_ADMIN'),
+  contractTemplateController.getTemplates.bind(contractTemplateController) as any
 );
 
 /**
@@ -31,8 +31,8 @@ router.get('/',
  * @body {CreateContractTemplateData} Template data
  */
 router.post('/',
-  authorize(['ADMIN', 'MANAGER']),
-  contractTemplateController.createTemplate.bind(contractTemplateController)
+  requireRole('COWORK_ADMIN'),
+  contractTemplateController.createTemplate.bind(contractTemplateController) as any
 );
 
 /**
@@ -41,8 +41,8 @@ router.post('/',
  * @access Private (Admin, Manager, Employee)
  */
 router.get('/categories',
-  authorize(['ADMIN', 'MANAGER', 'EMPLOYEE']),
-  contractTemplateController.getTemplateCategories.bind(contractTemplateController)
+  requireRole('CLIENT_ADMIN'),
+  contractTemplateController.getTemplateCategories.bind(contractTemplateController) as any
 );
 
 /**
@@ -52,8 +52,8 @@ router.get('/categories',
  * @body {GenerateContractData} Generation data
  */
 router.post('/generate',
-  authorize(['ADMIN', 'MANAGER', 'EMPLOYEE']),
-  contractTemplateController.generateContract.bind(contractTemplateController)
+  requireRole('CLIENT_ADMIN'),
+  contractTemplateController.generateContract.bind(contractTemplateController) as any
 );
 
 /**
@@ -63,8 +63,8 @@ router.post('/generate',
  * @param {string} id - Template ID
  */
 router.get('/:id',
-  authorize(['ADMIN', 'MANAGER', 'EMPLOYEE']),
-  contractTemplateController.getTemplateById.bind(contractTemplateController)
+  requireRole('CLIENT_ADMIN'),
+  contractTemplateController.getTemplateById.bind(contractTemplateController) as any
 );
 
 /**
@@ -75,8 +75,8 @@ router.get('/:id',
  * @body {UpdateContractTemplateData} Updated template data
  */
 router.put('/:id',
-  authorize(['ADMIN', 'MANAGER']),
-  contractTemplateController.updateTemplate.bind(contractTemplateController)
+  requireRole('COWORK_ADMIN'),
+  contractTemplateController.updateTemplate.bind(contractTemplateController) as any
 );
 
 /**
@@ -86,8 +86,8 @@ router.put('/:id',
  * @param {string} id - Template ID
  */
 router.delete('/:id',
-  authorize(['ADMIN']),
-  contractTemplateController.deleteTemplate.bind(contractTemplateController)
+  requireRole('COWORK_ADMIN'),
+  contractTemplateController.deleteTemplate.bind(contractTemplateController) as any
 );
 
 /**
@@ -97,8 +97,8 @@ router.delete('/:id',
  * @param {string} id - Template ID
  */
 router.get('/:id/validate',
-  authorize(['ADMIN', 'MANAGER']),
-  contractTemplateController.validateTemplate.bind(contractTemplateController)
+  requireRole('COWORK_ADMIN'),
+  contractTemplateController.validateTemplate.bind(contractTemplateController) as any
 );
 
 /**
@@ -109,8 +109,8 @@ router.get('/:id/validate',
  * @body {object} { newName: string }
  */
 router.post('/:id/duplicate',
-  authorize(['ADMIN', 'MANAGER']),
-  contractTemplateController.duplicateTemplate.bind(contractTemplateController)
+  requireRole('COWORK_ADMIN'),
+  contractTemplateController.duplicateTemplate.bind(contractTemplateController) as any
 );
 
 /**
@@ -121,8 +121,8 @@ router.post('/:id/duplicate',
  * @body {object} { sampleData?: Record<string, any> }
  */
 router.post('/:id/preview',
-  authorize(['ADMIN', 'MANAGER', 'EMPLOYEE']),
-  contractTemplateController.previewTemplate.bind(contractTemplateController)
+  requireRole('CLIENT_ADMIN'),
+  contractTemplateController.previewTemplate.bind(contractTemplateController) as any
 );
 
 export { router as contractTemplateRoutes };

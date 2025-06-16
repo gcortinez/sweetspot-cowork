@@ -1,10 +1,11 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { z } from 'zod';
 import { contractAnalyticsService, ReportType, TimeFrame, ExportFormat } from '../services/contractAnalyticsService';
 import { ContractStatus, ContractType } from '../services/contractLifecycleService';
 import { ResponseHelper } from '../utils/response';
 import { logger } from '../utils/logger';
 import { AppError, ValidationError } from '../utils/errors';
+import { BaseRequest, AuthenticatedRequest, ErrorCode, HttpStatusCode } from '../types/api';
 
 const AnalyticsQuerySchema = z.object({
   timeFrame: z.nativeEnum(TimeFrame).default(TimeFrame.THIS_MONTH),
@@ -34,12 +35,12 @@ const GenerateReportSchema = z.object({
 });
 
 export class ContractAnalyticsController {
-  async getContractOverview(req: Request, res: Response): Promise<Response> {
+  async getContractOverview(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       const query = AnalyticsQuerySchema.parse(req.query);
@@ -53,19 +54,19 @@ export class ContractAnalyticsController {
       logger.error('Error fetching contract overview', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Invalid query parameters', 400, error.errors);
+        return ResponseHelper.validationError(res, 'Invalid query parameters', error.errors);
       }
 
-      return ResponseHelper.error(res, 'Failed to fetch contract overview', 500);
+      return ResponseHelper.internalError(res, 'Failed to fetch contract overview');
     }
   }
 
-  async getRevenueAnalysis(req: Request, res: Response): Promise<Response> {
+  async getRevenueAnalysis(req: AuthenticatedRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       const query = AnalyticsQuerySchema.parse(req.query);
@@ -79,19 +80,19 @@ export class ContractAnalyticsController {
       logger.error('Error fetching revenue analysis', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Invalid query parameters', 400, error.errors);
+        return ResponseHelper.validationError(res, 'Invalid query parameters', error.errors);
       }
 
-      return ResponseHelper.error(res, 'Failed to fetch revenue analysis', 500);
+      return ResponseHelper.internalError(res, 'Failed to fetch revenue analysis');
     }
   }
 
-  async getClientAnalysis(req: Request, res: Response): Promise<Response> {
+  async getClientAnalysis(req: AuthenticatedRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       const query = AnalyticsQuerySchema.parse(req.query);
@@ -105,19 +106,19 @@ export class ContractAnalyticsController {
       logger.error('Error fetching client analysis', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Invalid query parameters', 400, error.errors);
+        return ResponseHelper.validationError(res, 'Invalid query parameters', error.errors);
       }
 
-      return ResponseHelper.error(res, 'Failed to fetch client analysis', 500);
+      return ResponseHelper.internalError(res, 'Failed to fetch client analysis');
     }
   }
 
-  async getRenewalPerformance(req: Request, res: Response): Promise<Response> {
+  async getRenewalPerformance(req: AuthenticatedRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       const query = AnalyticsQuerySchema.parse(req.query);
@@ -131,19 +132,19 @@ export class ContractAnalyticsController {
       logger.error('Error fetching renewal performance', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Invalid query parameters', 400, error.errors);
+        return ResponseHelper.validationError(res, 'Invalid query parameters', error.errors);
       }
 
-      return ResponseHelper.error(res, 'Failed to fetch renewal performance', 500);
+      return ResponseHelper.internalError(res, 'Failed to fetch renewal performance');
     }
   }
 
-  async getContractLifecycleMetrics(req: Request, res: Response): Promise<Response> {
+  async getContractLifecycleMetrics(req: AuthenticatedRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       const query = AnalyticsQuerySchema.parse(req.query);
@@ -157,19 +158,19 @@ export class ContractAnalyticsController {
       logger.error('Error fetching contract lifecycle metrics', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Invalid query parameters', 400, error.errors);
+        return ResponseHelper.validationError(res, 'Invalid query parameters', error.errors);
       }
 
-      return ResponseHelper.error(res, 'Failed to fetch contract lifecycle metrics', 500);
+      return ResponseHelper.internalError(res, 'Failed to fetch contract lifecycle metrics');
     }
   }
 
-  async getExpiryForecast(req: Request, res: Response): Promise<Response> {
+  async getExpiryForecast(req: AuthenticatedRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       logger.debug('Fetching expiry forecast', { tenantId });
@@ -179,17 +180,17 @@ export class ContractAnalyticsController {
       return ResponseHelper.success(res, forecast, 'Expiry forecast retrieved successfully');
     } catch (error) {
       logger.error('Error fetching expiry forecast', { error });
-      return ResponseHelper.error(res, 'Failed to fetch expiry forecast', 500);
+      return ResponseHelper.internalError(res, 'Failed to fetch expiry forecast');
     }
   }
 
-  async generateReport(req: Request, res: Response): Promise<Response> {
+  async generateReport(req: AuthenticatedRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const generatedBy = req.user?.id;
 
       if (!tenantId || !generatedBy) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       const options = GenerateReportSchema.parse(req.body);
@@ -214,28 +215,28 @@ export class ContractAnalyticsController {
         format: options.format,
       });
 
-      return ResponseHelper.success(res, report, 'Report generated successfully', 201);
+      return ResponseHelper.success(res, report, 'Report generated successfully', HttpStatusCode.CREATED);
     } catch (error) {
       logger.error('Error generating report', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Validation failed', 400, error.errors);
+        return ResponseHelper.validationError(res, 'Validation failed', error.errors);
       }
 
       if (error instanceof ValidationError) {
-        return ResponseHelper.error(res, error.message, 400);
+        return ResponseHelper.badRequest(res, error.message);
       }
 
-      return ResponseHelper.error(res, 'Failed to generate report', 500);
+      return ResponseHelper.internalError(res, 'Failed to generate report');
     }
   }
 
-  async getReportHistory(req: Request, res: Response): Promise<Response> {
+  async getReportHistory(req: AuthenticatedRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       logger.debug('Fetching report history', { tenantId });
@@ -245,16 +246,16 @@ export class ContractAnalyticsController {
       return ResponseHelper.success(res, reports, 'Report history retrieved successfully');
     } catch (error) {
       logger.error('Error fetching report history', { error });
-      return ResponseHelper.error(res, 'Failed to fetch report history', 500);
+      return ResponseHelper.internalError(res, 'Failed to fetch report history');
     }
   }
 
-  async getDashboardMetrics(req: Request, res: Response): Promise<Response> {
+  async getDashboardMetrics(req: AuthenticatedRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       logger.debug('Fetching dashboard metrics', { tenantId });
@@ -264,17 +265,17 @@ export class ContractAnalyticsController {
       return ResponseHelper.success(res, metrics, 'Dashboard metrics retrieved successfully');
     } catch (error) {
       logger.error('Error fetching dashboard metrics', { error });
-      return ResponseHelper.error(res, 'Failed to fetch dashboard metrics', 500);
+      return ResponseHelper.internalError(res, 'Failed to fetch dashboard metrics');
     }
   }
 
-  async downloadReport(req: Request, res: Response): Promise<Response> {
+  async downloadReport(req: AuthenticatedRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { reportId } = req.params;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       logger.info('Downloading report', { tenantId, reportId });
@@ -302,19 +303,19 @@ export class ContractAnalyticsController {
       logger.error('Error downloading report', { error });
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.INTERNAL_ERROR, error.message, error.statusCode);
       }
 
-      return ResponseHelper.error(res, 'Failed to download report', 500);
+      return ResponseHelper.internalError(res, 'Failed to download report');
     }
   }
 
-  async getKPIs(req: Request, res: Response): Promise<Response> {
+  async getKPIs(req: AuthenticatedRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.unauthorized(res);
       }
 
       const query = AnalyticsQuerySchema.parse(req.query);
@@ -360,10 +361,10 @@ export class ContractAnalyticsController {
       logger.error('Error fetching KPIs', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Invalid query parameters', 400, error.errors);
+        return ResponseHelper.validationError(res, 'Invalid query parameters', error.errors);
       }
 
-      return ResponseHelper.error(res, 'Failed to fetch KPIs', 500);
+      return ResponseHelper.internalError(res, 'Failed to fetch KPIs');
     }
   }
 }

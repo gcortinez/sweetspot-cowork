@@ -1,13 +1,13 @@
 import { Router } from 'express';
-import { requireAuth } from '../middleware/auth';
-import { validateTenantAccess } from '../middleware/tenant';
+import { authenticate } from '../middleware/auth';
+import { tenantMiddleware } from '../middleware/tenant';
 import * as threatDetectionController from '../controllers/threatDetectionController';
 
 const router = Router();
 
 // Apply authentication and tenant validation to all routes
-router.use(requireAuth);
-router.use(validateTenantAccess);
+router.use(authenticate);
+router.use(tenantMiddleware);
 
 // ============================================================================
 // BEHAVIORAL ANALYSIS
@@ -18,14 +18,14 @@ router.use(validateTenantAccess);
  * @desc    Analyze user behavior for anomalies and threats
  * @access  Private (Cowork Admin only)
  */
-router.post('/analyze-behavior', threatDetectionController.analyzeBehavior);
+router.post('/analyze-behavior', threatDetectionController.analyzeBehavior as any);
 
 /**
  * @route   GET /api/threat-detection/behavior-profile/:userId
  * @desc    Get user behavior profile
  * @access  Private (Cowork Admin only)
  */
-router.get('/behavior-profile/:userId', threatDetectionController.getUserBehaviorProfile);
+router.get('/behavior-profile/:userId', threatDetectionController.getUserBehaviorProfile as any);
 
 // ============================================================================
 // PATTERN DETECTION
@@ -36,7 +36,7 @@ router.get('/behavior-profile/:userId', threatDetectionController.getUserBehavio
  * @desc    Detect security patterns in recent events
  * @access  Private (Cowork Admin only)
  */
-router.get('/patterns', threatDetectionController.detectSecurityPatterns);
+router.get('/patterns', threatDetectionController.detectSecurityPatterns as any);
 
 // ============================================================================
 // THREAT PREDICTION
@@ -47,7 +47,7 @@ router.get('/patterns', threatDetectionController.detectSecurityPatterns);
  * @desc    Get AI-powered threat predictions
  * @access  Private (Cowork Admin only)
  */
-router.get('/predictions', threatDetectionController.predictThreats);
+router.get('/predictions', threatDetectionController.predictThreats as any);
 
 // ============================================================================
 // COMPREHENSIVE ANALYSIS
@@ -58,7 +58,7 @@ router.get('/predictions', threatDetectionController.predictThreats);
  * @desc    Run comprehensive security analysis (patterns + predictions + scoring)
  * @access  Private (Cowork Admin only)
  */
-router.get('/analyze', threatDetectionController.analyzeSecurityEvents);
+router.get('/analyze', threatDetectionController.analyzeSecurityEvents as any);
 
 // ============================================================================
 // ALERT MANAGEMENT
@@ -69,14 +69,14 @@ router.get('/analyze', threatDetectionController.analyzeSecurityEvents);
  * @desc    Get security alerts with filtering
  * @access  Private (Cowork Admin only)
  */
-router.get('/alerts', threatDetectionController.getSecurityAlerts);
+router.get('/alerts', threatDetectionController.getSecurityAlerts as any);
 
 /**
  * @route   PATCH /api/threat-detection/alerts/:alertId/resolve
  * @desc    Mark security alert as resolved
  * @access  Private (Cowork Admin only)
  */
-router.patch('/alerts/:alertId/resolve', threatDetectionController.resolveSecurityAlert);
+router.patch('/alerts/:alertId/resolve', threatDetectionController.resolveSecurityAlert as any);
 
 // ============================================================================
 // SYSTEM CONFIGURATION
@@ -87,14 +87,14 @@ router.patch('/alerts/:alertId/resolve', threatDetectionController.resolveSecuri
  * @desc    Get threat detection configuration
  * @access  Private (Cowork Admin only)
  */
-router.get('/config', threatDetectionController.getThreatDetectionConfig);
+router.get('/config', threatDetectionController.getThreatDetectionConfig as any);
 
 /**
  * @route   PUT /api/threat-detection/config
  * @desc    Update threat detection configuration
  * @access  Private (Cowork Admin only)
  */
-router.put('/config', threatDetectionController.updateThreatDetectionConfig);
+router.put('/config', threatDetectionController.updateThreatDetectionConfig as any);
 
 // ============================================================================
 // STATISTICS AND REPORTING
@@ -105,6 +105,6 @@ router.put('/config', threatDetectionController.updateThreatDetectionConfig);
  * @desc    Get threat detection statistics and metrics
  * @access  Private (Cowork Admin only)
  */
-router.get('/statistics', threatDetectionController.getThreatStatistics);
+router.get('/statistics', threatDetectionController.getThreatStatistics as any);
 
 export default router;

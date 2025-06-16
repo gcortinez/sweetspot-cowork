@@ -1,13 +1,13 @@
 import { Router } from 'express';
-import { requireAuth } from '../middleware/auth';
-import { validateTenantAccess } from '../middleware/tenant';
+import { authenticate } from '../middleware/auth';
+import { tenantMiddleware } from '../middleware/tenant';
 import * as billingController from '../controllers/billingController';
 
 const router = Router();
 
 // Apply authentication and tenant validation to all routes
-router.use(requireAuth);
-router.use(validateTenantAccess);
+router.use(authenticate);
+router.use(tenantMiddleware);
 
 // ============================================================================
 // BILLING CYCLE MANAGEMENT
@@ -18,14 +18,14 @@ router.use(validateTenantAccess);
  * @desc    Create a new billing cycle configuration
  * @access  Private (Cowork Admin)
  */
-router.post('/cycles', billingController.createBillingCycle);
+router.post('/cycles', billingController.createBillingCycle as any);
 
 /**
  * @route   GET /api/billing/cycles
  * @desc    Get all billing cycle configurations
  * @access  Private (Cowork Admin)
  */
-router.get('/cycles', billingController.getBillingCycles);
+router.get('/cycles', billingController.getBillingCycles as any);
 
 // ============================================================================
 // SUBSCRIPTION MANAGEMENT
@@ -36,35 +36,35 @@ router.get('/cycles', billingController.getBillingCycles);
  * @desc    Create a new subscription
  * @access  Private (Cowork Admin, Client Admin)
  */
-router.post('/subscriptions', billingController.createSubscription);
+router.post('/subscriptions', billingController.createSubscription as any);
 
 /**
  * @route   GET /api/billing/subscriptions
  * @desc    Get subscriptions with optional filters
  * @access  Private (Cowork Admin, Client Admin)
  */
-router.get('/subscriptions', billingController.getSubscriptions);
+router.get('/subscriptions', billingController.getSubscriptions as any);
 
 /**
  * @route   PUT /api/billing/subscriptions/:subscriptionId
  * @desc    Update a subscription
  * @access  Private (Cowork Admin, Client Admin)
  */
-router.put('/subscriptions/:subscriptionId', billingController.updateSubscription);
+router.put('/subscriptions/:subscriptionId', billingController.updateSubscription as any);
 
 /**
  * @route   POST /api/billing/subscriptions/:subscriptionId/cancel
  * @desc    Cancel a subscription
  * @access  Private (Cowork Admin, Client Admin)
  */
-router.post('/subscriptions/:subscriptionId/cancel', billingController.cancelSubscription);
+router.post('/subscriptions/:subscriptionId/cancel', billingController.cancelSubscription as any);
 
 /**
  * @route   POST /api/billing/subscriptions/:subscriptionId/invoice
  * @desc    Generate invoice for a subscription
  * @access  Private (Cowork Admin)
  */
-router.post('/subscriptions/:subscriptionId/invoice', billingController.generateInvoice);
+router.post('/subscriptions/:subscriptionId/invoice', billingController.generateInvoice as any);
 
 // ============================================================================
 // CONSUMPTION TRACKING
@@ -75,28 +75,28 @@ router.post('/subscriptions/:subscriptionId/invoice', billingController.generate
  * @desc    Track resource consumption/usage
  * @access  Private (System, Cowork Admin)
  */
-router.post('/usage', billingController.trackConsumption);
+router.post('/usage', billingController.trackConsumption as any);
 
 /**
  * @route   GET /api/billing/usage
  * @desc    Get usage records with filters
  * @access  Private (Cowork Admin, Client Admin)
  */
-router.get('/usage', billingController.getUsageRecords);
+router.get('/usage', billingController.getUsageRecords as any);
 
 /**
  * @route   GET /api/billing/usage/clients/:clientId/summary
  * @desc    Get consumption summary for a client
  * @access  Private (Cowork Admin, Client Admin)
  */
-router.get('/usage/clients/:clientId/summary', billingController.getConsumptionSummary);
+router.get('/usage/clients/:clientId/summary', billingController.getConsumptionSummary as any);
 
 /**
  * @route   GET /api/billing/usage/clients/:clientId/report
  * @desc    Get usage report for a client
  * @access  Private (Cowork Admin, Client Admin)
  */
-router.get('/usage/clients/:clientId/report', billingController.getUsageReport);
+router.get('/usage/clients/:clientId/report', billingController.getUsageReport as any);
 
 // ============================================================================
 // INVOICE MANAGEMENT
@@ -107,7 +107,7 @@ router.get('/usage/clients/:clientId/report', billingController.getUsageReport);
  * @desc    Generate all due recurring invoices
  * @access  Private (Cowork Admin, System)
  */
-router.post('/invoices/recurring/generate', billingController.generateRecurringInvoices);
+router.post('/invoices/recurring/generate', billingController.generateRecurringInvoices as any);
 
 // ============================================================================
 // PAYMENT METHODS
@@ -118,28 +118,28 @@ router.post('/invoices/recurring/generate', billingController.generateRecurringI
  * @desc    Create a new payment method
  * @access  Private (Client Admin, End User)
  */
-router.post('/payment-methods', billingController.createPaymentMethod);
+router.post('/payment-methods', billingController.createPaymentMethod as any);
 
 /**
  * @route   GET /api/billing/payment-methods/clients/:clientId
  * @desc    Get payment methods for a client
  * @access  Private (Cowork Admin, Client Admin)
  */
-router.get('/payment-methods/clients/:clientId', billingController.getPaymentMethods);
+router.get('/payment-methods/clients/:clientId', billingController.getPaymentMethods as any);
 
 /**
  * @route   PUT /api/billing/payment-methods/:paymentMethodId
  * @desc    Update a payment method
  * @access  Private (Client Admin, End User)
  */
-router.put('/payment-methods/:paymentMethodId', billingController.updatePaymentMethod);
+router.put('/payment-methods/:paymentMethodId', billingController.updatePaymentMethod as any);
 
 /**
  * @route   DELETE /api/billing/payment-methods/:paymentMethodId
  * @desc    Delete a payment method
  * @access  Private (Client Admin, End User)
  */
-router.delete('/payment-methods/:paymentMethodId', billingController.deletePaymentMethod);
+router.delete('/payment-methods/:paymentMethodId', billingController.deletePaymentMethod as any);
 
 // ============================================================================
 // PAYMENT PROCESSING
@@ -150,21 +150,21 @@ router.delete('/payment-methods/:paymentMethodId', billingController.deletePayme
  * @desc    Create a payment intent for client-side processing
  * @access  Private (Client Admin, End User)
  */
-router.post('/payments/intents', billingController.createPaymentIntent);
+router.post('/payments/intents', billingController.createPaymentIntent as any);
 
 /**
  * @route   POST /api/billing/payments/clients/:clientId/process
  * @desc    Process a payment for a client
  * @access  Private (Cowork Admin, Client Admin)
  */
-router.post('/payments/clients/:clientId/process', billingController.processPayment);
+router.post('/payments/clients/:clientId/process', billingController.processPayment as any);
 
 /**
  * @route   POST /api/billing/payments/:paymentId/refund
  * @desc    Refund a payment
  * @access  Private (Cowork Admin)
  */
-router.post('/payments/:paymentId/refund', billingController.refundPayment);
+router.post('/payments/:paymentId/refund', billingController.refundPayment as any);
 
 // ============================================================================
 // BILLING SETTINGS
@@ -175,14 +175,14 @@ router.post('/payments/:paymentId/refund', billingController.refundPayment);
  * @desc    Get billing settings for the tenant
  * @access  Private (Cowork Admin)
  */
-router.get('/settings', billingController.getBillingSettings);
+router.get('/settings', billingController.getBillingSettings as any);
 
 /**
  * @route   PUT /api/billing/settings
  * @desc    Update billing settings
  * @access  Private (Cowork Admin)
  */
-router.put('/settings', billingController.updateBillingSettings);
+router.put('/settings', billingController.updateBillingSettings as any);
 
 // ============================================================================
 // BILLING AUTOMATION
@@ -193,21 +193,21 @@ router.put('/settings', billingController.updateBillingSettings);
  * @desc    Run all billing automation workflows
  * @access  Private (Cowork Admin, System)
  */
-router.post('/automation/run-all', billingController.runAutomationWorkflows);
+router.post('/automation/run-all', billingController.runAutomationWorkflows as any);
 
 /**
  * @route   POST /api/billing/automation/invoice-generation
  * @desc    Run invoice generation workflow
  * @access  Private (Cowork Admin, System)
  */
-router.post('/automation/invoice-generation', billingController.runInvoiceGenerationWorkflow);
+router.post('/automation/invoice-generation', billingController.runInvoiceGenerationWorkflow as any);
 
 /**
  * @route   POST /api/billing/automation/payment-collection
  * @desc    Run payment collection workflow
  * @access  Private (Cowork Admin, System)
  */
-router.post('/automation/payment-collection', billingController.runPaymentCollectionWorkflow);
+router.post('/automation/payment-collection', billingController.runPaymentCollectionWorkflow as any);
 
 // ============================================================================
 // REPORTS & ANALYTICS
@@ -218,20 +218,20 @@ router.post('/automation/payment-collection', billingController.runPaymentCollec
  * @desc    Get comprehensive billing report
  * @access  Private (Cowork Admin)
  */
-router.get('/reports/billing', billingController.getBillingReport);
+router.get('/reports/billing', billingController.getBillingReport as any);
 
 /**
  * @route   GET /api/billing/reports/payments
  * @desc    Get payment analytics report
  * @access  Private (Cowork Admin)
  */
-router.get('/reports/payments', billingController.getPaymentAnalytics);
+router.get('/reports/payments', billingController.getPaymentAnalytics as any);
 
 /**
  * @route   GET /api/billing/reports/reconciliation
  * @desc    Get payment reconciliation report
  * @access  Private (Cowork Admin)
  */
-router.get('/reports/reconciliation', billingController.reconcilePayments);
+router.get('/reports/reconciliation', billingController.reconcilePayments as any);
 
 export default router;

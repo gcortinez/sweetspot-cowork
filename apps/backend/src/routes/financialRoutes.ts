@@ -1,13 +1,13 @@
 import { Router } from 'express';
-import { requireAuth } from '../middleware/auth';
-import { validateTenantAccess } from '../middleware/tenant';
+import { authenticate } from '../middleware/auth';
+import { tenantMiddleware } from '../middleware/tenant';
 import * as financialController from '../controllers/financialController';
 
 const router = Router();
 
 // Apply authentication and tenant validation to all routes
-router.use(requireAuth);
-router.use(validateTenantAccess);
+router.use(authenticate);
+router.use(tenantMiddleware);
 
 // ============================================================================
 // FINANCIAL OVERVIEW AND SUMMARY
@@ -19,7 +19,7 @@ router.use(validateTenantAccess);
  * @access  Private
  * @query   startDate, endDate
  */
-router.get('/overview', financialController.getFinancialOverview);
+router.get('/overview', financialController.getFinancialOverview as any);
 
 /**
  * @route   GET /api/financial/metrics
@@ -27,7 +27,7 @@ router.get('/overview', financialController.getFinancialOverview);
  * @access  Private
  * @query   period, startDate, endDate
  */
-router.get('/metrics', financialController.getFinancialMetrics);
+router.get('/metrics', financialController.getFinancialMetrics as any);
 
 // ============================================================================
 // FINANCIAL REPORTS
@@ -39,7 +39,7 @@ router.get('/metrics', financialController.getFinancialMetrics);
  * @access  Private
  * @body    reportType, period, startDate, endDate, title, description?, customFilters?
  */
-router.post('/reports', financialController.createFinancialReport);
+router.post('/reports', financialController.createFinancialReport as any);
 
 /**
  * @route   GET /api/financial/reports
@@ -47,21 +47,21 @@ router.post('/reports', financialController.createFinancialReport);
  * @access  Private
  * @query   reportType?, period?, status?, startDate?, endDate?, generatedBy?, skip?, take?
  */
-router.get('/reports', financialController.getFinancialReports);
+router.get('/reports', financialController.getFinancialReports as any);
 
 /**
  * @route   GET /api/financial/reports/:reportId
  * @desc    Get specific financial report by ID
  * @access  Private
  */
-router.get('/reports/:reportId', financialController.getFinancialReport);
+router.get('/reports/:reportId', financialController.getFinancialReport as any);
 
 /**
  * @route   DELETE /api/financial/reports/:reportId
  * @desc    Archive/delete a financial report
  * @access  Private
  */
-router.delete('/reports/:reportId', financialController.deleteFinancialReport);
+router.delete('/reports/:reportId', financialController.deleteFinancialReport as any);
 
 // ============================================================================
 // REVENUE FORECASTING
@@ -73,7 +73,7 @@ router.delete('/reports/:reportId', financialController.deleteFinancialReport);
  * @access  Private
  * @body    forecastType, period, startDate, endDate, methodology, customParameters?, notes?
  */
-router.post('/forecasts', financialController.createRevenueForecast);
+router.post('/forecasts', financialController.createRevenueForecast as any);
 
 /**
  * @route   GET /api/financial/forecasts
@@ -81,7 +81,7 @@ router.post('/forecasts', financialController.createRevenueForecast);
  * @access  Private
  * @query   forecastType?, period?, methodology?, status?, skip?, take?
  */
-router.get('/forecasts', financialController.getRevenueForecasts);
+router.get('/forecasts', financialController.getRevenueForecasts as any);
 
 /**
  * @route   PUT /api/financial/forecasts/:forecastId/accuracy
@@ -89,7 +89,7 @@ router.get('/forecasts', financialController.getRevenueForecasts);
  * @access  Private
  * @body    actualValue
  */
-router.put('/forecasts/:forecastId/accuracy', financialController.updateForecastAccuracy);
+router.put('/forecasts/:forecastId/accuracy', financialController.updateForecastAccuracy as any);
 
 // ============================================================================
 // PROFIT ANALYSIS
@@ -101,7 +101,7 @@ router.put('/forecasts/:forecastId/accuracy', financialController.updateForecast
  * @access  Private
  * @body    analysisType, period, startDate, endDate, compareWith?, includeForecasting?
  */
-router.post('/analysis/profit', financialController.createProfitAnalysis);
+router.post('/analysis/profit', financialController.createProfitAnalysis as any);
 
 // Note: Additional profit analysis endpoints would be added here
 // GET /api/financial/analysis/profit - Get profit analyses
@@ -119,7 +119,7 @@ router.post('/analysis/profit', financialController.createProfitAnalysis);
  * @access  Private
  * @body    reconciliationType, period, startDate, endDate, bankStatementFile?, reconciliationRules?, autoMatch?
  */
-router.post('/reconciliation', financialController.createPaymentReconciliation);
+router.post('/reconciliation', financialController.createPaymentReconciliation as any);
 
 /**
  * @route   GET /api/financial/reconciliation
@@ -127,14 +127,14 @@ router.post('/reconciliation', financialController.createPaymentReconciliation);
  * @access  Private
  * @query   reconciliationType?, status?, startDate?, endDate?, skip?, take?
  */
-router.get('/reconciliation', financialController.getPaymentReconciliations);
+router.get('/reconciliation', financialController.getPaymentReconciliations as any);
 
 /**
  * @route   GET /api/financial/reconciliation/:reconciliationId
  * @desc    Get specific payment reconciliation by ID
  * @access  Private
  */
-router.get('/reconciliation/:reconciliationId', financialController.getPaymentReconciliation);
+router.get('/reconciliation/:reconciliationId', financialController.getPaymentReconciliation as any);
 
 /**
  * @route   POST /api/financial/reconciliation/items/:reconciliationItemId/match
@@ -142,7 +142,7 @@ router.get('/reconciliation/:reconciliationId', financialController.getPaymentRe
  * @access  Private
  * @body    paymentId, notes?
  */
-router.post('/reconciliation/items/:reconciliationItemId/match', financialController.manualMatchTransaction);
+router.post('/reconciliation/items/:reconciliationItemId/match', financialController.manualMatchTransaction as any);
 
 /**
  * @route   DELETE /api/financial/reconciliation/items/:reconciliationItemId/match
@@ -150,7 +150,7 @@ router.post('/reconciliation/items/:reconciliationItemId/match', financialContro
  * @access  Private
  * @body    reason?
  */
-router.delete('/reconciliation/items/:reconciliationItemId/match', financialController.unmatchTransaction);
+router.delete('/reconciliation/items/:reconciliationItemId/match', financialController.unmatchTransaction as any);
 
 /**
  * @route   POST /api/financial/reconciliation/:reconciliationId/adjustments
@@ -158,7 +158,7 @@ router.delete('/reconciliation/items/:reconciliationItemId/match', financialCont
  * @access  Private
  * @body    type, amount, description, reference?
  */
-router.post('/reconciliation/:reconciliationId/adjustments', financialController.addReconciliationAdjustment);
+router.post('/reconciliation/:reconciliationId/adjustments', financialController.addReconciliationAdjustment as any);
 
 /**
  * @route   POST /api/financial/reconciliation/:reconciliationId/approve
@@ -166,7 +166,7 @@ router.post('/reconciliation/:reconciliationId/adjustments', financialController
  * @access  Private
  * @body    notes?
  */
-router.post('/reconciliation/:reconciliationId/approve', financialController.approveReconciliation);
+router.post('/reconciliation/:reconciliationId/approve', financialController.approveReconciliation as any);
 
 /**
  * @route   POST /api/financial/reconciliation/:reconciliationId/reject
@@ -174,14 +174,14 @@ router.post('/reconciliation/:reconciliationId/approve', financialController.app
  * @access  Private
  * @body    reason
  */
-router.post('/reconciliation/:reconciliationId/reject', financialController.rejectReconciliation);
+router.post('/reconciliation/:reconciliationId/reject', financialController.rejectReconciliation as any);
 
 /**
  * @route   GET /api/financial/reconciliation/:reconciliationId/report
  * @desc    Generate detailed reconciliation report
  * @access  Private
  */
-router.get('/reconciliation/:reconciliationId/report', financialController.getReconciliationReport);
+router.get('/reconciliation/:reconciliationId/report', financialController.getReconciliationReport as any);
 
 // ============================================================================
 // FINANCIAL DASHBOARDS
@@ -193,7 +193,7 @@ router.get('/reconciliation/:reconciliationId/report', financialController.getRe
  * @access  Private
  * @body    dashboardType, period, startDate, endDate, customizations?, autoRefresh?, refreshInterval?
  */
-router.post('/dashboards', financialController.createFinancialDashboard);
+router.post('/dashboards', financialController.createFinancialDashboard as any);
 
 /**
  * @route   GET /api/financial/dashboards
@@ -201,21 +201,21 @@ router.post('/dashboards', financialController.createFinancialDashboard);
  * @access  Private
  * @query   dashboardType?, createdBy?, skip?, take?
  */
-router.get('/dashboards', financialController.getFinancialDashboards);
+router.get('/dashboards', financialController.getFinancialDashboards as any);
 
 /**
  * @route   GET /api/financial/dashboards/:dashboardId
  * @desc    Get specific financial dashboard by ID
  * @access  Private
  */
-router.get('/dashboards/:dashboardId', financialController.getFinancialDashboard);
+router.get('/dashboards/:dashboardId', financialController.getFinancialDashboard as any);
 
 /**
  * @route   POST /api/financial/dashboards/:dashboardId/refresh
  * @desc    Refresh dashboard data
  * @access  Private
  */
-router.post('/dashboards/:dashboardId/refresh', financialController.refreshFinancialDashboard);
+router.post('/dashboards/:dashboardId/refresh', financialController.refreshFinancialDashboard as any);
 
 // Note: Additional dashboard endpoints would be added here
 // PUT /api/financial/dashboards/:dashboardId - Update dashboard

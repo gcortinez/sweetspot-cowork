@@ -305,6 +305,7 @@ async function checkServer() {
       console.log('✅ Server is running\n');
       return true;
     }
+    return false;
   } catch (error) {
     console.error('❌ Server is not running at', API_BASE_URL);
     console.error('Please start the server with: npm run dev\n');

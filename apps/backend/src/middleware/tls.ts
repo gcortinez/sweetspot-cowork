@@ -83,8 +83,8 @@ export const loadTLSCertificates = (config: TLSConfig): { key?: Buffer; cert?: B
     }
 
   } catch (error) {
-    logger.error('Failed to load TLS certificates', { error: error instanceof Error ? error.message : 'Unknown error' });
-    throw new Error(`TLS certificate loading failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    logger.error('Failed to load TLS certificates', { error: (error as Error).message });
+    throw new Error(`TLS certificate loading failed: ${(error as Error).message}`);
   }
 
   return result;

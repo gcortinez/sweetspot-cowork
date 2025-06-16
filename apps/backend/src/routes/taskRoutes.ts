@@ -8,27 +8,27 @@ const router = Router();
 router.use(authenticate);
 
 // Analytics and special routes (before parameterized routes)
-router.get('/stats', taskController.getTaskStats);
-router.get('/reminders', taskController.getUpcomingReminders);
-router.get('/my-tasks', taskController.getMyTasks);
-router.get('/overdue', taskController.getOverdueTasks);
-router.get('/due-today', taskController.getTasksDueToday);
-router.get('/dashboard', taskController.getTaskDashboard);
-router.get('/tags', taskController.getAllTags);
-router.get('/by-entity/:entityType/:entityId', taskController.getTasksByEntity);
-router.get('/by-tag/:tag', taskController.getTasksByTag);
+router.get('/stats', taskController.getTaskStats as any);
+router.get('/reminders', taskController.getUpcomingReminders as any);
+router.get('/my-tasks', taskController.getMyTasks as any);
+router.get('/overdue', taskController.getOverdueTasks as any);
+router.get('/due-today', taskController.getTasksDueToday as any);
+router.get('/dashboard', taskController.getTaskDashboard as any);
+router.get('/tags', taskController.getAllTags as any);
+router.get('/by-entity/:entityType/:entityId', taskController.getTasksByEntity as any);
+router.get('/by-tag/:tag', taskController.getTasksByTag as any);
 
 // Bulk operations
-router.post('/bulk-update', taskController.bulkUpdateTasks);
+router.post('/bulk-update', taskController.bulkUpdateTasks as any);
 
 // Basic CRUD operations
-router.get('/', taskController.getTasks);
-router.get('/:id', taskController.getTaskById);
-router.post('/', taskController.createTask);
-router.put('/:id', taskController.updateTask);
-router.delete('/:id', taskController.deleteTask);
+router.get('/', taskController.getTasks as any);
+router.get('/:id', taskController.getTaskById as any);
+router.post('/', taskController.createTask as any);
+router.put('/:id', taskController.updateTask as any);
+router.delete('/:id', taskController.deleteTask as any);
 
 // Task actions
-router.post('/:id/complete', taskController.completeTask);
+router.post('/:id/complete', taskController.completeTask as any);
 
 export { router as taskRoutes };

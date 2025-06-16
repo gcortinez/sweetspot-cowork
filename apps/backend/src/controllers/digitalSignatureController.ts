@@ -1,9 +1,10 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { z } from 'zod';
 import { digitalSignatureService, SignatureStatus, SignatureType } from '../services/digitalSignatureService';
 import { ResponseHelper } from '../utils/response';
 import { logger } from '../utils/logger';
 import { AppError, ValidationError } from '../utils/errors';
+import { BaseRequest, ErrorCode, HttpStatusCode } from '../types/api';
 
 const SignerSchema = z.object({
   id: z.string().min(1),
@@ -77,13 +78,13 @@ const SignatureWorkflowQuerySchema = z.object({
 });
 
 export class DigitalSignatureController {
-  async createWorkflow(req: Request, res: Response): Promise<Response> {
+  async createWorkflow(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const createdBy = req.user?.id;
 
       if (!tenantId || !createdBy) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.error(res, ErrorCode.UNAUTHORIZED_ACCESS, 'Unauthorized', HttpStatusCode.UNAUTHORIZED);
       }
 
       const validatedData = CreateSignatureWorkflowSchema.parse(req.body);
@@ -107,28 +108,28 @@ export class DigitalSignatureController {
         contractId: workflow.contractId,
       });
 
-      return ResponseHelper.success(res, workflow, 'Signature workflow created successfully', 201);
+      return ResponseHelper.success(res, workflow, 'Signature workflow created successfully', HttpStatusCode.CREATED);
     } catch (error) {
       logger.error('Error creating signature workflow', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Validation failed', 400, error.errors);
+        return ResponseHelper.error(res, ErrorCode.VALIDATION_ERROR, 'Validation failed', HttpStatusCode.BAD_REQUEST, error.errors);
       }
 
       if (error instanceof ValidationError) {
-        return ResponseHelper.error(res, error.message, 400);
+        return ResponseHelper.error(res, ErrorCode.VALIDATION_ERROR, error.message, HttpStatusCode.BAD_REQUEST);
       }
 
-      return ResponseHelper.error(res, 'Failed to create signature workflow', 500);
+      return ResponseHelper.error(res, ErrorCode.INTERNAL_ERROR, 'Internal server error', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async getWorkflows(req: Request, res: Response): Promise<Response> {
+  async getWorkflows(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.error(res, ErrorCode.UNAUTHORIZED_ACCESS, 'Unauthorized', HttpStatusCode.UNAUTHORIZED);
       }
 
       const query = SignatureWorkflowQuerySchema.parse(req.query);
@@ -142,20 +143,20 @@ export class DigitalSignatureController {
       logger.error('Error fetching signature workflows', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Invalid query parameters', 400, error.errors);
+        return ResponseHelper.error(res, ErrorCode.VALIDATION_ERROR, 'Validation failed', HttpStatusCode.BAD_REQUEST, error.errors);
       }
 
-      return ResponseHelper.error(res, 'Failed to fetch signature workflows', 500);
+      return ResponseHelper.error(res, ErrorCode.INTERNAL_ERROR, 'Internal server error', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async getWorkflowById(req: Request, res: Response): Promise<Response> {
+  async getWorkflowById(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { id } = req.params;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.error(res, ErrorCode.UNAUTHORIZED_ACCESS, 'Unauthorized', HttpStatusCode.UNAUTHORIZED);
       }
 
       logger.debug('Fetching signature workflow by ID', { tenantId, workflowId: id });
@@ -167,20 +168,20 @@ export class DigitalSignatureController {
       logger.error('Error fetching signature workflow', { error });
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.INTERNAL_ERROR, error.message, (error as any).statusCode || HttpStatusCode.INTERNAL_SERVER_ERROR);
       }
 
-      return ResponseHelper.error(res, 'Failed to fetch signature workflow', 500);
+      return ResponseHelper.error(res, ErrorCode.INTERNAL_ERROR, 'Internal server error', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async updateWorkflow(req: Request, res: Response): Promise<Response> {
+  async updateWorkflow(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { id } = req.params;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.error(res, ErrorCode.UNAUTHORIZED_ACCESS, 'Unauthorized', HttpStatusCode.UNAUTHORIZED);
       }
 
       const validatedData = UpdateSignatureWorkflowSchema.parse(req.body);
@@ -207,24 +208,24 @@ export class DigitalSignatureController {
       logger.error('Error updating signature workflow', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Validation failed', 400, error.errors);
+        return ResponseHelper.error(res, ErrorCode.VALIDATION_ERROR, 'Validation failed', HttpStatusCode.BAD_REQUEST, error.errors);
       }
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.INTERNAL_ERROR, error.message, (error as any).statusCode || HttpStatusCode.INTERNAL_SERVER_ERROR);
       }
 
-      return ResponseHelper.error(res, 'Failed to update signature workflow', 500);
+      return ResponseHelper.error(res, ErrorCode.INTERNAL_ERROR, 'Internal server error', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async signDocument(req: Request, res: Response): Promise<Response> {
+  async signDocument(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { workflowId, signerId } = req.params;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.error(res, ErrorCode.UNAUTHORIZED_ACCESS, 'Unauthorized', HttpStatusCode.UNAUTHORIZED);
       }
 
       const validatedData = SignDocumentSchema.parse(req.body);
@@ -265,24 +266,24 @@ export class DigitalSignatureController {
       logger.error('Error signing document', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Validation failed', 400, error.errors);
+        return ResponseHelper.error(res, ErrorCode.VALIDATION_ERROR, 'Validation failed', HttpStatusCode.BAD_REQUEST, error.errors);
       }
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.INTERNAL_ERROR, error.message, (error as any).statusCode || HttpStatusCode.INTERNAL_SERVER_ERROR);
       }
 
-      return ResponseHelper.error(res, 'Failed to sign document', 500);
+      return ResponseHelper.error(res, ErrorCode.INTERNAL_ERROR, 'Internal server error', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async declineSignature(req: Request, res: Response): Promise<Response> {
+  async declineSignature(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { workflowId, signerId } = req.params;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.error(res, ErrorCode.UNAUTHORIZED_ACCESS, 'Unauthorized', HttpStatusCode.UNAUTHORIZED);
       }
 
       const { reason } = DeclineSignatureSchema.parse(req.body);
@@ -312,25 +313,25 @@ export class DigitalSignatureController {
       logger.error('Error declining signature', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Validation failed', 400, error.errors);
+        return ResponseHelper.error(res, ErrorCode.VALIDATION_ERROR, 'Validation failed', HttpStatusCode.BAD_REQUEST, error.errors);
       }
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.INTERNAL_ERROR, error.message, (error as any).statusCode || HttpStatusCode.INTERNAL_SERVER_ERROR);
       }
 
-      return ResponseHelper.error(res, 'Failed to decline signature', 500);
+      return ResponseHelper.error(res, ErrorCode.INTERNAL_ERROR, 'Internal server error', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async cancelWorkflow(req: Request, res: Response): Promise<Response> {
+  async cancelWorkflow(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { id } = req.params;
       const cancelledBy = req.user?.id;
 
       if (!tenantId || !cancelledBy) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.error(res, ErrorCode.UNAUTHORIZED_ACCESS, 'Unauthorized', HttpStatusCode.UNAUTHORIZED);
       }
 
       const { reason } = CancelWorkflowSchema.parse(req.body);
@@ -359,24 +360,24 @@ export class DigitalSignatureController {
       logger.error('Error cancelling signature workflow', { error });
 
       if (error instanceof z.ZodError) {
-        return ResponseHelper.error(res, 'Validation failed', 400, error.errors);
+        return ResponseHelper.error(res, ErrorCode.VALIDATION_ERROR, 'Validation failed', HttpStatusCode.BAD_REQUEST, error.errors);
       }
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.INTERNAL_ERROR, error.message, (error as any).statusCode || HttpStatusCode.INTERNAL_SERVER_ERROR);
       }
 
-      return ResponseHelper.error(res, 'Failed to cancel signature workflow', 500);
+      return ResponseHelper.error(res, ErrorCode.INTERNAL_ERROR, 'Internal server error', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async getSignerView(req: Request, res: Response): Promise<Response> {
+  async getSignerView(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { workflowId, signerId } = req.params;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.error(res, ErrorCode.UNAUTHORIZED_ACCESS, 'Unauthorized', HttpStatusCode.UNAUTHORIZED);
       }
 
       logger.debug('Fetching signer view', { tenantId, workflowId, signerId });
@@ -392,20 +393,20 @@ export class DigitalSignatureController {
       logger.error('Error fetching signer view', { error });
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.INTERNAL_ERROR, error.message, (error as any).statusCode || HttpStatusCode.INTERNAL_SERVER_ERROR);
       }
 
-      return ResponseHelper.error(res, 'Failed to fetch signer view', 500);
+      return ResponseHelper.error(res, ErrorCode.INTERNAL_ERROR, 'Internal server error', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async getAuditTrail(req: Request, res: Response): Promise<Response> {
+  async getAuditTrail(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { id } = req.params;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.error(res, ErrorCode.UNAUTHORIZED_ACCESS, 'Unauthorized', HttpStatusCode.UNAUTHORIZED);
       }
 
       logger.debug('Fetching signature audit trail', { tenantId, workflowId: id });
@@ -417,20 +418,20 @@ export class DigitalSignatureController {
       logger.error('Error fetching audit trail', { error });
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.INTERNAL_ERROR, error.message, (error as any).statusCode || HttpStatusCode.INTERNAL_SERVER_ERROR);
       }
 
-      return ResponseHelper.error(res, 'Failed to fetch audit trail', 500);
+      return ResponseHelper.error(res, ErrorCode.INTERNAL_ERROR, 'Internal server error', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async verifySignature(req: Request, res: Response): Promise<Response> {
+  async verifySignature(req: BaseRequest, res: Response): Promise<Response> {
     try {
       const tenantId = req.user?.tenantId;
       const { workflowId, signatureId } = req.params;
 
       if (!tenantId) {
-        return ResponseHelper.error(res, 'Unauthorized', 401);
+        return ResponseHelper.error(res, ErrorCode.UNAUTHORIZED_ACCESS, 'Unauthorized', HttpStatusCode.UNAUTHORIZED);
       }
 
       logger.debug('Verifying signature', { tenantId, workflowId, signatureId });
@@ -446,10 +447,10 @@ export class DigitalSignatureController {
       logger.error('Error verifying signature', { error });
 
       if (error instanceof AppError) {
-        return ResponseHelper.error(res, error.message, error.statusCode);
+        return ResponseHelper.error(res, ErrorCode.INTERNAL_ERROR, error.message, (error as any).statusCode || HttpStatusCode.INTERNAL_SERVER_ERROR);
       }
 
-      return ResponseHelper.error(res, 'Failed to verify signature', 500);
+      return ResponseHelper.error(res, ErrorCode.INTERNAL_ERROR, 'Internal server error', HttpStatusCode.INTERNAL_SERVER_ERROR);
     }
   }
 }

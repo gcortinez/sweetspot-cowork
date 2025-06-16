@@ -28,7 +28,7 @@ router.use(authenticate);
  * @desc    Create a new booking
  * @access  Private (all authenticated users)
  */
-router.post('/', generalRateLimit, createBooking);
+router.post('/', generalRateLimit, createBooking as any);
 
 /**
  * @route   GET /api/bookings
@@ -36,28 +36,28 @@ router.post('/', generalRateLimit, createBooking);
  * @access  Admin (COWORK_ADMIN or SUPER_ADMIN)
  * @query   userId?, spaceId?, status?, startDate?, endDate?, upcoming?, page?, limit?
  */
-router.get('/', requireRole('COWORK_ADMIN'), getBookings);
+router.get('/', requireRole('COWORK_ADMIN'), getBookings as any);
 
 /**
  * @route   GET /api/bookings/:bookingId
  * @desc    Get booking details by ID
  * @access  Private (own bookings) or Admin
  */
-router.get('/:bookingId', generalRateLimit, getBookingById);
+router.get('/:bookingId', generalRateLimit, getBookingById as any);
 
 /**
  * @route   PUT /api/bookings/:bookingId
  * @desc    Update booking information
  * @access  Private (own bookings) or Admin
  */
-router.put('/:bookingId', generalRateLimit, updateBooking);
+router.put('/:bookingId', generalRateLimit, updateBooking as any);
 
 /**
  * @route   DELETE /api/bookings/:bookingId/cancel
  * @desc    Cancel a booking
  * @access  Private (own bookings) or Admin
  */
-router.delete('/:bookingId/cancel', generalRateLimit, cancelBooking);
+router.delete('/:bookingId/cancel', generalRateLimit, cancelBooking as any);
 
 // ============================================================================
 // USER-SPECIFIC BOOKING ROUTES
@@ -69,7 +69,7 @@ router.delete('/:bookingId/cancel', generalRateLimit, cancelBooking);
  * @access  Private (all authenticated users)
  * @query   spaceId?, status?, startDate?, endDate?, upcoming?, page?, limit?
  */
-router.get('/my/all', generalRateLimit, getMyBookings);
+router.get('/my/all', generalRateLimit, getMyBookings as any);
 
 /**
  * @route   GET /api/bookings/my/upcoming
@@ -77,7 +77,7 @@ router.get('/my/all', generalRateLimit, getMyBookings);
  * @access  Private (all authenticated users)
  * @query   limit?
  */
-router.get('/my/upcoming', generalRateLimit, getMyUpcomingBookings);
+router.get('/my/upcoming', generalRateLimit, getMyUpcomingBookings as any);
 
 // ============================================================================
 // BOOKING ANALYTICS ROUTES
@@ -89,14 +89,14 @@ router.get('/my/upcoming', generalRateLimit, getMyUpcomingBookings);
  * @access  Admin (COWORK_ADMIN or SUPER_ADMIN)
  * @query   startDate?, endDate?
  */
-router.get('/analytics/statistics', requireRole('COWORK_ADMIN'), getBookingStatistics);
+router.get('/analytics/statistics', requireRole('COWORK_ADMIN'), getBookingStatistics as any);
 
 /**
  * @route   GET /api/bookings/analytics/today
  * @desc    Get today's bookings overview
  * @access  Admin (COWORK_ADMIN or SUPER_ADMIN)
  */
-router.get('/analytics/today', requireRole('COWORK_ADMIN'), getTodaysBookings);
+router.get('/analytics/today', requireRole('COWORK_ADMIN'), getTodaysBookings as any);
 
 /**
  * @route   GET /api/bookings/calendar
@@ -104,6 +104,6 @@ router.get('/analytics/today', requireRole('COWORK_ADMIN'), getTodaysBookings);
  * @access  Private (all authenticated users)
  * @query   month?, year?, spaceId?
  */
-router.get('/calendar', generalRateLimit, getBookingCalendar);
+router.get('/calendar', generalRateLimit, getBookingCalendar as any);
 
 export default router;

@@ -1,5 +1,5 @@
-import { Request, Response } from "express";
-import { AuthenticatedRequest } from "../types/api";
+import { Response } from "express";
+import { BaseRequest, AuthenticatedRequest, ErrorCode } from "../types/api";
 import { z } from "zod";
 import { AuthService } from "../services/authService";
 import { UserService } from "../services/userService";
@@ -50,14 +50,14 @@ const refreshTokenSchema = z.object({
 /**
  * Login user
  */
-export const login = async (req: Request, res: Response): Promise<void> => {
+export const login = async (req: BaseRequest, res: Response): Promise<void> => {
   try {
     // Validate request body
     const validation = loginSchema.safeParse(req.body);
     if (!validation.success) {
       res.status(400).json({
         success: false,
-        error: "Validation failed",
+        error: ErrorCode.VALIDATION_ERROR,
         details: validation.error.errors,
       });
       return;
@@ -101,7 +101,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     console.error("Login error:", error);
     res.status(500).json({
       success: false,
-      error: "Internal server error",
+      error: ErrorCode.INTERNAL_ERROR,
     });
   }
 };
@@ -109,14 +109,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 /**
  * Register new user
  */
-export const register = async (req: Request, res: Response): Promise<void> => {
+export const register = async (req: BaseRequest, res: Response): Promise<void> => {
   try {
     // Validate request body
     const validation = registerSchema.safeParse(req.body);
     if (!validation.success) {
       res.status(400).json({
         success: false,
-        error: "Validation failed",
+        error: ErrorCode.VALIDATION_ERROR,
         details: validation.error.errors,
       });
       return;
@@ -158,7 +158,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     console.error("Registration error:", error);
     res.status(500).json({
       success: false,
-      error: "Internal server error",
+      error: ErrorCode.INTERNAL_ERROR,
     });
   }
 };
@@ -166,13 +166,13 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 /**
  * Logout user
  */
-export const logout = async (req: Request, res: Response): Promise<void> => {
+export const logout = async (req: BaseRequest, res: Response): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       res.status(400).json({
         success: false,
-        error: "Access token required",
+        error: ErrorCode.UNAUTHORIZED_ACCESS,
       });
       return;
     }
@@ -188,7 +188,7 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
     console.error("Logout error:", error);
     res.status(500).json({
       success: false,
-      error: "Internal server error",
+      error: ErrorCode.INTERNAL_ERROR,
     });
   }
 };
@@ -197,7 +197,7 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
  * Refresh access token
  */
 export const refreshToken = async (
-  req: Request,
+  req: BaseRequest,
   res: Response
 ): Promise<void> => {
   try {
@@ -206,7 +206,7 @@ export const refreshToken = async (
     if (!validation.success) {
       res.status(400).json({
         success: false,
-        error: "Validation failed",
+        error: ErrorCode.VALIDATION_ERROR,
         details: validation.error.errors,
       });
       return;
@@ -237,7 +237,7 @@ export const refreshToken = async (
     console.error("Token refresh error:", error);
     res.status(500).json({
       success: false,
-      error: "Internal server error",
+      error: ErrorCode.INTERNAL_ERROR,
     });
   }
 };
@@ -246,7 +246,7 @@ export const refreshToken = async (
  * Get current user session
  */
 export const getSession = async (
-  req: Request,
+  req: BaseRequest,
   res: Response
 ): Promise<void> => {
   try {
@@ -254,7 +254,7 @@ export const getSession = async (
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       res.status(401).json({
         success: false,
-        error: "Access token required",
+        error: ErrorCode.UNAUTHORIZED_ACCESS,
       });
       return;
     }
@@ -265,7 +265,7 @@ export const getSession = async (
     if (!session.isValid) {
       res.status(401).json({
         success: false,
-        error: "Invalid or expired session",
+        error: ErrorCode.TOKEN_INVALID,
       });
       return;
     }
@@ -282,7 +282,7 @@ export const getSession = async (
     console.error("Get session error:", error);
     res.status(500).json({
       success: false,
-      error: "Internal server error",
+      error: ErrorCode.INTERNAL_ERROR,
     });
   }
 };
@@ -298,7 +298,7 @@ export const changePassword = async (
     if (!req.user) {
       res.status(401).json({
         success: false,
-        error: "Authentication required",
+        error: ErrorCode.UNAUTHORIZED_ACCESS,
       });
       return;
     }
@@ -308,7 +308,7 @@ export const changePassword = async (
     if (!validation.success) {
       res.status(400).json({
         success: false,
-        error: "Validation failed",
+        error: ErrorCode.VALIDATION_ERROR,
         details: validation.error.errors,
       });
       return;
@@ -339,7 +339,7 @@ export const changePassword = async (
     console.error("Change password error:", error);
     res.status(500).json({
       success: false,
-      error: "Internal server error",
+      error: ErrorCode.INTERNAL_ERROR,
     });
   }
 };
@@ -348,7 +348,7 @@ export const changePassword = async (
  * Request password reset
  */
 export const resetPassword = async (
-  req: Request,
+  req: BaseRequest,
   res: Response
 ): Promise<void> => {
   try {
@@ -357,7 +357,7 @@ export const resetPassword = async (
     if (!validation.success) {
       res.status(400).json({
         success: false,
-        error: "Validation failed",
+        error: ErrorCode.VALIDATION_ERROR,
         details: validation.error.errors,
       });
       return;
@@ -384,7 +384,7 @@ export const resetPassword = async (
     console.error("Reset password error:", error);
     res.status(500).json({
       success: false,
-      error: "Internal server error",
+      error: ErrorCode.INTERNAL_ERROR,
     });
   }
 };
@@ -393,7 +393,7 @@ export const resetPassword = async (
  * Confirm password reset
  */
 export const confirmResetPassword = async (
-  req: Request,
+  req: BaseRequest,
   res: Response
 ): Promise<void> => {
   try {
@@ -402,7 +402,7 @@ export const confirmResetPassword = async (
     if (!validation.success) {
       res.status(400).json({
         success: false,
-        error: "Validation failed",
+        error: ErrorCode.VALIDATION_ERROR,
         details: validation.error.errors,
       });
       return;
@@ -429,7 +429,7 @@ export const confirmResetPassword = async (
     console.error("Confirm reset password error:", error);
     res.status(500).json({
       success: false,
-      error: "Internal server error",
+      error: ErrorCode.INTERNAL_ERROR,
     });
   }
 };
@@ -445,7 +445,7 @@ export const verifyPermissions = async (
     if (!req.user) {
       res.status(401).json({
         success: false,
-        error: "Authentication required",
+        error: ErrorCode.UNAUTHORIZED_ACCESS,
       });
       return;
     }
@@ -455,7 +455,7 @@ export const verifyPermissions = async (
     if (!action || !resource) {
       res.status(400).json({
         success: false,
-        error: "Action and resource parameters required",
+        error: ErrorCode.MISSING_REQUIRED_FIELD,
       });
       return;
     }
@@ -484,7 +484,7 @@ export const verifyPermissions = async (
     console.error("Verify permissions error:", error);
     res.status(500).json({
       success: false,
-      error: "Internal server error",
+      error: ErrorCode.INTERNAL_ERROR,
     });
   }
 };
@@ -500,7 +500,7 @@ export const getProfile = async (
     if (!req.user) {
       res.status(401).json({
         success: false,
-        error: "Authentication required",
+        error: ErrorCode.UNAUTHORIZED_ACCESS,
       });
       return;
     }
@@ -511,7 +511,7 @@ export const getProfile = async (
     if (!user) {
       res.status(404).json({
         success: false,
-        error: "User not found",
+        error: ErrorCode.RESOURCE_NOT_FOUND,
       });
       return;
     }
@@ -527,7 +527,7 @@ export const getProfile = async (
     console.error("Get profile error:", error);
     res.status(500).json({
       success: false,
-      error: "Internal server error",
+      error: ErrorCode.INTERNAL_ERROR,
     });
   }
 };
@@ -543,7 +543,7 @@ export const updateProfile = async (
     if (!req.user) {
       res.status(401).json({
         success: false,
-        error: "Authentication required",
+        error: ErrorCode.UNAUTHORIZED_ACCESS,
       });
       return;
     }
@@ -565,7 +565,7 @@ export const updateProfile = async (
     if (!updatedUser) {
       res.status(404).json({
         success: false,
-        error: "User not found",
+        error: ErrorCode.RESOURCE_NOT_FOUND,
       });
       return;
     }
@@ -580,7 +580,7 @@ export const updateProfile = async (
     console.error("Update profile error:", error);
     res.status(500).json({
       success: false,
-      error: "Internal server error",
+      error: ErrorCode.INTERNAL_ERROR,
     });
   }
 };

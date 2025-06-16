@@ -1,6 +1,6 @@
 import express from 'express';
 import { contractLifecycleController } from '../controllers/contractLifecycleController';
-import { authenticate, authorize } from '../middleware/auth';
+import { authenticate, requireRole } from '../middleware/auth';
 
 const router = express.Router();
 
@@ -24,8 +24,8 @@ router.use(authenticate);
  * @query {string} sortOrder - Sort order: asc or desc (default: desc)
  */
 router.get('/', 
-  authorize(['ADMIN', 'MANAGER', 'EMPLOYEE']),
-  contractLifecycleController.getContracts.bind(contractLifecycleController)
+  requireRole('CLIENT_ADMIN'),
+  contractLifecycleController.getContracts.bind(contractLifecycleController) as any
 );
 
 /**
@@ -35,8 +35,8 @@ router.get('/',
  * @body {CreateContractData} Contract data
  */
 router.post('/',
-  authorize(['ADMIN', 'MANAGER']),
-  contractLifecycleController.createContract.bind(contractLifecycleController)
+  requireRole('COWORK_ADMIN'),
+  contractLifecycleController.createContract.bind(contractLifecycleController) as any
 );
 
 /**
@@ -45,8 +45,8 @@ router.post('/',
  * @access Private (Admin, Manager)
  */
 router.get('/stats',
-  authorize(['ADMIN', 'MANAGER']),
-  contractLifecycleController.getContractStats.bind(contractLifecycleController)
+  requireRole('COWORK_ADMIN'),
+  contractLifecycleController.getContractStats.bind(contractLifecycleController) as any
 );
 
 /**
@@ -56,8 +56,8 @@ router.get('/stats',
  * @query {number} days - Number of days (default: 30, max: 365)
  */
 router.get('/expiring',
-  authorize(['ADMIN', 'MANAGER', 'EMPLOYEE']),
-  contractLifecycleController.getExpiringContracts.bind(contractLifecycleController)
+  requireRole('CLIENT_ADMIN'),
+  contractLifecycleController.getExpiringContracts.bind(contractLifecycleController) as any
 );
 
 /**
@@ -67,8 +67,8 @@ router.get('/expiring',
  * @param {string} id - Contract ID
  */
 router.get('/:id',
-  authorize(['ADMIN', 'MANAGER', 'EMPLOYEE']),
-  contractLifecycleController.getContractById.bind(contractLifecycleController)
+  requireRole('CLIENT_ADMIN'),
+  contractLifecycleController.getContractById.bind(contractLifecycleController) as any
 );
 
 /**
@@ -79,8 +79,8 @@ router.get('/:id',
  * @body {UpdateContractData} Updated contract data
  */
 router.put('/:id',
-  authorize(['ADMIN', 'MANAGER']),
-  contractLifecycleController.updateContract.bind(contractLifecycleController)
+  requireRole('COWORK_ADMIN'),
+  contractLifecycleController.updateContract.bind(contractLifecycleController) as any
 );
 
 /**
@@ -90,8 +90,8 @@ router.put('/:id',
  * @param {string} id - Contract ID
  */
 router.post('/:id/activate',
-  authorize(['ADMIN', 'MANAGER']),
-  contractLifecycleController.activateContract.bind(contractLifecycleController)
+  requireRole('COWORK_ADMIN'),
+  contractLifecycleController.activateContract.bind(contractLifecycleController) as any
 );
 
 /**
@@ -102,8 +102,8 @@ router.post('/:id/activate',
  * @body {object} { reason?: string }
  */
 router.post('/:id/suspend',
-  authorize(['ADMIN', 'MANAGER']),
-  contractLifecycleController.suspendContract.bind(contractLifecycleController)
+  requireRole('COWORK_ADMIN'),
+  contractLifecycleController.suspendContract.bind(contractLifecycleController) as any
 );
 
 /**
@@ -113,8 +113,8 @@ router.post('/:id/suspend',
  * @param {string} id - Contract ID
  */
 router.post('/:id/reactivate',
-  authorize(['ADMIN', 'MANAGER']),
-  contractLifecycleController.reactivateContract.bind(contractLifecycleController)
+  requireRole('COWORK_ADMIN'),
+  contractLifecycleController.reactivateContract.bind(contractLifecycleController) as any
 );
 
 /**
@@ -125,8 +125,8 @@ router.post('/:id/reactivate',
  * @body {object} { reason?: string, terminationDate?: Date }
  */
 router.post('/:id/terminate',
-  authorize(['ADMIN']),
-  contractLifecycleController.terminateContract.bind(contractLifecycleController)
+  requireRole('COWORK_ADMIN'),
+  contractLifecycleController.terminateContract.bind(contractLifecycleController) as any
 );
 
 /**
@@ -137,8 +137,8 @@ router.post('/:id/terminate',
  * @body {object} { reason?: string }
  */
 router.post('/:id/cancel',
-  authorize(['ADMIN', 'MANAGER']),
-  contractLifecycleController.cancelContract.bind(contractLifecycleController)
+  requireRole('COWORK_ADMIN'),
+  contractLifecycleController.cancelContract.bind(contractLifecycleController) as any
 );
 
 /**
@@ -148,8 +148,8 @@ router.post('/:id/cancel',
  * @param {string} id - Contract ID
  */
 router.get('/:id/activity',
-  authorize(['ADMIN', 'MANAGER', 'EMPLOYEE']),
-  contractLifecycleController.getContractActivity.bind(contractLifecycleController)
+  requireRole('CLIENT_ADMIN'),
+  contractLifecycleController.getContractActivity.bind(contractLifecycleController) as any
 );
 
 /**
@@ -159,8 +159,8 @@ router.get('/:id/activity',
  * @param {string} id - Contract ID
  */
 router.post('/:id/send-for-signature',
-  authorize(['ADMIN', 'MANAGER']),
-  contractLifecycleController.sendContractForSignature.bind(contractLifecycleController)
+  requireRole('COWORK_ADMIN'),
+  contractLifecycleController.sendContractForSignature.bind(contractLifecycleController) as any
 );
 
 export { router as contractLifecycleRoutes };

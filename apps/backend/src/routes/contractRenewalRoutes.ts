@@ -1,6 +1,6 @@
 import express from 'express';
 import { contractRenewalController } from '../controllers/contractRenewalController';
-import { authenticate, authorize } from '../middleware/auth';
+import { authenticate, requireRole } from '../middleware/auth';
 
 const router = express.Router();
 
@@ -13,8 +13,8 @@ router.use(authenticate);
  * @access Private (Admin, Manager)
  */
 router.get('/rules', 
-  authorize(['ADMIN', 'MANAGER']),
-  contractRenewalController.getRenewalRules.bind(contractRenewalController)
+  requireRole('COWORK_ADMIN'),
+  contractRenewalController.getRenewalRules.bind(contractRenewalController) as any as any
 );
 
 /**
@@ -24,8 +24,8 @@ router.get('/rules',
  * @body {CreateRenewalRuleData} Rule data
  */
 router.post('/rules',
-  authorize(['ADMIN', 'MANAGER']),
-  contractRenewalController.createRenewalRule.bind(contractRenewalController)
+  requireRole('COWORK_ADMIN'),
+  contractRenewalController.createRenewalRule.bind(contractRenewalController) as any
 );
 
 /**
@@ -36,8 +36,8 @@ router.post('/rules',
  * @body {UpdateRenewalRuleData} Updated rule data
  */
 router.put('/rules/:id',
-  authorize(['ADMIN', 'MANAGER']),
-  contractRenewalController.updateRenewalRule.bind(contractRenewalController)
+  requireRole('COWORK_ADMIN'),
+  contractRenewalController.updateRenewalRule.bind(contractRenewalController) as any
 );
 
 /**
@@ -47,8 +47,8 @@ router.put('/rules/:id',
  * @param {string} id - Rule ID
  */
 router.delete('/rules/:id',
-  authorize(['ADMIN']),
-  contractRenewalController.deleteRenewalRule.bind(contractRenewalController)
+  requireRole('COWORK_ADMIN'),
+  contractRenewalController.deleteRenewalRule.bind(contractRenewalController) as any
 );
 
 /**
@@ -59,8 +59,8 @@ router.delete('/rules/:id',
  * @body {object} { isActive: boolean }
  */
 router.patch('/rules/:id/toggle',
-  authorize(['ADMIN', 'MANAGER']),
-  contractRenewalController.toggleRuleStatus.bind(contractRenewalController)
+  requireRole('COWORK_ADMIN'),
+  contractRenewalController.toggleRuleStatus.bind(contractRenewalController) as any
 );
 
 /**
@@ -78,8 +78,8 @@ router.patch('/rules/:id/toggle',
  * @query {string} sortOrder - Sort order: asc or desc (default: desc)
  */
 router.get('/proposals', 
-  authorize(['ADMIN', 'MANAGER', 'EMPLOYEE']),
-  contractRenewalController.getRenewalProposals.bind(contractRenewalController)
+  requireRole('CLIENT_ADMIN'),
+  contractRenewalController.getRenewalProposals.bind(contractRenewalController) as any
 );
 
 /**
@@ -90,8 +90,8 @@ router.get('/proposals',
  * @body {object} { ruleId?: string }
  */
 router.post('/proposals/contract/:contractId',
-  authorize(['ADMIN', 'MANAGER']),
-  contractRenewalController.createRenewalProposal.bind(contractRenewalController)
+  requireRole('COWORK_ADMIN'),
+  contractRenewalController.createRenewalProposal.bind(contractRenewalController) as any
 );
 
 /**
@@ -102,8 +102,8 @@ router.post('/proposals/contract/:contractId',
  * @body {ProcessRenewalData} Processing data
  */
 router.post('/proposals/:id/process',
-  authorize(['ADMIN', 'MANAGER']),
-  contractRenewalController.processRenewalProposal.bind(contractRenewalController)
+  requireRole('COWORK_ADMIN'),
+  contractRenewalController.processRenewalProposal.bind(contractRenewalController) as any
 );
 
 /**
@@ -112,8 +112,8 @@ router.post('/proposals/:id/process',
  * @access Private (Admin)
  */
 router.post('/check',
-  authorize(['ADMIN']),
-  contractRenewalController.checkAndCreateRenewals.bind(contractRenewalController)
+  requireRole('COWORK_ADMIN'),
+  contractRenewalController.checkAndCreateRenewals.bind(contractRenewalController) as any
 );
 
 /**
@@ -122,8 +122,8 @@ router.post('/check',
  * @access Private (Admin, Manager)
  */
 router.get('/stats',
-  authorize(['ADMIN', 'MANAGER']),
-  contractRenewalController.getRenewalStats.bind(contractRenewalController)
+  requireRole('COWORK_ADMIN'),
+  contractRenewalController.getRenewalStats.bind(contractRenewalController) as any
 );
 
 export { router as contractRenewalRoutes };

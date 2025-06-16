@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { z } from 'zod';
 import { activityService } from '../services/activityService';
 import { handleController } from '../utils/response';
-import { AuthenticatedRequest } from '../types/api';
+import { AuthenticatedRequest, ErrorCode } from '../types/api';
 
 // Create activity schema
 const createActivitySchema = z.object({
