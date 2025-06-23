@@ -39,17 +39,20 @@ interface LoginFormProps {
 // Mapeo de errores comunes a mensajes amigables
 const errorMessages: Record<string, string> = {
   "Invalid credentials": "Email o contraseña incorrectos",
+  "Invalid email or password": "Email o contraseña incorrectos",
   "User not found": "No existe una cuenta con este email",
   "Invalid password": "La contraseña es incorrecta",
-  "Account disabled":
-    "Tu cuenta ha sido deshabilitada. Contacta al administrador",
+  "Account disabled": "Tu cuenta ha sido deshabilitada. Contacta al administrador",
   "Account locked": "Tu cuenta está bloqueada temporalmente por seguridad",
   "Email not verified": "Por favor verifica tu email antes de iniciar sesión",
   "Invalid tenant": "El espacio de trabajo especificado no existe",
   "User not member of tenant": "No tienes acceso a este espacio de trabajo",
   "Network request failed": "Error de conexión. Verifica tu internet",
   "Failed to fetch": "No se pudo conectar con el servidor",
+  "Network error": "Error de conexión. Verifica tu internet",
   "Too many requests": "Demasiados intentos. Por favor espera unos minutos",
+  "No active workspaces found for this user": "No tienes espacios de trabajo activos asociados",
+  "User not found in this workspace": "No tienes acceso a este espacio de trabajo",
 };
 
 function getErrorMessage(error: string): string {

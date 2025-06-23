@@ -1,3 +1,4 @@
+import React from "react";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { AuthUser, UserRole } from "@sweetspot/shared";
@@ -144,11 +145,20 @@ export const useIsAuthenticated = () =>
   useAuthStore((state) => state.isAuthenticated);
 export const useAuthLoading = () => useAuthStore((state) => state.isLoading);
 export const useAuthError = () => useAuthStore((state) => state.error);
-export const useAuthTokens = () =>
-  useAuthStore((state) => ({
-    accessToken: state.accessToken,
-    refreshToken: state.refreshToken,
-  }));
+// Separate token selectors to avoid object recreation
+export const useAccessToken = () => useAuthStore((state) => state.accessToken);
+export const useRefreshToken = () => useAuthStore((state) => state.refreshToken);
+
+// Keep the combined selector but with proper memoization
+export const useAuthTokens = () => {
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const refreshToken = useAuthStore((state) => state.refreshToken);
+  
+  return React.useMemo(() => ({
+    accessToken,
+    refreshToken,
+  }), [accessToken, refreshToken]);
+};
 
 // Role-based selectors
 export const useUserRole = () => useAuthStore((state) => state.user?.role);

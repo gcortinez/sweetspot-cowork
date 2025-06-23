@@ -32,6 +32,8 @@ export {
   useAuthLoading as useAuthLoadingStore,
   useAuthError,
   useAuthTokens,
+  useAccessToken,
+  useRefreshToken,
   useUserRole as useUserRoleStore,
   useCanAccess,
   useHasRole,

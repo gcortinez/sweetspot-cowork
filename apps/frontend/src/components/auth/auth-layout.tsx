@@ -42,7 +42,7 @@ export function AuthLayout({ children, title, description }: AuthLayoutProps) {
             </div>
             <div>
               <h1 className="text-3xl font-bold">SweetSpot</h1>
-              <p className="text-sm opacity-80">Espacios de Coworking</p>
+              <p className="text-sm opacity-80">Instalaciones de Coworking</p>
             </div>
           </a>
 
@@ -135,7 +135,7 @@ export function AuthLayout({ children, title, description }: AuthLayoutProps) {
               </div>
               <div className="text-left">
                 <h1 className="text-2xl font-bold text-gray-900">SweetSpot</h1>
-                <p className="text-sm text-gray-600">Espacios de Coworking</p>
+                <p className="text-sm text-gray-600">Instalaciones de Coworking</p>
               </div>
             </a>
           </div>

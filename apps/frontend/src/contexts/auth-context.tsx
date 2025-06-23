@@ -80,25 +80,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (isInitialized) return;
 
     const initializeAuth = async () => {
+      console.log('🔑 Initializing auth context...');
       setLoading(true);
 
       try {
+        console.log('🔍 Checking for existing session...');
         // Initialize session using session manager
         const session = await sessionManager.initializeSession();
 
         if (session) {
+          console.log('✅ Session restored:', { userId: session.user.id, email: session.user.email });
           // Session restored successfully
           setAuth(session.user, session.accessToken, session.refreshToken);
         } else {
+          console.log('❌ No valid session found, clearing auth');
           // No valid session found
           clearAuth();
         }
       } catch (error) {
-        console.error("Auth initialization error:", error);
+        console.error("❌ Auth initialization error:", error);
         clearAuth();
       } finally {
         setLoading(false);
         setInitialized(true);
+        console.log('🏁 Auth initialization complete');
       }
     };
 
@@ -144,7 +149,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setError(null);
 
       try {
+        console.log('🔐 Attempting login with:', { email: credentials.email, hasTenantSlug: !!credentials.tenantSlug });
         const response = await authAPI.login(credentials);
+        console.log('📝 Login response:', response);
 
         if (response.success) {
           // Check if we have multiple tenants to choose from
@@ -188,6 +195,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
             }
           } else if (response.user && response.accessToken) {
             // Single tenant or tenant was specified - normal login flow
+            console.log('👤 User data received:', response.user);
+            console.log('🏢 Tenant data:', response.tenant);
+            
             const sessionData: SessionData = {
               user: response.user,
               accessToken: response.accessToken,
@@ -198,6 +208,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             sessionManager.storeSession(sessionData);
             setAuth(response.user, response.accessToken, response.refreshToken);
+
 
             // Redirect to dashboard
             router.push(`/dashboard`);
@@ -278,6 +289,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } finally {
       // Clear session using session manager
       sessionManager.clearSession();
+
+      // Set flag to prevent redirect on landing page
+      localStorage.setItem('recent-logout', 'true');
 
       clearAuth();
       setLoading(false);

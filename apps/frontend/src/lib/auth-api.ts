@@ -38,10 +38,24 @@ class AuthAPI {
     });
 
     if (!response.ok) {
-      const errorData = await response
-        .json()
-        .catch(() => ({ error: "Network error" }));
-      throw new Error(errorData.error || `HTTP ${response.status}`);
+      let errorMessage = `HTTP ${response.status}`;
+      
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorData.message || errorMessage;
+      } catch (jsonError) {
+        // If JSON parsing fails, try to get text response
+        try {
+          const textResponse = await response.text();
+          if (textResponse) {
+            errorMessage = textResponse;
+          }
+        } catch (textError) {
+          errorMessage = "Network error";
+        }
+      }
+      
+      throw new Error(errorMessage);
     }
 
     return response.json();
@@ -49,13 +63,11 @@ class AuthAPI {
 
   async login(data: LoginRequest): Promise<AuthResponse> {
     try {
-      // TEMPORARY: Use bypass endpoint
-      const response = await this.request("/bypass-login", {
+      const response = await this.request("/login", {
         method: "POST",
         body: JSON.stringify(data),
       });
 
-      // The response is already in the correct format
       return {
         success: response.success,
         user: response.user,
