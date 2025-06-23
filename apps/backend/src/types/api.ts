@@ -38,7 +38,7 @@ export interface BaseRequest extends Request {
     id: string;
     email: string;
     role: string;
-    tenantId: string;
+    tenantId: string | null; // null for super admins without tenant
     clientId?: string;
     firstName?: string;
     lastName?: string;
@@ -49,15 +49,15 @@ export interface BaseRequest extends Request {
     name: string;
     domain?: string;
     slug?: string;
-  };
+  } | null; // null for super admins without tenant
 }
 
 // Extended Request interface with custom properties
 export interface AuthenticatedRequest extends BaseRequest {
   user: NonNullable<BaseRequest['user']>;
-  tenant: NonNullable<BaseRequest['tenant']>;
+  tenant: BaseRequest['tenant']; // Can be null for super admins without tenant
   userId: string; // Convenience property
-  tenantId: string; // Convenience property
+  tenantId: string | null; // Convenience property, null for super admins without tenant
 }
 
 // Pagination Query Parameters

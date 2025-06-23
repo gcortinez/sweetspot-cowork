@@ -50,11 +50,56 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // New status colors
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        // Surface colors
+        surface: {
+          primary: "hsl(var(--surface-primary))",
+          secondary: "hsl(var(--surface-secondary))",
+          tertiary: "hsl(var(--surface-tertiary))",
+        },
+        // Brand colors
+        brand: {
+          blue: "hsl(var(--brand-blue))",
+          purple: "hsl(var(--brand-purple))",
+          green: "hsl(var(--brand-green))",
+        },
+        // Theme-specific colors
+        'super-admin': {
+          primary: "hsl(var(--super-admin-primary))",
+          secondary: "hsl(var(--super-admin-secondary))",
+          accent: "hsl(var(--super-admin-accent))",
+        },
+        cowork: {
+          primary: "hsl(var(--cowork-primary))",
+          secondary: "hsl(var(--cowork-secondary))",
+          accent: "hsl(var(--cowork-accent))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        xl: "calc(var(--radius) + 4px)",
+        "2xl": "calc(var(--radius) + 8px)",
+      },
+      boxShadow: {
+        'soft': '0 2px 8px 0 rgba(0, 0, 0, 0.06)',
+        'medium': '0 4px 16px 0 rgba(0, 0, 0, 0.1)',
+        'strong': '0 8px 32px 0 rgba(0, 0, 0, 0.15)',
+        'brand': '0 4px 16px 0 rgba(59, 130, 246, 0.15)',
+        'purple': '0 4px 16px 0 rgba(147, 51, 234, 0.15)',
+      },
+      spacing: {
+        '18': '4.5rem',
+        '88': '22rem',
       },
       keyframes: {
         "accordion-down": {

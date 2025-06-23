@@ -97,7 +97,7 @@ async function createSuperAdmin() {
 
     console.log("\n✅ Super Admin created successfully!");
     console.log("📧 Email: gcortinez@getsweetspot.io");
-    console.log("🔑 Temporary Password: TempPassword123!");
+    console.log("🔑 Temporary Password: 123456");
     console.log("⚠️  Please change your password after first login!");
     console.log(`🏢 Tenant: ${superAdmin.tenant?.name}`);
     console.log(`🆔 User ID: ${superAdmin.id}`);

@@ -3,7 +3,7 @@ import { Database } from "@sweetspot/shared";
 import dotenv from "dotenv";
 
 // Load environment variables
-dotenv.config({ path: ".env.local" });
+dotenv.config();
 
 // Supabase configuration
 const supabaseUrl = process.env.SUPABASE_URL!;

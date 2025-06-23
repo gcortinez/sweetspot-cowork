@@ -112,7 +112,7 @@ enum TenantStatus {
 
 model User {
     id                    String     @id @default(cuid())
-    tenantId              String
+    tenantId              String?    // Allow null for Super Admins
     supabaseId            String     @unique
     email                 String
     firstName             String
@@ -131,7 +131,7 @@ model User {
     updatedAt             DateTime   @updatedAt
 
     // Relationships
-    tenant                  Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    tenant                  Tenant?              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
     client                  Client?              @relation(fields: [clientId], references: [id])
     clientId                String?
     bookings                Booking[]
