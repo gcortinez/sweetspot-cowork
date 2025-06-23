@@ -22,14 +22,28 @@ import { useApi } from "@/hooks/use-api";
 
 interface User {
   id: string;
+  tenantId: string;
+  email: string;
   firstName: string;
   lastName: string;
-  email: string;
-  role: 'SUPER_ADMIN' | 'COWORK_ADMIN' | 'CLIENT_ADMIN' | 'END_USER';
-  position?: string;
-  department?: string;
+  phone?: string;
   avatar?: string;
-  isActive: boolean;
+  role: 'SUPER_ADMIN' | 'COWORK_ADMIN' | 'CLIENT_ADMIN' | 'END_USER';
+  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+  lastLoginAt?: string;
+  clientId?: string;
+  createdAt: string;
+  updatedAt: string;
+  fullName?: string;
+  tenant?: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  client?: {
+    id: string;
+    name: string;
+  };
 }
 
 interface Lead {
@@ -105,107 +119,63 @@ export default function AssignUserModal({
   const loadUsers = async () => {
     setLoading(true);
     try {
-      // Try to load users from API
-      const response = await api.get('/api/users?assignable=true');
+      console.log('=== USER ASSIGNMENT MODAL DEBUG ===');
+      console.log('Loading users from API for lead assignment...');
+      console.log('Lead being assigned:', lead);
+      
+      // Load users from API - only assignable users (COWORK_ADMIN and END_USER)
+      const response = await api.get('/api/users?assignable=true&limit=100');
       
       if (!response.ok) {
-        console.log('API failed, using mock data for development');
-        // Fallback to mock data for development
-        const mockUsers: User[] = [
-          {
-            id: "user-1",
-            firstName: "Carlos",
-            lastName: "González",
-            email: "carlos@sweetspot.cl",
-            role: "COWORK_ADMIN",
-            position: "Gerente de Operaciones",
-            department: "Administración",
-            isActive: true
-          },
-          {
-            id: "user-2", 
-            firstName: "María",
-            lastName: "Rodríguez",
-            email: "maria@sweetspot.cl",
-            role: "COWORK_ADMIN",
-            position: "Coordinadora de Ventas",
-            department: "Ventas",
-            isActive: true
-          },
-          {
-            id: "user-3",
-            firstName: "Ana",
-            lastName: "Torres",
-            email: "ana@sweetspot.cl", 
-            role: "END_USER",
-            position: "Asistente Comercial",
-            department: "Ventas",
-            isActive: true
-          },
-          {
-            id: "user-4",
-            firstName: "Roberto",
-            lastName: "Silva",
-            email: "roberto@sweetspot.cl",
-            role: "COWORK_ADMIN", 
-            position: "Supervisor",
-            department: "Operaciones",
-            isActive: true
-          }
-        ];
-
-        // Filter only users that can be assigned leads (admins and end users, not clients)
-        const assignableUsers = mockUsers.filter(user => 
-          user.isActive && 
-          ['COWORK_ADMIN', 'END_USER'].includes(user.role)
-        );
-
-        setUsers(assignableUsers);
-        return;
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Error ${response.status}: No se pudieron cargar los usuarios`);
       }
 
       const data = await response.json();
-      console.log('Users loaded from API:', data);
+      console.log('Users API response:', data);
       
       // Extract users from API response structure
       const usersArray = Array.isArray(data.data?.users) ? data.data.users : [];
+      console.log('Extracted users array:', usersArray);
       
-      // Filter only users that can be assigned leads (admins and end users, not clients)
-      const assignableUsers = usersArray.filter((user: User) => 
-        user.isActive && 
-        ['COWORK_ADMIN', 'END_USER'].includes(user.role)
-      );
+      // The backend already filters for assignable users, but let's ensure they're active
+      const assignableUsers = usersArray.filter((user: User) => {
+        const isAssignable = user.status === 'ACTIVE' && ['COWORK_ADMIN', 'END_USER'].includes(user.role);
+        console.log(`User ${user.firstName} ${user.lastName} (${user.role}, status: ${user.status}) - assignable: ${isAssignable}`);
+        return isAssignable;
+      });
 
+      console.log('Final assignable users:', assignableUsers);
       setUsers(assignableUsers);
-    } catch (error) {
-      console.error('Error loading users:', error);
-      
-      // Fallback to mock data on error
-      console.log('Using mock data due to error');
-      const mockUsers: User[] = [
-        {
-          id: "user-1",
-          firstName: "Carlos",
-          lastName: "González", 
-          email: "carlos@sweetspot.cl",
-          role: "COWORK_ADMIN",
-          position: "Gerente de Operaciones",
-          department: "Administración",
-          isActive: true
-        },
-        {
-          id: "user-2",
-          firstName: "María",
-          lastName: "Rodríguez",
-          email: "maria@sweetspot.cl",
-          role: "COWORK_ADMIN",
-          position: "Coordinadora de Ventas",
-          department: "Ventas",
-          isActive: true
-        }
-      ];
 
-      setUsers(mockUsers);
+      if (assignableUsers.length === 0) {
+        console.log('⚠️ No assignable users found in the cowork');
+        toast({
+          title: "No hay usuarios disponibles",
+          description: "No se encontraron usuarios del cowork que puedan ser asignados a prospectos",
+          variant: "warning",
+        });
+      } else {
+        console.log(`✅ Found ${assignableUsers.length} assignable users from the current cowork`);
+        console.log('Users available for assignment:', assignableUsers.map(u => ({
+          id: u.id,
+          name: `${u.firstName} ${u.lastName}`,
+          role: u.role,
+          status: u.status,
+          tenantId: u.tenantId
+        })));
+      }
+    } catch (error) {
+      console.error('Error loading users from API:', error);
+      
+      toast({
+        title: "Error al cargar usuarios",
+        description: error instanceof Error ? error.message : "No se pudieron cargar los usuarios del cowork",
+        variant: "destructive",
+      });
+      
+      // Set empty users array on error
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -306,7 +276,7 @@ export default function AssignUserModal({
   };
 
   const filteredUsers = users.filter(user => {
-    const searchString = `${user.firstName} ${user.lastName} ${user.email} ${user.position || ''}`
+    const searchString = `${user.firstName} ${user.lastName} ${user.email} ${user.phone || ''}`
       .toLowerCase();
     return searchString.includes(searchTerm.toLowerCase());
   });
@@ -440,9 +410,9 @@ export default function AssignUserModal({
                             <Mail className="h-3 w-3" />
                             <span>{user.email}</span>
                           </div>
-                          {user.position && (
+                          {user.phone && (
                             <p className="text-sm text-gray-500 mt-1">
-                              {user.position} - {user.department}
+                              📞 {user.phone}
                             </p>
                           )}
                         </div>

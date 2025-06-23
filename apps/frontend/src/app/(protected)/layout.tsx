@@ -2,9 +2,14 @@
 
 import { useState } from "react";
 import { RequireAuth } from "@/components/auth/auth-guard";
+import { CoworkProvider } from "@/providers/cowork-provider";
+import { ThemeProvider } from "@/contexts/theme-context";
+import { NavigationGuard } from "@/components/navigation/navigation-guard";
 import { Sidebar } from "@/components/navigation/sidebar";
+import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
+import { PageTransition } from "@/components/ui/page-transition";
 
 export default function ProtectedLayout({
   children,
@@ -24,7 +29,10 @@ export default function ProtectedLayout({
         </div>
       }
     >
-      <div className="flex h-screen bg-surface-secondary">
+      <ThemeProvider>
+        <CoworkProvider>
+          <NavigationGuard>
+            <div className="flex h-screen bg-surface-secondary transition-theme">
         {/* Mobile backdrop */}
         {sidebarOpen && (
           <div 
@@ -45,22 +53,25 @@ export default function ProtectedLayout({
         </div>
         
         {/* Main content */}
-        <main className="flex-1 overflow-auto">
-          {/* Mobile header */}
-          <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSidebarOpen(true)}
-              className="text-gray-600 hover:text-gray-900"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-          </div>
+        <main className="flex-1 overflow-auto flex flex-col">
+          {/* Header */}
+          <Header 
+            onMobileMenuToggle={() => setSidebarOpen(!sidebarOpen)}
+            isMobileMenuOpen={sidebarOpen}
+            showMobileMenuButton={true}
+          />
           
-          <div className="h-full">{children}</div>
+          {/* Page content */}
+          <div className="flex-1 overflow-auto">
+            <PageTransition>
+              {children}
+            </PageTransition>
+          </div>
         </main>
-      </div>
+            </div>
+          </NavigationGuard>
+        </CoworkProvider>
+      </ThemeProvider>
     </RequireAuth>
   );
 }

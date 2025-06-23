@@ -143,7 +143,7 @@ const NotificationsPage: React.FC = () => {
   const categories = [
     { id: "bookings", name: "Reservas", icon: Bell },
     { id: "billing", name: "Facturación", icon: Mail },
-    { id: "spaces", name: "Espacios", icon: MessageSquare },
+    { id: "spaces", name: "Instalaciones", icon: MessageSquare },
     { id: "security", name: "Seguridad", icon: CheckCircle },
   ];
 

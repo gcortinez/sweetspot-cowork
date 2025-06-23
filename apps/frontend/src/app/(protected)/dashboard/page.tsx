@@ -1,281 +1,220 @@
 "use client";
 
 import React from "react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useI18n } from "@/lib/i18n";
+import { useDashboard } from "@/hooks/use-dashboard";
+import { DashboardMetrics } from "@/components/dashboard/dashboard-metrics";
+import { RecentBookings } from "@/components/dashboard/recent-bookings";
+import { ActivityFeed } from "@/components/dashboard/activity-feed";
+import { QuickActions } from "@/components/dashboard/quick-actions";
+import { AlertsPanel } from "@/components/dashboard/alerts-panel";
+import { CoworkPerformanceCard } from "@/components/dashboard/cowork-performance";
+import { useCoworkContextOptional } from "@/providers/cowork-provider";
+import { useAuth } from "@/hooks/use-auth";
+import { useTheme } from "@/contexts/theme-context";
 import {
-  Calendar,
-  Users,
-  Building2,
-  TrendingUp,
-  Clock,
   Plus,
-  ArrowRight,
-  CheckCircle,
-  AlertCircle,
-  Star,
+  RefreshCw,
+  Crown,
+  Building2,
+  Activity,
+  AlertTriangle
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Motion, StaggerContainer, ScrollReveal } from "@/components/ui/motion";
+import { LoadingPage, LoadingCard, LoadingGrid } from "@/components/ui/loading";
 
 const DashboardPage: React.FC = () => {
-  const { t } = useI18n();
+  const { user } = useAuth();
+  const coworkContext = useCoworkContextOptional();
+  const { config } = useTheme();
+  const {
+    metrics,
+    isLoading,
+    error,
+    refreshMetrics,
+    isSuperAdmin,
+    activeCowork
+  } = useDashboard();
+
+  const context = isSuperAdmin ? 'super-admin' : activeCowork ? 'cowork' : 'default';
+  const contextName = isSuperAdmin ? 'Super Admin' : activeCowork?.name || 'Dashboard';
+
+  const handleDismissAlert = (alertId: string) => {
+    // TODO: Implement alert dismissal
+    console.log('Dismissing alert:', alertId);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="h-full bg-surface-secondary">
+        <Motion animation="fade-in" duration={400}>
+          {/* Header Skeleton */}
+          <div className="bg-surface-primary border-b border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="h-6 w-6 bg-gray-200 dark:bg-gray-700 rounded loading-skeleton" />
+              <div className="h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded loading-skeleton" />
+            </div>
+            <div className="h-4 w-64 bg-gray-200 dark:bg-gray-700 rounded loading-skeleton" />
+          </div>
+          
+          {/* Content Skeleton */}
+          <div className="p-4 sm:p-6 space-y-6">
+            {/* Metrics Grid Skeleton */}
+            <LoadingGrid items={4} />
+            
+            {/* Main Content Skeleton */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                <LoadingCard lines={5} showAvatar />
+                <LoadingCard lines={3} />
+              </div>
+              <div className="space-y-6">
+                <LoadingCard lines={4} />
+                <LoadingCard lines={6} showAvatar />
+                <LoadingCard lines={3} />
+              </div>
+            </div>
+          </div>
+        </Motion>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="h-full bg-surface-secondary flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Error al cargar dashboard</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={refreshMetrics} variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Reintentar
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!metrics) {
+    return (
+      <div className="h-full bg-surface-secondary flex items-center justify-center">
+        <div className="text-center">
+          <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600">No hay datos disponibles</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="h-full bg-surface-secondary">
+    <div className="h-full bg-surface-secondary transition-theme">
       {/* Header */}
-      <div className="bg-surface-primary border-b border-gray-200">
-        <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <Motion animation="fade-in-down" duration={600}>
+        <div className="bg-surface-primary border-b border-gray-200 dark:border-gray-700">
+          <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-h1 font-semibold text-gray-900">{t("nav.dashboard")}</h1>
-              <p className="text-sm sm:text-body text-gray-600 mt-1">
-                {t("dashboard.welcomeMessage")}
+              <div className="flex items-center gap-3 mb-2">
+                {isSuperAdmin ? (
+                  <Crown className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                ) : activeCowork ? (
+                  <Building2 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                ) : (
+                  <Activity className="h-6 w-6 text-gray-600 dark:text-gray-400" />
+                )}
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  Dashboard {contextName}
+                </h1>
+                {isSuperAdmin && (
+                  <Badge className="bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-700">
+                    Super Admin
+                  </Badge>
+                )}
+              </div>
+              <p className="text-gray-600 dark:text-gray-400">
+                {isSuperAdmin 
+                  ? 'Vista general de toda la plataforma'
+                  : activeCowork 
+                    ? `Métricas y gestión de ${activeCowork.name}`
+                    : 'Bienvenido al panel de control'
+                }
               </p>
             </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-              <Button variant="secondary" className="w-full sm:w-auto">{t("dashboard.viewReports")}</Button>
-              <Button leftIcon={<Plus className="h-4 w-4" />} className="w-full sm:w-auto">
-                {t("action.newBooking")}
+              <Button 
+                variant="outline" 
+                onClick={refreshMetrics}
+                className="w-full sm:w-auto"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Actualizar
+              </Button>
+              <Button className={cn(
+                'w-full sm:w-auto',
+                isSuperAdmin 
+                  ? 'bg-purple-600 hover:bg-purple-700 text-white' 
+                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+              )}>
+                <Plus className="h-4 w-4 mr-2" />
+                {isSuperAdmin ? 'Nuevo Cowork' : 'Nueva Reserva'}
               </Button>
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      </Motion>
 
       <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6 sm:space-y-8">
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          <Card className="p-4 sm:p-6">
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-12 bg-brand-light flex items-center justify-center">
-                <Calendar className="h-6 w-6 text-brand-primary" />
-              </div>
-              <div>
-                <p className="text-h3 font-semibold text-gray-900">12</p>
-                <p className="text-body-sm text-gray-600">{t("dashboard.todaysBookings")}</p>
-                <div className="flex items-center gap-1 mt-1">
-                  <TrendingUp className="h-3 w-3 text-green-600" />
-                  <span className="text-caption text-green-600">+15%</span>
-                </div>
-              </div>
-            </div>
-          </Card>
+        {/* Dashboard Metrics */}
+        <Motion animation="fade-in-up" delay={200}>
+          <DashboardMetrics 
+            metrics={metrics}
+            context={context}
+            coworkName={activeCowork?.name}
+          />
+        </Motion>
 
-          <Card className="p-4 sm:p-6">
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-12 bg-green-50 flex items-center justify-center">
-                <Users className="h-6 w-6 text-green-600" />
-              </div>
-              <div>
-                <p className="text-h3 font-semibold text-gray-900">248</p>
-                <p className="text-body-sm text-gray-600">{t("dashboard.activeMembers")}</p>
-                <div className="flex items-center gap-1 mt-1">
-                  <TrendingUp className="h-3 w-3 text-green-600" />
-                  <span className="text-caption text-green-600">+8%</span>
-                </div>
-              </div>
+        {/* Main Content Grid */}
+        <StaggerContainer stagger={150} animation="fade-in-up">
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 dashboard-section">
+            {/* Main Content - Recent Bookings */}
+            <div className="flex-1 lg:flex-[2] space-y-6">
+              <RecentBookings 
+                bookings={metrics.recentBookings}
+                context={context}
+              />
+              
+              {/* Super Admin Performance Cards */}
+              {isSuperAdmin && 'coworkPerformance' in metrics && (
+                <CoworkPerformanceCard 
+                  coworks={metrics.coworkPerformance}
+                />
+              )}
             </div>
-          </Card>
 
-          <Card className="p-4 sm:p-6">
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-12 bg-yellow-50 flex items-center justify-center">
-                <Building2 className="h-6 w-6 text-yellow-600" />
-              </div>
-              <div>
-                <p className="text-h3 font-semibold text-gray-900">18/24</p>
-                <p className="text-body-sm text-gray-600">{t("dashboard.spacesOccupied")}</p>
-                <div className="flex items-center gap-1 mt-1">
-                  <span className="text-caption text-gray-600">
-                    {t("dashboard.utilization")}
-                  </span>
-                </div>
-              </div>
+            {/* Sidebar Content */}
+            <div className="flex-1 space-y-6">
+              {/* Quick Actions */}
+              <QuickActions context={context} />
+              
+              {/* Activity Feed */}
+              <ActivityFeed 
+                activities={metrics.recentActivities}
+                context={context}
+              />
+              
+              {/* Alerts */}
+              <AlertsPanel 
+                alerts={metrics.alerts}
+                context={context}
+                onDismissAlert={handleDismissAlert}
+              />
             </div>
-          </Card>
-
-          <Card className="p-4 sm:p-6">
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-12 bg-purple-50 flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-h3 font-semibold text-gray-900">$12,450</p>
-                <p className="text-body-sm text-gray-600">{t("dashboard.monthlyRevenue")}</p>
-                <div className="flex items-center gap-1 mt-1">
-                  <TrendingUp className="h-3 w-3 text-green-600" />
-                  <span className="text-caption text-green-600">+22%</span>
-                </div>
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-          {/* Recent Bookings */}
-          <div className="lg:col-span-2">
-            <Card className="h-full">
-              <div className="p-4 sm:p-6 border-b border-gray-100">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-h3 font-semibold text-gray-900">
-                    {t("dashboard.recentBookings")}
-                  </h2>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    rightIcon={<ArrowRight className="h-4 w-4" />}
-                  >
-                    {t("dashboard.viewAll")}
-                  </Button>
-                </div>
-              </div>
-              <div className="p-4 sm:p-6">
-                <div className="space-y-4">
-                  {[
-                    {
-                      id: 1,
-                      space: "Executive Office A",
-                      member: "Sarah Johnson",
-                      time: "9:00 AM - 5:00 PM",
-                      status: "confirmed",
-                      avatar: "SJ",
-                    },
-                    {
-                      id: 2,
-                      space: "Meeting Room B",
-                      member: "Tech Team",
-                      time: "2:00 PM - 4:00 PM",
-                      status: "in-progress",
-                      avatar: "TT",
-                    },
-                    {
-                      id: 3,
-                      space: "Hot Desk #12",
-                      member: "Mike Chen",
-                      time: "10:00 AM - 6:00 PM",
-                      status: "confirmed",
-                      avatar: "MC",
-                    },
-                    {
-                      id: 4,
-                      space: "Phone Booth 3",
-                      member: "Lisa Park",
-                      time: "1:00 PM - 1:30 PM",
-                      status: "completed",
-                      avatar: "LP",
-                    },
-                  ].map((booking) => (
-                    <div
-                      key={booking.id}
-                      className="flex items-center gap-4 p-3 rounded-8 hover:bg-gray-50 transition-colors duration-150"
-                    >
-                      <div className="h-10 w-10 rounded-full bg-brand-primary flex items-center justify-center">
-                        <span className="text-caption font-medium text-white">
-                          {booking.avatar}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-body font-medium text-gray-900 truncate">
-                          {booking.space}
-                        </p>
-                        <p className="text-body-sm text-gray-600">
-                          {booking.member}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-body-sm text-gray-900">
-                          {booking.time}
-                        </p>
-                        <div className="flex justify-end mt-1">
-                          {booking.status === "confirmed" && (
-                            <Badge className="bg-blue-50 text-blue-700 border-blue-200">
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              {t("status.confirmed")}
-                            </Badge>
-                          )}
-                          {booking.status === "in-progress" && (
-                            <Badge className="bg-green-50 text-green-700 border-green-200">
-                              <Clock className="h-3 w-3 mr-1" />
-                              {t("status.inProgress")}
-                            </Badge>
-                          )}
-                          {booking.status === "completed" && (
-                            <Badge className="bg-gray-50 text-gray-700 border-gray-200">
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              {t("status.completed")}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </Card>
           </div>
-
-          {/* Quick Actions & Alerts */}
-          <div className="space-y-6">
-            {/* Quick Actions */}
-            <Card>
-              <div className="p-4 sm:p-6 border-b border-gray-100">
-                <h3 className="text-h4 font-semibold text-gray-900">
-                  {t("dashboard.quickActions")}
-                </h3>
-              </div>
-              <div className="p-4 sm:p-6 space-y-3">
-                <Button className="w-full justify-start" variant="ghost">
-                  <Calendar className="h-4 w-4 mr-3" />
-                  {t("dashboard.scheduleTour")}
-                </Button>
-                <Button className="w-full justify-start" variant="ghost">
-                  <Users className="h-4 w-4 mr-3" />
-                  {t("dashboard.addMember")}
-                </Button>
-                <Button className="w-full justify-start" variant="ghost">
-                  <Building2 className="h-4 w-4 mr-3" />
-                  {t("dashboard.manageSpaces")}
-                </Button>
-                <Button className="w-full justify-start" variant="ghost">
-                  <TrendingUp className="h-4 w-4 mr-3" />
-                  {t("dashboard.viewAnalytics")}
-                </Button>
-              </div>
-            </Card>
-
-            {/* Alerts */}
-            <Card>
-              <div className="p-4 sm:p-6 border-b border-gray-100">
-                <h3 className="text-h4 font-semibold text-gray-900">{t("dashboard.alerts")}</h3>
-              </div>
-              <div className="p-4 sm:p-6 space-y-4">
-                <div className="flex items-start gap-3 p-3 rounded-8 bg-yellow-50 border border-yellow-200">
-                  <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
-                  <div>
-                    <p className="text-body-sm font-medium text-yellow-800">
-                      {t("dashboard.maintenanceScheduled")}
-                    </p>
-                    <p className="text-caption text-yellow-700">
-                      {t("dashboard.maintenanceMessage")}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-3 rounded-8 bg-blue-50 border border-blue-200">
-                  <Star className="h-5 w-5 text-blue-600 mt-0.5" />
-                  <div>
-                    <p className="text-body-sm font-medium text-blue-800">
-                      {t("dashboard.newReview")}
-                    </p>
-                    <p className="text-caption text-blue-700">
-                      {t("dashboard.reviewMessage")}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </div>
-        </div>
+        </StaggerContainer>
       </div>
     </div>
   );
