@@ -24,16 +24,44 @@ import {
 
 export default function HomePage() {
   const router = useRouter();
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isInitialized } = useAuth();
+
+  // Debug logging
+  useEffect(() => {
+    console.log('🏠 HomePage render:', { 
+      user: user ? { id: user.id, email: user.email, role: user.role } : null, 
+      isLoading, 
+      isInitialized,
+      shouldRedirect: !isLoading && user 
+    });
+
+    // Import debug utilities in development
+    if (process.env.NODE_ENV === 'development') {
+      import('@/lib/debug-storage').then(({ debugStorage }) => {
+        debugStorage();
+      });
+    }
+  }, [user, isLoading, isInitialized]);
 
   useEffect(() => {
+    // Check for logout flag in localStorage
+    const recentLogout = localStorage.getItem('recent-logout');
+    
+    // If there was a recent logout, clear the flag and don't redirect
+    if (recentLogout) {
+      localStorage.removeItem('recent-logout');
+      console.log('🚪 Recent logout detected, staying on landing page');
+      return;
+    }
+    
     // Redirect authenticated users to their role-appropriate dashboard
-    // Only run once after initialization to prevent redirect loops
-    if (!isLoading && user) {
+    // Only run once after initialization and not if coming from logout
+    if (!isLoading && isInitialized && user) {
+      console.log('🔄 Redirecting authenticated user:', user.email, 'to dashboard');
       const redirectPath = getDefaultRedirectForRole(user.role);
       router.replace(redirectPath); // Use replace to avoid back button issues
     }
-  }, [user?.id, isLoading]); // Depend only on user.id and loading state
+  }, [user?.id, isLoading, isInitialized, router]); // Depend only on user.id and loading state
 
   // Show loading state
   if (isLoading) {
@@ -161,7 +189,7 @@ export default function HomePage() {
                 Multi-Inquilino
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                Espacios de trabajo aislados para diferentes organizaciones con
+                Instalaciones de trabajo aisladas para diferentes organizaciones con
                 completa separación de datos y seguridad.
               </p>
             </div>
