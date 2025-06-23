@@ -2,5 +2,40 @@
   "currentTag": "master",
   "lastSwitched": "2025-06-16T00:27:17.086Z",
   "branchTagMapping": {},
-  "migrationNoticeShown": false
+  "migrationNoticeShown": false,
+  "superAdminProject": {
+    "id": "super-admin-system",
+    "title": "Sistema de Administración Super Admin",
+    "phase": "backend-foundation",
+    "status": "ready-to-start",
+    "nextSubtask": "backend-controller",
+    "summary": {
+      "totalTasks": 14,
+      "completedTasks": 0,
+      "estimatedHours": 160,
+      "actualHours": 0
+    },
+    "phases": [
+      {
+        "name": "backend-foundation",
+        "status": "ready",
+        "tasks": ["backend-controller", "backend-service", "backend-middleware", "backend-routes"]
+      },
+      {
+        "name": "frontend-dashboard", 
+        "status": "pending",
+        "tasks": ["frontend-routes", "frontend-guards", "frontend-sidebar", "coworks-management", "cowork-users-clients"]
+      },
+      {
+        "name": "advanced-features",
+        "status": "pending", 
+        "tasks": ["billing-dashboard", "system-analytics"]
+      },
+      {
+        "name": "security-audit",
+        "status": "pending",
+        "tasks": ["audit-system", "security-validations", "testing-integration"]
+      }
+    ]
+  }
 }
