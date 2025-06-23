@@ -13,7 +13,7 @@ export interface User {
   id: string;
   email: string;
   role: UserRole;
-  tenantId: string;
+  tenantId: string | null; // Allow null for super admins
   clientId?: string;
 }
 
@@ -51,9 +51,9 @@ export function hasAnyRole(
 export function getDefaultRedirectForRole(role: UserRole): string {
   switch (role) {
     case "SUPER_ADMIN":
-      return "/admin";
+      return "/dashboard";
     case "COWORK_ADMIN":
-      return "/admin";
+      return "/dashboard";
     case "CLIENT_ADMIN":
       return "/dashboard";
     case "END_USER":
