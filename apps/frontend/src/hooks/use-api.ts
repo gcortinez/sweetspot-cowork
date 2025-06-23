@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/auth-context';
 export function useApi() {
   const accessToken = useAuthStore(state => state.accessToken);
   const { logout, refreshSession } = useAuth();
+  
 
   return useMemo(() => {
     const makeRequest = async (url: string, options: RequestInit = {}) => {
@@ -26,13 +27,28 @@ export function useApi() {
         ...options.headers,
       };
 
-      // Add auth token if available (or use bypass for testing)
-      if (accessToken) {
-        (headers as Record<string, string>).Authorization = `Bearer ${accessToken}`;
+      // Add auth token if available
+      let tokenToUse = accessToken;
+      
+      // If no token in store, try to get from session manager as fallback
+      if (!tokenToUse) {
+        try {
+          const sessionData = JSON.parse(localStorage.getItem('sweetspot-session') || '{}');
+          if (sessionData && sessionData.accessToken) {
+            tokenToUse = sessionData.accessToken;
+            console.log('Using token from localStorage fallback');
+          }
+        } catch (error) {
+          console.error('Error parsing session data from localStorage:', error);
+        }
+      }
+      
+      if (tokenToUse) {
+        (headers as Record<string, string>).Authorization = `Bearer ${tokenToUse}`;
+        console.log('Added Authorization header with token');
       } else {
-        // Use bypass token for testing when no auth token is available
-        console.log('No access token available, using bypass token for testing');
-        (headers as Record<string, string>).Authorization = `Bearer bypass_token_testing123`;
+        console.error('No access token available for API request');
+        throw new Error('No access token available. Please log in again.');
       }
 
       try {

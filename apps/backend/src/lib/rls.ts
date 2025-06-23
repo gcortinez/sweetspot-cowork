@@ -6,7 +6,7 @@ import { UserRole } from "@sweetspot/shared";
  */
 
 export interface TenantContext {
-  tenantId: string;
+  tenantId: string | null; // Allow null for super admins
   userId: string;
   role: UserRole;
   clientId?: string;
@@ -19,27 +19,103 @@ export const getTenantContext = async (
   accessToken: string
 ): Promise<TenantContext | null> => {
   try {
+    console.log("🔍 getTenantContext: Starting authentication check");
+    
     const {
       data: { user },
       error,
     } = await supabaseAdmin.auth.getUser(accessToken);
 
     if (error || !user) {
-      console.error("Error getting user:", error);
+      console.error("❌ getTenantContext: Error getting user:", error);
       return null;
     }
 
-    // Get user details from our User table
-    const { data: userRecord, error: userError } = await supabaseAdmin
+    console.log("✅ getTenantContext: Supabase user found:", {
+      id: user.id,
+      email: user.email
+    });
+
+    // Get user details from our User table with multiple fallback strategies
+    console.log("🔍 getTenantContext: Querying users table for supabaseId:", user.id);
+    
+    // Strategy 1: Try with fresh client configuration
+    const { createClient } = await import("@supabase/supabase-js");
+    const freshClient = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    );
+
+    let userRecords: any[] | null = null;
+    let queryError: any = null;
+
+    // Try with fresh client first
+    const { data: freshResults, error: freshError } = await freshClient
       .from("users")
       .select("id, tenantId, role, clientId")
-      .eq("supabaseId", user.id)
-      .single();
+      .eq("supabaseId", user.id);
 
-    if (userError || !userRecord) {
-      console.error("Error getting user record:", userError);
+    if (!freshError && freshResults && freshResults.length > 0) {
+      userRecords = freshResults;
+      console.log("✅ Fresh client query succeeded");
+    } else {
+      console.log("⚠️ Fresh client failed, trying original client...");
+      
+      // Strategy 2: Try with original client
+      const { data: originalResults, error: originalError } = await supabaseAdmin
+        .from("users")
+        .select("id, tenantId, role, clientId")
+        .eq("supabaseId", user.id);
+
+      if (!originalError && originalResults && originalResults.length > 0) {
+        userRecords = originalResults;
+        console.log("✅ Original client query succeeded");
+      } else {
+        console.log("⚠️ Original client failed, trying email fallback...");
+        
+        // Strategy 3: Fallback to email lookup
+        const { data: emailResults, error: emailError } = await supabaseAdmin
+          .from("users")
+          .select("id, tenantId, role, clientId")
+          .eq("email", user.email);
+
+        if (!emailError && emailResults && emailResults.length > 0) {
+          userRecords = emailResults;
+          console.log("✅ Email fallback query succeeded");
+        } else {
+          queryError = originalError || freshError || emailError;
+        }
+      }
+    }
+
+    if (queryError || !userRecords || userRecords.length === 0) {
+      console.error("❌ getTenantContext: All query strategies failed:", {
+        freshError,
+        originalError: queryError,
+        supabaseId: user.id,
+        email: user.email
+      });
       return null;
     }
+
+    if (userRecords.length > 1) {
+      console.warn("⚠️ getTenantContext: Multiple user records found, using first one:", userRecords.length);
+    }
+
+    const userRecord = userRecords[0];
+
+    console.log("✅ getTenantContext: User record found:", {
+      id: userRecord.id,
+      tenantId: userRecord.tenantId,
+      role: userRecord.role,
+      clientId: userRecord.clientId
+    });
 
     return {
       tenantId: userRecord.tenantId,
@@ -48,7 +124,7 @@ export const getTenantContext = async (
       clientId: userRecord.clientId || undefined,
     };
   } catch (error) {
-    console.error("Error extracting tenant context:", error);
+    console.error("❌ getTenantContext: Unexpected error:", error);
     return null;
   }
 };
@@ -136,14 +212,14 @@ export const getAllowedTenantIds = async (
 
     if (error) {
       console.error("Error getting all tenants:", error);
-      return [context.tenantId];
+      return context.tenantId ? [context.tenantId] : [];
     }
 
     return tenants.map((t) => t.id);
   }
 
   // Other users can only access their own tenant
-  return [context.tenantId];
+  return context.tenantId ? [context.tenantId] : [];
 };
 
 /**

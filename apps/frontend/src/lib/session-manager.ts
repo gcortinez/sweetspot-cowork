@@ -46,10 +46,55 @@ class SessionManager {
   }
 
   /**
+   * Clean corrupted tokens from storage
+   */
+  private cleanCorruptedTokens(): void {
+    try {
+      // Check if tokens are corrupted by trying to parse them
+      const sessionStr = localStorage.getItem(this.SESSION_KEY);
+      const refreshToken = localStorage.getItem(this.REFRESH_TOKEN_KEY);
+      
+      if (sessionStr) {
+        try {
+          const session = JSON.parse(sessionStr);
+          // Validate token format (basic JWT structure check)
+          if (session.accessToken && typeof session.accessToken === 'string') {
+            const tokenParts = session.accessToken.split('.');
+            if (tokenParts.length !== 3) {
+              console.warn('Corrupted access token detected, clearing session');
+              this.clearSession();
+              return;
+            }
+          }
+        } catch (e) {
+          console.warn('Invalid session data detected, clearing session');
+          this.clearSession();
+          return;
+        }
+      }
+      
+      if (refreshToken && typeof refreshToken === 'string') {
+        const tokenParts = refreshToken.split('.');
+        if (tokenParts.length !== 3) {
+          console.warn('Corrupted refresh token detected, clearing session');
+          this.clearSession();
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Error cleaning corrupted tokens:', error);
+      this.clearSession();
+    }
+  }
+
+  /**
    * Initialize session from stored data
    */
   async initializeSession(): Promise<SessionData | null> {
     try {
+      // First clean any corrupted tokens
+      this.cleanCorruptedTokens();
+      
       const storedSession = this.getStoredSession();
       if (!storedSession) {
         return null;
@@ -202,18 +247,6 @@ class SessionManager {
         return false;
       }
 
-      // Check if this is a bypass token (used for testing)
-      if (session.accessToken.startsWith("bypass_token_")) {
-        // For bypass tokens, just extend the expiry time
-        const extendedSession: SessionData = {
-          ...session,
-          expiresAt: Date.now() + 60 * 60 * 1000, // 1 hour from now
-          lastRefresh: Date.now(),
-        };
-        this.storeSession(extendedSession);
-        this.emit("sessionRefreshed", extendedSession);
-        return true;
-      }
 
       // Check if we've refreshed too recently
       const timeSinceLastRefresh = Date.now() - session.lastRefresh;

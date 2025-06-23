@@ -24,7 +24,7 @@ export interface RegisterRequest {
 export interface AuthUser {
   id: string;
   email: string;
-  tenantId: string;
+  tenantId: string | null; // null for super admins without tenant
   role: UserRole;
   clientId?: string;
 }
@@ -59,7 +59,7 @@ export interface SessionInfo {
     id: string;
     name: string;
     slug: string;
-  };
+  } | null; // null for super admins without tenant
   isValid: boolean;
 }
 
@@ -228,6 +228,17 @@ export class AuthService {
           // Continue with the found records
           const userTenantsPromises = userRecordsFromDirect.map(
             async (userRecord) => {
+              // Special case: Super Admins don't need a tenant
+              if (userRecord.role === "SUPER_ADMIN" && !userRecord.tenantId) {
+                console.log(`  - Super Admin user found without tenant: ${userRecord.email}`);
+                return { userRecord, tenant: null };
+              }
+              
+              if (!userRecord.tenantId) {
+                console.log(`  - User without tenant: ${userRecord.email}`);
+                return null;
+              }
+              
               const tenant = await TenantService.getTenantById(
                 userRecord.tenantId
               );
@@ -269,8 +280,24 @@ export class AuthService {
               clientId: userRecord.clientId,
             };
 
+            // Handle Super Admin without tenant
+            if (userRecord.role === "SUPER_ADMIN" && !tenant) {
+              console.log(`✅ Super Admin logged in: ${email} (no tenant required)`);
+              
+              return {
+                success: true,
+                user: authUser,
+                accessToken: authData.session!.access_token,
+                refreshToken: authData.session!.refresh_token,
+                expiresAt: new Date(
+                  Date.now() + (authData.session!.expires_in || 3600) * 1000
+                ).toISOString(),
+                tenant: undefined,
+              };
+            }
+
             console.log(
-              `✅ User logged in: ${email} in tenant: ${tenant.name} (auto-selected)`
+              `✅ User logged in: ${email} in tenant: ${tenant!.name} (auto-selected)`
             );
 
             return {
@@ -282,9 +309,9 @@ export class AuthService {
                 Date.now() + (authData.session!.expires_in || 3600) * 1000
               ).toISOString(),
               tenant: {
-                id: tenant.id,
-                name: tenant.name,
-                slug: tenant.slug,
+                id: tenant!.id,
+                name: tenant!.name,
+                slug: tenant!.slug,
               },
             };
           } else {
@@ -330,6 +357,13 @@ export class AuthService {
         // Get tenant information for each user record
         const userTenants = [];
         for (const userRecord of userRecords) {
+          // Special case: Super Admins don't need a tenant
+          if (userRecord.role === "SUPER_ADMIN" && !userRecord.tenantId) {
+            console.log(`🔍 Super Admin user found without tenant: ${userRecord.email}`);
+            userTenants.push({ userRecord, tenant: null });
+            continue;
+          }
+          
           console.log(`🔍 Looking up tenant: ${userRecord.tenantId}`);
           try {
             // Direct query instead of using TenantService
@@ -383,6 +417,20 @@ export class AuthService {
             clientId: userRecord.clientId,
           };
 
+          // Handle Super Admin without tenant
+          if (userRecord.role === "SUPER_ADMIN" && !tenant) {
+            console.log(`✅ Super Admin logged in: ${email} (no tenant required)`);
+            
+            return {
+              success: true,
+              user: authUser,
+              accessToken: authData.session!.access_token,
+              refreshToken: authData.session!.refresh_token,
+              expiresAt: authData.session!.expires_at?.toString() || "",
+              tenant: undefined,
+            };
+          }
+
           console.log(
             `✅ User logged in: ${email} in tenant: ${tenant.name} (auto-selected)`
           );
@@ -408,11 +456,13 @@ export class AuthService {
 
         return {
           success: true,
-          tenants: userTenants.map((item) => ({
-            id: item.tenant.id,
-            name: item.tenant.name,
-            slug: item.tenant.slug,
-          })),
+          tenants: userTenants
+            .filter((item) => item.tenant !== null) // Filter out null tenants (super admins without tenant)
+            .map((item) => ({
+              id: item.tenant!.id,
+              name: item.tenant!.name,
+              slug: item.tenant!.slug,
+            })),
           accessToken: authData.session!.access_token,
           refreshToken: authData.session!.refresh_token,
           expiresAt: authData.session!.expires_at?.toString() || "",
@@ -494,14 +544,7 @@ export class AuthService {
    */
   static async logout(accessToken: string): Promise<void> {
     try {
-      // Check if this is a bypass token (used for testing)
-      if (accessToken.startsWith("bypass_token_")) {
-        console.log(`✅ Bypass token logout: ${accessToken}`);
-        // For bypass tokens, we just log the logout - no Supabase session to invalidate
-        return;
-      }
-
-      // Get user from token for real Supabase tokens
+      // Get user from token
       const {
         data: { user },
         error,
@@ -579,19 +622,36 @@ export class AuthService {
         };
       }
 
-      // Get user details
-      const userRecord = await UserService.getUserById(context.userId);
-      if (!userRecord) {
+      // For super admins with null tenantId, we can build the user from context directly
+      if (context.role === "SUPER_ADMIN" && !context.tenantId) {
+        console.log(`✅ Super Admin session without tenant detected from context`);
+        
+        // Try to get user details, but don't fail if it doesn't work
+        let userRecord;
+        try {
+          userRecord = await UserService.getUserById(context.userId);
+        } catch (error) {
+          console.warn("Could not get user record, building from context:", error);
+        }
+
+        const authUser: AuthUser = {
+          id: context.userId,
+          email: userRecord?.email || "super.admin@system", // Fallback email
+          tenantId: null,
+          role: context.role,
+          clientId: context.clientId || undefined,
+        };
+
         return {
-          user: {} as AuthUser,
-          tenant: {} as any,
-          isValid: false,
+          user: authUser,
+          tenant: null, // No tenant for global super admin
+          isValid: true,
         };
       }
 
-      // Get tenant details
-      const tenant = await TenantService.getTenantById(context.tenantId);
-      if (!tenant) {
+      // For regular users, get full user details
+      const userRecord = await UserService.getUserById(context.userId);
+      if (!userRecord) {
         return {
           user: {} as AuthUser,
           tenant: {} as any,
@@ -606,6 +666,24 @@ export class AuthService {
         role: userRecord.role,
         clientId: userRecord.clientId,
       };
+
+      // Get tenant details for users with tenants
+      if (!context.tenantId) {
+        return {
+          user: {} as AuthUser,
+          tenant: {} as any,
+          isValid: false,
+        };
+      }
+
+      const tenant = await TenantService.getTenantById(context.tenantId);
+      if (!tenant) {
+        return {
+          user: {} as AuthUser,
+          tenant: {} as any,
+          isValid: false,
+        };
+      }
 
       return {
         user: authUser,
@@ -844,6 +922,106 @@ export class AuthService {
           error instanceof Error
             ? error.message
             : "Password reset confirmation failed",
+      };
+    }
+  }
+
+  /**
+   * Get user's accessible coworks based on role
+   */
+  static async getUserCoworks(
+    userId: string,
+    userRole: UserRole
+  ): Promise<{
+    success: boolean;
+    userCoworks?: Array<{ id: string; name: string; slug: string; role: UserRole }>;
+    defaultCowork?: { id: string; name: string; slug: string };
+    isSuperAdmin?: boolean;
+    error?: string;
+  }> {
+    try {
+      console.log(`🔍 Getting coworks for user ${userId} with role ${userRole}`);
+
+      const isSuperAdmin = userRole === "SUPER_ADMIN";
+
+      if (isSuperAdmin) {
+        // Super admin sees all active coworks
+        const { data: allTenants, error: tenantsError } = await supabaseAdmin
+          .from("tenants")
+          .select("id, name, slug")
+          .eq("status", "ACTIVE")
+          .order("name");
+
+        if (tenantsError) {
+          console.error("Error fetching all tenants:", tenantsError);
+          return {
+            success: false,
+            error: "Failed to fetch coworks",
+          };
+        }
+
+        const userCoworks = (allTenants || []).map(tenant => ({
+          id: tenant.id,
+          name: tenant.name,
+          slug: tenant.slug,
+          role: "SUPER_ADMIN" as UserRole,
+        }));
+
+        console.log(`✅ Super admin can access ${userCoworks.length} coworks`);
+
+        return {
+          success: true,
+          userCoworks,
+          defaultCowork: userCoworks[0] || null,
+          isSuperAdmin: true,
+        };
+      } else {
+        // Regular users - get their specific tenant assignments
+        const { data: userRecords, error: userError } = await supabaseAdmin
+          .from("users")
+          .select(`
+            id,
+            tenantId,
+            role,
+            tenants!inner (
+              id,
+              name,
+              slug,
+              status
+            )
+          `)
+          .eq("id", userId)
+          .eq("tenants.status", "ACTIVE");
+
+        if (userError) {
+          console.error("Error fetching user coworks:", userError);
+          return {
+            success: false,
+            error: "Failed to fetch user coworks",
+          };
+        }
+
+        const userCoworks = (userRecords || []).map((record: any) => ({
+          id: record.tenants.id,
+          name: record.tenants.name,
+          slug: record.tenants.slug,
+          role: record.role,
+        }));
+
+        console.log(`✅ User can access ${userCoworks.length} coworks`);
+
+        return {
+          success: true,
+          userCoworks,
+          defaultCowork: userCoworks[0] || null,
+          isSuperAdmin: false,
+        };
+      }
+    } catch (error) {
+      console.error("Error in getUserCoworks:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to get user coworks",
       };
     }
   }

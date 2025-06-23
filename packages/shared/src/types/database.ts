@@ -202,7 +202,7 @@ export interface PaginatedResponse<T = any> {
 export interface AuthUser {
   id: string;
   email: string;
-  tenantId: string;
+  tenantId: string | null;
   role: UserRole;
   clientId?: string;
 }
