@@ -253,74 +253,6 @@ export class TenantService {
     }
   }
 
-  /**
-   * Get all tenants (super admin only)
-   */
-  static async getAllTenants(
-    page: number = 1,
-    limit: number = 10,
-    status?: TenantStatus
-  ): Promise<{
-    tenants: TenantResponse[];
-    total: number;
-    page: number;
-    limit: number;
-  }> {
-    try {
-      const offset = (page - 1) * limit;
-
-      let query = supabaseAdmin.from("tenants").select(
-        `
-          *,
-          users:users(count),
-          clients:clients(count)
-        `,
-        { count: "exact" }
-      );
-
-      if (status) {
-        query = query.eq("status", status);
-      }
-
-      const {
-        data: tenants,
-        error,
-        count,
-      } = await query
-        .order("createdAt", { ascending: false })
-        .range(offset, offset + limit - 1);
-
-      if (error) {
-        console.error("Error getting all tenants:", error);
-        throw new Error(`Failed to get tenants: ${error.message}`);
-      }
-
-      const formattedTenants: TenantResponse[] = tenants.map((tenant) => ({
-        id: tenant.id,
-        name: tenant.name,
-        slug: tenant.slug,
-        domain: tenant.domain,
-        logo: tenant.logo,
-        description: tenant.description,
-        settings: tenant.settings,
-        status: tenant.status,
-        createdAt: tenant.createdAt,
-        updatedAt: tenant.updatedAt,
-        userCount: tenant.users?.[0]?.count || 0,
-        clientCount: tenant.clients?.[0]?.count || 0,
-      }));
-
-      return {
-        tenants: formattedTenants,
-        total: count || 0,
-        page,
-        limit,
-      };
-    } catch (error) {
-      console.error("Error in getAllTenants:", error);
-      throw error;
-    }
-  }
 
   /**
    * Update tenant
@@ -417,16 +349,205 @@ export class TenantService {
   }
 
   /**
-   * Suspend tenant
+   * Get all tenants with pagination and filtering (for Super Admin)
    */
-  static async suspendTenant(tenantId: string): Promise<TenantResponse> {
+  static async getAllTenants(
+    page: number = 1,
+    limit: number = 20,
+    filters?: {
+      status?: TenantStatus;
+      search?: string;
+      sortBy?: 'name' | 'createdAt' | 'updatedAt';
+      sortOrder?: 'asc' | 'desc';
+    }
+  ): Promise<{
+    tenants: TenantResponse[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    try {
+      const offset = (page - 1) * limit;
+
+      let query = supabaseAdmin
+        .from("tenants")
+        .select("*", { count: "exact" });
+
+      // Apply filters
+      if (filters?.status) {
+        query = query.eq("status", filters.status);
+      }
+
+      if (filters?.search) {
+        query = query.or(
+          `name.ilike.%${filters.search}%,slug.ilike.%${filters.search}%,description.ilike.%${filters.search}%`
+        );
+      }
+
+      // Apply sorting
+      const sortBy = filters?.sortBy || 'createdAt';
+      const sortOrder = filters?.sortOrder === 'asc' ? { ascending: true } : { ascending: false };
+      query = query.order(sortBy, sortOrder);
+
+      // Apply pagination
+      const { data: tenants, error, count } = await query
+        .range(offset, offset + limit - 1);
+
+      if (error) {
+        console.error("Error getting all tenants:", error);
+        throw new Error(`Failed to get tenants: ${error.message}`);
+      }
+
+      const formattedTenants: TenantResponse[] = tenants.map((tenant) => ({
+        id: tenant.id,
+        name: tenant.name,
+        slug: tenant.slug,
+        domain: tenant.domain,
+        logo: tenant.logo,
+        description: tenant.description,
+        settings: tenant.settings,
+        status: tenant.status,
+        createdAt: tenant.createdAt,
+        updatedAt: tenant.updatedAt,
+      }));
+
+      return {
+        tenants: formattedTenants,
+        total: count || 0,
+        page,
+        limit,
+      };
+    } catch (error) {
+      console.error("Error in getAllTenants:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get system-wide statistics (for Super Admin dashboard)
+   */
+  static async getSystemStats(): Promise<{
+    totalTenants: number;
+    activeTenants: number;
+    suspendedTenants: number;
+    inactiveTenants: number;
+    totalUsers: number;
+    totalClients: number;
+    totalRevenue: number;
+    recentTenants: TenantResponse[];
+  }> {
+    try {
+      // Get tenant counts by status
+      const { count: totalTenants } = await supabaseAdmin
+        .from("tenants")
+        .select("*", { count: "exact", head: true });
+
+      const { count: activeTenants } = await supabaseAdmin
+        .from("tenants")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "ACTIVE");
+
+      const { count: suspendedTenants } = await supabaseAdmin
+        .from("tenants")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "SUSPENDED");
+
+      const { count: inactiveTenants } = await supabaseAdmin
+        .from("tenants")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "INACTIVE");
+
+      // Get total users across all tenants
+      const { count: totalUsers } = await supabaseAdmin
+        .from("users")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "ACTIVE");
+
+      // Get total clients across all tenants
+      const { count: totalClients } = await supabaseAdmin
+        .from("clients")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "ACTIVE");
+
+      // Get total revenue across all tenants
+      const { data: invoices } = await supabaseAdmin
+        .from("invoices")
+        .select("total")
+        .eq("status", "PAID");
+
+      const totalRevenue = invoices?.reduce((sum, invoice) => sum + (invoice.total || 0), 0) || 0;
+
+      // Get recent tenants (last 5)
+      const { data: recentTenantsData } = await supabaseAdmin
+        .from("tenants")
+        .select("*")
+        .order("createdAt", { ascending: false })
+        .limit(5);
+
+      const recentTenants: TenantResponse[] = recentTenantsData?.map((tenant) => ({
+        id: tenant.id,
+        name: tenant.name,
+        slug: tenant.slug,
+        domain: tenant.domain,
+        logo: tenant.logo,
+        description: tenant.description,
+        settings: tenant.settings,
+        status: tenant.status,
+        createdAt: tenant.createdAt,
+        updatedAt: tenant.updatedAt,
+      })) || [];
+
+      return {
+        totalTenants: totalTenants || 0,
+        activeTenants: activeTenants || 0,
+        suspendedTenants: suspendedTenants || 0,
+        inactiveTenants: inactiveTenants || 0,
+        totalUsers: totalUsers || 0,
+        totalClients: totalClients || 0,
+        totalRevenue,
+        recentTenants,
+      };
+    } catch (error) {
+      console.error("Error getting system stats:", error);
+      throw new Error("Failed to get system statistics");
+    }
+  }
+
+  /**
+   * Suspend tenant with enhanced options
+   */
+  static async suspendTenant(
+    tenantId: string,
+    options?: {
+      reason?: string;
+      suspendedBy?: string;
+      notifyUsers?: boolean;
+    }
+  ): Promise<TenantResponse> {
+    console.log(`Suspending tenant ${tenantId}:`, options);
+    
+    // TODO: Log the suspension action for audit trail
+    // TODO: Implement user notifications if requested
+    
     return this.updateTenant(tenantId, { status: "SUSPENDED" as TenantStatus });
   }
 
   /**
-   * Activate tenant
+   * Activate tenant with enhanced options
    */
-  static async activateTenant(tenantId: string): Promise<TenantResponse> {
+  static async activateTenant(
+    tenantId: string,
+    options?: {
+      reason?: string;
+      activatedBy?: string;
+      notifyUsers?: boolean;
+    }
+  ): Promise<TenantResponse> {
+    console.log(`Activating tenant ${tenantId}:`, options);
+    
+    // TODO: Log the activation action for audit trail
+    // TODO: Implement user notifications if requested
+    
     return this.updateTenant(tenantId, { status: "ACTIVE" as TenantStatus });
   }
 

@@ -128,7 +128,7 @@ export class TenantController {
       } = paginationSchema.parse(req.query);
 
       // Get tenants
-      const result = await TenantService.getAllTenants(page, limit, status);
+      const result = await TenantService.getAllTenants(page, limit, { status });
 
       res.json({
         success: true,

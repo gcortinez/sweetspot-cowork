@@ -11,8 +11,10 @@ import {
   verifyPermissions,
   getProfile,
   updateProfile,
+  getUserCoworks,
 } from "../controllers/authController";
 import { authenticate, optionalAuth } from "../middleware/auth";
+import { setCoworkContext, CoworkContextRequest } from "../middleware/coworkContext";
 import { BaseRequest } from "../types/api";
 
 const router = Router();
@@ -23,38 +25,6 @@ const router = Router();
 
 // POST /auth/login - User login
 router.post("/login", login);
-
-// TEMPORARY: Bypass login for testing  
-router.post("/bypass-login", ((req: Request, res: Response) => {
-  const { email, password } = req.body;
-  
-  if (email === "admin@sweetspot.io" && password === "Admin123!") {
-    // Return a valid auth response
-    return res.json({
-      success: true,
-      user: {
-        id: "user_1749874836637",
-        email: "admin@sweetspot.io",
-        tenantId: "tenant_1749874836546",
-        role: "SUPER_ADMIN",
-        clientId: null
-      },
-      accessToken: "bypass_token_" + Date.now(),
-      refreshToken: "bypass_refresh_" + Date.now(),
-      expiresAt: new Date(Date.now() + 3600000).toISOString(),
-      tenant: {
-        id: "tenant_1749874836546",
-        name: "SweetSpot HQ",
-        slug: "sweetspot-hq"
-      }
-    });
-  }
-  
-  return res.status(401).json({
-    success: false,
-    error: "Invalid credentials"
-  });
-}) as any);
 
 // POST /auth/register - User registration
 router.post("/register", register);
@@ -89,6 +59,46 @@ router.post("/change-password", authenticate, changePassword as any);
 
 // GET /auth/permissions - Verify user permissions
 router.get("/permissions", authenticate, verifyPermissions as any);
+
+// GET /auth/coworks - Get user's accessible coworks
+router.get("/coworks", authenticate, getUserCoworks as any);
+
+// GET /auth/context - Get current cowork context
+const getContextHandler = async (req: any, res: Response, next: any) => {
+  await setCoworkContext(req, res, () => {
+    res.json({
+      success: true,
+      data: {
+        activeCowork: req.activeCowork,
+        userCoworks: req.userCoworks,
+        isSuperAdmin: req.isSuperAdmin
+      }
+    });
+  });
+};
+
+router.get("/context", authenticate, getContextHandler as any);
+
+// POST /auth/set-active-cowork - Set active cowork for session
+router.post("/set-active-cowork", authenticate, ((req: Request, res: Response): void => {
+  const { coworkId } = req.body;
+  
+  if (!coworkId) {
+    res.status(400).json({
+      success: false,
+      error: "MISSING_COWORK_ID",
+      message: "Cowork ID is required"
+    });
+    return;
+  }
+
+  // This endpoint just validates the request
+  // The actual cowork switching is handled by frontend via headers
+  res.json({
+    success: true,
+    message: "Active cowork can be set via x-active-cowork header"
+  });
+}) as any);
 
 /**
  * Optional authentication routes (authentication optional)

@@ -584,3 +584,46 @@ export const updateProfile = async (
     });
   }
 };
+
+/**
+ * Get user coworks based on role
+ */
+export const getUserCoworks = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        error: ErrorCode.UNAUTHORIZED_ACCESS,
+      });
+      return;
+    }
+
+    const result = await AuthService.getUserCoworks(req.user.id, req.user.role as UserRole);
+
+    if (!result.success) {
+      res.status(400).json({
+        success: false,
+        error: result.error,
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        userCoworks: result.userCoworks,
+        defaultCowork: result.defaultCowork,
+        isSuperAdmin: result.isSuperAdmin,
+      },
+    });
+  } catch (error) {
+    console.error("Get user coworks error:", error);
+    res.status(500).json({
+      success: false,
+      error: ErrorCode.INTERNAL_ERROR,
+    });
+  }
+};

@@ -7,6 +7,7 @@ import { securityEventService } from "../services/securityEventService";
 import { ipWhitelistService } from "../services/ipWhitelistService";
 import { ResponseHelper } from "../utils/response";
 import { logger } from "../utils/logger";
+import { shouldSkipTenantValidation } from "../utils/super-admin-helper";
 import { z } from "zod";
 import { SecurityEventType, SecuritySeverity } from "@prisma/client";
 
@@ -87,16 +88,19 @@ export const invalidateSession = async (
 
     await sessionService.invalidateSession(sessionId, userId);
 
-    await auditLogService.log({
-      tenantId: req.user!.tenantId,
-      userId,
-      action: "DELETE",
-      entityType: "Session",
-      entityId: sessionId,
-      details: {
-        action: "Session invalidated by user",
-      },
-    });
+    // Only log for users with tenants
+    if (req.user!.tenantId) {
+      await auditLogService.log({
+        tenantId: req.user!.tenantId!,
+        userId,
+        action: "DELETE",
+        entityType: "Session",
+        entityId: sessionId,
+        details: {
+          action: "Session invalidated by user",
+        },
+      });
+    }
 
     return ResponseHelper.success(res, {
       message: "Session invalidated successfully",
@@ -124,15 +128,18 @@ export const invalidateAllOtherSessions = async (
 
     await sessionService.invalidateAllUserSessions(userId, currentSessionId);
 
-    await auditLogService.log({
-      tenantId: req.user!.tenantId,
-      userId,
-      action: "DELETE",
-      entityType: "Session",
-      details: {
-        action: "All other sessions invalidated",
-      },
-    });
+    // Only log for users with tenants
+    if (req.user!.tenantId) {
+      await auditLogService.log({
+        tenantId: req.user!.tenantId,
+        userId,
+        action: "DELETE",
+        entityType: "Session",
+        details: {
+          action: "All other sessions invalidated",
+        },
+      });
+    }
 
     return ResponseHelper.success(res, {
       message: "All other sessions invalidated successfully",
@@ -160,7 +167,7 @@ export const updateSessionConfig = async (
     // Store session configuration (would typically be in a user preferences table)
     // For now, we'll log the configuration change
     await auditLogService.log({
-      tenantId: req.user!.tenantId,
+      tenantId: req.user!.tenantId!,
       userId,
       action: "UPDATE",
       entityType: "SessionConfig",
@@ -549,7 +556,7 @@ export const generateEncryptionKey = async (
     const key = encryptionService.generateEncryptionKey();
 
     await auditLogService.log({
-      tenantId: req.user!.tenantId,
+      tenantId: req.user!.tenantId!,
       userId: req.user!.id,
       action: "CREATE",
       entityType: "EncryptionKey",
@@ -596,7 +603,7 @@ export const testEncryption = async (
     const success = decrypted === testData;
 
     await auditLogService.log({
-      tenantId: req.user!.tenantId,
+      tenantId: req.user!.tenantId!,
       userId: req.user!.id,
       action: "SYSTEM_CONFIG",
       entityType: "Encryption",

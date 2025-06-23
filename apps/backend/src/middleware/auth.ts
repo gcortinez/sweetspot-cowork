@@ -32,29 +32,6 @@ export const authenticate = async (
 
     const token = authHeader.substring(7); // Remove "Bearer " prefix
 
-    // Handle bypass tokens for testing
-    if (token.startsWith("bypass_token_")) {
-      logger.debug("Using bypass token for testing", { 
-        path: req.path,
-        ip: req.ip,
-      });
-      
-      // Set mock user and tenant for bypass tokens
-      req.user = {
-        id: "user_1749874837193", // Use the real user ID from database
-        email: "admin@sweetspot.io",
-        tenantId: "tenant_1749874836546",
-        role: "SUPER_ADMIN",
-        clientId: undefined,
-      };
-      req.tenant = {
-        id: "tenant_1749874836546",
-        name: "SweetSpot HQ",
-        slug: "sweetspot-hq",
-      };
-      return next();
-    }
-
     // Get session information for real tokens
     const session = await AuthService.getSession(token);
     if (!session.isValid) {
@@ -70,10 +47,14 @@ export const authenticate = async (
     // Add user and tenant context to request
     req.user = session.user;
     req.tenant = session.tenant;
+    
+    // Set convenience properties
+    (req as AuthenticatedRequest).userId = session.user.id;
+    (req as AuthenticatedRequest).tenantId = session.user.tenantId;
 
     logger.info("Authentication successful", {
       userId: req.user.id,
-      tenantId: req.tenant?.id,
+      tenantId: req.tenant?.id || null,
       userRole: req.user.role,
       path: req.path,
     });
@@ -117,11 +98,21 @@ export const optionalAuth = async (
           name: "SweetSpot HQ",
           slug: "sweetspot-hq",
         };
+        
+        // Set convenience properties
+        (req as any).userId = req.user.id;
+        (req as any).tenantId = req.user.tenantId;
       } else {
         const session = await AuthService.getSession(token);
         if (session.isValid) {
           req.user = session.user;
           req.tenant = session.tenant;
+          
+          // Set convenience properties if user is present
+          if (req.user) {
+            (req as any).userId = session.user.id;
+            (req as any).tenantId = session.user.tenantId;
+          }
         }
       }
     }
