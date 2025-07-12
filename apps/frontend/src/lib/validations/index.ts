@@ -44,5 +44,8 @@ export * from './invoice'
 export * from './payment'
 export * from './financial-report'
 
+// Notification management validations
+export * from './notification'
+
 // Re-export for convenience
 export { z } from 'zod'

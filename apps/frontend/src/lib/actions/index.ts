@@ -43,6 +43,9 @@ export * from './membership'
 export * from './invoice'
 export * from './payment'
 
+// Notification management actions
+export * from './notification'
+
 // TODO: Add more action modules as they are created
 // export * from './financial-report'
 // export * from './contract'
