@@ -23,7 +23,8 @@ export const buildApiUrl = (endpoint: string): string => {
 
 // Helper function for auth endpoints specifically
 export const buildAuthUrl = (endpoint: string): string => {
-  return buildApiUrl(`/api/auth${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`);
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  return buildApiUrl(`/api/auth${cleanEndpoint}`);
 };
 
 // Export the base URL constant for backwards compatibility
