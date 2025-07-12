@@ -37,30 +37,43 @@ export function NavigationGuard({ children }: NavigationGuardProps) {
       return;
     }
 
-    // Don't run guards if no user or no cowork context yet
-    if (!user || !coworkContext) return;
-
-    // Apply super admin specific navigation guards
-    const redirectPath = applySuperAdminNavigationGuards(user, coworkContext, pathname);
-    if (redirectPath) {
-      console.log(`🔄 Navigation guard redirect: ${pathname} -> ${redirectPath}`);
-      router.push(redirectPath);
+    // Don't run guards if no user
+    if (!user) return;
+    
+    // For SUPER_ADMIN with tenantId null, we don't need cowork context
+    if (user.role === "SUPER_ADMIN" && user.tenantId === null) {
+      // Super admin can proceed without cowork context
+    } else if (!coworkContext) {
+      // Other users need cowork context
       return;
     }
 
-    // Check if user has access to current route
-    if (!hasRouteAccess(user, coworkContext, pathname)) {
-      console.log(`❌ Access denied to route: ${pathname}`);
-      
-      // Redirect to appropriate default route
-      if (user.role === "SUPER_ADMIN" && coworkContext.isSuperAdminWithoutCowork) {
-        router.push("/super-admin");
-      } else if (coworkContext.hasCoworkAccess) {
-        router.push("/dashboard");
-      } else {
-        router.push("/profile");
+    // Apply super admin specific navigation guards (only if coworkContext exists)
+    if (coworkContext) {
+      const redirectPath = applySuperAdminNavigationGuards(user, coworkContext, pathname);
+      if (redirectPath) {
+        console.log(`🔄 Navigation guard redirect: ${pathname} -> ${redirectPath}`);
+        router.push(redirectPath);
+        return;
       }
-      return;
+
+      // Check if user has access to current route
+      if (!hasRouteAccess(user, coworkContext, pathname)) {
+        console.log(`❌ Access denied to route: ${pathname}`);
+        
+        // Redirect to appropriate default route
+        if (user.role === "SUPER_ADMIN" && coworkContext.isSuperAdminWithoutCowork) {
+          router.push("/super-admin");
+        } else if (coworkContext.hasCoworkAccess) {
+          router.push("/dashboard");
+        } else {
+          router.push("/profile");
+        }
+        return;
+      }
+    } else if (user.role === "SUPER_ADMIN" && user.tenantId === null) {
+      // Super admin without cowork context - allow access to all routes
+      console.log(`🛡️ Super admin accessing ${pathname} without cowork context`);
     }
 
   }, [

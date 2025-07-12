@@ -417,8 +417,28 @@ class SessionManager {
   private setCookie(name: string, value: string, expiresAt: number): void {
     if (typeof document === "undefined") return;
 
-    const expires = new Date(expiresAt).toUTCString();
-    document.cookie = `${name}=${value}; path=/; expires=${expires}; SameSite=Lax`;
+    try {
+      const expires = new Date(expiresAt).toUTCString();
+      const cookieString = `${name}=${value}; path=/; expires=${expires}; SameSite=Lax; Secure=${location.protocol === 'https:'}`;
+      
+      // Check if token is too long for cookie (max ~4KB)
+      if (cookieString.length > 4000) {
+        console.warn('🍪 Token too long for cookie, storing only in localStorage');
+        return;
+      }
+      
+      document.cookie = cookieString;
+      
+      // Verify cookie was set
+      const verification = document.cookie.split(';').find(c => c.trim().startsWith(`${name}=`));
+      if (verification) {
+        console.log(`🍪 Cookie set successfully: ${name}`);
+      } else {
+        console.warn(`🍪 Failed to set cookie: ${name}`);
+      }
+    } catch (error) {
+      console.error('🍪 Error setting cookie:', error);
+    }
   }
 
   /**
