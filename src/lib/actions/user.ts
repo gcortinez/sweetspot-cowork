@@ -1,6 +1,6 @@
 'use server'
 
-import { UserRole, UserStatus } from '@/types/database'
+import { UserRole, UserStatus } from '@/types/enums'
 import { 
   createUserSchema, 
   updateUserSchema, 

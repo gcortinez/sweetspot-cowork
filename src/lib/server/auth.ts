@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
-import { UserRole, UserStatus } from '@/types/database'
+import { UserRole, UserStatus } from '@/types/enums'
 import prisma from './prisma'
 
 // Supabase client for server-side operations
@@ -202,7 +202,37 @@ export class AuthService {
           }
         }
 
-        // Filter for active tenants
+        // Check for SUPER_ADMIN with null tenant (global admin)
+        const superAdmin = userRecords.find(ur => ur.role === 'SUPER_ADMIN' && ur.tenantId === null)
+        
+        if (superAdmin) {
+          // Update last login timestamp
+          await prisma.user.update({
+            where: { id: superAdmin.id },
+            data: { lastLoginAt: new Date() }
+          })
+
+          const authUser: AuthUser = {
+            id: superAdmin.id,
+            email: superAdmin.email,
+            tenantId: null, // Global super admin
+            role: superAdmin.role as UserRole,
+            clientId: superAdmin.clientId || undefined,
+          }
+
+          return {
+            success: true,
+            user: authUser,
+            accessToken: authData.session!.access_token,
+            refreshToken: authData.session!.refresh_token,
+            expiresAt: new Date(
+              Date.now() + (authData.session!.expires_in || 3600) * 1000
+            ).toISOString(),
+            tenant: null, // Global admin has no specific tenant
+          }
+        }
+
+        // Filter for active tenants (non-super-admin users)
         const activeUserTenants = userRecords.filter(
           (ur) => ur.tenant && ur.tenant.status === 'ACTIVE'
         )
@@ -474,8 +504,20 @@ export class AuthService {
         }
       }
 
+      // Get user session info to return complete user data
+      const sessionInfo = await AuthService.getSession(data.session.access_token)
+      
+      if (!sessionInfo.isValid || !sessionInfo.user) {
+        return {
+          success: false,
+          error: 'Failed to validate refreshed session',
+        }
+      }
+
       return {
         success: true,
+        user: sessionInfo.user,
+        tenant: sessionInfo.tenant,
         accessToken: data.session.access_token,
         refreshToken: data.session.refresh_token,
         expiresAt: new Date(

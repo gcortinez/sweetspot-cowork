@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { emailSchema, passwordSchema, nameSchema, slugSchema, phoneSchema } from './common'
-import { UserRole } from '@/types/database'
+import { UserRole } from '@/types/enums'
 
 /**
  * Authentication validation schemas for Server Actions
@@ -10,7 +10,7 @@ import { UserRole } from '@/types/database'
 export const loginSchema = z.object({
   email: emailSchema,
   password: z.string().min(1, 'Password is required'),
-  tenantSlug: slugSchema.optional(),
+  tenantSlug: z.string().optional().or(z.literal('')).transform(val => val === '' ? undefined : val),
   rememberMe: z.boolean().default(false),
 })
 

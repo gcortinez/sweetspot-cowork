@@ -54,20 +54,26 @@ class SessionManager {
       const sessionStr = localStorage.getItem(this.SESSION_KEY);
       const refreshToken = localStorage.getItem(this.REFRESH_TOKEN_KEY);
       
+      console.log('🧹 Cleaning corrupted tokens - sessionStr exists:', !!sessionStr, 'refreshToken exists:', !!refreshToken);
+      
       if (sessionStr) {
         try {
           const session = JSON.parse(sessionStr);
+          console.log('📋 Session data parsed successfully:', { hasUser: !!session.user, hasAccessToken: !!session.accessToken, expiresAt: session.expiresAt });
+          
           // Validate token format (basic JWT structure check)
           if (session.accessToken && typeof session.accessToken === 'string') {
             const tokenParts = session.accessToken.split('.');
-            if (tokenParts.length !== 3) {
-              console.warn('Corrupted access token detected, clearing session');
+            console.log('🔑 Access token parts:', tokenParts.length, 'Length:', session.accessToken.length);
+            // Supabase tokens should have 3 parts, but let's be more lenient
+            if (tokenParts.length < 2 || session.accessToken.length < 10) {
+              console.warn('❌ Corrupted access token detected, clearing session');
               this.clearSession();
               return;
             }
           }
         } catch (e) {
-          console.warn('Invalid session data detected, clearing session');
+          console.warn('❌ Invalid session data detected, clearing session', e);
           this.clearSession();
           return;
         }
@@ -75,14 +81,18 @@ class SessionManager {
       
       if (refreshToken && typeof refreshToken === 'string') {
         const tokenParts = refreshToken.split('.');
-        if (tokenParts.length !== 3) {
-          console.warn('Corrupted refresh token detected, clearing session');
+        console.log('🔄 Refresh token parts:', tokenParts.length, 'Length:', refreshToken.length);
+        // Supabase refresh tokens might not be JWTs, so be more lenient
+        if (refreshToken.length < 10) {
+          console.warn('❌ Corrupted refresh token detected, clearing session');
           this.clearSession();
           return;
         }
       }
+      
+      console.log('✅ Token validation passed');
     } catch (error) {
-      console.error('Error cleaning corrupted tokens:', error);
+      console.error('❌ Error cleaning corrupted tokens:', error);
       this.clearSession();
     }
   }

@@ -81,6 +81,9 @@ export async function loginAction(data: LoginRequest) {
         success: true,
         user: result.user,
         tenant: result.tenant,
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+        expiresAt: result.expiresAt,
         redirectTo: '/dashboard',
       }
     }

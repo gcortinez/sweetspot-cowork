@@ -10,9 +10,11 @@ import { loginAction } from '@/lib/actions/auth'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    // Debug: console.log('🔍 API Route received body:', { hasEmail: !!body.email, hasPassword: !!body.password, keys: Object.keys(body) })
     
     // Call the Server Action
     const result = await loginAction(body)
+    // Debug: console.log('🔍 LoginAction result:', { success: result.success, hasUser: !!result.user, hasAccessToken: !!result.accessToken, hasRefreshToken: !!result.refreshToken })
     
     if (!result.success) {
       return NextResponse.json(
@@ -39,6 +41,9 @@ export async function POST(request: NextRequest) {
       success: true,
       user: result.user,
       tenant: result.tenant,
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+      expiresAt: result.expiresAt,
       message: 'Login successful',
     })
     

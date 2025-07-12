@@ -149,7 +149,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setError(null);
 
       try {
-        console.log('🔐 Attempting login with:', { email: credentials.email, hasTenantSlug: !!credentials.tenantSlug });
+        console.log('🔐 [V2] Attempting login with:', { email: credentials.email, hasTenantSlug: !!credentials.tenantSlug, hasPassword: !!credentials.password, allKeys: Object.keys(credentials) });
         const response = await authAPI.login(credentials);
         console.log('📝 Login response:', response);
 

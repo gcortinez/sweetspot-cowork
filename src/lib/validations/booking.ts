@@ -86,8 +86,8 @@ export const RecurrenceRuleSchema = z.object({
   exceptions: z.array(z.date()).optional(), // Dates to skip
 })
 
-// Base booking schema
-export const baseBookingSchema = z.object({
+// Base booking object (without refinements)
+const baseBookingObject = z.object({
   spaceId: z.string().uuid('Invalid space ID').optional(),
   clientId: z.string().uuid('Invalid client ID'),
   type: BookingTypeSchema.default('SPACE_ONLY'),
@@ -124,7 +124,10 @@ export const baseBookingSchema = z.object({
   cancelledAt: z.date().optional(),
   cancelledBy: z.string().uuid().optional(),
   metadata: z.record(z.any()).optional(),
-}).refine(
+})
+
+// Base booking schema with refinements
+export const baseBookingSchema = baseBookingObject.refine(
   (data) => data.endTime > data.startTime,
   {
     message: 'End time must be after start time',
@@ -144,7 +147,7 @@ export const createBookingSchema = baseBookingSchema
 // Update booking schema (all fields optional except ID)
 export const updateBookingSchema = z.object({
   id: z.string().uuid('Invalid booking ID'),
-}).merge(baseBookingSchema.partial())
+}).merge(baseBookingObject.partial())
 
 // Delete booking schema
 export const deleteBookingSchema = z.object({

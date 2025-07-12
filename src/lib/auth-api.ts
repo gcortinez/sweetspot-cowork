@@ -66,6 +66,7 @@ class AuthAPI {
 
   async login(data: LoginRequest): Promise<AuthResponse> {
     try {
+      console.log('🔐 AuthAPI.login called with:', { email: data.email, hasPassword: !!data.password, tenantSlug: data.tenantSlug });
       const response = await this.request("/login", {
         method: "POST",
         body: JSON.stringify(data),

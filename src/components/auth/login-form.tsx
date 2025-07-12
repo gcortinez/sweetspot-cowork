@@ -19,16 +19,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/use-auth";
-import type { LoginRequest } from "@/types/database";
+import type { LoginRequest } from "@/lib/validations/auth";
+import { loginSchema } from "@/lib/validations/auth";
 
-const loginSchema = z.object({
-  email: z.string().email("Por favor ingresa un email válido"),
-  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
-  tenantSlug: z.string().optional(),
-  rememberMe: z.boolean().optional(),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
+type LoginFormData = LoginRequest;
 
 interface LoginFormProps {
   onSuccess?: (user: any, accessToken: string) => void;
@@ -101,8 +95,10 @@ export function LoginForm({
     // Clear any previous form errors
     setError("root", undefined);
 
+    console.log('📝 [FORM-V2] Form data before login:', { email: data.email, hasPassword: !!data.password, tenantSlug: data.tenantSlug, rememberMe: data.rememberMe, allFormKeys: Object.keys(data) });
+
     try {
-      const result = await login(data as LoginRequest);
+      const result = await login(data);
 
       if (result.success) {
         onSuccess?.(null, ""); // Auth context handles user data
