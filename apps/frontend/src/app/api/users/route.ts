@@ -1,83 +1,151 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server'
+import { createUserAction, listUsersAction, getUserStatsAction, bulkUserOperationAction } from '@/lib/actions/user'
 
-// Helper function to get auth token from request
-async function getAuthToken(request: NextRequest): Promise<string | null> {
-  // Try to get token from Authorization header first
-  const authHeader = request.headers.get('authorization');
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    return authHeader.slice(7);
-  }
-
-  // Try to get token from cookies as fallback
-  const cookieStore = await cookies();
-  const tokenCookie = cookieStore.get('auth-token');
-  return tokenCookie?.value || null;
-}
-
-export async function GET(request: NextRequest) {
+// Handle bulk operations
+async function handleBulkOperation(body: any) {
   try {
-    console.log('=== FRONTEND API ROUTE: GET /api/users ===');
+    const result = await bulkUserOperationAction(body)
     
-    // Get auth token
-    let token = await getAuthToken(request);
-    if (!token) {
-      console.log('No auth token found, using bypass token for testing');
-      token = 'bypass_token_testing123';
-    }
-    
-    // Get query parameters
-    const { searchParams } = new URL(request.url);
-    const assignable = searchParams.get('assignable') || 'true'; // Only get assignable users by default
-    const search = searchParams.get('search') || '';
-    
-    // Build query string
-    const queryParams = new URLSearchParams({
-      ...(assignable && { assignable }),
-      ...(search && { search }),
-    });
-    
-    // Make request to backend API
-    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
-    const fullUrl = `${backendUrl}/api/users?${queryParams}`;
-    
-    console.log('Making request to backend:', fullUrl);
-    console.log('With headers:', { 'Authorization': `Bearer ${token.substring(0, 20)}...` });
-    
-    const response = await fetch(fullUrl, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-    
-    console.log('Backend response status:', response.status);
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('Backend error response:', errorData);
+    if (!result.success) {
       return NextResponse.json(
-        { message: errorData.message || 'Error al obtener los usuarios' },
-        { status: response.status }
-      );
+        {
+          success: false,
+          error: result.error,
+          ...(result.fieldErrors && { fieldErrors: result.fieldErrors }),
+        },
+        { status: 400 }
+      )
     }
-    
-    const result = await response.json();
-    console.log('Backend success response:', {
-      usersCount: result.data?.users?.length || 0,
-      hasData: !!result.data
-    });
-    console.log('=== END FRONTEND API ROUTE ===');
-    
-    return NextResponse.json(result);
+
+    return NextResponse.json({
+      success: true,
+      affectedCount: result.affectedCount,
+      message: result.message,
+    })
     
   } catch (error) {
-    console.error('Error fetching users:', error);
-    
+    console.error('API bulk user operation error:', error)
     return NextResponse.json(
-      { message: 'Error interno del servidor' },
+      { 
+        success: false, 
+        error: 'Internal server error' 
+      },
       { status: 500 }
-    );
+    )
+  }
+}
+
+// Create new user (POST /api/users)
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    
+    // Check if this is a bulk operation
+    if (body.operation && body.userIds) {
+      return handleBulkOperation(body)
+    }
+    
+    // Call the Server Action for user creation
+    const result = await createUserAction(body)
+    
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: result.error,
+          ...(result.fieldErrors && { fieldErrors: result.fieldErrors }),
+        },
+        { status: 400 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      user: result.user,
+      ...(result.temporaryPassword && { temporaryPassword: result.temporaryPassword }),
+      message: result.message,
+    }, { status: 201 })
+    
+  } catch (error) {
+    console.error('API create user error:', error)
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: 'Internal server error' 
+      },
+      { status: 500 }
+    )
+  }
+}
+
+// List users (GET /api/users)
+export async function GET(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams
+    
+    // Check if requesting stats
+    if (searchParams.get('stats') === 'true') {
+      const result = await getUserStatsAction()
+      
+      if (!result.success) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: result.error,
+          },
+          { status: 400 }
+        )
+      }
+
+      return NextResponse.json({
+        success: true,
+        stats: result.stats,
+      })
+    }
+    
+    const query = {
+      page: parseInt(searchParams.get('page') || '1'),
+      limit: parseInt(searchParams.get('limit') || '10'),
+      sortBy: searchParams.get('sortBy') || 'createdAt',
+      sortOrder: (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc',
+      search: searchParams.get('search') || undefined,
+      role: searchParams.get('role') || undefined,
+      status: searchParams.get('status') || undefined,
+      clientId: searchParams.get('clientId') || undefined,
+      createdAfter: searchParams.get('createdAfter') || undefined,
+      createdBefore: searchParams.get('createdBefore') || undefined,
+      lastLoginAfter: searchParams.get('lastLoginAfter') || undefined,
+      lastLoginBefore: searchParams.get('lastLoginBefore') || undefined,
+    }
+
+    // Call the Server Action
+    const result = await listUsersAction(query)
+    
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: result.error,
+          ...(result.fieldErrors && { fieldErrors: result.fieldErrors }),
+        },
+        { status: 400 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      users: result.users,
+      pagination: result.pagination,
+    })
+    
+  } catch (error) {
+    console.error('API list users error:', error)
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: 'Internal server error' 
+      },
+      { status: 500 }
+    )
   }
 }

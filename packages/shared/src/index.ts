@@ -19,6 +19,7 @@ export type {
   ChangePasswordRequest,
   ResetPasswordRequest,
   ConfirmResetPasswordRequest,
+  ActionResult,
   ApiResponse,
   PaginatedResponse,
 } from "./types/database";

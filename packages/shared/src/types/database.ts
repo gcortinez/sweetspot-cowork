@@ -237,3 +237,31 @@ export interface ConfirmResetPasswordRequest {
   token: string;
   newPassword: string;
 }
+
+// API Response types
+export interface ActionResult<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  fieldErrors?: Record<string, string>;
+  details?: any;
+}
+
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
+
+export interface PaginatedResponse<T = any> extends ApiResponse<{
+  items: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    totalPages: number;
+    totalCount: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}> {}
