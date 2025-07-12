@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { cookies } from 'next/headers';
+import { getApiBaseUrl } from '@/lib/api-config';
 
 // Schema for creating a lead
 const CreateLeadSchema = z.object({
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Make request to backend API
-    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+    const backendUrl = getApiBaseUrl();
     
     const response = await fetch(`${backendUrl}/api/leads`, {
       method: 'POST',
@@ -122,7 +123,7 @@ export async function GET(request: NextRequest) {
     });
     
     // Make authenticated request to backend API
-    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+    const backendUrl = getApiBaseUrl();
     const fullUrl = `${backendUrl}/api/leads?${queryParams}`;
     
     console.log('Making request to backend:', fullUrl);

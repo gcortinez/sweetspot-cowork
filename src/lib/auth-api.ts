@@ -5,9 +5,7 @@ import {
   ResetPasswordRequest,
   ConfirmResetPasswordRequest,
 } from "@/types/database";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
+import { buildAuthUrl } from "./api-config";
 
 interface AuthResponse {
   success: boolean;
@@ -27,7 +25,7 @@ interface SessionResponse {
 
 class AuthAPI {
   private async request(endpoint: string, options: RequestInit = {}) {
-    const url = `${API_BASE_URL}/api/auth${endpoint}`;
+    const url = buildAuthUrl(endpoint);
 
     const response = await fetch(url, {
       headers: {

@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo } from "react";
 import { useCoworkContext } from "@/providers/cowork-provider";
+import { buildApiUrl } from "@/lib/api-config";
 
 interface ApiOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
@@ -64,7 +65,7 @@ export function useCoworkAPI() {
         isSuperAdmin,
       });
 
-      const response = await fetch(`http://localhost:3001/api${endpoint}`, requestOptions);
+      const response = await fetch(buildApiUrl(`/api${endpoint}`), requestOptions);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);

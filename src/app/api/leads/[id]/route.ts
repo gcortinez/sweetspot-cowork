@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { cookies } from 'next/headers';
+import { getApiBaseUrl } from '@/lib/api-config';
 
 // Schema for updating a lead
 const UpdateLeadSchema = z.object({
@@ -57,7 +58,7 @@ export async function PUT(
     }
     
     // Make request to backend API
-    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+    const backendUrl = getApiBaseUrl();
     const fullUrl = `${backendUrl}/api/leads/${id}`;
     
     console.log('Making request to backend:', fullUrl);
@@ -127,7 +128,7 @@ export async function DELETE(
     }
     
     // Make request to backend API
-    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+    const backendUrl = getApiBaseUrl();
     const fullUrl = `${backendUrl}/api/leads/${id}`;
     
     console.log('Making request to backend:', fullUrl);
@@ -183,7 +184,7 @@ export async function GET(
     }
     
     // Make request to backend API
-    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+    const backendUrl = getApiBaseUrl();
     const fullUrl = `${backendUrl}/api/leads/${id}`;
     
     console.log('Making request to backend:', fullUrl);

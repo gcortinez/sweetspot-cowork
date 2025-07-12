@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, createContext, useContext } from "react";
 import { UserCowork } from "@/components/ui/cowork-selector";
+import { buildAuthUrl } from "@/lib/api-config";
 
 interface CoworkContextData {
   userCoworks: UserCowork[];
@@ -50,7 +51,7 @@ export function useCoworkContextHook() {
         throw new Error("No access token found");
       }
 
-      const response = await fetch("http://localhost:3001/api/auth/coworks", {
+      const response = await fetch(buildAuthUrl("/coworks"), {
         headers: {
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -95,7 +96,7 @@ export function useCoworkContextHook() {
       const token = localStorage.getItem("accessToken");
       if (token) {
         try {
-          await fetch("http://localhost:3001/api/auth/set-active-cowork", {
+          await fetch(buildAuthUrl("/set-active-cowork"), {
             method: "POST",
             headers: {
               "Authorization": `Bearer ${token}`,
@@ -124,7 +125,7 @@ export function useCoworkContextHook() {
         throw new Error("No access token found");
       }
 
-      const response = await fetch("http://localhost:3001/api/auth/context", {
+      const response = await fetch(buildAuthUrl("/context"), {
         headers: getAuthHeaders(),
       });
 

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { useAuth } from '@/contexts/auth-context';
+import { getApiBaseUrl } from "@/lib/api-config";
 
 export function useApi() {
   const accessToken = useAuthStore(state => state.accessToken);
@@ -17,7 +18,7 @@ export function useApi() {
         console.log('Using frontend proxy for activities:', fullUrl);
       } else {
         // Convert relative URLs to absolute URLs pointing to the backend for other endpoints
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+        const baseUrl = getApiBaseUrl();
         fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
       }
       

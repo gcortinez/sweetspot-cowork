@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useCoworkContextOptional } from '@/providers/cowork-provider';
 import { useAuth } from '@/hooks/use-auth';
 import { useAuthStore } from '@/stores/auth-store';
+import { getApiBaseUrl } from "@/lib/api-config";
 
 interface DashboardMetrics {
   todayBookings: {
@@ -80,7 +81,7 @@ export function useDashboard() {
       setIsLoading(true);
       setError(null);
 
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+      const baseUrl = getApiBaseUrl();
       const endpoint = user?.role === 'SUPER_ADMIN' 
         ? '/api/super-admin/analytics'
         : '/api/dashboard/metrics';

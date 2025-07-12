@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useCallback, useEffect, useState, ReactNode } from "react";
 import { UserCowork } from "@/components/ui/cowork-selector";
 import { useAuth } from "@/hooks/use-auth";
+import { buildAuthUrl } from "@/lib/api-config";
 
 // API types
 interface CoworkContextAPI {
@@ -181,7 +182,7 @@ export function CoworkProvider({
 
       console.log(`🔄 Fetching coworks for user: ${user.email}`);
 
-      const response = await fetch("http://localhost:3001/api/auth/coworks", {
+      const response = await fetch(buildAuthUrl("/coworks"), {
         headers: getAuthHeaders(),
       });
 
@@ -245,7 +246,7 @@ export function CoworkProvider({
       const token = localStorage.getItem("accessToken");
       if (token) {
         try {
-          await fetch("http://localhost:3001/api/auth/set-active-cowork", {
+          await fetch(buildAuthUrl("/set-active-cowork"), {
             method: "POST",
             headers: {
               "Authorization": `Bearer ${token}`,
@@ -282,7 +283,7 @@ export function CoworkProvider({
         return;
       }
 
-      const response = await fetch("http://localhost:3001/api/auth/context", {
+      const response = await fetch(buildAuthUrl("/context"), {
         headers: getAuthHeaders(),
       });
 
