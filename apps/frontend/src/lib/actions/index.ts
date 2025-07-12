@@ -36,9 +36,13 @@ export * from './visitor'
 // Access control actions
 export * from './access-control'
 
+// Membership management actions
+export * from './membership'
+
 // Financial management actions
 export * from './invoice'
 export * from './payment'
 
 // TODO: Add more action modules as they are created
 // export * from './financial-report'
+// export * from './contract'

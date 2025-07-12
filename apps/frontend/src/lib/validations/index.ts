@@ -33,6 +33,12 @@ export * from './visitor'
 // Access control validations
 export * from './access-control'
 
+// Membership management validations
+export * from './membership'
+
+// Contract management validations
+export * from './contract'
+
 // Financial management validations
 export * from './invoice'
 export * from './payment'
