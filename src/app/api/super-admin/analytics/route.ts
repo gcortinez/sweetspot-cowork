@@ -10,8 +10,21 @@ import prisma from '@/lib/server/prisma'
 
 export async function GET(request: NextRequest) {
   try {
-    // Get current user and verify super admin role
-    const user = await getCurrentUser()
+    // Try to get user from cookie first, then from Authorization header
+    let user = await getCurrentUser()
+    
+    if (!user) {
+      // Try Authorization header
+      const authHeader = request.headers.get('authorization')
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7)
+        const session = await import('@/lib/server/auth').then(m => m.AuthService.getSession(token))
+        if (session.isValid && session.user) {
+          user = session.user
+        }
+      }
+    }
+    
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
@@ -56,7 +69,14 @@ export async function GET(request: NextRequest) {
         orderBy: { createdAt: 'desc' },
         include: {
           space: { select: { name: true } },
-          client: { select: { name: true } },
+          user: { 
+            select: { 
+              id: true,
+              firstName: true,
+              lastName: true,
+              client: { select: { name: true } }
+            }
+          },
           tenant: { select: { name: true, slug: true } }
         }
       }),
@@ -87,7 +107,13 @@ export async function GET(request: NextRequest) {
         take: 5,
         orderBy: { createdAt: 'desc' },
         include: {
-          client: { select: { name: true } },
+          user: { 
+            select: { 
+              firstName: true,
+              lastName: true,
+              client: { select: { name: true } }
+            }
+          },
           tenant: { select: { name: true } }
         }
       })
@@ -140,7 +166,7 @@ export async function GET(request: NextRequest) {
       recentBookings: recentBookings.map(booking => ({
         id: booking.id,
         spaceName: booking.space?.name || 'Unknown Space',
-        clientName: booking.client?.name || 'Unknown Client',
+        clientName: booking.user?.client?.name || `${booking.user?.firstName || ''} ${booking.user?.lastName || ''}`.trim() || 'Unknown Client',
         startTime: booking.startTime.toISOString(),
         endTime: booking.endTime.toISOString(),
         status: booking.status,
@@ -165,7 +191,7 @@ export async function GET(request: NextRequest) {
         id: booking.id,
         type: 'booking' as const,
         title: `Nueva reserva en ${booking.tenant?.name}`,
-        description: `${booking.client?.name} reservó un espacio`,
+        description: `${booking.user?.client?.name || `${booking.user?.firstName || ''} ${booking.user?.lastName || ''}`.trim() || 'Usuario'} reservó un espacio`,
         timestamp: booking.createdAt.toISOString()
       })),
       
@@ -197,7 +223,7 @@ export async function GET(request: NextRequest) {
     }
     
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch analytics data' },
+      { success: false, error: `Failed to fetch analytics data: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     )
   }
