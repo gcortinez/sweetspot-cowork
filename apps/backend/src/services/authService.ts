@@ -95,9 +95,30 @@ export class AuthService {
 
       if (authError || !authData.user) {
         console.error("Authentication failed:", authError);
+        
+        // Handle specific Supabase errors
+        if (authError?.message?.includes('Unexpected token')) {
+          console.error("Supabase returned HTML instead of JSON. Possible causes:");
+          console.error("1. SUPABASE_URL is incorrect");
+          console.error("2. Network/proxy issues");
+          console.error("3. Supabase project is paused");
+          return {
+            success: false,
+            error: "Service temporarily unavailable. Please try again later.",
+          };
+        }
+        
+        // Handle other auth errors
+        if (authError?.message?.toLowerCase().includes('invalid login credentials')) {
+          return {
+            success: false,
+            error: "Invalid email or password",
+          };
+        }
+        
         return {
           success: false,
-          error: "Invalid email or password",
+          error: authError?.message || "Invalid email or password",
         };
       }
 
@@ -239,9 +260,22 @@ export class AuthService {
                 return null;
               }
               
-              const tenant = await TenantService.getTenantById(
-                userRecord.tenantId
-              );
+              console.log(`  - DEBUG: About to query tenant ${userRecord.tenantId}`);
+              
+              // Use direct query instead of TenantService to avoid potential issues
+              const { data: tenantData, error: tenantError } = await supabaseAdmin
+                .from("tenants")
+                .select("*")
+                .eq("id", userRecord.tenantId)
+                .single();
+              
+              console.log(`  - DEBUG: Direct tenant query result:`, {
+                found: !!tenantData,
+                error: tenantError?.message,
+                tenantId: userRecord.tenantId,
+              });
+              
+              const tenant = tenantData;
               console.log(
                 `  - Tenant ${userRecord.tenantId}: ${tenant?.name} (${tenant?.status})`
               );
@@ -369,15 +403,32 @@ export class AuthService {
             // Direct query instead of using TenantService
             console.log(`🔍 DEBUG: Querying tenants table for ID: ${userRecord.tenantId}`);
             console.log(`🔍 DEBUG: Using supabaseAdmin client`);
+            console.log(`🔍 DEBUG: supabaseAdmin exists:`, !!supabaseAdmin);
+            console.log(`🔍 DEBUG: supabaseAdmin.from exists:`, !!supabaseAdmin?.from);
             
-            // First try without single() to see all results
-            const { data: tenants, error: tenantError } = await supabaseAdmin
+            // Debug: Test a simple query first
+            const { data: testTenants, error: testError } = await supabaseAdmin
+              .from("tenants")
+              .select("id")
+              .limit(1);
+            console.log(`🔍 DEBUG: Test query result:`, { count: testTenants?.length || 0, error: testError?.message });
+            
+            // Try using RPC to bypass any potential RLS issues
+            let tenants = null;
+            let tenantError = null;
+            
+            // Skip RPC and use direct query instead
+            console.log(`🔍 DEBUG: Skipping RPC, using direct query`);
+            const result = await supabaseAdmin
               .from("tenants")
               .select("*")
               .eq("id", userRecord.tenantId);
+            tenants = result.data;
+            tenantError = result.error;
               
             console.log(`🔍 DEBUG: Tenants query result:`, tenants?.length || 0, 'rows');
-            console.log(`🔍 DEBUG: Tenants data:`, tenants);
+            console.log(`🔍 DEBUG: Tenants data:`, JSON.stringify(tenants));
+            console.log(`🔍 DEBUG: Tenant error:`, tenantError);
             
             const tenant = tenants?.[0];
               

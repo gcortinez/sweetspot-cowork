@@ -40,6 +40,8 @@ export function AlertsPanel({
   className,
   onDismissAlert
 }: AlertsPanelProps) {
+  // Validate alerts array
+  const safeAlerts = Array.isArray(alerts) ? alerts : [];
   const getAlertIcon = (type: Alert['type']) => {
     switch (type) {
       case 'warning':
@@ -154,14 +156,14 @@ export function AlertsPanel({
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 Alertas y Notificaciones
               </h3>
-              {alerts.length > 0 && (
+              {safeAlerts.length > 0 && (
                 <Badge className="mt-1 text-xs bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700">
-                  {alerts.length} {alerts.length === 1 ? 'alerta' : 'alertas'}
+                  {safeAlerts.length} {safeAlerts.length === 1 ? 'alerta' : 'alertas'}
                 </Badge>
               )}
             </div>
           </div>
-          {alerts.length > 0 && (
+          {safeAlerts.length > 0 && (
             <Button
               variant="ghost"
               size="sm"
@@ -175,7 +177,7 @@ export function AlertsPanel({
       </div>
 
       <div className="p-4 sm:p-6">
-        {alerts.length === 0 ? (
+        {safeAlerts.length === 0 ? (
           <div className="text-center py-8">
             <Bell className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
             <p className="text-gray-500 dark:text-gray-400 text-sm">
@@ -187,7 +189,7 @@ export function AlertsPanel({
           </div>
         ) : (
           <StaggerContainer stagger={120} animation="scale-in" className="space-y-4">
-            {alerts.map((alert) => (
+            {safeAlerts.map((alert) => (
               <div
                 key={alert.id}
                 className={cn(

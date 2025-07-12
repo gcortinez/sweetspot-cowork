@@ -137,24 +137,49 @@ export class TenantService {
    */
   static async getTenantById(tenantId: string): Promise<TenantResponse | null> {
     try {
+      console.log(`[TenantService.getTenantById] Querying for tenant: ${tenantId}`);
+      
+      // Simplified query without counts to avoid potential issues
       const { data: tenant, error } = await supabaseAdmin
         .from("tenants")
-        .select(
-          `
-          *,
-          users:users(count),
-          clients:clients(count)
-        `
-        )
+        .select("*")
         .eq("id", tenantId)
         .single();
 
+      console.log(`[TenantService.getTenantById] Query result:`, {
+        found: !!tenant,
+        error: error?.message,
+        errorCode: error?.code,
+      });
+
       if (error) {
         if (error.code === "PGRST116") {
+          console.log(`[TenantService.getTenantById] Tenant not found (PGRST116)`);
           return null; // Tenant not found
         }
         console.error("Error getting tenant by ID:", error);
         throw new Error(`Failed to get tenant: ${error.message}`);
+      }
+
+      // Get counts separately if needed
+      let userCount = 0;
+      let clientCount = 0;
+      
+      try {
+        const { count: uCount } = await supabaseAdmin
+          .from("users")
+          .select("*", { count: "exact", head: true })
+          .eq("tenantId", tenantId);
+        userCount = uCount || 0;
+        
+        const { count: cCount } = await supabaseAdmin
+          .from("clients")
+          .select("*", { count: "exact", head: true })
+          .eq("tenantId", tenantId);
+        clientCount = cCount || 0;
+      } catch (countError) {
+        console.warn("Error getting counts:", countError);
+        // Continue without counts
       }
 
       return {
@@ -168,8 +193,8 @@ export class TenantService {
         status: tenant.status,
         createdAt: tenant.createdAt,
         updatedAt: tenant.updatedAt,
-        userCount: tenant.users?.[0]?.count || 0,
-        clientCount: tenant.clients?.[0]?.count || 0,
+        userCount,
+        clientCount,
       };
     } catch (error) {
       console.error("Error in getTenantById:", error);

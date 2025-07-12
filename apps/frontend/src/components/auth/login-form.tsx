@@ -53,6 +53,8 @@ const errorMessages: Record<string, string> = {
   "Too many requests": "Demasiados intentos. Por favor espera unos minutos",
   "No active workspaces found for this user": "No tienes espacios de trabajo activos asociados",
   "User not found in this workspace": "No tienes acceso a este espacio de trabajo",
+  "Service temporarily unavailable": "El servicio no está disponible temporalmente. Por favor intenta más tarde",
+  "Unexpected token": "Error de conexión con el servidor. Por favor intenta más tarde",
 };
 
 function getErrorMessage(error: string): string {
@@ -76,6 +78,7 @@ export function LoginForm({
   const [showWorkspaceField, setShowWorkspaceField] = useState(
     !!defaultTenantSlug
   );
+  const [localError, setLocalError] = useState<string | null>(null);
   const { login, isLoading, error, clearError } = useAuth();
 
   const {
@@ -91,8 +94,12 @@ export function LoginForm({
     },
   });
 
+
   const onSubmit = async (data: LoginFormData) => {
     clearError();
+    setLocalError(null);
+    // Clear any previous form errors
+    setError("root", undefined);
 
     try {
       const result = await login(data as LoginRequest);
@@ -103,6 +110,7 @@ export function LoginForm({
         const errorMessage = getErrorMessage(
           result.error || "Error al iniciar sesión"
         );
+        setLocalError(errorMessage);
         setError("root", { message: errorMessage });
         onError?.(errorMessage);
       }
@@ -111,6 +119,7 @@ export function LoginForm({
         err instanceof Error
           ? getErrorMessage(err.message)
           : "Ocurrió un error inesperado. Por favor intenta más tarde";
+      setLocalError(errorMessage);
       setError("root", { message: errorMessage });
       onError?.(errorMessage);
     }
@@ -127,6 +136,18 @@ export function LoginForm({
           Gestiona tu espacio de coworking de forma eficiente
         </p>
       </div>
+
+      {/* Local Error Display - Top of form for visibility */}
+      {localError && (
+        <div className="mb-4 rounded-lg bg-red-50 border-2 border-red-400 p-4 flex items-start space-x-3">
+          <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-bold text-red-800">
+              {localError}
+            </p>
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Workspace Slug - Optional */}
@@ -254,12 +275,12 @@ export function LoginForm({
           </a>
         </div>
 
-        {/* Global Error */}
-        {errors.root && (
-          <div className="rounded-lg bg-red-50 border border-red-200 p-4 flex items-start space-x-3">
+        {/* Global Error - Make it more prominent */}
+        {errors.root && errors.root.message && (
+          <div className="rounded-lg bg-red-50 border-2 border-red-300 p-4 flex items-start space-x-3">
             <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-red-800">
+              <p className="text-sm font-semibold text-red-800">
                 {errors.root.message}
               </p>
               {errors.root.message?.includes("contraseña incorrectos") && (
@@ -272,6 +293,18 @@ export function LoginForm({
                   Verifica tu conexión a internet e intenta nuevamente
                 </p>
               )}
+            </div>
+          </div>
+        )}
+        
+        {/* Also show auth context error if present */}
+        {error && !errors.root && (
+          <div className="rounded-lg bg-orange-50 border-2 border-orange-300 p-4 flex items-start space-x-3">
+            <AlertCircle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-orange-800">
+                {getErrorMessage(error)}
+              </p>
             </div>
           </div>
         )}

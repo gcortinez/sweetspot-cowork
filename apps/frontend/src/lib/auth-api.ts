@@ -42,7 +42,12 @@ class AuthAPI {
       
       try {
         const errorData = await response.json();
-        errorMessage = errorData.error || errorData.message || errorMessage;
+        // Handle validation errors with details
+        if (errorData.error === "VALIDATION_ERROR" && errorData.details) {
+          errorMessage = errorData.details[0]?.message || errorMessage;
+        } else {
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        }
       } catch (jsonError) {
         // If JSON parsing fails, try to get text response
         try {

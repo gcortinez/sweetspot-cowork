@@ -37,6 +37,8 @@ export function RecentBookings({
   context = 'default',
   className 
 }: RecentBookingsProps) {
+  // Validate bookings array
+  const safeBookings = Array.isArray(bookings) ? bookings : [];
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
       case 'confirmed':
@@ -158,7 +160,7 @@ export function RecentBookings({
       </div>
 
       <div className="p-4 sm:p-6">
-        {bookings.length === 0 ? (
+        {safeBookings.length === 0 ? (
           <div className="text-center py-8">
             <Calendar className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
             <p className="text-gray-500 dark:text-gray-400 text-sm">
@@ -167,7 +169,7 @@ export function RecentBookings({
           </div>
         ) : (
           <StaggerContainer stagger={100} animation="fade-in-up" className="space-y-4">
-            {bookings.map((booking) => (
+            {safeBookings.map((booking) => (
               <div
                 key={booking.id}
                 className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all duration-200 cursor-pointer hover-lift"

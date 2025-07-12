@@ -24,6 +24,7 @@ import { enforceHTTPS, secureDataTransit } from "./middleware/encryption";
 // Import routes - keeping only essential routes for super admin testing
 import authRoutes from "./routes/auth";
 import { superAdminRoutes } from "./routes/superAdminRoutes";
+import debugRoutes from "./routes/debug";
 // Temporarily disabled other routes due to TypeScript issues with tenantId nullability
 // import tenantRoutes from "./routes/tenantRoutes";
 // import { leadRoutes } from "./routes/leadRoutes";
@@ -53,7 +54,7 @@ import { superAdminRoutes } from "./routes/superAdminRoutes";
 // import bookingManagementRoutes from "./routes/bookingManagementRoutes";
 // import serviceCatalogRoutes from "./routes/serviceCatalogRoutes";
 // import serviceRequestRoutes from "./routes/serviceRequestRoutes";
-// import dashboardRoutes from "./routes/dashboardRoutes";
+import dashboardRoutes from "./routes/dashboardRoutes";
 // import { auditLogRoutes } from "./routes/auditLogRoutes"; // Temporarily commented due to type issues
 
 // Validate configuration before starting
@@ -199,6 +200,7 @@ const apiV1 = express.Router();
 // Mount route modules - keeping only essential for super admin testing
 apiV1.use("/auth", authRoutes);
 apiV1.use("/super-admin", superAdminRoutes);
+apiV1.use("/debug", debugRoutes);
 // Temporarily disabled other route registrations due to TypeScript issues
 // apiV1.use("/tenants", tenantRoutes);
 // apiV1.use("/leads", leadRoutes);
@@ -228,7 +230,7 @@ apiV1.use("/super-admin", superAdminRoutes);
 // apiV1.use("/room-bookings", bookingManagementRoutes);
 // apiV1.use("/services", serviceCatalogRoutes);
 // apiV1.use("/service-requests", serviceRequestRoutes);
-// apiV1.use("/dashboard", dashboardRoutes);
+apiV1.use("/dashboard", dashboardRoutes);
 // apiV1.use("/audit-logs", auditLogRoutes); // Temporarily commented due to type issues
 
 // Mount versioned API

@@ -115,6 +115,23 @@ export function DashboardMetrics({
   context = 'default',
   coworkName 
 }: DashboardMetricsProps) {
+  // Validate metrics structure
+  if (!metrics || typeof metrics !== 'object') {
+    console.error('DashboardMetrics: Invalid metrics data', metrics);
+    return (
+      <div className="text-center p-8 text-gray-500">
+        <p>No hay métricas disponibles</p>
+      </div>
+    );
+  }
+
+  // Provide default values for missing properties
+  const safeMetrics = {
+    todayBookings: metrics.todayBookings || { count: 0, trend: 0 },
+    activeMembers: metrics.activeMembers || { count: 0, trend: 0 },
+    spaceOccupancy: metrics.spaceOccupancy || { occupied: 0, total: 0, percentage: 0 },
+    monthlyRevenue: metrics.monthlyRevenue || { amount: 0, trend: 0 }
+  };
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CL', {
       style: 'currency',
@@ -187,11 +204,11 @@ export function DashboardMetrics({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <MetricCard
             title="Reservas de Hoy"
-            value={metrics.todayBookings.count}
+            value={safeMetrics.todayBookings.count}
             description="Confirmadas y en progreso"
             trend={{
-              value: metrics.todayBookings.trend,
-              isPositive: metrics.todayBookings.trend >= 0
+              value: safeMetrics.todayBookings.trend,
+              isPositive: safeMetrics.todayBookings.trend >= 0
             }}
             icon={<Calendar className="h-6 w-6" />}
             context={context}
@@ -199,11 +216,11 @@ export function DashboardMetrics({
 
           <MetricCard
             title="Miembros Activos"
-            value={metrics.activeMembers.count}
+            value={safeMetrics.activeMembers.count}
             description="Con membresías vigentes"
             trend={{
-              value: metrics.activeMembers.trend,
-              isPositive: metrics.activeMembers.trend >= 0
+              value: safeMetrics.activeMembers.trend,
+              isPositive: safeMetrics.activeMembers.trend >= 0
             }}
             icon={<Users className="h-6 w-6" />}
             context={context}
@@ -211,19 +228,19 @@ export function DashboardMetrics({
 
           <MetricCard
             title="Ocupación de Espacios"
-            value={`${metrics.spaceOccupancy.occupied}/${metrics.spaceOccupancy.total}`}
-            description={`${metrics.spaceOccupancy.percentage}% de utilización`}
+            value={`${safeMetrics.spaceOccupancy.occupied}/${safeMetrics.spaceOccupancy.total}`}
+            description={`${safeMetrics.spaceOccupancy.percentage}% de utilización`}
             icon={<Building2 className="h-6 w-6" />}
             context={context}
           />
 
           <MetricCard
             title="Ingresos del Mes"
-            value={formatCurrency(metrics.monthlyRevenue.amount)}
+            value={formatCurrency(safeMetrics.monthlyRevenue.amount)}
             description="Pagos completados"
             trend={{
-              value: metrics.monthlyRevenue.trend,
-              isPositive: metrics.monthlyRevenue.trend >= 0
+              value: safeMetrics.monthlyRevenue.trend,
+              isPositive: safeMetrics.monthlyRevenue.trend >= 0
             }}
             icon={<DollarSign className="h-6 w-6" />}
             context={context}

@@ -20,7 +20,8 @@
     "script:fix-tenant": "ts-node src/scripts/fix-tenant-issue.ts",
     "script:make-tenantless": "ts-node src/scripts/make-super-admin-tenantless.ts",
     "script:test-login": "ts-node src/scripts/test-super-admin-login.ts",
-    "script:debug-auth": "ts-node src/scripts/debug-auth-flow.ts"
+    "script:debug-auth": "ts-node src/scripts/debug-auth-flow.ts",
+    "script:test-login-errors": "ts-node src/scripts/test-login-errors.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.9.0",

@@ -143,6 +143,8 @@ export class UserService {
           role: data.role,
           clientId: data.clientId,
           status: "ACTIVE" as UserStatus,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         })
         .select()
         .single();

@@ -64,6 +64,8 @@ async function testSupabaseConnection() {
         name: "Connection Test Tenant",
         slug: `connection-test-${Date.now()}`,
         status: "ACTIVE",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       })
       .select()
       .single();

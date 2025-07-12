@@ -1,9 +1,16 @@
 import { createClient } from "@supabase/supabase-js";
-import { Database } from "@sweetspot/shared";
 import dotenv from "dotenv";
 
-// Load environment variables
-dotenv.config();
+// Load environment variables if not already loaded
+if (!process.env.SUPABASE_URL) {
+  dotenv.config();
+}
+
+// Debug environment loading
+console.log("[supabase.ts] Environment check:");
+console.log("[supabase.ts] SUPABASE_URL:", process.env.SUPABASE_URL ? "Set" : "Not set");
+console.log("[supabase.ts] SUPABASE_SERVICE_ROLE_KEY:", process.env.SUPABASE_SERVICE_ROLE_KEY ? "Set (length: " + process.env.SUPABASE_SERVICE_ROLE_KEY.length + ")" : "Not set");
+console.log("[supabase.ts] SUPABASE_ANON_KEY:", process.env.SUPABASE_ANON_KEY ? "Set" : "Not set");
 
 // Supabase configuration
 const supabaseUrl = process.env.SUPABASE_URL!;
@@ -23,7 +30,7 @@ if (!supabaseAnonKey) {
 }
 
 // Admin client with service role key for backend operations
-export const supabaseAdmin = createClient<Database>(
+export const supabaseAdmin = createClient(
   supabaseUrl,
   supabaseServiceKey,
   {
@@ -31,11 +38,20 @@ export const supabaseAdmin = createClient<Database>(
       autoRefreshToken: false,
       persistSession: false,
     },
+    db: {
+      schema: 'public',
+    },
+    global: {
+      headers: {
+        'apikey': supabaseServiceKey,
+        'Authorization': `Bearer ${supabaseServiceKey}`
+      },
+    },
   }
 );
 
 // Regular client with anon key for user operations
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
@@ -82,7 +98,7 @@ export const verifySession = async (accessToken: string) => {
 
 // Helper function to create a client for a specific user
 export const createUserClient = (accessToken: string) => {
-  return createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  return createClient(supabaseUrl, supabaseAnonKey, {
     global: {
       headers: {
         Authorization: `Bearer ${accessToken}`,

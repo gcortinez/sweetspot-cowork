@@ -37,6 +37,8 @@ export function ActivityFeed({
   context = 'default',
   className 
 }: ActivityFeedProps) {
+  // Validate activities array
+  const safeActivities = Array.isArray(activities) ? activities : [];
   const getActivityIcon = (type: ActivityItem['type']) => {
     switch (type) {
       case 'booking':
@@ -121,7 +123,7 @@ export function ActivityFeed({
       </div>
 
       <div className="p-4 sm:p-6">
-        {activities.length === 0 ? (
+        {safeActivities.length === 0 ? (
           <div className="text-center py-8">
             <Activity className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
             <p className="text-gray-500 dark:text-gray-400 text-sm">
@@ -130,10 +132,10 @@ export function ActivityFeed({
           </div>
         ) : (
           <StaggerContainer stagger={80} animation="slide-in-left" className="space-y-4">
-            {activities.map((activity, index) => (
+            {safeActivities.map((activity, index) => (
               <div key={activity.id} className="relative">
                 {/* Timeline line */}
-                {index < activities.length - 1 && (
+                {index < safeActivities.length - 1 && (
                   <div className="absolute left-6 top-8 w-px h-12 bg-gray-200 dark:bg-gray-700" />
                 )}
                 

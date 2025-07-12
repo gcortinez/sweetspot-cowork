@@ -33,6 +33,8 @@ export function CoworkPerformanceCard({
   coworks, 
   className 
 }: CoworkPerformanceProps) {
+  // Validate coworks array
+  const safeCoworks = Array.isArray(coworks) ? coworks : [];
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CL', {
       style: 'currency',
@@ -77,7 +79,7 @@ export function CoworkPerformanceCard({
       </div>
 
       <div className="p-4 sm:p-6">
-        {coworks.length === 0 ? (
+        {safeCoworks.length === 0 ? (
           <div className="text-center py-8">
             <Building2 className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
             <p className="text-gray-500 dark:text-gray-400 text-sm">
@@ -86,7 +88,7 @@ export function CoworkPerformanceCard({
           </div>
         ) : (
           <div className="space-y-4">
-            {coworks.map((cowork, index) => (
+            {safeCoworks.map((cowork, index) => (
               <div
                 key={cowork.id}
                 className="flex items-center gap-4 p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-150 cursor-pointer"
