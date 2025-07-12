@@ -49,5 +49,8 @@ export * from './notification'
 // Reporting and analytics actions
 export * from './report'
 
+// Integration and migration actions
+export * from './integration'
+
 // TODO: Add more action modules as they are created
 // export * from './contract'

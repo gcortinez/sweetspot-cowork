@@ -50,5 +50,8 @@ export * from './notification'
 // Reporting and analytics validations
 export * from './report'
 
+// Integration and migration validations
+export * from './integration'
+
 // Re-export for convenience
 export { z } from 'zod'
