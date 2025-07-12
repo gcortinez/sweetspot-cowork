@@ -1,0 +1,531 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "SweetSpot Cowork - Application Dashboard",
+    "tags": ["sweetspot", "cowork", "application"],
+    "style": "dark",
+    "timezone": "browser",
+    "editable": true,
+    "hideControls": false,
+    "graphTooltip": 1,
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "timepicker": {
+      "refresh_intervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "time_options": [
+        "5m",
+        "15m",
+        "1h",
+        "6h",
+        "12h",
+        "24h",
+        "2d",
+        "7d",
+        "30d"
+      ]
+    },
+    "refresh": "30s",
+    "version": 1,
+    "panels": [
+      {
+        "id": 1,
+        "title": "Application Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up{job=~\"sweetspot-.*\"}",
+            "refId": "A",
+            "legendFormat": "{{job}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "red",
+                  "value": null
+                },
+                {
+                  "color": "green",
+                  "value": 1
+                }
+              ]
+            },
+            "mappings": [
+              {
+                "type": "value",
+                "value": "1",
+                "text": "UP"
+              },
+              {
+                "type": "value",
+                "value": "0",
+                "text": "DOWN"
+              }
+            ]
+          }
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": 2,
+        "title": "Request Rate (req/sec)",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total[5m])) by (job)",
+            "refId": "A",
+            "legendFormat": "{{job}}"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Requests/sec",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 6,
+          "w": 9,
+          "x": 6,
+          "y": 0
+        }
+      },
+      {
+        "id": 3,
+        "title": "Error Rate (%)",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sweetspot:http_requests:error_rate5m * 100",
+            "refId": "A",
+            "legendFormat": "{{job}}"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Error Rate %",
+            "min": 0,
+            "max": 100
+          }
+        ],
+        "gridPos": {
+          "h": 6,
+          "w": 9,
+          "x": 15,
+          "y": 0
+        }
+      },
+      {
+        "id": 4,
+        "title": "Response Time (95th percentile)",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sweetspot:http_request_duration:p95",
+            "refId": "A",
+            "legendFormat": "{{job}}"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Seconds",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 6
+        }
+      },
+      {
+        "id": 5,
+        "title": "Database Connections",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "db_connections_active",
+            "refId": "A",
+            "legendFormat": "Active"
+          },
+          {
+            "expr": "db_connections_idle",
+            "refId": "B",
+            "legendFormat": "Idle"
+          },
+          {
+            "expr": "db_connections_max",
+            "refId": "C",
+            "legendFormat": "Max"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Connections",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 6
+        }
+      },
+      {
+        "id": 6,
+        "title": "Memory Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sweetspot:memory:usage_ratio",
+            "refId": "A",
+            "legendFormat": "{{instance}}"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Memory Usage %",
+            "min": 0,
+            "max": 100
+          }
+        ],
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 0,
+          "y": 12
+        }
+      },
+      {
+        "id": 7,
+        "title": "CPU Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sweetspot:cpu:usage_ratio",
+            "refId": "A",
+            "legendFormat": "{{instance}}"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "CPU Usage %",
+            "min": 0,
+            "max": 100
+          }
+        ],
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 8,
+          "y": 12
+        }
+      },
+      {
+        "id": 8,
+        "title": "Disk Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sweetspot:disk:usage_ratio",
+            "refId": "A",
+            "legendFormat": "{{instance}}"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Disk Usage %",
+            "min": 0,
+            "max": 100
+          }
+        ],
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 16,
+          "y": 12
+        }
+      },
+      {
+        "id": 9,
+        "title": "Top API Endpoints by Request Count",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "topk(10, sum(rate(http_requests_total[5m])) by (path, method))",
+            "refId": "A",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 18
+        }
+      },
+      {
+        "id": 10,
+        "title": "Active Users",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "active_users_total",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "unit": "short"
+          }
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 12,
+          "y": 18
+        }
+      },
+      {
+        "id": 11,
+        "title": "Database Query Time (95th percentile)",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(db_query_duration_seconds_bucket[5m])) by (le, operation))",
+            "refId": "A",
+            "legendFormat": "{{operation}}"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Seconds",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 18,
+          "y": 18
+        }
+      },
+      {
+        "id": 12,
+        "title": "Redis Operations",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(redis_commands_total[5m])",
+            "refId": "A",
+            "legendFormat": "{{cmd}}"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Operations/sec",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 22
+        }
+      },
+      {
+        "id": 13,
+        "title": "Business Metrics",
+        "type": "row",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 28
+        }
+      },
+      {
+        "id": 14,
+        "title": "Total Bookings Today",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "bookings_created_today_total",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "unit": "short"
+          }
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 0,
+          "y": 29
+        }
+      },
+      {
+        "id": 15,
+        "title": "Revenue Today",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "revenue_today_total",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "unit": "currencyUSD"
+          }
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 6,
+          "y": 29
+        }
+      },
+      {
+        "id": 16,
+        "title": "Space Utilization Rate",
+        "type": "gauge",
+        "targets": [
+          {
+            "expr": "space_utilization_rate * 100",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "red",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 50
+                },
+                {
+                  "color": "green",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "percent",
+            "min": 0,
+            "max": 100
+          }
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 12,
+          "y": 29
+        }
+      },
+      {
+        "id": 17,
+        "title": "New Clients This Week",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "increase(clients_created_total[7d])",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "unit": "short"
+          }
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 18,
+          "y": 29
+        }
+      }
+    ],
+    "annotations": {
+      "list": [
+        {
+          "name": "Deployments",
+          "datasource": "prometheus",
+          "enable": true,
+          "expr": "changes(build_info[1h]) > 0",
+          "iconColor": "blue",
+          "titleFormat": "Deployment"
+        }
+      ]
+    },
+    "templating": {
+      "list": [
+        {
+          "name": "instance",
+          "type": "query",
+          "query": "label_values(up{job=~\"sweetspot-.*\"}, instance)",
+          "refresh": 1,
+          "includeAll": true,
+          "allValue": ".*"
+        },
+        {
+          "name": "job",
+          "type": "query",
+          "query": "label_values(up, job)",
+          "refresh": 1,
+          "includeAll": true,
+          "allValue": ".*"
+        }
+      ]
+    }
+  },
+  "folderId": 0,
+  "overwrite": true
+}
