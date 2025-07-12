@@ -1,7 +1,7 @@
 "use client";
 
 import { GuestOnly } from "@/components/auth/auth-guard";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/contexts/auth-context";
 import { useRouteGuard } from "@/lib/route-guards";
 
 export default function AuthLayout({

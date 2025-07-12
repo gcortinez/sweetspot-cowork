@@ -20,7 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAuth, useRoleAccess } from "@/hooks/use-auth";
+import { useAuth, useRoleAccess } from "@/contexts/auth-context";
 import { RoleGate } from "@/components/rbac/role-gate";
 import { FeatureToggle } from "@/components/rbac/feature-toggle";
 
@@ -253,7 +253,8 @@ export function CompactUserMenu({ className }: UserMenuProps) {
 
 // Role badge component for displaying user role
 export function RoleBadge({ className }: { className?: string }) {
-  const { user, isEndUser, isClientAdmin, isCoworkAdmin, isSuperAdmin } =
+  const { user } = useAuth();
+  const { isEndUser, isClientAdmin, isCoworkAdmin, isSuperAdmin } =
     useRoleAccess();
 
   if (!user) {

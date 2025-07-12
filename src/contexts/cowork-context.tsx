@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useCallback, useEffect, useState, ReactNode } from "react";
 import { UserCowork } from "@/components/ui/cowork-selector";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/contexts/auth-context";
 import { buildAuthUrl } from "@/lib/api-config";
 
 // API types
@@ -95,10 +95,14 @@ export function CoworkProvider({
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
   // Utility to get auth headers
-  const getAuthHeaders = useCallback(() => {
-    const token = localStorage.getItem("accessToken");
+  const getAuthHeaders = useCallback(async () => {
+    // Get Supabase session token
+    const { createClient } = await import("@/lib/supabase/browser");
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    
     return {
-      "Authorization": `Bearer ${token}`,
+      "Authorization": session?.access_token ? `Bearer ${session.access_token}` : '',
       "Content-Type": "application/json",
       ...(activeCowork ? { "x-active-cowork": activeCowork.id } : {}),
     };
@@ -173,8 +177,8 @@ export function CoworkProvider({
       setIsLoading(true);
       setError(null);
 
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
+      const headers = await getAuthHeaders();
+      if (!headers.Authorization) {
         console.log("No access token found, skipping cowork fetch");
         setIsInitialized(true);
         return;
@@ -183,7 +187,7 @@ export function CoworkProvider({
       console.log(`🔄 Fetching coworks for user: ${user.email}`);
 
       const response = await fetch(buildAuthUrl("/coworks"), {
-        headers: getAuthHeaders(),
+        headers,
       });
 
       if (!response.ok) {
@@ -243,15 +247,12 @@ export function CoworkProvider({
       saveToStorage(cowork);
 
       // Notify backend (optional, non-blocking)
-      const token = localStorage.getItem("accessToken");
-      if (token) {
+      const headers = await getAuthHeaders();
+      if (headers.Authorization) {
         try {
           await fetch(buildAuthUrl("/set-active-cowork"), {
             method: "POST",
-            headers: {
-              "Authorization": `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
+            headers,
             body: JSON.stringify({ coworkId: cowork.id }),
           });
         } catch (err) {
@@ -277,14 +278,14 @@ export function CoworkProvider({
     try {
       setError(null);
       
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
+      const headers = await getAuthHeaders();
+      if (!headers.Authorization) {
         console.log("No access token found, cannot refresh context");
         return;
       }
 
       const response = await fetch(buildAuthUrl("/context"), {
-        headers: getAuthHeaders(),
+        headers,
       });
 
       if (!response.ok) {

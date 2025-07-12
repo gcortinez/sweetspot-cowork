@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useCoworkContextOptional } from '@/providers/cowork-provider';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/contexts/auth-context';
 import { useAuthStore } from '@/stores/auth-store';
 import { getApiBaseUrl } from "@/lib/api-config";
 

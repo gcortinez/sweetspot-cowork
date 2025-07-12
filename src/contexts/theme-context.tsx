@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/contexts/auth-context";
 import { useCoworkContextOptional } from "@/providers/cowork-provider";
 import { 
   ThemeManager, 

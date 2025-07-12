@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/contexts/auth-context";
 import { SuperAdminDashboard } from "./super-admin-dashboard";
 import { CoworkAdminDashboard } from "./cowork-admin-dashboard";
 import { EndUserDashboard } from "./end-user-dashboard";

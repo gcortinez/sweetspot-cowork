@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/server/auth'
+import { createClient } from '@/lib/supabase/server'
 import prisma from '@/lib/server/prisma'
 
 /**
@@ -9,25 +9,39 @@ import prisma from '@/lib/server/prisma'
 
 export async function GET(request: NextRequest) {
   try {
-    // Try to get user from cookie first, then from Authorization header
-    let user = await getCurrentUser()
+    const supabase = createClient()
     
-    if (!user) {
-      // Try Authorization header
-      const authHeader = request.headers.get('authorization')
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.substring(7)
-        const session = await import('@/lib/server/auth').then(m => m.AuthService.getSession(token))
-        if (session.isValid && session.user) {
-          user = session.user
-        }
-      }
-    }
+    // Get the current user from Supabase
+    const { data: { user: supabaseUser }, error } = await supabase.auth.getUser()
     
-    if (!user) {
+    if (error || !supabaseUser) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
         { status: 401 }
+      )
+    }
+
+    // Find the user record in our database
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { supabaseId: supabaseUser.id },
+          { email: supabaseUser.email }
+        ],
+        status: 'ACTIVE'
+      },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        tenantId: true,
+      }
+    })
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'User record not found' },
+        { status: 404 }
       )
     }
 

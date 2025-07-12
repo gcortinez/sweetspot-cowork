@@ -11,7 +11,7 @@ import { QuickActions } from "@/components/dashboard/quick-actions";
 import { AlertsPanel } from "@/components/dashboard/alerts-panel";
 import { CoworkPerformanceCard } from "@/components/dashboard/cowork-performance";
 import { useCoworkContextOptional } from "@/providers/cowork-provider";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/contexts/theme-context";
 import {
   Plus,

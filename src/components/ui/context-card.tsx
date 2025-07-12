@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/theme-context';
 import { useCoworkContextOptional } from '@/providers/cowork-provider';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/contexts/auth-context';
 
 interface ContextCardProps extends React.ComponentProps<typeof Card> {
   autoContext?: boolean;

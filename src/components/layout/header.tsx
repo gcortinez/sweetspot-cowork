@@ -10,7 +10,7 @@ import { ContextBreadcrumbs } from "@/components/ui/context-breadcrumbs";
 import { MobileBreadcrumbs } from "@/components/ui/mobile-breadcrumbs";
 import { QuickThemeToggle } from "@/components/ui/theme-toggle";
 import { useCoworkContextOptional } from "@/providers/cowork-provider";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/contexts/auth-context";
 import {
   Building2,
   Bell,

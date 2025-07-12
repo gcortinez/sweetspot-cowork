@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
-import { usePermissions } from "@/hooks/use-auth";
+import { usePermissions } from "@/contexts/auth-context";
 
 interface PermissionGateProps {
   children: ReactNode;

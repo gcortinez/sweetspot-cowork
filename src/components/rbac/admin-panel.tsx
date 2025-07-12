@@ -15,7 +15,7 @@ import {
   ClientAdminOnly,
 } from "./role-gate";
 import { FeatureToggle } from "./feature-toggle";
-import { useRoleAccess } from "@/hooks/use-auth";
+import { useRoleAccess } from "@/contexts/auth-context";
 
 interface AdminPanelProps {
   children: ReactNode;

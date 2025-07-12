@@ -19,7 +19,7 @@ import {
 import { useApi } from "@/hooks/use-api";
 import { useToast } from "@/hooks/use-toast";
 import { useCoworkContextOptional } from "@/contexts/cowork-context";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/contexts/auth-context";
 import { useAuthStore } from "@/stores/auth-store";
 import Link from "next/link";
 

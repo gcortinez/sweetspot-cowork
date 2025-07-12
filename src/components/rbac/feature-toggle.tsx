@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
-import { useRoleAccess, usePermissions } from "@/hooks/use-auth";
+import { useRoleAccess, usePermissions } from "@/contexts/auth-context";
 import type { UserRole } from "@/types/database";
 
 interface FeatureToggleProps {

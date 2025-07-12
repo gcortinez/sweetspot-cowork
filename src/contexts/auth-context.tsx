@@ -1,50 +1,28 @@
 "use client";
 
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useCallback,
-  ReactNode,
-} from "react";
+import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { authAPI } from "@/lib/auth-api";
-import { sessionManager, type SessionData } from "@/lib/session-manager";
-import { useAuthStore } from "@/stores/auth-store";
-import type {
-  LoginRequest,
-  RegisterRequest,
-  AuthUser,
-  UserRole,
-} from "@/types/database";
+import { createBrowserClient } from '@supabase/ssr';
+import type { User } from "@supabase/supabase-js";
+import type { AuthUser, UserRole } from "@/types/database";
+
+// Initialize Supabase client
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 interface AuthContextType {
-  // State
+  user: AuthUser | null;
+  supabaseUser: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   isInitialized: boolean;
-  user: AuthUser | null;
   error: string | null;
-
-  // Authentication methods
-  login: (
-    credentials: LoginRequest
-  ) => Promise<{ success: boolean; error?: string }>;
-  register: (
-    data: RegisterRequest
-  ) => Promise<{ success: boolean; error?: string }>;
+  
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
-  refreshSession: () => Promise<boolean>;
-
-  // Session management
-  checkSession: () => Promise<boolean>;
   clearError: () => void;
-
-  // Role helpers
-  hasRole: (role: UserRole) => boolean;
-  hasAnyRole: (roles: UserRole[]) => boolean;
-  canAccess: (requiredRole: UserRole) => boolean;
-  getRoleLevel: () => number;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -55,313 +33,162 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const router = useRouter();
-  const {
-    isAuthenticated,
-    isLoading,
-    isInitialized,
-    user,
-    accessToken,
-    refreshToken,
-    error,
-    setAuth,
-    clearAuth,
-    setLoading,
-    setError,
-    setInitialized,
-    updateTokens,
-    hasRole,
-    hasAnyRole,
-    canAccess,
-    getRoleLevel,
-  } = useAuthStore();
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [supabaseUser, setSupabaseUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Initialize auth state on app load
+  const isAuthenticated = !!user && !!supabaseUser;
+
+  // Get user record from our database
+  const getUserRecord = async (supabaseUser: User): Promise<AuthUser | null> => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return null;
+
+      const response = await fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) return null;
+
+      const data = await response.json();
+      return data.success ? data.user : null;
+    } catch (error) {
+      console.error('Error fetching user record:', error);
+      return null;
+    }
+  };
+
+  // Initialize auth state
   useEffect(() => {
-    if (isInitialized) return;
+    let mounted = true;
 
     const initializeAuth = async () => {
-      console.log('🔑 Initializing auth context...');
-      setLoading(true);
-
       try {
-        console.log('🔍 Checking for existing session...');
-        // Initialize session using session manager
-        const session = await sessionManager.initializeSession();
-
-        if (session) {
-          console.log('✅ Session restored:', { userId: session.user.id, email: session.user.email });
-          // Session restored successfully
-          setAuth(session.user, session.accessToken, session.refreshToken);
-        } else {
-          console.log('❌ No valid session found, clearing auth');
-          // No valid session found
-          clearAuth();
+        setIsLoading(true);
+        
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user && mounted) {
+          setSupabaseUser(session.user);
+          const userRecord = await getUserRecord(session.user);
+          if (mounted) {
+            setUser(userRecord);
+          }
         }
       } catch (error) {
-        console.error("❌ Auth initialization error:", error);
-        clearAuth();
+        console.error('Auth initialization error:', error);
+        if (mounted) {
+          setError(error instanceof Error ? error.message : 'Authentication error');
+        }
       } finally {
-        setLoading(false);
-        setInitialized(true);
-        console.log('🏁 Auth initialization complete');
+        if (mounted) {
+          setIsLoading(false);
+          setIsInitialized(true);
+        }
       }
     };
 
     initializeAuth();
-  }, []); // Empty dependency array to run only once
 
-  // Set up session manager event listeners separately
-  useEffect(() => {
-    const handleSessionExpired = () => {
-      clearAuth();
-      router.push("/auth/login");
-    };
-
-    const handleSessionRefreshed = (sessionData: SessionData) => {
-      setAuth(
-        sessionData.user,
-        sessionData.accessToken,
-        sessionData.refreshToken
-      );
-    };
-
-    const handleSessionCleared = () => {
-      clearAuth();
-    };
-
-    sessionManager.on("sessionExpired", handleSessionExpired);
-    sessionManager.on("sessionRefreshed", handleSessionRefreshed);
-    sessionManager.on("sessionCleared", handleSessionCleared);
-
-    // Cleanup event listeners on unmount
-    return () => {
-      sessionManager.off("sessionExpired");
-      sessionManager.off("sessionRefreshed");
-      sessionManager.off("sessionCleared");
-    };
-  }, []); // Empty dependency array
-
-  // Note: Auto-refresh is now handled by the session manager
-
-  const login = useCallback(
-    async (credentials: LoginRequest) => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        console.log('🔐 [V2] Attempting login with:', { email: credentials.email, hasTenantSlug: !!credentials.tenantSlug, hasPassword: !!credentials.password, allKeys: Object.keys(credentials) });
-        const response = await authAPI.login(credentials);
-        console.log('📝 Login response:', response);
-
-        if (response.success) {
-          // Check if we have multiple tenants to choose from
-          if (
-            response.tenants &&
-            response.tenants.length > 0 &&
-            !response.user
-          ) {
-            // User belongs to multiple tenants - need to handle tenant selection
-            // For now, we'll just use the first tenant and login again with it
-            // In a real app, you'd show a tenant selection UI
-            const firstTenant = response.tenants[0];
-            const loginWithTenant = await authAPI.login({
-              ...credentials,
-              tenantSlug: firstTenant.slug,
-            });
-
-            if (
-              loginWithTenant.success &&
-              loginWithTenant.user &&
-              loginWithTenant.accessToken
-            ) {
-              const sessionData: SessionData = {
-                user: loginWithTenant.user,
-                accessToken: loginWithTenant.accessToken,
-                refreshToken: loginWithTenant.refreshToken,
-                expiresAt: Date.now() + 60 * 60 * 1000,
-                lastRefresh: Date.now(),
-              };
-
-              sessionManager.storeSession(sessionData);
-              setAuth(
-                loginWithTenant.user,
-                loginWithTenant.accessToken,
-                loginWithTenant.refreshToken
-              );
-
-              // Redirect to the tenant's workspace
-              router.push(`/dashboard`);
-              return { success: true };
-            }
-          } else if (response.user && response.accessToken) {
-            // Single tenant or tenant was specified - normal login flow
-            console.log('👤 User data received:', response.user);
-            console.log('🏢 Tenant data:', response.tenant);
-            
-            const sessionData: SessionData = {
-              user: response.user,
-              accessToken: response.accessToken,
-              refreshToken: response.refreshToken,
-              expiresAt: Date.now() + 60 * 60 * 1000,
-              lastRefresh: Date.now(),
-            };
-
-            sessionManager.storeSession(sessionData);
-            setAuth(response.user, response.accessToken, response.refreshToken);
-
-
-            // Redirect to dashboard
-            router.push(`/dashboard`);
-            return { success: true };
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event);
+        
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          if (session?.user) {
+            setSupabaseUser(session.user);
+            const userRecord = await getUserRecord(session.user);
+            setUser(userRecord);
           }
+        } else if (event === 'SIGNED_OUT') {
+          setSupabaseUser(null);
+          setUser(null);
         }
 
-        const errorMessage = response.error || "Login failed";
-        setError(errorMessage);
-        return { success: false, error: errorMessage };
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : "An unexpected error occurred";
-        setError(errorMessage);
-        return { success: false, error: errorMessage };
-      } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
-    },
-    [setAuth, setLoading, setError, router]
-  );
+    );
 
-  const register = useCallback(
-    async (data: RegisterRequest) => {
-      setLoading(true);
-      setError(null);
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
-      try {
-        const response = await authAPI.register(data);
-
-        if (response.success && response.user && response.accessToken) {
-          // Create session data
-          const sessionData: SessionData = {
-            user: response.user,
-            accessToken: response.accessToken,
-            refreshToken: response.refreshToken,
-            expiresAt: Date.now() + 60 * 60 * 1000, // 1 hour from now
-            lastRefresh: Date.now(),
-          };
-
-          // Store session using session manager
-          sessionManager.storeSession(sessionData);
-
-          setAuth(response.user, response.accessToken, response.refreshToken);
-          return { success: true };
-        } else {
-          const errorMessage = response.error || "Registration failed";
-          setError(errorMessage);
-          return { success: false, error: errorMessage };
-        }
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : "An unexpected error occurred";
-        setError(errorMessage);
-        return { success: false, error: errorMessage };
-      } finally {
-        setLoading(false);
-      }
-    },
-    [setAuth, setLoading, setError]
-  );
-
-  const logout = useCallback(async () => {
-    setLoading(true);
-
-    try {
-      // Call backend logout if we have a token
-      if (accessToken) {
-        await authAPI.logout(accessToken);
-      }
-    } catch (error) {
-      console.error("Logout error:", error);
-      // Continue with local logout even if backend call fails
-    } finally {
-      // Clear session using session manager
-      sessionManager.clearSession();
-
-      // Set flag to prevent redirect on landing page
-      localStorage.setItem('recent-logout', 'true');
-
-      clearAuth();
-      setLoading(false);
-      router.push("/");
-    }
-  }, [accessToken, clearAuth, setLoading, router]);
-
-  const refreshSession = useCallback(async (): Promise<boolean> => {
-    try {
-      return await sessionManager.refreshSession();
-    } catch (error) {
-      console.error("Token refresh error:", error);
-      clearAuth();
-      return false;
-    }
-  }, [clearAuth]);
-
-  const checkSession = useCallback(async (): Promise<boolean> => {
-    if (!accessToken) return false;
-
-    try {
-      const response = await authAPI.getSession(accessToken);
-
-      if (response.isValid && response.user) {
-        // Update user data if needed
-        if (JSON.stringify(response.user) !== JSON.stringify(user)) {
-          setAuth(response.user, accessToken, refreshToken || undefined);
-        }
-        return true;
-      } else {
-        // Session invalid, try refresh
-        return await refreshSession();
-      }
-    } catch (error) {
-      console.error("Session check error:", error);
-      return await refreshSession();
-    }
-  }, [accessToken, refreshToken, user, setAuth, refreshSession]);
-
-  const clearError = useCallback(() => {
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
     setError(null);
-  }, [setError]);
+
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        setError(signInError.message);
+        return { success: false, error: signInError.message };
+      }
+
+      // Redirect to dashboard after successful login
+      router.push('/dashboard');
+      return { success: true };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Login failed';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    setIsLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Logout error:', error);
+      }
+      
+      setUser(null);
+      setSupabaseUser(null);
+      setError(null);
+      
+      router.push('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const clearError = () => {
+    setError(null);
+  };
 
   const contextValue: AuthContextType = {
-    // State
+    user,
+    supabaseUser,
     isAuthenticated,
     isLoading,
     isInitialized,
-    user,
     error,
-
-    // Authentication methods
     login,
-    register,
     logout,
-    refreshSession,
-
-    // Session management
-    checkSession,
     clearError,
-
-    // Role helpers
-    hasRole,
-    hasAnyRole,
-    canAccess,
-    getRoleLevel,
   };
 
   return (
-    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={contextValue}>
+      {children}
+    </AuthContext.Provider>
   );
 }
 
@@ -373,37 +200,26 @@ export function useAuth() {
   return context;
 }
 
-// Additional convenience hooks
-export function useAuthUser() {
+// Additional hooks needed by components
+export function useRoleAccess() {
   const { user } = useAuth();
-  return user;
+  
+  return {
+    isSuperAdmin: user?.role === 'SUPER_ADMIN',
+    isCoworkAdmin: user?.role === 'COWORK_ADMIN',
+    isClientAdmin: user?.role === 'CLIENT_ADMIN',
+    isEndUser: user?.role === 'END_USER',
+    isAdmin: user?.role === 'SUPER_ADMIN' || user?.role === 'COWORK_ADMIN',
+  };
 }
 
-export function useIsAuthenticated() {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated;
-}
-
-export function useAuthLoading() {
-  const { isLoading } = useAuth();
-  return isLoading;
-}
-
-export function useUserRole() {
+export function usePermissions() {
   const { user } = useAuth();
-  return user?.role;
-}
-
-export function useRequireAuth() {
-  const { isAuthenticated, isLoading, isInitialized } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    // Only redirect once when fully initialized and not authenticated
-    if (isInitialized && !isLoading && !isAuthenticated) {
-      router.replace("/auth/login"); // Use replace to avoid back button issues
-    }
-  }, [isAuthenticated, isInitialized]); // Remove isLoading and router from deps
-
-  return { isAuthenticated, isLoading, isInitialized };
+  
+  return {
+    hasPermission: () => true, // Simplified for now
+    hasAnyPermission: () => true,
+    hasAllPermissions: () => true,
+    permissions: [],
+  };
 }

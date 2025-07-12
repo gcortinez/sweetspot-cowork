@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/contexts/auth-context";
 import type { LoginRequest } from "@/lib/validations/auth";
 import { loginSchema } from "@/lib/validations/auth";
 
@@ -98,7 +98,7 @@ export function LoginForm({
     console.log('📝 [FORM-V2] Form data before login:', { email: data.email, hasPassword: !!data.password, tenantSlug: data.tenantSlug, rememberMe: data.rememberMe, allFormKeys: Object.keys(data) });
 
     try {
-      const result = await login(data);
+      const result = await login(data.email, data.password);
 
       if (result.success) {
         onSuccess?.(null, ""); // Auth context handles user data
