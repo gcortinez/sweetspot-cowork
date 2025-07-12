@@ -47,5 +47,8 @@ export * from './financial-report'
 // Notification management validations
 export * from './notification'
 
+// Reporting and analytics validations
+export * from './report'
+
 // Re-export for convenience
 export { z } from 'zod'

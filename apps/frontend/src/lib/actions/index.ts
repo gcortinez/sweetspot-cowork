@@ -46,6 +46,8 @@ export * from './payment'
 // Notification management actions
 export * from './notification'
 
+// Reporting and analytics actions
+export * from './report'
+
 // TODO: Add more action modules as they are created
-// export * from './financial-report'
 // export * from './contract'
