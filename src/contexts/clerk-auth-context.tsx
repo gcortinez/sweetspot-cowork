@@ -55,10 +55,12 @@ export function ClerkAuthProvider({ children }: AuthProviderProps) {
       // Auto-assign SUPER_ADMIN to specific email or first user
       let role = metadata?.role || 'END_USER';
       
-      // Check if this is the admin email
+      // Check if this is the admin email or Gustavo
       const adminEmail = clerkUser.emailAddresses[0]?.emailAddress;
-      if (adminEmail === 'gcortinez@getsweetspot.io' && !metadata?.role) {
-        console.log('🔧 Auto-assigning SUPER_ADMIN role to:', adminEmail);
+      const isGustavo = clerkUser.firstName === 'Gustavo' || adminEmail?.includes('gustavo');
+      
+      if ((adminEmail === 'gcortinez@getsweetspot.io' || isGustavo) && !metadata?.role) {
+        console.log('🔧 Auto-assigning SUPER_ADMIN role to:', adminEmail || clerkUser.firstName);
         role = 'SUPER_ADMIN';
         
         // Update metadata in Clerk via API route
