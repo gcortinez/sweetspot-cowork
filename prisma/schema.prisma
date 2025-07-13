@@ -113,14 +113,17 @@ enum TenantStatus {
 model User {
     id                    String     @id @default(cuid())
     tenantId              String?    // Allow null for Super Admins
-    supabaseId            String     @unique
+    supabaseId            String?    @unique // Made optional for Clerk migration
+    clerkId               String?    @unique // Clerk user ID
     email                 String
     firstName             String
     lastName              String
+    isOnboarded           Boolean    @default(false) // Track if user completed onboarding
     phone                 String?
     avatar                String?
     role                  UserRole
     status                UserStatus @default(ACTIVE)
+    isActive              Boolean    @default(true) // User account active status
     lastLoginAt           DateTime?
     // Two-Factor Authentication
     twoFactorEnabled      Boolean    @default(false)

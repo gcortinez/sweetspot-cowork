@@ -26,7 +26,7 @@ export const ReportPeriodSchema = z.enum([
   'CUSTOM'
 ])
 
-export const ReportStatusSchema = z.enum([
+export const FinancialReportStatusSchema = z.enum([
   'GENERATING',
   'COMPLETED',
   'FAILED',
@@ -78,7 +78,7 @@ export const createFinancialReportSchema = z.object({
 export const financialReportFiltersSchema = z.object({
   reportType: FinancialReportTypeSchema.optional(),
   period: ReportPeriodSchema.optional(),
-  status: ReportStatusSchema.optional(),
+  status: FinancialReportStatusSchema.optional(),
   startDate: z.date().optional(),
   endDate: z.date().optional(),
   generatedBy: z.string().uuid().optional(),
@@ -269,5 +269,5 @@ export type FinancialMetricsRequest = z.infer<typeof financialMetricsSchema>
 export type TaxReportRequest = z.infer<typeof taxReportSchema>
 export type FinancialReportType = z.infer<typeof FinancialReportTypeSchema>
 export type ReportPeriod = z.infer<typeof ReportPeriodSchema>
-export type ReportStatus = z.infer<typeof ReportStatusSchema>
+export type FinancialReportStatus = z.infer<typeof FinancialReportStatusSchema>
 export type ForecastType = z.infer<typeof ForecastTypeSchema>

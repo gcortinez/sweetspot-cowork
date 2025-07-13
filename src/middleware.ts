@@ -1,54 +1,50 @@
-import { NextRequest, NextResponse } from "next/server";
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { NextResponse, type NextRequest } from 'next/server'
 
-// Define route patterns
-const authRoutes = ["/auth/login", "/auth/register", "/auth/reset"];
-const protectedRoutes = ["/dashboard", "/admin", "/settings", "/profile"];
-const publicRoutes = ["/", "/about", "/contact", "/pricing", "/simple", "/test", "/unauthorized"];
+// Define protected routes that require authentication
+const isProtectedRoute = createRouteMatcher([
+  '/dashboard(.*)',
+  '/profile(.*)',
+  '/admin(.*)',
+  '/super-admin(.*)',
+  '/leads(.*)',
+  '/spaces(.*)',
+  '/settings(.*)',
+])
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+// Define auth routes that should redirect authenticated users
+const isAuthRoute = createRouteMatcher([
+  '/auth/login(.*)',
+  '/auth/register(.*)',
+  '/auth/reset(.*)',
+])
 
-  // Skip middleware for static files and API routes that are already excluded
-  if (pathname.startsWith('/_next') || pathname.startsWith('/api')) {
-    return NextResponse.next();
+export default clerkMiddleware(async (auth, request: NextRequest) => {
+  const { userId } = await auth()
+  const isAuthenticated = !!userId
+  
+  console.log('🛡️ Clerk Middleware:', {
+    path: request.nextUrl.pathname,
+    isAuthenticated,
+    isProtectedRoute: isProtectedRoute(request),
+    isAuthRoute: isAuthRoute(request),
+  })
+
+  // Redirect authenticated users away from auth pages
+  if (isAuthenticated && isAuthRoute(request)) {
+    console.log('🔄 Redirecting authenticated user to dashboard')
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  // Get token from cookies
-  const token = request.cookies.get("auth-token")?.value;
-  const isAuthenticated = !!token;
-
-  // Check if current path is an auth route
-  const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
-
-  // Check if current path is a protected route
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
-  );
-
-  // Check if current path is a public route
-  const isPublicRoute = publicRoutes.includes(pathname) || pathname === "/";
-
-  // Only redirect authenticated users away from auth pages if they're directly accessing them
-  if (isAuthRoute && isAuthenticated) {
-    // Check if this is a direct navigation (not a programmatic redirect)
-    const referer = request.headers.get('referer');
-    const isDirectNavigation = !referer || !referer.includes(request.nextUrl.origin);
-    
-    if (isDirectNavigation) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
+  // Protect routes that require authentication
+  if (!isAuthenticated && isProtectedRoute(request)) {
+    console.log('🚨 Redirecting unauthenticated user to login')
+    return NextResponse.redirect(new URL('/auth/login', request.url))
   }
 
-  // Redirect unauthenticated users from protected routes to login
-  if (isProtectedRoute && !isAuthenticated) {
-    const loginUrl = new URL("/auth/login", request.url);
-    loginUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // Allow access to public routes and other routes
-  return NextResponse.next();
-}
+  // Allow the request to proceed
+  return NextResponse.next()
+})
 
 export const config = {
   matcher: [

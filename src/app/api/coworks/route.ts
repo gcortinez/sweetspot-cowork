@@ -9,7 +9,7 @@ import prisma from '@/lib/server/prisma'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     
     // Get the current user from Supabase
     const { data: { user: supabaseUser }, error } = await supabase.auth.getUser()

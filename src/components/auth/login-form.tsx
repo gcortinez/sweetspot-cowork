@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -19,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/auth-context";
+import { getDefaultRedirectForRole } from "@/lib/route-guards";
 import type { LoginRequest } from "@/lib/validations/auth";
 import { loginSchema } from "@/lib/validations/auth";
 
@@ -73,7 +75,8 @@ export function LoginForm({
     !!defaultTenantSlug
   );
   const [localError, setLocalError] = useState<string | null>(null);
-  const { login, isLoading, error, clearError } = useAuth();
+  const { login, isLoading, error, clearError, user } = useAuth();
+  const router = useRouter();
 
   const {
     register,
@@ -101,7 +104,11 @@ export function LoginForm({
       const result = await login(data.email, data.password);
 
       if (result.success) {
-        onSuccess?.(null, ""); // Auth context handles user data
+        onSuccess?.(result.user, ""); // Pass the user data
+        
+        // DO NOT redirect here - AuthRedirect component will handle it automatically
+        console.log('✅ Login successful, user authenticated:', result.user?.email, result.user?.role);
+        console.log('🔄 AuthRedirect component will handle the redirect automatically');
       } else {
         const errorMessage = getErrorMessage(
           result.error || "Error al iniciar sesión"

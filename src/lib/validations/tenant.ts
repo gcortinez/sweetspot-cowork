@@ -106,7 +106,7 @@ export const tenantFiltersSchema = z.object({
 export type TenantFilters = z.infer<typeof tenantFiltersSchema>
 
 // Space creation schema
-export const createSpaceSchema = z.object({
+export const createTenantSpaceSchema = z.object({
   name: nameSchema,
   type: z.enum(['OFFICE', 'MEETING_ROOM', 'DESK', 'COMMON_AREA', 'PHONE_BOOTH', 'EVENT_SPACE', 'STORAGE']),
   description: z.string().max(1000, 'Description is too long').optional(),
@@ -196,12 +196,12 @@ export const createSpaceSchema = z.object({
   }).optional(),
 })
 
-export type CreateSpaceRequest = z.infer<typeof createSpaceSchema>
+export type CreateTenantSpaceRequest = z.infer<typeof createTenantSpaceSchema>
 
 // Space update schema
-export const updateSpaceSchema = createSpaceSchema.partial()
+export const updateTenantSpaceSchema = createTenantSpaceSchema.partial()
 
-export type UpdateSpaceRequest = z.infer<typeof updateSpaceSchema>
+export type UpdateTenantSpaceRequest = z.infer<typeof updateTenantSpaceSchema>
 
 // Space filters schema
 export const spaceFiltersSchema = z.object({

@@ -1,37 +1,48 @@
 "use client";
 
-import { GuestOnly } from "@/components/auth/auth-guard";
-import { useAuth } from "@/contexts/auth-context";
-import { useRouteGuard } from "@/lib/route-guards";
+import { useAuth } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isLoading } = useAuth();
+  const { isSignedIn, isLoaded } = useAuth();
+  const router = useRouter();
 
-  // Use route guard to ensure guest-only access
-  const { isAuthorized } = useRouteGuard(user, isLoading, {
-    guestOnly: true,
-  });
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      router.push('/dashboard');
+    }
+  }, [isLoaded, isSignedIn, router]);
 
-  // Show loading state while checking authentication
-  if (isLoading) {
+  // Show loading while Clerk initializes
+  if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando...</p>
         </div>
       </div>
     );
   }
 
-  // If not authorized (user is authenticated), the route guard will handle redirects
-  if (!isAuthorized) {
-    return null;
+  // If user is signed in, show loading while redirecting
+  if (isSignedIn) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirigiendo al dashboard...</p>
+        </div>
+      </div>
+    );
   }
 
-  return <GuestOnly>{children}</GuestOnly>;
+  // Show auth pages for non-authenticated users
+  return <>{children}</>;
 }

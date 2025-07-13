@@ -99,11 +99,7 @@ const nextConfig = {
   // Redirects
   async redirects() {
     return [
-      {
-        source: '/dashboard',
-        destination: '/',
-        permanent: false,
-      },
+      // Dashboard redirect removed - allowing direct access
     ]
   },
 
