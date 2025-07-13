@@ -20,48 +20,18 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Find the user record in our database
-    const user = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { clerkId: clerkUser.id },
-          { email: clerkUser.emailAddresses[0]?.emailAddress }
-        ],
-        status: 'ACTIVE'
-      },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        tenantId: true,
-      }
-    })
-
-    // TEMPORARY: Force Gustavo as SUPER_ADMIN for testing
-    const isGustavo = clerkUser.firstName === 'Gustavo' || 
-                      clerkUser.emailAddresses[0]?.emailAddress?.includes('gustavo');
+    // Get user role from Clerk metadata (check private first, then public)
+    const privateMetadata = clerkUser.privateMetadata as any;
+    const publicMetadata = clerkUser.publicMetadata as any;
+    const userRole = privateMetadata?.role || publicMetadata?.role || 'END_USER';
     
-    if (!user && !isGustavo) {
-      return NextResponse.json(
-        { success: false, error: 'User record not found' },
-        { status: 404 }
-      )
-    }
-    
-    // Override for Gustavo
-    const effectiveUser = isGustavo && !user ? {
-      id: 'temp-super-admin',
+    // Create effective user object from Clerk data
+    const effectiveUser = {
+      id: clerkUser.id,
       email: clerkUser.emailAddresses[0]?.emailAddress,
-      role: 'SUPER_ADMIN' as const,
-      tenantId: null
-    } : user;
-    
-    if (!effectiveUser) {
-      return NextResponse.json(
-        { success: false, error: 'User record not found' },
-        { status: 404 }
-      )
-    }
+      role: userRole,
+      tenantId: privateMetadata?.tenantId || publicMetadata?.tenantId || null
+    };
 
     // For SUPER_ADMIN with no tenantId, get all coworks
     if (effectiveUser.role === 'SUPER_ADMIN' && effectiveUser.tenantId === null) {

@@ -3,7 +3,7 @@ import { createClerkClient } from '@clerk/nextjs/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, metadata } = await request.json();
+    const { userId, metadata, type = 'private' } = await request.json();
 
     if (!userId || !metadata) {
       return NextResponse.json(
@@ -18,9 +18,16 @@ export async function POST(request: NextRequest) {
     });
 
     // Update user metadata using Clerk's server API
-    await clerkClient.users.updateUserMetadata(userId, {
-      publicMetadata: metadata,
-    });
+    // Use private metadata for sensitive data like roles
+    const updateData: any = {};
+    
+    if (type === 'private') {
+      updateData.privateMetadata = metadata;
+    } else {
+      updateData.publicMetadata = metadata;
+    }
+
+    await clerkClient.users.updateUserMetadata(userId, updateData);
 
     return NextResponse.json({ success: true });
   } catch (error) {

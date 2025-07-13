@@ -1,61 +1,44 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
-import { NextResponse, type NextRequest } from 'next/server'
 
 // Define protected routes that require authentication
 const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)',
-  '/profile(.*)',
-  '/admin(.*)',
-  '/super-admin(.*)',
-  '/leads(.*)',
-  '/spaces(.*)',
-  '/settings(.*)',
+  '/api/coworks(.*)',
+  '/api/platform(.*)'
 ])
 
-// Define auth routes that should redirect authenticated users
+// Define auth routes (sign in/up pages)
 const isAuthRoute = createRouteMatcher([
   '/auth/login(.*)',
-  '/auth/register(.*)',
-  '/auth/reset(.*)',
+  '/auth/register(.*)'
 ])
 
-export default clerkMiddleware(async (auth, request: NextRequest) => {
+export default clerkMiddleware(async (auth, req) => {
+  const { pathname } = req.nextUrl
   const { userId } = await auth()
-  const isAuthenticated = !!userId
-  
+
   console.log('🛡️ Clerk Middleware:', {
-    path: request.nextUrl.pathname,
-    isAuthenticated,
-    isProtectedRoute: isProtectedRoute(request),
-    isAuthRoute: isAuthRoute(request),
+    path: pathname,
+    isAuthenticated: !!userId,
+    isProtectedRoute: isProtectedRoute(req),
+    isAuthRoute: isAuthRoute(req)
   })
 
-  // Redirect authenticated users away from auth pages
-  if (isAuthenticated && isAuthRoute(request)) {
+  // Redirect authenticated users away from auth routes
+  if (userId && isAuthRoute(req)) {
     console.log('🔄 Redirecting authenticated user to dashboard')
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    return Response.redirect(new URL('/dashboard', req.url))
   }
 
-  // Protect routes that require authentication
-  if (!isAuthenticated && isProtectedRoute(request)) {
-    console.log('🚨 Redirecting unauthenticated user to login')
-    return NextResponse.redirect(new URL('/auth/login', request.url))
+  // Protect routes for authenticated users only
+  if (isProtectedRoute(req)) {
+    await auth.protect()
   }
-
-  // Allow the request to proceed
-  return NextResponse.next()
 })
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
-    "/((?!api|_next/static|_next/image|favicon.ico|public).*)",
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/(api|trpc)(.*)',
   ],
-};
+}

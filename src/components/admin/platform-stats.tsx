@@ -14,6 +14,7 @@ import {
   ArrowUpRight,
   ArrowDownRight
 } from 'lucide-react';
+import { useCoworkSelection } from '@/contexts/cowork-selection-context';
 
 interface PlatformStats {
   overview: {
@@ -56,92 +57,143 @@ export function PlatformStats() {
   const [activities, setActivities] = useState<RecentActivity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { availableCoworks } = useCoworkSelection();
 
   // Fetch platform statistics
   useEffect(() => {
     const fetchStats = async () => {
       try {
         setIsLoading(true);
+        setError(null);
         
-        // In a real implementation, this would fetch from your API
-        // For now, using mock data that represents what the API would return
-        const mockStats: PlatformStats = {
-          overview: {
-            totalCoworks: 12,
-            activeCoworks: 10,
-            totalUsers: 1247,
-            activeUsers: 892,
-            totalRevenue: 2450000,
-            monthlyRevenue: 185000,
-            revenueGrowth: 12.5
-          },
-          coworkStats: {
-            byStatus: {
-              active: 10,
-              inactive: 2,
-              suspended: 0
+        // Only fetch if we have coworks loaded (to avoid showing zeros)
+        if (availableCoworks.length === 0) {
+          console.log('📊 Waiting for coworks to load...');
+          setIsLoading(false);
+          return;
+        }
+        
+        // Fetch real data from the API
+        console.log('📊 Fetching platform stats...');
+        const response = await fetch('/api/platform/stats', {
+          cache: 'no-store' // Force fresh data
+        });
+        console.log('📊 Response status:', response.status);
+        const data = await response.json();
+        console.log('📊 Platform stats data:', data);
+        
+        if (data.success) {
+          console.log('📊 Using API data');
+          setStats(data.stats);
+          setActivities(data.activities || []);
+        } else {
+          console.log('📊 API failed, using fallback data:', data.error);
+          // If API fails, use data from context as fallback
+          const activeCoworks = availableCoworks.filter(c => c.status === 'ACTIVE').length;
+          const fallbackStats: PlatformStats = {
+            overview: {
+              totalCoworks: availableCoworks.length,
+              activeCoworks: activeCoworks,
+              totalUsers: 4, // Known from database check
+              activeUsers: 0,
+              totalRevenue: 0,
+              monthlyRevenue: 0,
+              revenueGrowth: 0
             },
-            recentlyCreated: 3,
-            averageUsersPerCowork: 104
-          },
-          userStats: {
-            byRole: {
-              super_admin: 2,
-              cowork_admin: 24,
-              cowork_user: 89,
-              client_admin: 156,
-              end_user: 976
+            coworkStats: {
+              byStatus: {
+                active: activeCoworks,
+                inactive: availableCoworks.filter(c => c.status === 'INACTIVE').length,
+                suspended: availableCoworks.filter(c => c.status === 'SUSPENDED').length
+              },
+              recentlyCreated: availableCoworks.length,
+              averageUsersPerCowork: availableCoworks.length > 0 ? Math.round(4 / availableCoworks.length) : 0
             },
-            newUsersThisMonth: 47,
-            activeUsersToday: 234
-          },
-          revenueStats: {
-            thisMonth: 185000,
-            lastMonth: 164000,
-            growth: 12.8,
-            averagePerCowork: 18500
-          }
-        };
-
-        const mockActivities: RecentActivity[] = [
-          {
-            id: '1',
-            type: 'cowork_created',
-            message: 'Nuevo cowork "Tech Hub Madrid" creado',
-            timestamp: 'Hace 2 horas'
-          },
-          {
-            id: '2',
-            type: 'user_registered',
-            message: '15 nuevos usuarios registrados hoy',
-            timestamp: 'Hace 3 horas'
-          },
-          {
-            id: '3',
-            type: 'payment_received',
-            message: 'Pago de $12,500 recibido de "Startup Valley"',
-            timestamp: 'Hace 5 horas'
-          },
-          {
-            id: '4',
-            type: 'cowork_activated',
-            message: 'Cowork "Innovation Center" reactivado',
-            timestamp: 'Hace 1 día'
-          }
-        ];
-
-        setStats(mockStats);
-        setActivities(mockActivities);
+            userStats: {
+              byRole: {
+                super_admin: 1, // You as super admin
+                cowork_admin: 0,
+                cowork_user: 0,
+                client_admin: 0,
+                end_user: 3 // Other users
+              },
+              newUsersThisMonth: 0,
+              activeUsersToday: 0
+            },
+            revenueStats: {
+              thisMonth: 0,
+              lastMonth: 0,
+              growth: 0,
+              averagePerCowork: 0
+            }
+          };
+          
+          // Create activities from available coworks
+          const coworkActivities: RecentActivity[] = availableCoworks.map((cowork, index) => ({
+            id: cowork.id,
+            type: 'cowork_created' as const,
+            message: `Cowork "${cowork.name}" está activo`,
+            timestamp: index === 0 ? 'Hace 1 día' : 'Hace 2 días'
+          }));
+          
+          setStats(fallbackStats);
+          setActivities(coworkActivities);
+          setError(data.error || 'Failed to load platform statistics');
+        }
       } catch (err) {
+        console.error('📊 Platform stats error:', err);
         setError('Error loading platform statistics');
-        console.error('Platform stats error:', err);
+        
+        // Use fallback data even on error
+        if (availableCoworks.length > 0) {
+          const activeCoworks = availableCoworks.filter(c => c.status === 'ACTIVE').length;
+          const fallbackStats: PlatformStats = {
+            overview: {
+              totalCoworks: availableCoworks.length,
+              activeCoworks: activeCoworks,
+              totalUsers: 4,
+              activeUsers: 0,
+              totalRevenue: 0,
+              monthlyRevenue: 0,
+              revenueGrowth: 0
+            },
+            coworkStats: {
+              byStatus: {
+                active: activeCoworks,
+                inactive: availableCoworks.filter(c => c.status === 'INACTIVE').length,
+                suspended: availableCoworks.filter(c => c.status === 'SUSPENDED').length
+              },
+              recentlyCreated: availableCoworks.length,
+              averageUsersPerCowork: availableCoworks.length > 0 ? Math.round(4 / availableCoworks.length) : 0
+            },
+            userStats: {
+              byRole: {
+                super_admin: 1,
+                cowork_admin: 0,
+                cowork_user: 0,
+                client_admin: 0,
+                end_user: 3
+              },
+              newUsersThisMonth: 0,
+              activeUsersToday: 0
+            },
+            revenueStats: {
+              thisMonth: 0,
+              lastMonth: 0,
+              growth: 0,
+              averagePerCowork: 0
+            }
+          };
+          
+          setStats(fallbackStats);
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchStats();
-  }, []);
+  }, [availableCoworks]);
 
   if (isLoading) {
     return (

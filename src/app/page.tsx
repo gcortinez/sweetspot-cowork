@@ -1,29 +1,15 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-
-// Client-only wrapper to avoid hydration issues
-const ClientOnlyHomeContent = dynamic(
-  () => import("@/components/home/home-content").then(mod => ({ default: mod.HomeContent })),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando...</p>
-        </div>
-      </div>
-    ),
-  }
-);
+import { HomeContent } from "@/components/home/home-content";
 
 export default function HomePage() {
   const { isSignedIn, isLoaded } = useAuth();
   const router = useRouter();
+
+  console.log('🏠 HomePage: Auth state', { isSignedIn, isLoaded });
 
   // Redirect authenticated users to dashboard
   useEffect(() => {
@@ -35,11 +21,12 @@ export default function HomePage() {
 
   // Show loading while checking auth
   if (!isLoaded) {
+    console.log('🏠 HomePage: Showing loading (auth not loaded)');
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando...</p>
+          <p className="text-gray-600">Cargando autenticación...</p>
         </div>
       </div>
     );
@@ -47,6 +34,7 @@ export default function HomePage() {
 
   // Show redirecting for authenticated users
   if (isSignedIn) {
+    console.log('🏠 HomePage: Showing redirect (user signed in)');
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
@@ -57,5 +45,6 @@ export default function HomePage() {
     );
   }
 
-  return <ClientOnlyHomeContent />;
+  console.log('🏠 HomePage: Showing landing page');
+  return <HomeContent />;
 }

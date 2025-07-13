@@ -73,64 +73,46 @@ export function UserManagement() {
     try {
       setIsLoading(true);
       
-      // In a real implementation, these would be separate API calls
-      // For now, using mock data
-      const mockUsers: User[] = [
-        {
-          id: '1',
-          clerkId: 'clerk_123',
-          email: 'admin@sweetspot.com',
-          firstName: 'Carlos',
-          lastName: 'Administrador',
-          role: 'SUPER_ADMIN',
-          status: 'ACTIVE',
-          isOnboarded: true,
-          lastLoginAt: '2024-01-15T10:30:00Z',
-          createdAt: '2024-01-01T00:00:00Z',
-          updatedAt: '2024-01-15T10:30:00Z'
-        },
-        {
-          id: '2',
-          clerkId: 'clerk_456',
-          email: 'maria@techhub.com',
-          firstName: 'María',
-          lastName: 'González',
-          phone: '+34 612 345 678',
-          role: 'COWORK_ADMIN',
-          status: 'ACTIVE',
-          tenantId: 'tenant_1',
-          tenantName: 'Tech Hub Madrid',
-          isOnboarded: true,
-          lastLoginAt: '2024-01-14T16:45:00Z',
-          createdAt: '2024-01-02T00:00:00Z',
-          updatedAt: '2024-01-14T16:45:00Z'
-        },
-        {
-          id: '3',
-          clerkId: 'clerk_789',
-          email: 'juan@freelancer.com',
-          firstName: 'Juan',
-          lastName: 'Pérez',
-          phone: '+34 698 765 432',
-          role: 'END_USER',
-          status: 'ACTIVE',
-          tenantId: 'tenant_1',
-          tenantName: 'Tech Hub Madrid',
-          isOnboarded: true,
-          lastLoginAt: '2024-01-15T09:15:00Z',
-          createdAt: '2024-01-05T00:00:00Z',
-          updatedAt: '2024-01-15T09:15:00Z'
-        }
-      ];
-
-      const mockTenants = [
-        { id: 'tenant_1', name: 'Tech Hub Madrid' },
-        { id: 'tenant_2', name: 'Innovation Center' },
-        { id: 'tenant_3', name: 'Startup Valley' }
-      ];
-
-      setUsers(mockUsers);
-      setAvailableTenants(mockTenants);
+      // Fetch real users from API
+      const response = await fetch('/api/platform/users');
+      const data = await response.json();
+      
+      if (data.success) {
+        // Transform API response to match User interface
+        const transformedUsers: User[] = data.users.map((user: any) => ({
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          status: user.status,
+          tenantId: user.tenant?.id,
+          tenantName: user.tenantName,
+          isOnboarded: true, // Assuming all fetched users are onboarded
+          lastLoginAt: user.lastLogin,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt
+        }));
+        
+        setUsers(transformedUsers);
+        
+        // Extract unique tenants from users
+        const uniqueTenants = data.users
+          .filter((user: any) => user.tenant)
+          .reduce((acc: any[], user: any) => {
+            if (!acc.find(t => t.id === user.tenant.id)) {
+              acc.push({
+                id: user.tenant.id,
+                name: user.tenant.name
+              });
+            }
+            return acc;
+          }, []);
+        
+        setAvailableTenants(uniqueTenants);
+      } else {
+        console.error('Failed to fetch users:', data.error);
+      }
     } catch (error) {
       console.error('Error loading users:', error);
     } finally {

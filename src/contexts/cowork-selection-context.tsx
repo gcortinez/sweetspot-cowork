@@ -51,8 +51,28 @@ export function CoworkSelectionProvider({ children }: CoworkSelectionProviderPro
   // TEMPORARY: Force Super Admin for testing
   const isGustavo = user?.firstName === 'Gustavo' || 
                     user?.emailAddresses?.[0]?.emailAddress?.includes('gustavo');
-  const isSuperAdmin = user?.publicMetadata?.role === 'SUPER_ADMIN' || isGustavo;
+  // Check both private and public metadata for backward compatibility
+  const isSuperAdmin = user?.privateMetadata?.role === 'SUPER_ADMIN' || 
+                       user?.publicMetadata?.role === 'SUPER_ADMIN' || 
+                       isGustavo;
   const isPlatformView = isSuperAdmin && selectedCowork === null;
+  
+  // Debug logging
+  useEffect(() => {
+    if (user) {
+      console.log('🔍 Cowork Selection Context Debug:', {
+        firstName: user.firstName,
+        email: user.emailAddresses?.[0]?.emailAddress,
+        publicRole: user.publicMetadata?.role,
+        privateRole: user.privateMetadata?.role,
+        isGustavo,
+        isSuperAdmin,
+        selectedCowork: selectedCowork?.name || 'null',
+        isPlatformView,
+        isLoadingCoworks
+      });
+    }
+  }, [user, isSuperAdmin, selectedCowork, isPlatformView, isLoadingCoworks]);
 
   // Load coworks from API
   const loadCoworks = async () => {
@@ -72,16 +92,11 @@ export function CoworkSelectionProvider({ children }: CoworkSelectionProviderPro
           setSelectedCowork(data.data.defaultCowork);
         }
         
-        // For Super Admins, restore previous selection or default to platform view
+        // For Super Admins, force platform view initially (for debugging)
         if (isSuperAdmin) {
-          const savedCoworkId = localStorage.getItem(SELECTED_COWORK_KEY);
-          if (savedCoworkId && savedCoworkId !== 'platform') {
-            const savedCowork = coworks.find((c: Cowork) => c.id === savedCoworkId);
-            if (savedCowork) {
-              setSelectedCowork(savedCowork);
-            }
-          }
-          // If no saved selection or 'platform', stay in platform view (selectedCowork = null)
+          console.log('🔧 Forcing platform view for Super Admin');
+          setSelectedCowork(null); // Force platform view
+          localStorage.setItem(SELECTED_COWORK_KEY, 'platform');
         }
       }
     } catch (error) {

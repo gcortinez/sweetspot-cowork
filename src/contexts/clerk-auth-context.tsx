@@ -49,21 +49,22 @@ export function ClerkAuthProvider({ children }: AuthProviderProps) {
     if (!clerkUser) return null;
 
     try {
-      // Get user metadata from Clerk
-      const metadata = clerkUser.publicMetadata as ClerkUserMetadata;
+      // Get user metadata from Clerk (check both private and public for backward compatibility)
+      const privateMetadata = clerkUser.privateMetadata as ClerkUserMetadata;
+      const publicMetadata = clerkUser.publicMetadata as ClerkUserMetadata;
       
       // Auto-assign SUPER_ADMIN to specific email or first user
-      let role = metadata?.role || 'END_USER';
+      let role = privateMetadata?.role || publicMetadata?.role || 'END_USER';
       
       // Check if this is the admin email or Gustavo
       const adminEmail = clerkUser.emailAddresses[0]?.emailAddress;
       const isGustavo = clerkUser.firstName === 'Gustavo' || adminEmail?.includes('gustavo');
       
-      if ((adminEmail === 'gcortinez@getsweetspot.io' || isGustavo) && !metadata?.role) {
+      if ((adminEmail === 'gcortinez@getsweetspot.io' || isGustavo) && !privateMetadata?.role && !publicMetadata?.role) {
         console.log('🔧 Auto-assigning SUPER_ADMIN role to:', adminEmail || clerkUser.firstName);
         role = 'SUPER_ADMIN';
         
-        // Update metadata in Clerk via API route
+        // Update metadata in Clerk via API route (use private metadata for security)
         try {
           const response = await fetch('/api/auth/update-metadata', {
             method: 'POST',
@@ -74,7 +75,8 @@ export function ClerkAuthProvider({ children }: AuthProviderProps) {
                 role: 'SUPER_ADMIN',
                 tenantId: null,
                 isOnboarded: true,
-              }
+              },
+              type: 'private'
             })
           });
           
@@ -96,12 +98,13 @@ export function ClerkAuthProvider({ children }: AuthProviderProps) {
         firstName: clerkUser.firstName,
         lastName: clerkUser.lastName,
         role: role as UserRole,
-        tenantId: metadata?.tenantId || null,
-        clientId: metadata?.clientId,
-        isOnboarded: metadata?.isOnboarded || (role === 'SUPER_ADMIN'),
+        tenantId: privateMetadata?.tenantId || publicMetadata?.tenantId || null,
+        clientId: privateMetadata?.clientId || publicMetadata?.clientId,
+        isOnboarded: privateMetadata?.isOnboarded || publicMetadata?.isOnboarded || (role === 'SUPER_ADMIN'),
         clerkUser: clerkUser,
         metadata: {
-          ...metadata,
+          ...privateMetadata,
+          ...publicMetadata,
           role: role as UserRole,
         },
       };
@@ -184,16 +187,17 @@ export function ClerkAuthProvider({ children }: AuthProviderProps) {
     if (!clerkUser) return;
 
     try {
-      // Update metadata via API route
+      // Update metadata via API route (use private metadata for security)
       const response = await fetch('/api/auth/update-metadata', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: clerkUser.id,
           metadata: {
-            ...clerkUser.publicMetadata,
+            ...clerkUser.privateMetadata,
             ...metadata,
-          }
+          },
+          type: 'private'
         })
       });
 
