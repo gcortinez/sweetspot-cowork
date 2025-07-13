@@ -38,9 +38,6 @@ export async function GET(request: NextRequest) {
 
     // Fetch all users with their tenant information
     const users = await prisma.user.findMany({
-      where: {
-        status: 'ACTIVE'
-      },
       select: {
         id: true,
         email: true,
