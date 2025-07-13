@@ -3,9 +3,9 @@ import { currentUser } from '@clerk/nextjs/server'
 import prisma from '@/lib/server/prisma'
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 /**
@@ -14,7 +14,8 @@ interface RouteParams {
  */
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    console.log('👤 Update User API called for ID:', params.id);
+    const { id } = await params
+    console.log('👤 Update User API called for ID:', id);
     
     // Get the current user from Clerk
     const clerkUser = await currentUser()
@@ -75,7 +76,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!existingUser) {
@@ -87,7 +88,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     // Update user in database
     const updatedUser = await prisma.user.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         firstName: firstName.trim(),
         lastName: lastName.trim(),

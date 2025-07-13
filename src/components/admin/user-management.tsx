@@ -189,7 +189,7 @@ export function UserManagement() {
   // Handle status change
   const handleStatusChange = async (userId: string, newStatus: string) => {
     try {
-      console.log(`Changing status of user ${userId} to ${newStatus}`);
+      console.log(`🔄 Changing status of user ${userId} to ${newStatus}`);
       
       // Call API to update user status
       const response = await fetch(`/api/platform/users/${userId}`, {
@@ -202,7 +202,17 @@ export function UserManagement() {
         })
       });
       
+      console.log(`📡 API Response status:`, response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ API Error:', errorText);
+        alert(`Error al actualizar el estado: ${response.status} - ${errorText}`);
+        return;
+      }
+      
       const data = await response.json();
+      console.log(`📊 API Response data:`, data);
       
       if (data.success) {
         // Update local state
@@ -212,11 +222,11 @@ export function UserManagement() {
         
         console.log(`✅ User status updated successfully`);
       } else {
-        console.error('Failed to update user status:', data.error);
+        console.error('❌ Failed to update user status:', data.error);
         alert(`Error al actualizar el estado: ${data.error}`);
       }
     } catch (error) {
-      console.error('Error updating user status:', error);
+      console.error('❌ Error updating user status:', error);
       alert('Error al actualizar el estado del usuario');
     }
   };
@@ -241,6 +251,7 @@ export function UserManagement() {
     
     try {
       setIsUpdatingUser(true);
+      console.log(`🔄 Updating user ${editingUser.id} with data:`, editForm);
       
       const response = await fetch(`/api/platform/users/${editingUser.id}`, {
         method: 'PATCH',
@@ -250,7 +261,17 @@ export function UserManagement() {
         body: JSON.stringify(editForm)
       });
       
+      console.log(`📡 API Response status:`, response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ API Error:', errorText);
+        alert(`Error al actualizar el usuario: ${response.status} - ${errorText}`);
+        return;
+      }
+      
       const data = await response.json();
+      console.log(`📊 API Response data:`, data);
       
       if (data.success) {
         // Update local state
@@ -262,11 +283,11 @@ export function UserManagement() {
         setEditingUser(null);
         console.log('✅ User updated successfully');
       } else {
-        console.error('Failed to update user:', data.error);
+        console.error('❌ Failed to update user:', data.error);
         alert(`Error al actualizar el usuario: ${data.error}`);
       }
     } catch (error) {
-      console.error('Error updating user:', error);
+      console.error('❌ Error updating user:', error);
       alert('Error al actualizar el usuario');
     } finally {
       setIsUpdatingUser(false);
