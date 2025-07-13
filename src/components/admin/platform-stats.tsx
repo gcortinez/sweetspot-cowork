@@ -196,7 +196,6 @@ export function PlatformStats() {
           };
           
           setStats(fallbackStats);
-        }
       } finally {
         setIsLoading(false);
       }

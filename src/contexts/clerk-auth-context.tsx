@@ -91,6 +91,24 @@ export function ClerkAuthProvider({ children }: AuthProviderProps) {
         }
       }
 
+      // Sync Clerk ID with database
+      try {
+        console.log('🔗 Syncing Clerk ID with database...');
+        const syncResponse = await fetch('/api/auth/sync-clerk-id', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (syncResponse.ok) {
+          const syncData = await syncResponse.json();
+          console.log('✅ Clerk ID synced:', syncData.message);
+        } else {
+          console.warn('⚠️ Failed to sync Clerk ID, but continuing...');
+        }
+      } catch (syncError) {
+        console.warn('⚠️ Clerk ID sync failed, but continuing:', syncError);
+      }
+
       // Create user object
       const authUser: AuthUser = {
         id: clerkUser.id,
