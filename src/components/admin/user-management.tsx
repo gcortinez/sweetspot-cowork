@@ -1,6 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+// Removed createInvitation import - using API instead
+import InvitationsDashboard from './invitations-dashboard';
 import { 
   Users, 
   Search, 
@@ -66,22 +69,50 @@ export function UserManagement() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showUserModal, setShowUserModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editForm, setEditForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    role: 'END_USER' as User['role'],
+    status: 'ACTIVE' as User['status']
+  });
+  const [isUpdatingUser, setIsUpdatingUser] = useState(false);
   const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState<{top: number, left: number} | null>(null);
   const [availableTenants, setAvailableTenants] = useState<any[]>([]);
+  const [mounted, setMounted] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<'SUPER_ADMIN' | 'COWORK_ADMIN' | 'COWORK_USER' | 'CLIENT_ADMIN' | 'END_USER'>('END_USER');
+  const [inviteTenantId, setInviteTenantId] = useState('');
+  const [isSubmittingInvite, setIsSubmittingInvite] = useState(false);
+  const [inviteMessage, setInviteMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+  const [activeTab, setActiveTab] = useState<'users' | 'invitations'>('users');
+
+  // Set mounted state for portal
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Load users and tenants
   const loadData = async () => {
     try {
       setIsLoading(true);
       
-      // Fetch real users from API
-      const response = await fetch('/api/platform/users');
-      const data = await response.json();
+      // Fetch users and coworks in parallel
+      const [usersResponse, coworksResponse] = await Promise.all([
+        fetch('/api/platform/users'),
+        fetch('/api/platform/coworks')
+      ]);
       
-      if (data.success) {
+      const usersData = await usersResponse.json();
+      const coworksData = await coworksResponse.json();
+      
+      if (usersData.success) {
         // Transform API response to match User interface
-        const transformedUsers: User[] = data.users.map((user: any) => ({
+        const transformedUsers: User[] = usersData.users.map((user: any) => ({
           id: user.id,
           email: user.email,
           firstName: user.firstName,
@@ -97,26 +128,26 @@ export function UserManagement() {
         }));
         
         setUsers(transformedUsers);
-        
-        // Extract unique tenants from users
-        const uniqueTenants = data.users
-          .filter((user: any) => user.tenant)
-          .reduce((acc: any[], user: any) => {
-            if (!acc.find(t => t.id === user.tenant.id)) {
-              acc.push({
-                id: user.tenant.id,
-                name: user.tenant.name
-              });
-            }
-            return acc;
-          }, []);
-        
-        setAvailableTenants(uniqueTenants);
       } else {
-        console.error('Failed to fetch users:', data.error);
+        console.error('Failed to fetch users:', usersData.error);
+      }
+      
+      if (coworksData.success) {
+        // Set available coworks/tenants
+        const formattedCoworks = coworksData.coworks.map((cowork: any) => ({
+          id: cowork.id,
+          name: cowork.name,
+          slug: cowork.slug,
+          status: cowork.status,
+          userCount: cowork.userCount
+        }));
+        
+        setAvailableTenants(formattedCoworks);
+      } else {
+        console.error('Failed to fetch coworks:', coworksData.error);
       }
     } catch (error) {
-      console.error('Error loading users:', error);
+      console.error('Error loading data:', error);
     } finally {
       setIsLoading(false);
     }
@@ -160,11 +191,145 @@ export function UserManagement() {
     try {
       console.log(`Changing status of user ${userId} to ${newStatus}`);
       
-      setUsers(prev => prev.map(u => 
-        u.id === userId ? { ...u, status: newStatus as any } : u
-      ));
+      // Call API to update user status
+      const response = await fetch(`/api/platform/users/${userId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          status: newStatus
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        // Update local state
+        setUsers(prev => prev.map(u => 
+          u.id === userId ? { ...u, status: newStatus as any } : u
+        ));
+        
+        console.log(`✅ User status updated successfully`);
+      } else {
+        console.error('Failed to update user status:', data.error);
+        alert(`Error al actualizar el estado: ${data.error}`);
+      }
     } catch (error) {
       console.error('Error updating user status:', error);
+      alert('Error al actualizar el estado del usuario');
+    }
+  };
+
+  // Handle edit user
+  const handleEditUser = (user: User) => {
+    setEditingUser(user);
+    setEditForm({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      phone: user.phone || '',
+      role: user.role,
+      status: user.status
+    });
+    setShowEditModal(true);
+  };
+
+  // Handle update user
+  const handleUpdateUser = async () => {
+    if (!editingUser) return;
+    
+    try {
+      setIsUpdatingUser(true);
+      
+      const response = await fetch(`/api/platform/users/${editingUser.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(editForm)
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        // Update local state
+        setUsers(prev => prev.map(u => 
+          u.id === editingUser.id ? { ...u, ...editForm } : u
+        ));
+        
+        setShowEditModal(false);
+        setEditingUser(null);
+        console.log('✅ User updated successfully');
+      } else {
+        console.error('Failed to update user:', data.error);
+        alert(`Error al actualizar el usuario: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Error updating user:', error);
+      alert('Error al actualizar el usuario');
+    } finally {
+      setIsUpdatingUser(false);
+    }
+  };
+
+  // Handle send invitation
+  const handleSendInvitation = async () => {
+    if (!inviteEmail.trim()) {
+      setInviteMessage({ type: 'error', text: 'Por favor ingresa un email válido' });
+      return;
+    }
+
+    if (inviteRole !== 'SUPER_ADMIN' && !inviteTenantId) {
+      setInviteMessage({ type: 'error', text: 'Por favor selecciona un cowork para este rol' });
+      return;
+    }
+
+    try {
+      setIsSubmittingInvite(true);
+      setInviteMessage(null);
+
+      const response = await fetch('/api/platform/invitations/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          emailAddress: inviteEmail.trim(),
+          role: inviteRole,
+          tenantId: inviteRole === 'SUPER_ADMIN' ? undefined : inviteTenantId || undefined
+        })
+      });
+      
+      const data = await response.json();
+
+      if (data.success) {
+        setInviteMessage({ 
+          type: 'success', 
+          text: `✅ Invitación enviada exitosamente a ${inviteEmail}` 
+        });
+        
+        // Reset form
+        setInviteEmail('');
+        setInviteRole('END_USER');
+        setInviteTenantId('');
+        
+        // Close modal after 2 seconds
+        setTimeout(() => {
+          setShowInviteModal(false);
+          setInviteMessage(null);
+        }, 2000);
+        
+        // Refresh users list
+        loadData();
+      } else {
+        setInviteMessage({ type: 'error', text: `❌ ${data.error}` });
+      }
+    } catch (error) {
+      console.error('Error sending invitation:', error);
+      setInviteMessage({ type: 'error', text: '❌ Error al enviar la invitación' });
+    } finally {
+      setIsSubmittingInvite(false);
     }
   };
 
@@ -223,7 +388,12 @@ export function UserManagement() {
           </div>
           <div className="flex items-center space-x-3">
             <button 
-              onClick={() => setShowInviteModal(true)}
+              onClick={() => {
+                // Close any open action menu
+                setActionMenuOpen(null);
+                setMenuPosition(null);
+                setShowInviteModal(true);
+              }}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm flex items-center space-x-2 transition-colors"
             >
               <Users className="h-4 w-4" />
@@ -279,9 +449,44 @@ export function UserManagement() {
             ))}
           </select>
         </div>
+
+        {/* Navigation Tabs */}
+        <div className="border-t border-gray-200 pt-6">
+          <nav className="flex space-x-8">
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`pb-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'users'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <Users className="h-4 w-4" />
+                <span>Usuarios Activos</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('invitations')}
+              className={`pb-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'invitations'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <Mail className="h-4 w-4" />
+                <span>Invitaciones</span>
+              </div>
+            </button>
+          </nav>
+        </div>
       </div>
 
-      {/* Users Table */}
+      {/* Tab Content */}
+      {activeTab === 'users' && (
+        <>
+          {/* Users Table */}
       <div className="bg-white rounded-lg shadow-sm border overflow-hidden relative">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -386,9 +591,18 @@ export function UserManagement() {
                         onClick={(e) => {
                           e.stopPropagation();
                           const rect = e.currentTarget.getBoundingClientRect();
+                          const menuWidth = 200;
+                          const viewportWidth = window.innerWidth;
+                          
+                          // Calculate horizontal position to keep menu on screen
+                          let left = rect.right - menuWidth;
+                          if (left < 10) {
+                            left = rect.left;
+                          }
+                          
                           setMenuPosition({
                             top: rect.bottom + 5,
-                            left: rect.left - 180 // Offset to the left so menu doesn't go off screen
+                            left: left
                           });
                           setActionMenuOpen(actionMenuOpen === user.id ? null : user.id);
                         }}
@@ -405,8 +619,8 @@ export function UserManagement() {
           </table>
         </div>
 
-        {/* Action Menu - Positioned outside table to avoid overflow issues */}
-        {actionMenuOpen && menuPosition && (
+        {/* Action Menu Portal - Rendered directly to body to avoid any container clipping */}
+        {mounted && actionMenuOpen && menuPosition && createPortal(
           <>
             <div
               className="fixed inset-0 z-40"
@@ -416,10 +630,11 @@ export function UserManagement() {
               }}
             />
             <div 
-              className="fixed w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200"
+              className="fixed w-48 bg-white rounded-md shadow-xl z-50 border border-gray-200"
               style={{
-                top: menuPosition.top,
-                left: menuPosition.left
+                top: `${menuPosition.top}px`,
+                left: `${menuPosition.left}px`,
+                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
               }}
             >
               <div className="py-1">
@@ -440,6 +655,10 @@ export function UserManagement() {
                 </button>
                 <button
                   onClick={() => {
+                    const user = filteredUsers.find(u => u.id === actionMenuOpen);
+                    if (user) {
+                      handleEditUser(user);
+                    }
                     setActionMenuOpen(null);
                     setMenuPosition(null);
                   }}
@@ -460,7 +679,7 @@ export function UserManagement() {
                         onClick={() => {
                           handleStatusChange(user.id, 'SUSPENDED');
                           setActionMenuOpen(null);
-                    setMenuPosition(null);
+                          setMenuPosition(null);
                         }}
                         className="w-full text-left px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50 flex items-center"
                       >
@@ -476,7 +695,7 @@ export function UserManagement() {
                         onClick={() => {
                           handleStatusChange(user.id, 'ACTIVE');
                           setActionMenuOpen(null);
-                    setMenuPosition(null);
+                          setMenuPosition(null);
                         }}
                         className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center"
                       >
@@ -490,7 +709,8 @@ export function UserManagement() {
                 })()}
               </div>
             </div>
-          </>
+          </>,
+          document.body
         )}
 
         {/* Empty State */}
@@ -535,10 +755,17 @@ export function UserManagement() {
           </button>
         </div>
       </div>
+        </>
+      )}
+
+      {/* Invitations Tab */}
+      {activeTab === 'invitations' && (
+        <InvitationsDashboard />
+      )}
 
       {/* Invite User Modal */}
       {showInviteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Invitar Usuario</h3>
@@ -551,6 +778,17 @@ export function UserManagement() {
             </div>
             
             <div className="space-y-4">
+              {/* Success/Error Message */}
+              {inviteMessage && (
+                <div className={`p-3 rounded-md ${
+                  inviteMessage.type === 'success' 
+                    ? 'bg-green-50 text-green-800 border border-green-200' 
+                    : 'bg-red-50 text-red-800 border border-red-200'
+                }`}>
+                  {inviteMessage.text}
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Email
@@ -558,7 +796,10 @@ export function UserManagement() {
                 <input
                   type="email"
                   placeholder="usuario@ejemplo.com"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  disabled={isSubmittingInvite}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
                 />
               </div>
               
@@ -566,7 +807,12 @@ export function UserManagement() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Rol
                 </label>
-                <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <select 
+                  value={inviteRole} 
+                  onChange={(e) => setInviteRole(e.target.value as any)}
+                  disabled={isSubmittingInvite}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                >
                   <option value="END_USER">Usuario Final</option>
                   <option value="COWORK_USER">Usuario de Cowork</option>
                   <option value="CLIENT_ADMIN">Admin de Cliente</option>
@@ -575,35 +821,57 @@ export function UserManagement() {
                 </select>
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Cowork
-                </label>
-                <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                  <option value="">Seleccionar cowork...</option>
-                  {availableTenants.map(tenant => (
-                    <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
-                  ))}
-                </select>
-              </div>
+              {inviteRole !== 'SUPER_ADMIN' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Cowork <span className="text-red-500">*</span>
+                  </label>
+                  <select 
+                    value={inviteTenantId} 
+                    onChange={(e) => setInviteTenantId(e.target.value)}
+                    disabled={isSubmittingInvite}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                  >
+                    <option value="">Seleccionar cowork...</option>
+                    {availableTenants.map(tenant => (
+                      <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {inviteRole === 'SUPER_ADMIN' && (
+                <div className="bg-purple-50 border border-purple-200 rounded-md p-3">
+                  <p className="text-sm text-purple-800">
+                    <strong>Super Admin:</strong> Este usuario tendrá acceso completo a toda la plataforma y podrá gestionar todos los coworks.
+                  </p>
+                </div>
+              )}
             </div>
             
             <div className="flex justify-end space-x-3 mt-6">
               <button
-                onClick={() => setShowInviteModal(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                onClick={() => {
+                  setShowInviteModal(false);
+                  setInviteMessage(null);
+                  setInviteEmail('');
+                  setInviteRole('END_USER');
+                  setInviteTenantId('');
+                }}
+                disabled={isSubmittingInvite}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 rounded-md transition-colors"
               >
                 Cancelar
               </button>
               <button
-                onClick={() => {
-                  // TODO: Implement invite logic
-                  console.log('Inviting user...');
-                  setShowInviteModal(false);
-                }}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+                onClick={handleSendInvitation}
+                disabled={isSubmittingInvite || !inviteEmail.trim()}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-md transition-colors flex items-center space-x-2"
               >
-                Enviar Invitación
+                {isSubmittingInvite && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                )}
+                <span>{isSubmittingInvite ? 'Enviando...' : 'Enviar Invitación'}</span>
               </button>
             </div>
           </div>
@@ -692,6 +960,140 @@ export function UserManagement() {
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
               >
                 Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {showEditModal && editingUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-lg mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Editar Usuario</h3>
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingUser(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nombre
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.firstName}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, firstName: e.target.value }))}
+                    disabled={isUpdatingUser}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Apellido
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.lastName}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, lastName: e.target.value }))}
+                    disabled={isUpdatingUser}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
+                  disabled={isUpdatingUser}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Teléfono
+                </label>
+                <input
+                  type="tel"
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
+                  disabled={isUpdatingUser}
+                  placeholder="988773344"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Rol
+                  </label>
+                  <select
+                    value={editForm.role}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, role: e.target.value as User['role'] }))}
+                    disabled={isUpdatingUser}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                  >
+                    {Object.entries(ROLE_LABELS).map(([key, label]) => (
+                      <option key={key} value={key}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Estado
+                  </label>
+                  <select
+                    value={editForm.status}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, status: e.target.value as User['status'] }))}
+                    disabled={isUpdatingUser}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                  >
+                    <option value="ACTIVE">Activo</option>
+                    <option value="INACTIVE">Inactivo</option>
+                    <option value="SUSPENDED">Suspendido</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingUser(null);
+                }}
+                disabled={isUpdatingUser}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 rounded-md transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleUpdateUser}
+                disabled={isUpdatingUser || !editForm.firstName.trim() || !editForm.lastName.trim() || !editForm.email.trim()}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-md transition-colors flex items-center space-x-2"
+              >
+                {isUpdatingUser && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                )}
+                <span>{isUpdatingUser ? 'Actualizando...' : 'Guardar Cambios'}</span>
               </button>
             </div>
           </div>

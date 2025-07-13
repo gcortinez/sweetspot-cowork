@@ -29,6 +29,7 @@ model Tenant {
 
     // Relationships
     users               User[]
+    invitations         Invitation[]
     clients             Client[]
     spaces              Space[]
     plans               Plan[]
@@ -190,6 +191,9 @@ model User {
     approvedBudgetPlans        BudgetPlan[]                @relation("BudgetPlanApprover")
     responsibleExpenses        BudgetExpense[]
 
+    // Invitation management relationships
+    sentInvitations         Invitation[] @relation("InvitationSender")
+
     @@unique([tenantId, email])
     @@map("users")
 }
@@ -206,6 +210,42 @@ enum UserStatus {
     ACTIVE
     INACTIVE
     SUSPENDED
+}
+
+// ============================================================================
+// INVITATION MANAGEMENT
+// ============================================================================
+
+model Invitation {
+    id                String           @id @default(cuid())
+    email             String
+    role              UserRole
+    status            InvitationStatus @default(PENDING)
+    
+    // Clerk integration
+    clerkInvitationId String           @unique
+    
+    // Tenant relationship (optional - for cowork-specific invitations)
+    tenantId          String?
+    tenant            Tenant?          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    
+    // Audit fields
+    invitedBy         String
+    inviter           User             @relation("InvitationSender", fields: [invitedBy], references: [id], onDelete: Cascade)
+    acceptedAt        DateTime?
+    
+    createdAt         DateTime         @default(now())
+    updatedAt         DateTime         @updatedAt
+    
+    @@unique([email, tenantId])
+    @@map("invitations")
+}
+
+enum InvitationStatus {
+    PENDING
+    ACCEPTED
+    REVOKED
+    EXPIRED
 }
 
 // ============================================================================

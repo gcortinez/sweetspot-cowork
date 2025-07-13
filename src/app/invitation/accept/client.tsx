@@ -56,13 +56,7 @@ export default function InvitationAcceptClient() {
   const validateForm = () => {
     const errors: string[] = []
 
-    if (!formData.firstName.trim()) {
-      errors.push('El nombre es requerido')
-    }
-
-    if (!formData.lastName.trim()) {
-      errors.push('El apellido es requerido')
-    }
+    // Names are optional for ticket signup, will be collected in onboarding
 
     if (formData.password.length < 8) {
       errors.push('La contraseña debe tener al menos 8 caracteres')
@@ -103,8 +97,6 @@ export default function InvitationAcceptClient() {
       const result = await signUp.create({
         strategy: 'ticket',
         ticket,
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
         password: formData.password,
       })
 
@@ -112,6 +104,19 @@ export default function InvitationAcceptClient() {
         if (setActiveSignUp) {
           await setActiveSignUp({ session: result.createdSessionId })
         }
+        
+        // Update Clerk user with names if provided
+        if (formData.firstName.trim() || formData.lastName.trim()) {
+          try {
+            await result.createdUser?.update({
+              firstName: formData.firstName.trim() || undefined,
+              lastName: formData.lastName.trim() || undefined,
+            })
+          } catch (updateError) {
+            console.warn('Could not update user names in Clerk:', updateError)
+          }
+        }
+        
         setState('success')
         
         setTimeout(() => {
@@ -218,30 +223,34 @@ export default function InvitationAcceptClient() {
 
               <div>
                 <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-                  Nombre *
+                  Nombre (opcional)
                 </label>
                 <input
                   id="firstName"
                   type="text"
-                  required
                   value={formData.firstName}
                   onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
                   className="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm border"
                 />
+                <p className="mt-1 text-xs text-gray-500">
+                  Puedes completar esta información después
+                </p>
               </div>
 
               <div>
                 <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-                  Apellido *
+                  Apellido (opcional)
                 </label>
                 <input
                   id="lastName"
                   type="text"
-                  required
                   value={formData.lastName}
                   onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
                   className="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm border"
                 />
+                <p className="mt-1 text-xs text-gray-500">
+                  Puedes completar esta información después
+                </p>
               </div>
 
               <div>
