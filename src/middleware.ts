@@ -1,5 +1,4 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
-import prisma from '@/lib/server/prisma'
 
 // Define protected routes that require authentication
 const isProtectedRoute = createRouteMatcher([
@@ -11,7 +10,8 @@ const isProtectedRoute = createRouteMatcher([
 // Define routes that suspended users can access
 const isSuspendedAllowedRoute = createRouteMatcher([
   '/suspended',
-  '/api/auth(.*)'
+  '/api/auth(.*)',
+  '/api/internal(.*)'
 ])
 
 // Define auth routes (sign in/up pages)
@@ -44,39 +44,44 @@ export default clerkMiddleware(async (auth, req) => {
     // Check if user is suspended (only for authenticated users on protected routes)
     if (userId && sessionClaims) {
       try {
-        const userEmail = sessionClaims.email
+        // Get email from different possible locations in sessionClaims
+        const userEmail = sessionClaims.email || sessionClaims.primaryEmailAddress?.emailAddress || sessionClaims.emailAddresses?.[0]?.emailAddress
         console.log('🔍 Checking suspension for user:', {
           clerkId: userId,
-          email: userEmail
+          email: userEmail,
+          sessionClaims: Object.keys(sessionClaims)
         })
         
-        // Find user in database by Clerk ID or email
-        const user = await prisma.user.findFirst({
-          where: {
-            OR: [
-              { clerkId: userId },
-              { email: userEmail }
-            ]
+        // Call internal API to check user status
+        const response = await fetch(new URL('/api/internal/user-status', req.url), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
-          select: {
-            id: true,
-            status: true,
-            email: true,
-            clerkId: true
-          }
+          body: JSON.stringify({
+            clerkId: userId,
+            email: userEmail
+          })
         })
 
-        console.log('📊 User found in database:', user)
+        if (response.ok) {
+          const data = await response.json()
+          console.log('📊 User status response:', data)
 
-        if (user && user.status === 'SUSPENDED' && !isSuspendedAllowedRoute(req)) {
-          console.log('🚫 User is suspended, redirecting to suspended page')
-          return Response.redirect(new URL('/suspended', req.url))
-        }
+          if (data.success && data.user && data.user.status === 'SUSPENDED' && !isSuspendedAllowedRoute(req)) {
+            console.log('🚫 User is suspended, redirecting to suspended page')
+            return Response.redirect(new URL('/suspended', req.url))
+          }
 
-        if (!user) {
-          console.log('⚠️ User not found in database')
-        } else if (user.status !== 'SUSPENDED') {
-          console.log('✅ User status is:', user.status)
+          if (data.success) {
+            if (!data.user) {
+              console.log('⚠️ User not found in database')
+            } else if (data.user.status !== 'SUSPENDED') {
+              console.log('✅ User status is:', data.user.status)
+            }
+          }
+        } else {
+          console.error('❌ Failed to check user status:', response.status, response.statusText)
         }
       } catch (error) {
         console.error('❌ Error checking user status:', error)
