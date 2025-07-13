@@ -113,7 +113,6 @@ enum TenantStatus {
 model User {
     id                    String     @id @default(cuid())
     tenantId              String?    // Allow null for Super Admins
-    supabaseId            String?    @unique // Made optional for Clerk migration
     clerkId               String?    @unique // Clerk user ID
     email                 String
     firstName             String
