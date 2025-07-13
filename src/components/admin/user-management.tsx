@@ -67,6 +67,7 @@ export function UserManagement() {
   const [showUserModal, setShowUserModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{top: number, left: number} | null>(null);
   const [availableTenants, setAvailableTenants] = useState<any[]>([]);
 
   // Load users and tenants
@@ -281,7 +282,7 @@ export function UserManagement() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm border overflow-hidden relative">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -382,78 +383,114 @@ export function UserManagement() {
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="relative">
                       <button
-                        onClick={() => setActionMenuOpen(actionMenuOpen === user.id ? null : user.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          setMenuPosition({
+                            top: rect.bottom + 5,
+                            left: rect.left - 180 // Offset to the left so menu doesn't go off screen
+                          });
+                          setActionMenuOpen(actionMenuOpen === user.id ? null : user.id);
+                        }}
                         className="text-gray-400 hover:text-gray-600 p-1"
+                        id={`action-button-${user.id}`}
                       >
                         <MoreVertical className="h-4 w-4" />
                       </button>
-                      
-                      {actionMenuOpen === user.id && (
-                        <>
-                          <div
-                            className="fixed inset-0 z-40"
-                            onClick={() => setActionMenuOpen(null)}
-                          />
-                          <div className="absolute right-0 top-8 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200">
-                            <div className="py-1">
-                              <button
-                                onClick={() => {
-                                  setSelectedUser(user);
-                                  setShowUserModal(true);
-                                  setActionMenuOpen(null);
-                                }}
-                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                              >
-                                <Eye className="h-4 w-4 mr-2" />
-                                Ver perfil
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setActionMenuOpen(null);
-                                }}
-                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                              >
-                                <Edit className="h-4 w-4 mr-2" />
-                                Editar usuario
-                              </button>
-                              
-                              {/* Status actions */}
-                              {user.status === 'ACTIVE' && (
-                                <button
-                                  onClick={() => {
-                                    handleStatusChange(user.id, 'SUSPENDED');
-                                    setActionMenuOpen(null);
-                                  }}
-                                  className="w-full text-left px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50 flex items-center"
-                                >
-                                  <UserX className="h-4 w-4 mr-2" />
-                                  Suspender
-                                </button>
-                              )}
-                              
-                              {user.status === 'SUSPENDED' && (
-                                <button
-                                  onClick={() => {
-                                    handleStatusChange(user.id, 'ACTIVE');
-                                    setActionMenuOpen(null);
-                                  }}
-                                  className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center"
-                                >
-                                  <UserCheck className="h-4 w-4 mr-2" />
-                                  Activar
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </>
-                      )}
                     </div>
-                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+
+        {/* Action Menu - Positioned outside table to avoid overflow issues */}
+        {actionMenuOpen && menuPosition && (
+          <>
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => {
+                setActionMenuOpen(null);
+                setMenuPosition(null);
+              }}
+            />
+            <div 
+              className="fixed w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200"
+              style={{
+                top: menuPosition.top,
+                left: menuPosition.left
+              }}
+            >
+              <div className="py-1">
+                <button
+                  onClick={() => {
+                    const user = filteredUsers.find(u => u.id === actionMenuOpen);
+                    if (user) {
+                      setSelectedUser(user);
+                      setShowUserModal(true);
+                    }
+                    setActionMenuOpen(null);
+                    setMenuPosition(null);
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Ver perfil
+                </button>
+                <button
+                  onClick={() => {
+                    setActionMenuOpen(null);
+                    setMenuPosition(null);
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Editar usuario
+                </button>
+                
+                {/* Status actions */}
+                {(() => {
+                  const user = filteredUsers.find(u => u.id === actionMenuOpen);
+                  if (!user) return null;
+                  
+                  if (user.status === 'ACTIVE') {
+                    return (
+                      <button
+                        onClick={() => {
+                          handleStatusChange(user.id, 'SUSPENDED');
+                          setActionMenuOpen(null);
+                    setMenuPosition(null);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50 flex items-center"
+                      >
+                        <UserX className="h-4 w-4 mr-2" />
+                        Suspender
+                      </button>
+                    );
+                  }
+                  
+                  if (user.status === 'SUSPENDED') {
+                    return (
+                      <button
+                        onClick={() => {
+                          handleStatusChange(user.id, 'ACTIVE');
+                          setActionMenuOpen(null);
+                    setMenuPosition(null);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center"
+                      >
+                        <UserCheck className="h-4 w-4 mr-2" />
+                        Activar
+                      </button>
+                    );
+                  }
+                  
+                  return null;
+                })()}
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Empty State */}
         {filteredUsers.length === 0 && (
