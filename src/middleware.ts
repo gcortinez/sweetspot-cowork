@@ -47,6 +47,11 @@ export default clerkMiddleware(async (auth, req) => {
       try {
         const clerkUser = await currentUser()
         if (clerkUser) {
+          console.log('🔍 Checking suspension for user:', {
+            clerkId: clerkUser.id,
+            email: clerkUser.emailAddresses[0]?.emailAddress
+          })
+          
           // Find user in database by Clerk ID
           const user = await prisma.user.findFirst({
             where: {
@@ -58,17 +63,26 @@ export default clerkMiddleware(async (auth, req) => {
             select: {
               id: true,
               status: true,
-              email: true
+              email: true,
+              clerkId: true
             }
           })
+
+          console.log('📊 User found in database:', user)
 
           if (user && user.status === 'SUSPENDED' && !isSuspendedAllowedRoute(req)) {
             console.log('🚫 User is suspended, redirecting to suspended page')
             return Response.redirect(new URL('/suspended', req.url))
           }
+
+          if (!user) {
+            console.log('⚠️ User not found in database')
+          } else if (user.status !== 'SUSPENDED') {
+            console.log('✅ User status is:', user.status)
+          }
         }
       } catch (error) {
-        console.error('Error checking user status:', error)
+        console.error('❌ Error checking user status:', error)
         // Continue to allow access if there's an error checking status
       }
     }
