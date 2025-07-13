@@ -1,10 +1,18 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { currentUser } from '@clerk/nextjs/server'
+import prisma from '@/lib/server/prisma'
 
 // Define protected routes that require authentication
 const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)',
   '/api/coworks(.*)',
   '/api/platform(.*)'
+])
+
+// Define routes that suspended users can access
+const isSuspendedAllowedRoute = createRouteMatcher([
+  '/suspended',
+  '/api/auth(.*)'
 ])
 
 // Define auth routes (sign in/up pages)
@@ -33,6 +41,37 @@ export default clerkMiddleware(async (auth, req) => {
   // Protect routes for authenticated users only
   if (isProtectedRoute(req)) {
     await auth.protect()
+    
+    // Check if user is suspended (only for authenticated users on protected routes)
+    if (userId) {
+      try {
+        const clerkUser = await currentUser()
+        if (clerkUser) {
+          // Find user in database by Clerk ID
+          const user = await prisma.user.findFirst({
+            where: {
+              OR: [
+                { clerkId: clerkUser.id },
+                { email: clerkUser.emailAddresses[0]?.emailAddress }
+              ]
+            },
+            select: {
+              id: true,
+              status: true,
+              email: true
+            }
+          })
+
+          if (user && user.status === 'SUSPENDED' && !isSuspendedAllowedRoute(req)) {
+            console.log('🚫 User is suspended, redirecting to suspended page')
+            return Response.redirect(new URL('/suspended', req.url))
+          }
+        }
+      } catch (error) {
+        console.error('Error checking user status:', error)
+        // Continue to allow access if there's an error checking status
+      }
+    }
   }
 })
 
