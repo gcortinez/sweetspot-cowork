@@ -191,13 +191,26 @@ export function UserManagement() {
     try {
       console.log(`🔄 Changing status of user ${userId} to ${newStatus}`);
       
-      // Call API to update user status
+      // Find the user to get required fields
+      const user = users.find(u => u.id === userId);
+      if (!user) {
+        console.error('❌ User not found in local state');
+        alert('Error: Usuario no encontrado');
+        return;
+      }
+      
+      // Call API to update user status with required fields
       const response = await fetch(`/api/platform/users/${userId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          phone: user.phone || '',
+          role: user.role,
           status: newStatus
         })
       });
