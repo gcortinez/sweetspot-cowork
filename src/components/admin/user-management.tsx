@@ -65,6 +65,7 @@ export function UserManagement() {
   const [tenantFilter, setTenantFilter] = useState<string>('all');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showUserModal, setShowUserModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null);
   const [availableTenants, setAvailableTenants] = useState<any[]>([]);
 
@@ -220,7 +221,10 @@ export function UserManagement() {
             <p className="text-gray-600">Administra todos los usuarios de la plataforma</p>
           </div>
           <div className="flex items-center space-x-3">
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm flex items-center space-x-2 transition-colors">
+            <button 
+              onClick={() => setShowInviteModal(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm flex items-center space-x-2 transition-colors"
+            >
               <Users className="h-4 w-4" />
               <span>Invitar Usuario</span>
             </button>
@@ -387,10 +391,10 @@ export function UserManagement() {
                       {actionMenuOpen === user.id && (
                         <>
                           <div
-                            className="fixed inset-0 z-10"
+                            className="fixed inset-0 z-40"
                             onClick={() => setActionMenuOpen(null)}
                           />
-                          <div className="absolute right-0 top-8 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border border-gray-200">
+                          <div className="absolute right-0 top-8 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200">
                             <div className="py-1">
                               <button
                                 onClick={() => {
@@ -493,6 +497,168 @@ export function UserManagement() {
           </button>
         </div>
       </div>
+
+      {/* Invite User Modal */}
+      {showInviteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Invitar Usuario</h3>
+              <button
+                onClick={() => setShowInviteModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  placeholder="usuario@ejemplo.com"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Rol
+                </label>
+                <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                  <option value="END_USER">Usuario Final</option>
+                  <option value="COWORK_USER">Usuario de Cowork</option>
+                  <option value="CLIENT_ADMIN">Admin de Cliente</option>
+                  <option value="COWORK_ADMIN">Admin de Cowork</option>
+                  <option value="SUPER_ADMIN">Super Admin</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Cowork
+                </label>
+                <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                  <option value="">Seleccionar cowork...</option>
+                  {availableTenants.map(tenant => (
+                    <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => setShowInviteModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  // TODO: Implement invite logic
+                  console.log('Inviting user...');
+                  setShowInviteModal(false);
+                }}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+              >
+                Enviar Invitación
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* User Detail Modal */}
+      {showUserModal && selectedUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Detalles del Usuario</h3>
+              <button
+                onClick={() => setShowUserModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nombre
+                  </label>
+                  <p className="text-sm text-gray-900">{selectedUser.firstName} {selectedUser.lastName}</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                  </label>
+                  <p className="text-sm text-gray-900">{selectedUser.email}</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Teléfono
+                  </label>
+                  <p className="text-sm text-gray-900">{selectedUser.phone || 'No especificado'}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Rol
+                  </label>
+                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${ROLE_COLORS[selectedUser.role]}`}>
+                    {ROLE_LABELS[selectedUser.role]}
+                  </span>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Estado
+                  </label>
+                  <p className="text-sm text-gray-900">{selectedUser.status}</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Cowork
+                  </label>
+                  <p className="text-sm text-gray-900">{selectedUser.tenantName || 'Plataforma'}</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Último acceso
+                  </label>
+                  <p className="text-sm text-gray-900">
+                    {selectedUser.lastLoginAt 
+                      ? new Date(selectedUser.lastLoginAt).toLocaleDateString('es-ES')
+                      : 'Nunca'
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => setShowUserModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
