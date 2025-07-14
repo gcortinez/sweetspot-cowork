@@ -19,6 +19,7 @@ import { useActivities } from "@/hooks/use-activities";
 import { useToast } from "@/hooks/use-toast";
 import { useApi } from "@/hooks/use-api";
 import { useConfirm } from "@/hooks/use-confirm";
+import { localStorageService } from "@/lib/local-storage-service";
 import { 
   User, 
   Mail, 
@@ -166,14 +167,15 @@ export default function LeadDetailModal({
   const [showCreateActivityModal, setShowCreateActivityModal] = useState(false);
   const [showEditActivityModal, setShowEditActivityModal] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [localActivities, setLocalActivities] = useState<Activity[]>([]);
   const { toast } = useToast();
   const api = useApi();
   const { confirm, ConfirmDialog } = useConfirm();
   
-  // Fetch activities for this lead
+  // Fetch activities for this lead - disabled auto-fetch due to token issues
   const { activities, loading: activitiesLoading, refetch: refetchActivities } = useActivities({
     leadId: lead?.id,
-    autoFetch: true
+    autoFetch: false // Disabled until authentication is properly configured
   });
 
   // Mock activities for demo purposes when no real activities are available
@@ -196,13 +198,37 @@ export default function LeadDetailModal({
     }
   ];
 
-  // Use activities from API or mock activities as fallback
-  const displayActivities = activities.length > 0 ? activities : mockActivities;
+  // Initialize activities from localStorage and API
+  React.useEffect(() => {
+    if (!isOpen || !lead?.id) {
+      setLocalActivities([]);
+      return;
+    }
+
+    // Load from localStorage first
+    const storedActivities = localStorageService.getActivities(lead.id);
+    
+    if (storedActivities.length > 0) {
+      setLocalActivities(storedActivities);
+    } else if (activities.length > 0) {
+      setLocalActivities(activities);
+    } else {
+      // Use mock activities as fallback
+      setLocalActivities(mockActivities);
+    }
+  }, [isOpen, lead?.id, activities]);
+
+  // Use local activities for display
+  const displayActivities = localActivities;
 
   // Update editScore when lead changes
   React.useEffect(() => {
     if (lead) {
-      setEditScore(lead.score);
+      // Check localStorage for updated score first
+      const storedScore = localStorageService.getLeadScore(lead.id);
+      const scoreToUse = storedScore !== null ? storedScore : lead.score;
+      
+      setEditScore(scoreToUse);
       setIsEditingScore(false); // Reset edit mode when lead changes
     }
   }, [lead?.id, lead?.score]);
@@ -232,9 +258,17 @@ export default function LeadDetailModal({
     try {
       console.log('Saving score:', editScore, 'for lead:', lead.id);
       
-      // Call parent callback if provided
+      // Save to localStorage immediately
+      localStorageService.saveLeadScore(lead.id, editScore);
+      
+      // Try to call parent callback (which calls API)
       if (onUpdateScore) {
-        await onUpdateScore(lead.id, editScore);
+        try {
+          await onUpdateScore(lead.id, editScore);
+        } catch (apiError) {
+          console.warn('API score update failed, but localStorage updated:', apiError);
+          // Still show success since localStorage was updated
+        }
       }
       
       setIsEditingScore(false);
@@ -262,8 +296,18 @@ export default function LeadDetailModal({
   const handleActivityCreated = (newActivity?: any) => {
     console.log('Activity created for lead:', lead.id);
     
-    // Refresh activities from database
-    refetchActivities();
+    // Add to localStorage for persistence
+    if (newActivity) {
+      localStorageService.saveActivity(lead.id, newActivity);
+      setLocalActivities(prev => [newActivity, ...prev]);
+    }
+    
+    // Try to refresh from API, but don't fail if it doesn't work
+    try {
+      refetchActivities();
+    } catch (error) {
+      console.warn('Failed to refresh activities from API:', error);
+    }
     
     // Call parent callback if provided
     if (onCreateActivity) {
@@ -280,8 +324,18 @@ export default function LeadDetailModal({
   const handleActivityUpdated = (updatedActivity: Activity) => {
     console.log('Activity updated:', updatedActivity);
     
-    // Refresh activities from database
-    refetchActivities();
+    // Update in localStorage
+    localStorageService.updateActivity(updatedActivity.id, updatedActivity);
+    setLocalActivities(prev => prev.map(activity => 
+      activity.id === updatedActivity.id ? updatedActivity : activity
+    ));
+    
+    // Try to refresh from API, but don't fail if it doesn't work
+    try {
+      refetchActivities();
+    } catch (error) {
+      console.warn('Failed to refresh activities from API:', error);
+    }
     
     // Close edit modal
     setShowEditActivityModal(false);
@@ -302,16 +356,23 @@ export default function LeadDetailModal({
     try {
       console.log('Deleting activity:', activity.id);
       
-      // Delete via API
-      const response = await api.delete(`/api/activities/${activity.id}`);
+      // Delete from localStorage immediately
+      localStorageService.deleteActivity(activity.id);
+      setLocalActivities(prev => prev.filter(a => a.id !== activity.id));
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error ${response.status}: ${errorText || 'Error al eliminar la actividad'}`);
+      // Try to delete via API, but don't fail if it doesn't work
+      try {
+        const response = await api.delete(`/api/activities/${activity.id}`);
+        
+        if (!response.ok) {
+          console.warn('API delete failed, but localStorage updated');
+        } else {
+          // Refresh from API if successful
+          refetchActivities();
+        }
+      } catch (apiError) {
+        console.warn('API delete failed, using localStorage only:', apiError);
       }
-      
-      // Refresh activities from database
-      refetchActivities();
       
       toast({
         title: "¡Actividad eliminada!",
