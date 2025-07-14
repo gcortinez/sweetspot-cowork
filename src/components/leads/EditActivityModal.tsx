@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useApi } from "@/hooks/use-api";
-import { localStorageService } from "@/lib/local-storage-service";
 import { 
   Phone, 
   Mail, 
@@ -175,23 +174,20 @@ export default function EditActivityModal({
         updateData.completedAt = null;
       }
 
-      // Update activity in localStorage (demo mode)
+      // Update activity via API
       console.log('Updating activity:', activity.id, updateData);
       
-      // TODO: Implement API call when backend is ready
-      // const response = await api.put(`/api/activities/${activity.id}`, updateData);
+      const response = await api.put(`/api/activities/${activity.id}`, updateData);
       
-      // Simulate successful update for demo
-      const updatedActivity: Activity = {
-        ...activity,
-        ...updateData,
-        updatedAt: new Date().toISOString()
-      };
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error ${response.status}: ${errorText || 'Error al actualizar la actividad'}`);
+      }
       
-      // Update in localStorage
-      localStorageService.updateActivity(activity.id, updatedActivity);
+      const result = await response.json();
+      console.log('Activity updated successfully:', result);
       
-      console.log('Activity updated successfully (demo):', updatedActivity);
+      const updatedActivity: Activity = result.data || result;
 
       onActivityUpdated(updatedActivity);
       onClose();

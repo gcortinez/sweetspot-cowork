@@ -57,7 +57,7 @@ import { useToast } from '@/hooks/use-toast'
 import CreateLeadModal from '@/components/leads/CreateLeadModal'
 import LeadDetailModal from '@/components/leads/LeadDetailModal'
 import EditLeadModal from '@/components/leads/EditLeadModal'
-import { localStorageService } from '@/lib/local-storage-service'
+import { useApi } from '@/hooks/use-api'
 
 interface Lead {
   id: string
@@ -133,6 +133,7 @@ export default function LeadsPage() {
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const { toast } = useToast()
+  const api = useApi()
 
   // Check if user is Super Admin
   const privateMetadata = user?.privateMetadata as any
@@ -210,15 +211,7 @@ export default function LeadsPage() {
       
       // Using mock data for now
       setTimeout(() => {
-        // Load leads with stored scores from localStorage
-        const leadsWithStoredScores = mockLeads.map(lead => {
-          const storedScore = localStorageService.getLeadScore(lead.id)
-          return storedScore !== null 
-            ? { ...lead, score: storedScore }
-            : lead
-        })
-        
-        setLeads(leadsWithStoredScores)
+        setLeads(mockLeads)
         setIsLoading(false)
       }, 1000)
     } catch (error) {
@@ -629,23 +622,42 @@ export default function LeadsPage() {
                 setSelectedLead(null)
               }}
               onUpdateScore={async (leadId, newScore) => {
-                console.log('Updating score for lead:', leadId, 'to:', newScore)
-                
-                // Update the lead in the main state
-                setLeads(prev => prev.map(lead => 
-                  lead.id === leadId ? { ...lead, score: newScore } : lead
-                ))
-                
-                // Also update the selected lead if it's the same
-                if (selectedLead?.id === leadId) {
-                  setSelectedLead(prev => prev ? { ...prev, score: newScore } : null)
+                try {
+                  console.log('Updating score for lead:', leadId, 'to:', newScore)
+                  
+                  // Update lead via API
+                  const response = await api.put(`/api/leads/${leadId}`, { score: newScore })
+                  
+                  if (!response.ok) {
+                    const errorText = await response.text()
+                    throw new Error(`Error ${response.status}: ${errorText || 'Error al actualizar la puntuación'}`)
+                  }
+                  
+                  // Update the lead in the main state
+                  setLeads(prev => prev.map(lead => 
+                    lead.id === leadId ? { ...lead, score: newScore } : lead
+                  ))
+                  
+                  // Also update the selected lead if it's the same
+                  if (selectedLead?.id === leadId) {
+                    setSelectedLead(prev => prev ? { ...prev, score: newScore } : null)
+                  }
+                  
+                  // Show success message
+                  toast({
+                    title: '¡Puntuación actualizada!',
+                    description: `La puntuación se ha actualizado a ${newScore}`,
+                  })
+                } catch (error) {
+                  console.error('Error updating lead score:', error)
+                  const errorMessage = error instanceof Error ? error.message : 'Error desconocido al actualizar la puntuación'
+                  toast({
+                    title: 'Error al actualizar puntuación',
+                    description: errorMessage,
+                    variant: 'destructive'
+                  })
+                  throw error // Re-throw to let the modal know there was an error
                 }
-                
-                // Show success message
-                toast({
-                  title: '¡Puntuación actualizada!',
-                  description: `La puntuación se ha actualizado a ${newScore}`,
-                })
               }}
             />
             <EditLeadModal

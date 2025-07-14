@@ -134,21 +134,20 @@ export default function CreateActivityModal({
 
       console.log('Creating activity:', activityData);
       
-      // TODO: Implement API call when backend is ready
-      // const response = await api.post('/api/activities', activityData);
+      // Call API to create activity
+      const response = await api.post('/api/activities', activityData);
       
-      // Simulate successful creation for demo
-      const result = {
-        id: `activity_${Date.now()}`,
-        ...activityData,
-        createdAt: new Date().toISOString(),
-        user: { firstName: 'Usuario', lastName: 'Actual' }
-      };
-      console.log('Activity created successfully (demo):', result);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error ${response.status}: ${errorText || 'Error al crear la actividad'}`);
+      }
+      
+      const result = await response.json();
+      console.log('Activity created successfully:', result);
       
       // Pass the created activity to the parent
       if (typeof onActivityCreated === 'function') {
-        onActivityCreated(result);
+        onActivityCreated(result.data || result);
       }
       onClose();
       
