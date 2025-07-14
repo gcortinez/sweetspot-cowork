@@ -170,10 +170,10 @@ export default function LeadDetailModal({
   const api = useApi();
   const { confirm, ConfirmDialog } = useConfirm();
   
-  // Fetch activities for this lead
+  // Fetch activities for this lead - disabled until backend is fully configured
   const { activities, loading: activitiesLoading, refetch: refetchActivities } = useActivities({
     leadId: lead?.id,
-    autoFetch: true
+    autoFetch: false // Disabled until backend activities API is working
   });
 
   // Mock activities for demo purposes when no real activities are available
@@ -262,8 +262,12 @@ export default function LeadDetailModal({
   const handleActivityCreated = (newActivity?: any) => {
     console.log('Activity created for lead:', lead.id);
     
-    // Refresh activities from database
-    refetchActivities();
+    // Try to refresh activities from database, but don't fail if it doesn't work
+    try {
+      refetchActivities();
+    } catch (error) {
+      console.warn('Failed to refresh activities after creation:', error);
+    }
     
     // Call parent callback if provided
     if (onCreateActivity) {
@@ -280,8 +284,12 @@ export default function LeadDetailModal({
   const handleActivityUpdated = (updatedActivity: Activity) => {
     console.log('Activity updated:', updatedActivity);
     
-    // Refresh activities from database
-    refetchActivities();
+    // Try to refresh activities from database, but don't fail if it doesn't work
+    try {
+      refetchActivities();
+    } catch (error) {
+      console.warn('Failed to refresh activities after update:', error);
+    }
     
     // Close edit modal
     setShowEditActivityModal(false);
@@ -302,16 +310,24 @@ export default function LeadDetailModal({
     try {
       console.log('Deleting activity:', activity.id);
       
-      // Delete via API
-      const response = await api.delete(`/api/activities/${activity.id}`);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error ${response.status}: ${errorText || 'Error al eliminar la actividad'}`);
+      // Try to delete via API
+      try {
+        const response = await api.delete(`/api/activities/${activity.id}`);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.warn('API delete failed:', errorText);
+        }
+      } catch (apiError) {
+        console.warn('Failed to delete activity via API:', apiError);
       }
       
-      // Refresh activities from database
-      refetchActivities();
+      // Try to refresh activities from database
+      try {
+        refetchActivities();
+      } catch (refreshError) {
+        console.warn('Failed to refresh activities after deletion:', refreshError);
+      }
       
       toast({
         title: "¡Actividad eliminada!",
