@@ -2,57 +2,19 @@
 
 import { currentUser } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
-import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
+import { 
+  createLeadSchema, 
+  updateLeadSchema, 
+  leadsListSchema,
+  type CreateLeadInput,
+  type UpdateLeadInput,
+  type LeadsListInput
+} from '@/lib/validations/leads'
 
-// Validation schemas
-export const createLeadSchema = z.object({
-  firstName: z.string().min(1, 'El nombre es requerido'),
-  lastName: z.string().min(1, 'El apellido es requerido'),
-  email: z.string().email('Email inválido'),
-  phone: z.string().optional(),
-  company: z.string().optional(),
-  position: z.string().optional(),
-  source: z.enum(['WEBSITE', 'REFERRAL', 'SOCIAL_MEDIA', 'COLD_CALL', 'EMAIL_CAMPAIGN', 'WALK_IN', 'PARTNER', 'OTHER']),
-  channel: z.string().optional(),
-  budget: z.number().optional(),
-  interests: z.array(z.string()).optional(),
-  qualificationNotes: z.string().optional(),
-  assignedToId: z.string().optional(),
-})
-
-export const updateLeadSchema = z.object({
-  firstName: z.string().min(1).optional(),
-  lastName: z.string().min(1).optional(),
-  email: z.string().email().optional(),
-  phone: z.string().optional(),
-  company: z.string().optional(),
-  position: z.string().optional(),
-  source: z.enum(['WEBSITE', 'REFERRAL', 'SOCIAL_MEDIA', 'COLD_CALL', 'EMAIL_CAMPAIGN', 'WALK_IN', 'PARTNER', 'OTHER']).optional(),
-  channel: z.string().optional(),
-  budget: z.number().optional(),
-  interests: z.array(z.string()).optional(),
-  qualificationNotes: z.string().optional(),
-  status: z.enum(['NEW', 'CONTACTED', 'QUALIFIED', 'UNQUALIFIED', 'FOLLOW_UP', 'CONVERTED', 'LOST', 'DORMANT']).optional(),
-  score: z.number().min(0).max(100).optional(),
-  assignedToId: z.string().optional(),
-})
-
-export const leadsListSchema = z.object({
-  page: z.number().min(1).default(1),
-  limit: z.number().min(1).max(100).default(10),
-  search: z.string().optional(),
-  status: z.enum(['NEW', 'CONTACTED', 'QUALIFIED', 'UNQUALIFIED', 'FOLLOW_UP', 'CONVERTED', 'LOST', 'DORMANT']).optional(),
-  source: z.enum(['WEBSITE', 'REFERRAL', 'SOCIAL_MEDIA', 'COLD_CALL', 'EMAIL_CAMPAIGN', 'WALK_IN', 'PARTNER', 'OTHER']).optional(),
-})
-
-// Types
-export type CreateLeadInput = z.infer<typeof createLeadSchema>
-export type UpdateLeadInput = z.infer<typeof updateLeadSchema>
-export type LeadsListInput = z.infer<typeof leadsListSchema>
-
-// Helper function to get user with tenant info
-async function getUserWithTenant() {
+// Helper function to get user with tenant info  
+// For Super Admins, they can optionally pass a tenantId to operate on a specific cowork
+async function getUserWithTenant(targetTenantId?: string) {
   const user = await currentUser()
   console.log('🔍 Clerk user:', user?.id, user?.emailAddresses?.[0]?.emailAddress)
   
@@ -121,33 +83,52 @@ async function getUserWithTenant() {
     throw new Error(`Usuario no encontrado en la base de datos. Clerk ID: ${user.id}, Email: ${user.emailAddresses[0]?.emailAddress}`)
   }
 
-  if (!dbUser.tenantId) {
+  // Super Admins don't have a tenantId, which is expected
+  if (!dbUser.tenantId && dbUser.role !== 'SUPER_ADMIN') {
     throw new Error(`Usuario no tiene un tenant asignado. User ID: ${dbUser.id}, Email: ${dbUser.email}`)
   }
 
-  return dbUser
+  // For Super Admins, use the targetTenantId if provided, otherwise return empty results
+  if (dbUser.role === 'SUPER_ADMIN') {
+    if (targetTenantId) {
+      return { ...dbUser, tenantId: targetTenantId, effectiveTenantId: targetTenantId }
+    } else {
+      // Return a special flag to indicate Super Admin with no cowork selected
+      return { ...dbUser, effectiveTenantId: null, noCoworkSelected: true }
+    }
+  }
+
+  return { ...dbUser, effectiveTenantId: dbUser.tenantId }
 }
 
 /**
  * Create a new lead
  */
-export async function createLead(input: CreateLeadInput) {
+export async function createLead(input: CreateLeadInput, targetTenantId?: string) {
   try {
     console.log('💾 Creating lead:', input)
     
     const validatedInput = createLeadSchema.parse(input)
-    const user = await getUserWithTenant()
+    const user = await getUserWithTenant(targetTenantId)
+
+    // If Super Admin hasn't selected a cowork, they can't create leads
+    if ((user as any).noCoworkSelected) {
+      return {
+        success: false,
+        error: 'Debe seleccionar un cowork para crear prospectos'
+      }
+    }
 
     console.log('👤 Creating lead for user:', {
       userId: user.id,
-      tenantId: user.tenantId,
+      tenantId: user.effectiveTenantId,
       userEmail: user.email
     })
 
     const lead = await db.lead.create({
       data: {
         ...validatedInput,
-        tenantId: user.tenantId!,
+        tenantId: user.effectiveTenantId!,
         interests: validatedInput.interests || [],
         budget: validatedInput.budget ? validatedInput.budget : null,
       },
@@ -187,16 +168,32 @@ export async function createLead(input: CreateLeadInput) {
 /**
  * List leads with filtering and pagination
  */
-export async function listLeads(input: LeadsListInput = {}) {
+export async function listLeads(input: LeadsListInput = {}, targetTenantId?: string) {
   try {
     console.log('📋 Listing leads with params:', input)
     
     const validatedInput = leadsListSchema.parse(input)
-    const user = await getUserWithTenant()
+    const user = await getUserWithTenant(targetTenantId)
+
+    // If Super Admin hasn't selected a cowork, return empty results
+    if ((user as any).noCoworkSelected) {
+      return {
+        success: true,
+        data: {
+          leads: [],
+          pagination: {
+            page: validatedInput.page,
+            limit: validatedInput.limit,
+            total: 0,
+            totalPages: 0
+          }
+        }
+      }
+    }
 
     // Build where clause
     const whereClause: any = {
-      tenantId: user.tenantId!,
+      tenantId: user.effectiveTenantId!,
     }
 
     if (validatedInput.status) {
@@ -239,7 +236,7 @@ export async function listLeads(input: LeadsListInput = {}) {
       take: validatedInput.limit,
     })
 
-    console.log(`✅ Found ${leads.length} leads out of ${total} total for tenant ${user.tenantId}`)
+    console.log(`✅ Found ${leads.length} leads out of ${total} total for tenant ${user.effectiveTenantId}`)
     console.log('📄 Leads preview:', leads.map(l => ({ id: l.id, name: `${l.firstName} ${l.lastName}`, email: l.email, company: l.company })))
 
     return {
@@ -266,16 +263,16 @@ export async function listLeads(input: LeadsListInput = {}) {
 /**
  * Get a single lead by ID
  */
-export async function getLead(id: string) {
+export async function getLead(id: string, targetTenantId?: string) {
   try {
     console.log('Getting lead:', id)
     
-    const user = await getUserWithTenant()
+    const user = await getUserWithTenant(targetTenantId)
 
     const lead = await db.lead.findUnique({
       where: { 
         id,
-        tenantId: user.tenantId!,
+        tenantId: user.effectiveTenantId!,
       },
       include: {
         assignedTo: {
@@ -326,18 +323,18 @@ export async function getLead(id: string) {
 /**
  * Update a lead
  */
-export async function updateLead(id: string, input: UpdateLeadInput) {
+export async function updateLead(id: string, input: UpdateLeadInput, targetTenantId?: string) {
   try {
     console.log('Updating lead:', id, input)
     
     const validatedInput = updateLeadSchema.parse(input)
-    const user = await getUserWithTenant()
+    const user = await getUserWithTenant(targetTenantId)
 
     // Check if lead exists and belongs to user's tenant
     const existingLead = await db.lead.findUnique({
       where: { 
         id,
-        tenantId: user.tenantId!,
+        tenantId: user.effectiveTenantId!,
       }
     })
 
@@ -384,17 +381,17 @@ export async function updateLead(id: string, input: UpdateLeadInput) {
 /**
  * Delete a lead
  */
-export async function deleteLead(id: string) {
+export async function deleteLead(id: string, targetTenantId?: string) {
   try {
     console.log('Deleting lead:', id)
     
-    const user = await getUserWithTenant()
+    const user = await getUserWithTenant(targetTenantId)
 
     // Check if lead exists and belongs to user's tenant
     const existingLead = await db.lead.findUnique({
       where: { 
         id,
-        tenantId: user.tenantId!,
+        tenantId: user.effectiveTenantId!,
       }
     })
 

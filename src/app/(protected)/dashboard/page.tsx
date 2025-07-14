@@ -1,5 +1,7 @@
+'use client'
+
 import { redirect } from 'next/navigation';
-import { currentUser } from '@clerk/nextjs/server';
+import { useUser } from '@clerk/nextjs';
 import { 
   Building2, 
   Crown, 
@@ -26,13 +28,18 @@ import { CoworkManagement } from "@/components/admin/cowork-management";
 import { UserManagement } from "@/components/admin/user-management";
 import { useCoworkSelection } from "@/contexts/cowork-selection-context";
 
-// Server-side dashboard page
-export default async function DashboardPage() {
-  // Get user on server side
-  const user = await currentUser();
+// Client-side dashboard page
+export default function DashboardPage() {
+  // Get user on client side
+  const { user, isLoaded } = useUser();
+  
+  if (!isLoaded) {
+    return <div className="flex items-center justify-center min-h-screen">Cargando...</div>;
+  }
   
   if (!user) {
     redirect('/auth/login');
+    return null;
   }
 
   // Get user role from metadata (check private first, then public)
@@ -41,7 +48,7 @@ export default async function DashboardPage() {
   const userRole = privateMetadata?.role || publicMetadata?.role || 'END_USER';
   const isSuperAdmin = userRole === 'SUPER_ADMIN';
 
-  console.log('🚀 SERVER-SIDE DASHBOARD:', {
+  console.log('🚀 CLIENT-SIDE DASHBOARD:', {
     email: user.emailAddresses[0]?.emailAddress,
     role: userRole,
     isSuperAdmin,
@@ -53,8 +60,6 @@ export default async function DashboardPage() {
     <DashboardContent user={user} isSuperAdmin={isSuperAdmin} />
   );
 }
-
-'use client'
 
 // Dashboard content component
 function DashboardContent({ 
