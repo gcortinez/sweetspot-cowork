@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
-import { useAuthStore } from '@/stores/auth-store';
+import { useAuth as useClerkAuth } from '@clerk/nextjs';
 import { useAuth } from '@/contexts/auth-context';
 import { getApiBaseUrl } from "@/lib/api-config";
 
 export function useApi() {
-  const accessToken = useAuthStore(state => state.accessToken);
-  const { logout, refreshSession } = useAuth();
+  const { getToken } = useClerkAuth();
+  const { signOut } = useAuth();
   
 
   return useMemo(() => {
@@ -28,25 +28,12 @@ export function useApi() {
         ...options.headers,
       };
 
-      // Add auth token if available
-      let tokenToUse = accessToken;
+      // Get auth token from Clerk
+      const token = await getToken();
       
-      // If no token in store, try to get from session manager as fallback
-      if (!tokenToUse) {
-        try {
-          const sessionData = JSON.parse(localStorage.getItem('sweetspot-session') || '{}');
-          if (sessionData && sessionData.accessToken) {
-            tokenToUse = sessionData.accessToken;
-            console.log('Using token from localStorage fallback');
-          }
-        } catch (error) {
-          console.error('Error parsing session data from localStorage:', error);
-        }
-      }
-      
-      if (tokenToUse) {
-        (headers as Record<string, string>).Authorization = `Bearer ${tokenToUse}`;
-        console.log('Added Authorization header with token');
+      if (token) {
+        (headers as Record<string, string>).Authorization = `Bearer ${token}`;
+        console.log('Added Authorization header with Clerk token');
       } else {
         console.error('No access token available for API request');
         throw new Error('No access token available. Please log in again.');
@@ -66,40 +53,10 @@ export function useApi() {
           ok: response.ok
         });
 
-        // Handle 401 responses by trying to refresh token first
+        // Handle 401 responses by signing out
         if (response.status === 401) {
-          console.log('Got 401, trying to refresh token...');
-          const refreshed = await refreshSession();
-          
-          if (refreshed) {
-            console.log('Token refresh successful, retrying request...');
-            // Get the new token and retry the request
-            const newToken = useAuthStore.getState().accessToken;
-            if (newToken) {
-              const newHeaders = {
-                ...headers,
-                Authorization: `Bearer ${newToken}`,
-              };
-              
-              const retryResponse = await fetch(fullUrl, {
-                ...options,
-                headers: newHeaders,
-              });
-              
-              console.log('Retry response:', {
-                url: fullUrl,
-                status: retryResponse.status,
-                statusText: retryResponse.statusText,
-                ok: retryResponse.ok
-              });
-              
-              return retryResponse;
-            }
-          }
-          
-          // If refresh failed or didn't work, logout
-          console.log('Token refresh failed, logging out...');
-          await logout();
+          console.log('Got 401, signing out...');
+          await signOut();
           throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
         }
 
@@ -132,5 +89,5 @@ export function useApi() {
       delete: (url: string, options: RequestInit = {}) =>
         makeRequest(url, { ...options, method: 'DELETE' }),
     };
-  }, [accessToken, logout, refreshSession]);
+  }, [getToken, signOut]);
 }

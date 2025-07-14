@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useApi } from "@/hooks/use-api";
-import { localStorageService } from "@/lib/local-storage-service";
 import { 
   Phone, 
   Mail, 
@@ -175,35 +174,20 @@ export default function EditActivityModal({
         updateData.completedAt = null;
       }
 
-      // Update activity via API with fallback
+      // Update activity via API
       console.log('Updating activity:', activity.id, updateData);
       
-      let updatedActivity: Activity;
+      const response = await api.put(`/api/activities/${activity.id}`, updateData);
       
-      try {
-        const response = await api.put(`/api/activities/${activity.id}`, updateData);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Error ${response.status}: ${errorText || 'Error al actualizar la actividad'}`);
-        }
-        
-        const result = await response.json();
-        console.log('Activity updated successfully via API:', result);
-        
-        updatedActivity = result.data || result;
-      } catch (apiError) {
-        console.warn('API update failed, using fallback:', apiError);
-        
-        // Fallback: create updated activity locally
-        updatedActivity = {
-          ...activity,
-          ...updateData,
-          updatedAt: new Date().toISOString()
-        };
-        
-        console.log('Created fallback updated activity:', updatedActivity);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error ${response.status}: ${errorText || 'Error al actualizar la actividad'}`);
       }
+      
+      const result = await response.json();
+      console.log('Activity updated successfully:', result);
+      
+      const updatedActivity: Activity = result.data || result;
 
       onActivityUpdated(updatedActivity);
       onClose();

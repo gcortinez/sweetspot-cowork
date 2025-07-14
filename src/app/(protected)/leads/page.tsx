@@ -58,7 +58,6 @@ import CreateLeadModal from '@/components/leads/CreateLeadModal'
 import LeadDetailModal from '@/components/leads/LeadDetailModal'
 import EditLeadModal from '@/components/leads/EditLeadModal'
 import { useApi } from '@/hooks/use-api'
-import { localStorageService } from '@/lib/local-storage-service'
 
 interface Lead {
   id: string
@@ -212,15 +211,7 @@ export default function LeadsPage() {
       
       // Using mock data for now
       setTimeout(() => {
-        // Load leads with stored scores from localStorage
-        const leadsWithStoredScores = mockLeads.map(lead => {
-          const storedScore = localStorageService.getLeadScore(lead.id)
-          return storedScore !== null 
-            ? { ...lead, score: storedScore }
-            : lead
-        })
-        
-        setLeads(leadsWithStoredScores)
+        setLeads(mockLeads)
         setIsLoading(false)
       }, 1000)
     } catch (error) {
@@ -631,37 +622,42 @@ export default function LeadsPage() {
                 setSelectedLead(null)
               }}
               onUpdateScore={async (leadId, newScore) => {
-                console.log('Updating score for lead:', leadId, 'to:', newScore)
-                
-                // Update localStorage immediately
-                localStorageService.saveLeadScore(leadId, newScore)
-                
-                // Update the lead in the main state
-                setLeads(prev => prev.map(lead => 
-                  lead.id === leadId ? { ...lead, score: newScore } : lead
-                ))
-                
-                // Also update the selected lead if it's the same
-                if (selectedLead?.id === leadId) {
-                  setSelectedLead(prev => prev ? { ...prev, score: newScore } : null)
-                }
-                
-                // Try to update via API, but don't fail if it doesn't work
                 try {
+                  console.log('Updating score for lead:', leadId, 'to:', newScore)
+                  
+                  // Update lead via API
                   const response = await api.put(`/api/leads/${leadId}`, { score: newScore })
                   
                   if (!response.ok) {
-                    console.warn('API score update failed, but localStorage updated')
+                    const errorText = await response.text()
+                    throw new Error(`Error ${response.status}: ${errorText || 'Error al actualizar la puntuación'}`)
                   }
-                } catch (apiError) {
-                  console.warn('API score update failed, using localStorage only:', apiError)
+                  
+                  // Update the lead in the main state
+                  setLeads(prev => prev.map(lead => 
+                    lead.id === leadId ? { ...lead, score: newScore } : lead
+                  ))
+                  
+                  // Also update the selected lead if it's the same
+                  if (selectedLead?.id === leadId) {
+                    setSelectedLead(prev => prev ? { ...prev, score: newScore } : null)
+                  }
+                  
+                  // Show success message
+                  toast({
+                    title: '¡Puntuación actualizada!',
+                    description: `La puntuación se ha actualizado a ${newScore}`,
+                  })
+                } catch (error) {
+                  console.error('Error updating lead score:', error)
+                  const errorMessage = error instanceof Error ? error.message : 'Error desconocido al actualizar la puntuación'
+                  toast({
+                    title: 'Error al actualizar puntuación',
+                    description: errorMessage,
+                    variant: 'destructive'
+                  })
+                  throw error // Re-throw to let the modal know there was an error
                 }
-                
-                // Show success message (localStorage was updated)
-                toast({
-                  title: '¡Puntuación actualizada!',
-                  description: `La puntuación se ha actualizado a ${newScore}`,
-                })
               }}
             />
             <EditLeadModal
