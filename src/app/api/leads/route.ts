@@ -1,83 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-import { cookies } from 'next/headers';
-import { getApiBaseUrl } from '@/lib/api-config';
+import { listLeads, createLead } from '@/lib/actions/leads';
 
-// Schema for creating a lead
-const CreateLeadSchema = z.object({
-  firstName: z.string().min(1, 'El nombre es requerido'),
-  lastName: z.string().min(1, 'El apellido es requerido'),
-  email: z.string().email('Email inválido'),
-  phone: z.string().optional(),
-  company: z.string().optional(),
-  position: z.string().optional(),
-  source: z.enum(['WEBSITE', 'REFERRAL', 'SOCIAL_MEDIA', 'COLD_CALL', 'EMAIL_CAMPAIGN', 'WALK_IN', 'PARTNER', 'OTHER']),
-  channel: z.string().optional(),
-  budget: z.number().optional(),
-  interests: z.array(z.string()).optional(),
-  qualificationNotes: z.string().optional(),
-  assignedToId: z.string().optional(),
-});
-
-// Helper function to get auth token from request
-async function getAuthToken(request: NextRequest): Promise<string | null> {
-  // Try to get token from Authorization header first
-  const authHeader = request.headers.get('authorization');
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    return authHeader.slice(7);
-  }
-
-  // Try to get token from cookies as fallback
-  const cookieStore = await cookies();
-  const tokenCookie = cookieStore.get('auth-token'); // Note: hyphen not underscore
-  return tokenCookie?.value || null;
-}
+// API routes that delegate to Server Actions
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log('POST /api/leads - Creating lead:', body);
     
-    // Validate the request body
-    const validatedData = CreateLeadSchema.parse(body);
+    // Call Server Action
+    const result = await createLead(body);
     
-    // Get auth token
-    const token = await getAuthToken(request);
-    if (!token) {
+    if (!result.success) {
       return NextResponse.json(
-        { message: 'Token de autenticación requerido' },
-        { status: 401 }
-      );
-    }
-    
-    // TODO: Implement actual database creation once leads table is created
-    console.log('Lead creation not yet implemented:', validatedData);
-    
-    // For now, return a mock response
-    const mockLead = {
-      id: `lead-${Date.now()}`,
-      ...validatedData,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    return NextResponse.json({
-      success: true,
-      data: mockLead
-    }, { status: 201 });
-    
-  } catch (error) {
-    console.error('Error creating lead:', error);
-    
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { 
-          message: 'Datos inválidos',
-          errors: error.errors 
-        },
+        { message: result.error },
         { status: 400 }
       );
     }
     
+    return NextResponse.json(result, { status: 201 });
+    
+  } catch (error) {
+    console.error('Error in POST /api/leads:', error);
     return NextResponse.json(
       { message: 'Error interno del servidor' },
       { status: 500 }
@@ -87,41 +31,33 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('=== API ROUTE: GET /api/leads ===');
+    console.log('GET /api/leads - Listing leads');
     
-    // Get auth token from request
-    const token = await getAuthToken(request);
-    if (!token) {
+    const { searchParams } = new URL(request.url);
+    const params = {
+      page: parseInt(searchParams.get('page') || '1'),
+      limit: parseInt(searchParams.get('limit') || '10'),
+      search: searchParams.get('search') || undefined,
+      status: searchParams.get('status') as any || undefined,
+      source: searchParams.get('source') as any || undefined,
+    };
+    
+    console.log('Query params:', params);
+    
+    // Call Server Action
+    const result = await listLeads(params);
+    
+    if (!result.success) {
       return NextResponse.json(
-        { message: 'Token de autenticación requerido' },
-        { status: 401 }
+        { message: result.error },
+        { status: 400 }
       );
     }
     
-    // For now, return empty leads array since we don't have the leads table set up
-    // TODO: Implement actual database query once leads table is created
-    console.log('Returning empty leads array - leads feature not yet implemented');
-    
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    
-    return NextResponse.json({
-      success: true,
-      data: {
-        leads: [],
-        pagination: {
-          page,
-          limit,
-          total: 0,
-          totalPages: 0
-        }
-      }
-    });
+    return NextResponse.json(result);
     
   } catch (error) {
-    console.error('Error fetching leads:', error);
-    
+    console.error('Error in GET /api/leads:', error);
     return NextResponse.json(
       { message: 'Error interno del servidor' },
       { status: 500 }
