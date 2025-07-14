@@ -610,6 +610,34 @@ export default function LeadsPage() {
                 setShowDetailModal(false)
                 setSelectedLead(null)
               }}
+              onCreateOpportunity={(lead) => {
+                console.log('Creating opportunity from lead:', lead)
+                toast({
+                  title: '¡Oportunidad creada!',
+                  description: `Se ha creado una oportunidad para ${lead.firstName} ${lead.lastName}`,
+                })
+                setShowDetailModal(false)
+                setSelectedLead(null)
+              }}
+              onUpdateScore={async (leadId, newScore) => {
+                console.log('Updating score for lead:', leadId, 'to:', newScore)
+                
+                // Update the lead in the main state
+                setLeads(prev => prev.map(lead => 
+                  lead.id === leadId ? { ...lead, score: newScore } : lead
+                ))
+                
+                // Also update the selected lead if it's the same
+                if (selectedLead?.id === leadId) {
+                  setSelectedLead(prev => prev ? { ...prev, score: newScore } : null)
+                }
+                
+                // Show success message
+                toast({
+                  title: '¡Puntuación actualizada!',
+                  description: `La puntuación se ha actualizado a ${newScore}`,
+                })
+              }}
             />
             <EditLeadModal
               lead={selectedLead}

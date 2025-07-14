@@ -31,7 +31,7 @@ interface CreateActivityModalProps {
   leadId: string;
   isOpen: boolean;
   onClose: () => void;
-  onActivityCreated: () => void;
+  onActivityCreated: (activity?: any) => void;
 }
 
 const activityTypes: Array<{
@@ -146,7 +146,10 @@ export default function CreateActivityModal({
       };
       console.log('Activity created successfully (demo):', result);
       
-      onActivityCreated();
+      // Pass the created activity to the parent
+      if (typeof onActivityCreated === 'function') {
+        onActivityCreated(result);
+      }
       onClose();
       
       // Reset form

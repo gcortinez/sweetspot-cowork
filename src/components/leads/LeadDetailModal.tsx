@@ -166,6 +166,7 @@ export default function LeadDetailModal({
   const [showCreateActivityModal, setShowCreateActivityModal] = useState(false);
   const [showEditActivityModal, setShowEditActivityModal] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [localActivities, setLocalActivities] = useState<Activity[]>([]);
   const { toast } = useToast();
   const api = useApi();
   const { confirm, ConfirmDialog } = useConfirm();
@@ -196,8 +197,17 @@ export default function LeadDetailModal({
     }
   ];
 
-  // Use mock activities if no real activities are loaded
-  const displayActivities = activities.length > 0 ? activities : mockActivities;
+  // Initialize local activities with mock data
+  React.useEffect(() => {
+    if (activities.length > 0) {
+      setLocalActivities(activities);
+    } else if (localActivities.length === 0) {
+      setLocalActivities(mockActivities);
+    }
+  }, [activities]);
+
+  // Use local activities for display
+  const displayActivities = localActivities;
 
   // Update editScore when lead changes
   React.useEffect(() => {
@@ -206,6 +216,16 @@ export default function LeadDetailModal({
       setIsEditingScore(false); // Reset edit mode when lead changes
     }
   }, [lead?.id, lead?.score]);
+
+  // Reset local activities when lead changes or modal closes
+  React.useEffect(() => {
+    if (!isOpen) {
+      setLocalActivities([]);
+    } else if (lead?.id && localActivities.length === 0) {
+      // Initialize with mock activities when opening
+      setLocalActivities(mockActivities);
+    }
+  }, [isOpen, lead?.id]);
 
   if (!lead) return null;
 
@@ -256,10 +276,30 @@ export default function LeadDetailModal({
     setShowCreateActivityModal(true);
   };
 
-  const handleActivityCreated = () => {
+  const handleActivityCreated = (newActivity?: any) => {
     console.log('Activity created for lead:', lead.id);
-    // Refresh activities - disabled for demo mode
-    // refetchActivities();
+    
+    // Add the new activity to the local list
+    if (newActivity) {
+      const activityToAdd: Activity = {
+        id: newActivity.id || `activity_${Date.now()}`,
+        type: newActivity.type,
+        subject: newActivity.subject,
+        description: newActivity.description,
+        dueDate: newActivity.dueDate,
+        duration: newActivity.duration,
+        location: newActivity.location,
+        outcome: newActivity.outcome,
+        createdAt: newActivity.createdAt || new Date().toISOString(),
+        user: newActivity.user || { 
+          id: 'current-user',
+          firstName: 'Usuario', 
+          lastName: 'Actual' 
+        }
+      };
+      setLocalActivities(prev => [activityToAdd, ...prev]);
+    }
+    
     // Call parent callback if provided
     if (onCreateActivity) {
       onCreateActivity(lead.id);
