@@ -11,7 +11,13 @@ import {
   Activity,
   PlusCircle,
   Settings,
-  Bell
+  Bell,
+  UserCheck,
+  Target,
+  Star,
+  ArrowRight,
+  Mail,
+  Phone
 } from "lucide-react";
 import { SignOutButton } from "@clerk/nextjs";
 import { CoworkSelector } from "@/components/admin/cowork-selector";
@@ -94,7 +100,47 @@ function DashboardContent({
       { id: 2, type: 'payment', text: 'Pago recibido', time: 'Hace 1 hora' },
       { id: 3, type: 'member', text: 'Nuevo miembro registrado', time: 'Hace 2 horas' },
       { id: 4, type: 'space', text: 'Espacio actualizado', time: 'Hace 3 horas' }
-    ]
+    ],
+    leads: {
+      stats: {
+        total: 18,
+        new: 7,
+        qualified: 5,
+        converted: 2
+      },
+      recent: [
+        {
+          id: 1,
+          name: "María González",
+          email: "maria@startup.cl",
+          company: "Startup Innovadora",
+          status: "NEW",
+          score: 92,
+          source: "WEBSITE",
+          createdAt: "2024-01-15T10:30:00Z"
+        },
+        {
+          id: 2,
+          name: "Juan Pérez",
+          email: "juan@empresa.com", 
+          company: "Tech Solutions",
+          status: "QUALIFIED",
+          score: 85,
+          source: "REFERRAL",
+          createdAt: "2024-01-14T14:20:00Z"
+        },
+        {
+          id: 3,
+          name: "Pedro Martínez",
+          email: "pedro@consultora.com",
+          company: "Consultora Ágil",
+          status: "CONTACTED",
+          score: 78,
+          source: "SOCIAL_MEDIA",
+          createdAt: "2024-01-13T16:45:00Z"
+        }
+      ]
+    }
   };
 
   return (
@@ -290,6 +336,118 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
         </div>
       </div>
 
+      {/* Leads Section */}
+      <div className="mb-8">
+        <div className="bg-white rounded-lg shadow-sm border">
+          <div className="p-6 border-b">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <UserCheck className="h-6 w-6 text-blue-600" />
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Gestión de Prospectos</h3>
+                  <p className="text-sm text-gray-600">Nuevos leads y oportunidades de venta</p>
+                </div>
+              </div>
+              <a 
+                href="/leads"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm flex items-center space-x-2 transition-colors"
+              >
+                <PlusCircle className="h-4 w-4" />
+                <span>Ver Todos</span>
+              </a>
+            </div>
+          </div>
+
+          {/* Leads Stats */}
+          <div className="p-6 border-b bg-gray-50">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-2">
+                  <Users className="h-5 w-5 text-blue-600 mr-1" />
+                  <span className="text-2xl font-bold text-gray-900">{coworkData.leads.stats.total}</span>
+                </div>
+                <p className="text-sm text-gray-600">Total Prospectos</p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-2">
+                  <Star className="h-5 w-5 text-yellow-600 mr-1" />
+                  <span className="text-2xl font-bold text-yellow-600">{coworkData.leads.stats.new}</span>
+                </div>
+                <p className="text-sm text-gray-600">Nuevos</p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-2">
+                  <Target className="h-5 w-5 text-green-600 mr-1" />
+                  <span className="text-2xl font-bold text-green-600">{coworkData.leads.stats.qualified}</span>
+                </div>
+                <p className="text-sm text-gray-600">Calificados</p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-2">
+                  <TrendingUp className="h-5 w-5 text-purple-600 mr-1" />
+                  <span className="text-2xl font-bold text-purple-600">{coworkData.leads.stats.converted}</span>
+                </div>
+                <p className="text-sm text-gray-600">Convertidos</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Leads */}
+          <div className="p-6">
+            <h4 className="text-md font-medium text-gray-900 mb-4">Prospectos Recientes</h4>
+            <div className="space-y-3">
+              {coworkData.leads.recent.map((lead: any) => (
+                <div key={lead.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div className="flex items-center space-x-3">
+                    <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                      <UserCheck className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{lead.name}</p>
+                      <div className="flex items-center space-x-4 text-sm text-gray-500">
+                        <span className="flex items-center">
+                          <Mail className="h-3 w-3 mr-1" />
+                          {lead.email}
+                        </span>
+                        {lead.company && (
+                          <span className="flex items-center">
+                            <Building2 className="h-3 w-3 mr-1" />
+                            {lead.company}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="text-right">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        lead.status === 'NEW' ? 'bg-blue-100 text-blue-800' :
+                        lead.status === 'QUALIFIED' ? 'bg-green-100 text-green-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {lead.status === 'NEW' ? 'Nuevo' : 
+                         lead.status === 'QUALIFIED' ? 'Calificado' : 'Contactado'}
+                      </span>
+                      <p className="text-xs text-gray-500 mt-1">Score: {lead.score}</p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-gray-400" />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 text-center">
+              <a 
+                href="/leads"
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium inline-flex items-center"
+              >
+                Ver todos los prospectos
+                <ArrowRight className="h-4 w-4 ml-1" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Cowork Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Bookings */}
@@ -332,6 +490,13 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
                 <Users className="h-4 w-4 mr-2" />
                 Agregar Miembro
               </button>
+              <a 
+                href="/leads"
+                className="w-full flex items-center justify-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+              >
+                <UserCheck className="h-4 w-4 mr-2" />
+                Gestionar Prospectos
+              </a>
               <button className="w-full flex items-center justify-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors">
                 <BarChart3 className="h-4 w-4 mr-2" />
                 Ver Reportes
