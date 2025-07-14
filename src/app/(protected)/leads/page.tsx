@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { 
   Users, 
   Search, 
@@ -21,8 +22,13 @@ import {
   Clock,
   Target,
   Star,
-  MapPin
+  MapPin,
+  ArrowLeft,
+  Bell,
+  Home
 } from 'lucide-react'
+import { useUser } from '@clerk/nextjs'
+import { SignOutButton } from '@clerk/nextjs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -116,6 +122,7 @@ const SOURCE_COLORS = {
 }
 
 export default function LeadsPage() {
+  const { user } = useUser()
   const [leads, setLeads] = useState<Lead[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -125,6 +132,12 @@ export default function LeadsPage() {
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const { toast } = useToast()
+
+  // Check if user is Super Admin
+  const privateMetadata = user?.privateMetadata as any
+  const publicMetadata = user?.publicMetadata as any
+  const userRole = privateMetadata?.role || publicMetadata?.role || 'END_USER'
+  const isSuperAdmin = userRole === 'SUPER_ADMIN'
 
   // Mock data for demonstration - replace with actual API call
   const mockLeads: Lead[] = [
@@ -276,20 +289,95 @@ export default function LeadsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="h-10 w-10 rounded-lg bg-blue-600 flex items-center justify-center">
-            <UserCheck className="h-5 w-5 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Gestión de Prospectos</h1>
-            <p className="text-gray-600">Administra y da seguimiento a tus leads</p>
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-3">
+              <Link 
+                href="/dashboard"
+                className="flex items-center space-x-3 group"
+              >
+                <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center group-hover:bg-blue-700 transition-colors">
+                  <Building2 className="h-5 w-5 text-white" />
+                </div>
+                <h1 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">SweetSpot</h1>
+              </Link>
+              
+              {/* Breadcrumb */}
+              <div className="flex items-center space-x-2 text-sm text-gray-500">
+                <span>/</span>
+                <Link 
+                  href="/dashboard" 
+                  className="hover:text-blue-600 transition-colors flex items-center space-x-1"
+                >
+                  <Home className="h-3 w-3" />
+                  <span>Dashboard</span>
+                </Link>
+                <span>/</span>
+                <span className="text-gray-900">Prospectos</span>
+              </div>
+            </div>
+            
+            {/* Header Actions */}
+            <div className="flex items-center space-x-4">
+              {/* User Role Display */}
+              {isSuperAdmin ? (
+                <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                  Super Admin
+                </span>
+              ) : (
+                <div className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                  {userRole}
+                </div>
+              )}
+              
+              <Bell className="h-5 w-5 text-gray-400 hover:text-gray-600 cursor-pointer" />
+              
+              <div className="text-sm text-gray-600">
+                Bienvenido, {user?.firstName || user?.emailAddresses[0]?.emailAddress}
+              </div>
+              
+              <SignOutButton>
+                <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm transition-colors">
+                  Cerrar Sesión
+                </button>
+              </SignOutButton>
+            </div>
           </div>
         </div>
-        <CreateLeadModal onLeadCreated={handleLeadCreated} />
-      </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Page Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Link 
+                href="/dashboard"
+                className="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors mb-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span className="text-sm">Volver al Dashboard</span>
+              </Link>
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="h-10 w-10 rounded-lg bg-blue-600 flex items-center justify-center">
+                <UserCheck className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Gestión de Prospectos</h1>
+                <p className="text-gray-600">Administra y da seguimiento a tus leads</p>
+              </div>
+            </div>
+            <CreateLeadModal onLeadCreated={handleLeadCreated} />
+          </div>
+        </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -512,28 +600,29 @@ export default function LeadsPage() {
         </Table>
       </div>
 
-      {/* Modals */}
-      {selectedLead && (
-        <>
-          <LeadDetailModal
-            lead={selectedLead}
-            isOpen={showDetailModal}
-            onClose={() => {
-              setShowDetailModal(false)
-              setSelectedLead(null)
-            }}
-          />
-          <EditLeadModal
-            lead={selectedLead}
-            isOpen={showEditModal}
-            onClose={() => {
-              setShowEditModal(false)
-              setSelectedLead(null)
-            }}
-            onLeadUpdated={handleLeadCreated}
-          />
-        </>
-      )}
+        {/* Modals */}
+        {selectedLead && (
+          <>
+            <LeadDetailModal
+              lead={selectedLead}
+              isOpen={showDetailModal}
+              onClose={() => {
+                setShowDetailModal(false)
+                setSelectedLead(null)
+              }}
+            />
+            <EditLeadModal
+              lead={selectedLead}
+              isOpen={showEditModal}
+              onClose={() => {
+                setShowEditModal(false)
+                setSelectedLead(null)
+              }}
+              onLeadUpdated={handleLeadCreated}
+            />
+          </>
+        )}
+      </main>
     </div>
   )
 }
