@@ -57,6 +57,7 @@ import { useToast } from '@/hooks/use-toast'
 import CreateLeadModal from '@/components/leads/CreateLeadModal'
 import LeadDetailModal from '@/components/leads/LeadDetailModal'
 import EditLeadModal from '@/components/leads/EditLeadModal'
+import { localStorageService } from '@/lib/local-storage-service'
 
 interface Lead {
   id: string
@@ -209,7 +210,15 @@ export default function LeadsPage() {
       
       // Using mock data for now
       setTimeout(() => {
-        setLeads(mockLeads)
+        // Load leads with stored scores from localStorage
+        const leadsWithStoredScores = mockLeads.map(lead => {
+          const storedScore = localStorageService.getLeadScore(lead.id)
+          return storedScore !== null 
+            ? { ...lead, score: storedScore }
+            : lead
+        })
+        
+        setLeads(leadsWithStoredScores)
         setIsLoading(false)
       }, 1000)
     } catch (error) {

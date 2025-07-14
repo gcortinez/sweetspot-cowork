@@ -19,6 +19,7 @@ import { useActivities } from "@/hooks/use-activities";
 import { useToast } from "@/hooks/use-toast";
 import { useApi } from "@/hooks/use-api";
 import { useConfirm } from "@/hooks/use-confirm";
+import { localStorageService } from "@/lib/local-storage-service";
 import { 
   User, 
   Mail, 
@@ -197,14 +198,25 @@ export default function LeadDetailModal({
     }
   ];
 
-  // Initialize local activities with mock data
+  // Initialize local activities from localStorage or mock data
   React.useEffect(() => {
-    if (activities.length > 0) {
+    if (!isOpen || !lead?.id) {
+      setLocalActivities([]);
+      return;
+    }
+
+    // Load activities from localStorage first
+    const storedActivities = localStorageService.getActivities(lead.id);
+    
+    if (storedActivities.length > 0) {
+      setLocalActivities(storedActivities);
+    } else if (activities.length > 0) {
       setLocalActivities(activities);
-    } else if (localActivities.length === 0) {
+    } else {
+      // Use mock activities as fallback
       setLocalActivities(mockActivities);
     }
-  }, [activities]);
+  }, [isOpen, lead?.id, activities]);
 
   // Use local activities for display
   const displayActivities = localActivities;
@@ -212,20 +224,14 @@ export default function LeadDetailModal({
   // Update editScore when lead changes
   React.useEffect(() => {
     if (lead) {
-      setEditScore(lead.score);
+      // Check if there's a stored score
+      const storedScore = localStorageService.getLeadScore(lead.id);
+      const scoreToUse = storedScore !== null ? storedScore : lead.score;
+      
+      setEditScore(scoreToUse);
       setIsEditingScore(false); // Reset edit mode when lead changes
     }
-  }, [lead?.id, lead?.score]);
-
-  // Reset local activities when lead changes or modal closes
-  React.useEffect(() => {
-    if (!isOpen) {
-      setLocalActivities([]);
-    } else if (lead?.id && localActivities.length === 0) {
-      // Initialize with mock activities when opening
-      setLocalActivities(mockActivities);
-    }
-  }, [isOpen, lead?.id]);
+  }, [lead?.id]);
 
   if (!lead) return null;
 
@@ -249,21 +255,27 @@ export default function LeadDetailModal({
       return;
     }
     
-    if (onUpdateScore) {
-      try {
-        console.log('Saving score:', editScore, 'for lead:', lead.id);
+    try {
+      console.log('Saving score:', editScore, 'for lead:', lead.id);
+      
+      // Save to localStorage
+      localStorageService.saveLeadScore(lead.id, editScore);
+      
+      // Call parent callback if provided
+      if (onUpdateScore) {
         await onUpdateScore(lead.id, editScore);
-        setIsEditingScore(false);
-        console.log('Score saved successfully');
-      } catch (error) {
-        console.error('Error updating score in modal:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-        toast({
-          title: "Error al actualizar puntuación",
-          description: errorMessage,
-          variant: "destructive",
-        });
       }
+      
+      setIsEditingScore(false);
+      console.log('Score saved successfully');
+    } catch (error) {
+      console.error('Error updating score in modal:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      toast({
+        title: "Error al actualizar puntuación",
+        description: errorMessage,
+        variant: "destructive",
+      });
     }
   };
 
@@ -297,6 +309,11 @@ export default function LeadDetailModal({
           lastName: 'Actual' 
         }
       };
+      
+      // Save to localStorage
+      localStorageService.saveActivity(lead.id, activityToAdd);
+      
+      // Update local state
       setLocalActivities(prev => [activityToAdd, ...prev]);
     }
     
@@ -314,8 +331,15 @@ export default function LeadDetailModal({
 
   const handleActivityUpdated = (updatedActivity: Activity) => {
     console.log('Activity updated:', updatedActivity);
-    // Refresh activities - disabled for demo mode
-    // refetchActivities();
+    
+    // Update in localStorage
+    localStorageService.updateActivity(updatedActivity.id, updatedActivity);
+    
+    // Update local state
+    setLocalActivities(prev => prev.map(activity => 
+      activity.id === updatedActivity.id ? updatedActivity : activity
+    ));
+    
     // Close edit modal
     setShowEditActivityModal(false);
     setEditingActivity(null);
@@ -334,17 +358,17 @@ export default function LeadDetailModal({
 
     try {
       console.log('Deleting activity:', activity.id);
-      // TODO: Implement API call when backend is ready
-      // const response = await api.delete(`/api/activities/${activity.id}`);
       
-      // Simulate successful deletion for demo
+      // Delete from localStorage
+      localStorageService.deleteActivity(activity.id);
+      
+      // Update local state
+      setLocalActivities(prev => prev.filter(a => a.id !== activity.id));
+      
       toast({
         title: "¡Actividad eliminada!",
         description: "La actividad ha sido eliminada exitosamente",
       });
-
-      // Refresh activities - disabled for demo mode
-      // refetchActivities();
 
     } catch (error) {
       console.error('Error deleting activity:', error);
