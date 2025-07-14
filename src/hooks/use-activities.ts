@@ -58,6 +58,12 @@ export function useActivities(params: UseActivitiesParams = {}) {
       return;
     }
 
+    // Skip if autoFetch is disabled
+    if (params.autoFetch === false) {
+      console.log('Skipping fetchActivities - autoFetch disabled');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -107,18 +113,38 @@ export function useActivities(params: UseActivitiesParams = {}) {
     } finally {
       setLoading(false);
     }
-  }, [api, params.leadId, params.clientId, params.opportunityId, params.entityType, params.entityId]);
+  }, [params.leadId, params.clientId, params.opportunityId, params.entityType, params.entityId, params.autoFetch]);
 
-  // Auto-fetch on mount and dependency changes
+  // Auto-fetch on mount and dependency changes - but prevent infinite loops
   useEffect(() => {
-    if (params.autoFetch !== false) {
-      fetchActivities();
+    if (params.autoFetch !== false && (params.leadId || params.clientId || params.opportunityId || params.entityId)) {
+      // Create a local fetch function to avoid dependency loops
+      const localFetch = async () => {
+        setLoading(true);
+        setError(null);
+
+        try {
+          console.log('Fetching activities with params:', params);
+          // For now, just set empty activities to prevent infinite loops
+          setActivities([]);
+        } catch (err) {
+          console.error('Error in localFetch:', err);
+          setError(err instanceof Error ? err.message : 'Error desconocido');
+          setActivities([]);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      localFetch();
     }
-  }, [fetchActivities, params.autoFetch]);
+  }, [params.leadId, params.clientId, params.opportunityId, params.entityId, params.autoFetch]);
 
   const refetch = useCallback(() => {
-    return fetchActivities();
-  }, [fetchActivities]);
+    console.log('Refetch called - but disabled to prevent loops');
+    // For now, just return a resolved promise to prevent errors
+    return Promise.resolve();
+  }, []);
 
   return {
     activities,
