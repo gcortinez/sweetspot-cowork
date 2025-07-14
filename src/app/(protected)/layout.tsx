@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { currentUser } from '@clerk/nextjs/server';
+import { ClerkAuthProvider } from '@/contexts/clerk-auth-context';
 
 export default async function ProtectedLayout({
   children,
@@ -14,8 +15,8 @@ export default async function ProtectedLayout({
   }
 
   return (
-    <>
+    <ClerkAuthProvider>
       {children}
-    </>
+    </ClerkAuthProvider>
   );
 }
