@@ -54,8 +54,10 @@ export type LeadsListInput = z.infer<typeof leadsListSchema>
 // Helper function to get user with tenant info
 async function getUserWithTenant() {
   const user = await currentUser()
+  console.log('🔍 Clerk user:', user?.id, user?.emailAddresses?.[0]?.emailAddress)
+  
   if (!user) {
-    throw new Error('No autorizado')
+    throw new Error('No autorizado - no hay usuario de Clerk')
   }
 
   const dbUser = await db.user.findUnique({
@@ -65,16 +67,62 @@ async function getUserWithTenant() {
       tenantId: true, 
       role: true,
       firstName: true,
-      lastName: true 
+      lastName: true,
+      email: true
     }
   })
 
+  console.log('🗃️ Database user:', {
+    found: !!dbUser,
+    id: dbUser?.id,
+    email: dbUser?.email,
+    tenantId: dbUser?.tenantId,
+    role: dbUser?.role
+  })
+
   if (!dbUser) {
-    throw new Error('Usuario no encontrado en la base de datos')
+    // Try to find by email as fallback
+    const userByEmail = await db.user.findFirst({
+      where: { 
+        email: user.emailAddresses[0]?.emailAddress 
+      },
+      select: { 
+        id: true, 
+        tenantId: true, 
+        role: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        clerkId: true
+      }
+    })
+    
+    console.log('📧 User by email fallback:', userByEmail)
+    
+    if (userByEmail && !userByEmail.clerkId) {
+      // Update the user with clerkId
+      console.log('🔗 Updating user with Clerk ID...')
+      const updatedUser = await db.user.update({
+        where: { id: userByEmail.id },
+        data: { clerkId: user.id },
+        select: { 
+          id: true, 
+          tenantId: true, 
+          role: true,
+          firstName: true,
+          lastName: true,
+          email: true
+        }
+      })
+      console.log('✅ User updated with Clerk ID:', updatedUser)
+      return updatedUser
+    }
+    
+    throw new Error(`Usuario no encontrado en la base de datos. Clerk ID: ${user.id}, Email: ${user.emailAddresses[0]?.emailAddress}`)
   }
 
   if (!dbUser.tenantId) {
-    throw new Error('Usuario no tiene un tenant asignado')
+    throw new Error(`Usuario no tiene un tenant asignado. User ID: ${dbUser.id}, Email: ${dbUser.email}`)
   }
 
   return dbUser
@@ -85,10 +133,16 @@ async function getUserWithTenant() {
  */
 export async function createLead(input: CreateLeadInput) {
   try {
-    console.log('Creating lead:', input)
+    console.log('💾 Creating lead:', input)
     
     const validatedInput = createLeadSchema.parse(input)
     const user = await getUserWithTenant()
+
+    console.log('👤 Creating lead for user:', {
+      userId: user.id,
+      tenantId: user.tenantId,
+      userEmail: user.email
+    })
 
     const lead = await db.lead.create({
       data: {
@@ -108,7 +162,13 @@ export async function createLead(input: CreateLeadInput) {
       }
     })
 
-    console.log('Lead created successfully:', lead.id)
+    console.log('✅ Lead created successfully:', {
+      id: lead.id,
+      name: `${lead.firstName} ${lead.lastName}`,
+      email: lead.email,
+      tenantId: lead.tenantId
+    })
+    
     revalidatePath('/leads')
 
     return {
@@ -116,7 +176,7 @@ export async function createLead(input: CreateLeadInput) {
       data: lead
     }
   } catch (error) {
-    console.error('Error creating lead:', error)
+    console.error('❌ Error creating lead:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Error al crear el prospecto'
@@ -129,7 +189,7 @@ export async function createLead(input: CreateLeadInput) {
  */
 export async function listLeads(input: LeadsListInput = {}) {
   try {
-    console.log('Listing leads with params:', input)
+    console.log('📋 Listing leads with params:', input)
     
     const validatedInput = leadsListSchema.parse(input)
     const user = await getUserWithTenant()
@@ -156,8 +216,11 @@ export async function listLeads(input: LeadsListInput = {}) {
       ]
     }
 
+    console.log('🔍 Query where clause:', JSON.stringify(whereClause, null, 2))
+
     // Get total count
     const total = await db.lead.count({ where: whereClause })
+    console.log('📊 Total leads count:', total)
     
     // Get leads with pagination
     const leads = await db.lead.findMany({
@@ -176,7 +239,8 @@ export async function listLeads(input: LeadsListInput = {}) {
       take: validatedInput.limit,
     })
 
-    console.log(`Found ${leads.length} leads out of ${total} total`)
+    console.log(`✅ Found ${leads.length} leads out of ${total} total for tenant ${user.tenantId}`)
+    console.log('📄 Leads preview:', leads.map(l => ({ id: l.id, name: `${l.firstName} ${l.lastName}`, email: l.email, company: l.company })))
 
     return {
       success: true,
@@ -191,7 +255,7 @@ export async function listLeads(input: LeadsListInput = {}) {
       }
     }
   } catch (error) {
-    console.error('Error listing leads:', error)
+    console.error('❌ Error listing leads:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Error al cargar los prospectos'

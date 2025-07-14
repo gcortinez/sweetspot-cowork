@@ -24,7 +24,7 @@ import { CoworkSelector } from "@/components/admin/cowork-selector";
 import { PlatformStats } from "@/components/admin/platform-stats";
 import { CoworkManagement } from "@/components/admin/cowork-management";
 import { UserManagement } from "@/components/admin/user-management";
-import { CoworkSelectionProvider } from "@/contexts/cowork-selection-context";
+import { useCoworkSelection } from "@/contexts/cowork-selection-context";
 
 // Server-side dashboard page
 export default async function DashboardPage() {
@@ -50,11 +50,11 @@ export default async function DashboardPage() {
   });
 
   return (
-    <CoworkSelectionProvider>
-      <DashboardContent user={user} isSuperAdmin={isSuperAdmin} />
-    </CoworkSelectionProvider>
+    <DashboardContent user={user} isSuperAdmin={isSuperAdmin} />
   );
 }
+
+'use client'
 
 // Dashboard content component
 function DashboardContent({ 
@@ -64,6 +64,12 @@ function DashboardContent({
   user: any;
   isSuperAdmin: boolean;
 }) {
+  const {
+    selectedCowork,
+    isPlatformView,
+    isLoadingCoworks
+  } = useCoworkSelection();
+
   // Mock data for demonstration
   const coworkData = {
     stats: {
@@ -150,10 +156,40 @@ function DashboardContent({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-3">
-              <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center">
-                <Building2 className="h-5 w-5 text-white" />
+              <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${
+                isSuperAdmin ? 'bg-purple-600' : 'bg-blue-600'
+              }`}>
+                {isSuperAdmin ? (
+                  <Crown className="h-5 w-5 text-white" />
+                ) : (
+                  <Building2 className="h-5 w-5 text-white" />
+                )}
               </div>
-              <h1 className="text-xl font-bold text-gray-900">SweetSpot</h1>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">SweetSpot</h1>
+                {/* Cowork name display */}
+                {!isLoadingCoworks && (
+                  <div className="text-sm text-gray-600">
+                    {isSuperAdmin ? (
+                      isPlatformView ? (
+                        <span className="text-purple-600 font-medium">Vista General de la Plataforma</span>
+                      ) : (
+                        selectedCowork ? (
+                          <span className="text-blue-600 font-medium">{selectedCowork.name}</span>
+                        ) : (
+                          <span className="text-gray-500">Seleccionar Cowork</span>
+                        )
+                      )
+                    ) : (
+                      selectedCowork ? (
+                        <span className="text-blue-600 font-medium">{selectedCowork.name}</span>
+                      ) : (
+                        <span className="text-gray-500">Cargando...</span>
+                      )
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
             
             {/* Header Actions */}

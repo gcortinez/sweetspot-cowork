@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { currentUser } from '@clerk/nextjs/server';
 import { ClerkAuthProvider } from '@/contexts/clerk-auth-context';
+import { CoworkSelectionProvider } from '@/contexts/cowork-selection-context';
 
 export default async function ProtectedLayout({
   children,
@@ -16,7 +17,9 @@ export default async function ProtectedLayout({
 
   return (
     <ClerkAuthProvider>
-      {children}
+      <CoworkSelectionProvider>
+        {children}
+      </CoworkSelectionProvider>
     </ClerkAuthProvider>
   );
 }

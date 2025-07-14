@@ -29,6 +29,7 @@ import {
 } from 'lucide-react'
 import { useUser } from '@clerk/nextjs'
 import { SignOutButton } from '@clerk/nextjs'
+import { AppHeader } from '@/components/shared/app-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -262,63 +263,13 @@ export default function LeadsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-3">
-              <Link 
-                href="/dashboard"
-                className="flex items-center space-x-3 group"
-              >
-                <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center group-hover:bg-blue-700 transition-colors">
-                  <Building2 className="h-5 w-5 text-white" />
-                </div>
-                <h1 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">SweetSpot</h1>
-              </Link>
-              
-              {/* Breadcrumb */}
-              <div className="flex items-center space-x-2 text-sm text-gray-500">
-                <span>/</span>
-                <Link 
-                  href="/dashboard" 
-                  className="hover:text-blue-600 transition-colors flex items-center space-x-1"
-                >
-                  <Home className="h-3 w-3" />
-                  <span>Dashboard</span>
-                </Link>
-                <span>/</span>
-                <span className="text-gray-900">Prospectos</span>
-              </div>
-            </div>
-            
-            {/* Header Actions */}
-            <div className="flex items-center space-x-4">
-              {/* User Role Display */}
-              {isSuperAdmin ? (
-                <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded">
-                  Super Admin
-                </span>
-              ) : (
-                <div className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                  {userRole}
-                </div>
-              )}
-              
-              <Bell className="h-5 w-5 text-gray-400 hover:text-gray-600 cursor-pointer" />
-              
-              <div className="text-sm text-gray-600">
-                Bienvenido, {user?.firstName || user?.emailAddresses[0]?.emailAddress}
-              </div>
-              
-              <SignOutButton>
-                <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm transition-colors">
-                  Cerrar Sesión
-                </button>
-              </SignOutButton>
-            </div>
-          </div>
-        </div>
-      </header>
+      <AppHeader 
+        currentPage="Prospectos"
+        showBreadcrumb={true}
+        breadcrumbItems={[
+          { label: 'Prospectos' }
+        ]}
+      />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
