@@ -174,40 +174,20 @@ export default function EditActivityModal({
         updateData.completedAt = null;
       }
 
-      // Try to update activity via API
+      // Update activity via API
       console.log('Updating activity:', activity.id, updateData);
       
-      let updatedActivity: Activity;
+      const response = await api.put(`/api/activities/${activity.id}`, updateData);
       
-      try {
-        const response = await api.put(`/api/activities/${activity.id}`, updateData);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Error ${response.status}: ${errorText || 'Error al actualizar la actividad'}`);
-        }
-        
-        const result = await response.json();
-        console.log('Activity updated successfully:', result);
-        
-        updatedActivity = result.data || result;
-      } catch (apiError) {
-        console.warn('API update failed, using local update:', apiError);
-        
-        // Create a local version of the updated activity
-        updatedActivity = {
-          ...activity,
-          ...updateData,
-          updatedAt: new Date().toISOString()
-        };
-        
-        // Show warning
-        toast({
-          title: "Actividad actualizada localmente",
-          description: "Los cambios se aplicaron pero pueden no estar sincronizados con el servidor",
-          variant: "default",
-        });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error ${response.status}: ${errorText || 'Error al actualizar la actividad'}`);
       }
+      
+      const result = await response.json();
+      console.log('Activity updated successfully:', result);
+      
+      const updatedActivity = result.data || result;
 
       onActivityUpdated(updatedActivity);
       onClose();

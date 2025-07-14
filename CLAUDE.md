@@ -115,6 +115,7 @@ npm run test:performance  # Run performance tests
 
 - **Data Usage Guidelines**:
   - Nunca utilices data falsa o dummy ya que esta es una app que ya esta productiva y sus cambios son para optimizar lo que ya existe. Repito nunca uses data falta dummy o ficticia
+  - Nunca uses datos mock en ninguna parte de la app siempre usa apis y base de datos
 
 ## Development Best Practices:
 

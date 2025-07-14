@@ -55,12 +55,7 @@ export function useActivities(params: UseActivitiesParams = {}) {
 
   const fetchActivities = useCallback(async () => {
     if (!params.leadId && !params.clientId && !params.opportunityId && !params.entityId) {
-      return;
-    }
-
-    // Skip if autoFetch is disabled
-    if (params.autoFetch === false) {
-      console.log('Skipping fetchActivities - autoFetch disabled');
+      setActivities([]);
       return;
     }
 
@@ -113,38 +108,18 @@ export function useActivities(params: UseActivitiesParams = {}) {
     } finally {
       setLoading(false);
     }
-  }, [params.leadId, params.clientId, params.opportunityId, params.entityType, params.entityId, params.autoFetch]);
+  }, [api, params.leadId, params.clientId, params.opportunityId, params.entityType, params.entityId]);
 
-  // Auto-fetch on mount and dependency changes - but prevent infinite loops
+  // Auto-fetch on mount and dependency changes
   useEffect(() => {
-    if (params.autoFetch !== false && (params.leadId || params.clientId || params.opportunityId || params.entityId)) {
-      // Create a local fetch function to avoid dependency loops
-      const localFetch = async () => {
-        setLoading(true);
-        setError(null);
-
-        try {
-          console.log('Fetching activities with params:', params);
-          // For now, just set empty activities to prevent infinite loops
-          setActivities([]);
-        } catch (err) {
-          console.error('Error in localFetch:', err);
-          setError(err instanceof Error ? err.message : 'Error desconocido');
-          setActivities([]);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      localFetch();
+    if (params.autoFetch !== false) {
+      fetchActivities();
     }
-  }, [params.leadId, params.clientId, params.opportunityId, params.entityId, params.autoFetch]);
+  }, [fetchActivities, params.autoFetch]);
 
   const refetch = useCallback(() => {
-    console.log('Refetch called - but disabled to prevent loops');
-    // For now, just return a resolved promise to prevent errors
-    return Promise.resolve();
-  }, []);
+    return fetchActivities();
+  }, [fetchActivities]);
 
   return {
     activities,

@@ -170,34 +170,14 @@ export default function LeadDetailModal({
   const api = useApi();
   const { confirm, ConfirmDialog } = useConfirm();
   
-  // Fetch activities for this lead - disabled until backend is fully configured
+  // Fetch activities for this lead
   const { activities, loading: activitiesLoading, refetch: refetchActivities } = useActivities({
     leadId: lead?.id,
-    autoFetch: false // Disabled until backend activities API is working
+    autoFetch: true
   });
 
-  // Mock activities for demo purposes when no real activities are available
-  const mockActivities = [
-    {
-      id: 'mock-1',
-      type: 'EMAIL',
-      subject: 'Correo de bienvenida enviado',
-      description: 'Se envió información inicial sobre nuestros servicios de coworking',
-      createdAt: '2024-01-15T09:30:00Z',
-      user: { firstName: 'Sistema', lastName: 'Automático' }
-    },
-    {
-      id: 'mock-2', 
-      type: 'CALL',
-      subject: 'Llamada de seguimiento',
-      description: 'Conversación sobre necesidades específicas de oficina privada',
-      createdAt: '2024-01-14T16:45:00Z',
-      user: { firstName: 'Carlos', lastName: 'Vendedor' }
-    }
-  ];
-
-  // Use activities from API or mock activities as fallback
-  const displayActivities = activities.length > 0 ? activities : mockActivities;
+  // Use activities from API
+  const displayActivities = activities;
 
   // Update editScore when lead changes
   React.useEffect(() => {
@@ -262,12 +242,8 @@ export default function LeadDetailModal({
   const handleActivityCreated = (newActivity?: any) => {
     console.log('Activity created for lead:', lead.id);
     
-    // Try to refresh activities from database, but don't fail if it doesn't work
-    try {
-      refetchActivities();
-    } catch (error) {
-      console.warn('Failed to refresh activities after creation:', error);
-    }
+    // Refresh activities from database
+    refetchActivities();
     
     // Call parent callback if provided
     if (onCreateActivity) {
@@ -284,12 +260,8 @@ export default function LeadDetailModal({
   const handleActivityUpdated = (updatedActivity: Activity) => {
     console.log('Activity updated:', updatedActivity);
     
-    // Try to refresh activities from database, but don't fail if it doesn't work
-    try {
-      refetchActivities();
-    } catch (error) {
-      console.warn('Failed to refresh activities after update:', error);
-    }
+    // Refresh activities from database
+    refetchActivities();
     
     // Close edit modal
     setShowEditActivityModal(false);
@@ -310,24 +282,16 @@ export default function LeadDetailModal({
     try {
       console.log('Deleting activity:', activity.id);
       
-      // Try to delete via API
-      try {
-        const response = await api.delete(`/api/activities/${activity.id}`);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.warn('API delete failed:', errorText);
-        }
-      } catch (apiError) {
-        console.warn('Failed to delete activity via API:', apiError);
+      // Delete via API
+      const response = await api.delete(`/api/activities/${activity.id}`);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error ${response.status}: ${errorText || 'Error al eliminar la actividad'}`);
       }
       
-      // Try to refresh activities from database
-      try {
-        refetchActivities();
-      } catch (refreshError) {
-        console.warn('Failed to refresh activities after deletion:', refreshError);
-      }
+      // Refresh activities from database
+      refetchActivities();
       
       toast({
         title: "¡Actividad eliminada!",

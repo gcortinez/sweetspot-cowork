@@ -141,61 +141,6 @@ export default function LeadsPage() {
   const userRole = privateMetadata?.role || publicMetadata?.role || 'END_USER'
   const isSuperAdmin = userRole === 'SUPER_ADMIN'
 
-  // Mock data for demonstration - replace with actual API call
-  const mockLeads: Lead[] = [
-    {
-      id: '1',
-      firstName: 'Juan',
-      lastName: 'Pérez',
-      email: 'juan@empresa.com',
-      phone: '+56 9 8877 6655',
-      company: 'Tech Solutions',
-      position: 'Director de TI',
-      source: 'WEBSITE',
-      status: 'NEW',
-      score: 85,
-      budget: 500000,
-      interests: ['Coworking', 'Oficina Privada'],
-      createdAt: '2024-01-15T10:30:00Z',
-      updatedAt: '2024-01-15T10:30:00Z'
-    },
-    {
-      id: '2', 
-      firstName: 'María',
-      lastName: 'González',
-      email: 'maria@startup.cl',
-      phone: '+56 9 7766 5544',
-      company: 'Startup Innovadora',
-      position: 'CEO',
-      source: 'REFERRAL',
-      status: 'QUALIFIED',
-      score: 92,
-      budget: 800000,
-      interests: ['Oficina Privada', 'Salas de Reunión'],
-      assignedTo: {
-        id: 'user1',
-        firstName: 'Carlos',
-        lastName: 'Vendedor'
-      },
-      createdAt: '2024-01-14T14:20:00Z',
-      updatedAt: '2024-01-15T09:15:00Z'
-    },
-    {
-      id: '3',
-      firstName: 'Pedro',
-      lastName: 'Martínez',
-      email: 'pedro@consultora.com',
-      company: 'Consultora Ágil',
-      position: 'Consultor Senior',
-      source: 'SOCIAL_MEDIA',
-      status: 'CONTACTED',
-      score: 78,
-      budget: 300000,
-      interests: ['Coworking'],
-      createdAt: '2024-01-13T16:45:00Z',
-      updatedAt: '2024-01-14T11:30:00Z'
-    }
-  ]
 
   useEffect(() => {
     loadLeads()
@@ -204,23 +149,39 @@ export default function LeadsPage() {
   const loadLeads = async () => {
     setIsLoading(true)
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch('/api/leads')
-      // const data = await response.json()
-      // setLeads(data.leads || [])
+      const response = await api.get('/api/leads')
       
-      // Using mock data for now
-      setTimeout(() => {
-        setLeads(mockLeads)
-        setIsLoading(false)
-      }, 1000)
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`Error ${response.status}: ${errorText || 'Error al cargar prospectos'}`)
+      }
+      
+      const data = await response.json()
+      console.log('Leads loaded:', data)
+      
+      // Handle different response structures
+      let leadsArray: Lead[] = []
+      if (data.success && data.data) {
+        if (Array.isArray(data.data)) {
+          leadsArray = data.data
+        } else if (data.data.leads && Array.isArray(data.data.leads)) {
+          leadsArray = data.data.leads
+        }
+      } else if (Array.isArray(data)) {
+        leadsArray = data
+      }
+      
+      setLeads(leadsArray)
     } catch (error) {
       console.error('Error loading leads:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido al cargar prospectos'
       toast({
         title: 'Error al cargar prospectos',
-        description: 'Hubo un problema al cargar los prospectos',
+        description: errorMessage,
         variant: 'destructive'
       })
+      setLeads([]) // Set empty array on error
+    } finally {
       setIsLoading(false)
     }
   }
@@ -241,16 +202,24 @@ export default function LeadsPage() {
 
   const handleDeleteLead = async (leadId: string) => {
     try {
-      // TODO: Implement delete API call
+      const response = await api.delete(`/api/leads/${leadId}`)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`Error ${response.status}: ${errorText || 'Error al eliminar el prospecto'}`)
+      }
+      
       toast({
         title: 'Prospecto eliminado',
         description: 'El prospecto ha sido eliminado exitosamente'
       })
       loadLeads()
     } catch (error) {
+      console.error('Error deleting lead:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido al eliminar el prospecto'
       toast({
         title: 'Error al eliminar',
-        description: 'Hubo un problema al eliminar el prospecto',
+        description: errorMessage,
         variant: 'destructive'
       })
     }

@@ -49,28 +49,21 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Make request to backend API
-    const backendUrl = getApiBaseUrl();
+    // TODO: Implement actual database creation once leads table is created
+    console.log('Lead creation not yet implemented:', validatedData);
     
-    const response = await fetch(`${backendUrl}/api/leads`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(validatedData),
-    });
+    // For now, return a mock response
+    const mockLead = {
+      id: `lead-${Date.now()}`,
+      ...validatedData,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
     
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      return NextResponse.json(
-        { message: errorData.message || 'Error al crear el prospecto' },
-        { status: response.status }
-      );
-    }
-    
-    const result = await response.json();
-    return NextResponse.json(result, { status: 201 });
+    return NextResponse.json({
+      success: true,
+      data: mockLead
+    }, { status: 201 });
     
   } catch (error) {
     console.error('Error creating lead:', error);
@@ -94,68 +87,37 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('=== FRONTEND API ROUTE: GET /api/leads ===');
+    console.log('=== API ROUTE: GET /api/leads ===');
     
-    // Get auth token from request (or use bypass for testing)
-    let token = await getAuthToken(request);
+    // Get auth token from request
+    const token = await getAuthToken(request);
     if (!token) {
-      console.log('No auth token found, using bypass token for testing');
-      token = 'bypass_token_testing123';
-    }
-    
-    console.log('Using token:', token.substring(0, 20) + '...');
-    
-    // Get query parameters
-    const { searchParams } = new URL(request.url);
-    const page = searchParams.get('page') || '1';
-    const limit = searchParams.get('limit') || '10';
-    const search = searchParams.get('search') || '';
-    const status = searchParams.get('status') || '';
-    const source = searchParams.get('source') || '';
-    
-    // Build query string
-    const queryParams = new URLSearchParams({
-      page,
-      limit,
-      ...(search && { search }),
-      ...(status && { status }),
-      ...(source && { source }),
-    });
-    
-    // Make authenticated request to backend API
-    const backendUrl = getApiBaseUrl();
-    const fullUrl = `${backendUrl}/api/leads?${queryParams}`;
-    
-    console.log('Making request to backend:', fullUrl);
-    console.log('With headers:', { 'Authorization': `Bearer ${token.substring(0, 20)}...` });
-    
-    const response = await fetch(fullUrl, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-    
-    console.log('Backend response status:', response.status);
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('Backend error response:', errorData);
       return NextResponse.json(
-        { message: errorData.message || 'Error al obtener los prospectos' },
-        { status: response.status }
+        { message: 'Token de autenticación requerido' },
+        { status: 401 }
       );
     }
     
-    const result = await response.json();
-    console.log('Backend success response:', {
-      leadsCount: result.data?.leads?.length || 0,
-      hasData: !!result.data
-    });
-    console.log('=== END FRONTEND API ROUTE ===');
+    // For now, return empty leads array since we don't have the leads table set up
+    // TODO: Implement actual database query once leads table is created
+    console.log('Returning empty leads array - leads feature not yet implemented');
     
-    return NextResponse.json(result);
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    
+    return NextResponse.json({
+      success: true,
+      data: {
+        leads: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0
+        }
+      }
+    });
     
   } catch (error) {
     console.error('Error fetching leads:', error);

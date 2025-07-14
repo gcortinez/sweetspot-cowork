@@ -134,36 +134,20 @@ export default function CreateActivityModal({
 
       console.log('Creating activity:', activityData);
       
-      try {
-        // Try to call API to create activity
-        const response = await api.post('/api/activities', activityData);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Error ${response.status}: ${errorText || 'Error al crear la actividad'}`);
-        }
-        
-        const result = await response.json();
-        console.log('Activity created successfully:', result);
-        
-        // Pass the created activity to the parent
-        if (typeof onActivityCreated === 'function') {
-          onActivityCreated(result.data || result);
-        }
-      } catch (apiError) {
-        console.warn('API creation failed, but continuing:', apiError);
-        
-        // Still notify parent that an activity was "created" for UI purposes
-        if (typeof onActivityCreated === 'function') {
-          onActivityCreated();
-        }
-        
-        // Show warning but don't fail completely
-        toast({
-          title: "Actividad registrada localmente",
-          description: "La actividad se registró pero puede no estar sincronizada con el servidor",
-          variant: "default",
-        });
+      // Call API to create activity
+      const response = await api.post('/api/activities', activityData);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error ${response.status}: ${errorText || 'Error al crear la actividad'}`);
+      }
+      
+      const result = await response.json();
+      console.log('Activity created successfully:', result);
+      
+      // Pass the created activity to the parent
+      if (typeof onActivityCreated === 'function') {
+        onActivityCreated(result.data || result);
       }
       
       onClose();
