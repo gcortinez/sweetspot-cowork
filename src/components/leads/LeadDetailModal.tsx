@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import CreateActivityModal from "./CreateActivityModal";
 import EditActivityModal from "./EditActivityModal";
-import { useActivities } from "@/hooks/use-activities";
+import { useActivitiesWithCache } from "@/hooks/use-activities-cache";
 import { useToast } from "@/hooks/use-toast";
 import { useApi } from "@/hooks/use-api";
 import { useConfirm } from "@/hooks/use-confirm";
@@ -170,8 +170,15 @@ export default function LeadDetailModal({
   const api = useApi();
   const { confirm, ConfirmDialog } = useConfirm();
   
-  // Fetch activities for this lead
-  const { activities, loading: activitiesLoading, refetch: refetchActivities } = useActivities({
+  // Fetch activities for this lead with caching
+  const { 
+    activities, 
+    loading: activitiesLoading, 
+    refetch: refetchActivities,
+    updateActivityInCache,
+    addActivityToCache,
+    removeActivityFromCache 
+  } = useActivitiesWithCache({
     leadId: lead?.id,
     autoFetch: true
   });
@@ -240,10 +247,15 @@ export default function LeadDetailModal({
   };
 
   const handleActivityCreated = (newActivity?: any) => {
-    console.log('Activity created for lead:', lead.id);
+    console.log('Activity created for lead:', lead.id, newActivity);
     
-    // Refresh activities from database
-    refetchActivities();
+    // Add to cache if activity data is provided, otherwise refetch
+    if (newActivity && addActivityToCache) {
+      addActivityToCache(newActivity);
+    } else {
+      // Fallback to refetch if no activity data or cache function
+      refetchActivities();
+    }
     
     // Call parent callback if provided
     if (onCreateActivity) {
@@ -260,8 +272,13 @@ export default function LeadDetailModal({
   const handleActivityUpdated = (updatedActivity: Activity) => {
     console.log('Activity updated:', updatedActivity);
     
-    // Refresh activities from database
-    refetchActivities();
+    // Update cache instead of refetching (much faster)
+    if (updateActivityInCache) {
+      updateActivityInCache(updatedActivity);
+    } else {
+      // Fallback to refetch if cache update fails
+      refetchActivities();
+    }
     
     // Close edit modal
     setShowEditActivityModal(false);
@@ -282,16 +299,21 @@ export default function LeadDetailModal({
     try {
       console.log('Deleting activity:', activity.id);
       
-      // Delete via API
-      const response = await api.delete(`/api/activities/${activity.id}`);
+      // Delete via API - use v1 endpoint directly
+      const response = await api.delete(`/api/v1/activities/${activity.id}`);
       
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Error ${response.status}: ${errorText || 'Error al eliminar la actividad'}`);
       }
       
-      // Refresh activities from database
-      refetchActivities();
+      // Remove from cache instead of refetching (much faster)
+      if (removeActivityFromCache) {
+        removeActivityFromCache(activity.id);
+      } else {
+        // Fallback to refetch if cache removal fails
+        refetchActivities();
+      }
       
       toast({
         title: "¡Actividad eliminada!",
@@ -746,6 +768,7 @@ export default function LeadDetailModal({
           setEditingActivity(null);
         }}
         onActivityUpdated={handleActivityUpdated}
+        updateActivityInCache={updateActivityInCache}
       />
 
       {/* Confirmation Dialog */}

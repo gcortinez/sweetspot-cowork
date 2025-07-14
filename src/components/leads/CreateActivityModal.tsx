@@ -134,8 +134,8 @@ export default function CreateActivityModal({
 
       console.log('Creating activity:', activityData);
       
-      // Call API to create activity
-      const response = await api.post('/api/activities', activityData);
+      // Call API to create activity - use v1 endpoint directly
+      const response = await api.post('/api/v1/activities', activityData);
       
       if (!response.ok) {
         const errorText = await response.text();

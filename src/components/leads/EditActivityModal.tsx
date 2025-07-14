@@ -48,6 +48,7 @@ interface EditActivityModalProps {
   isOpen: boolean;
   onClose: () => void;
   onActivityUpdated: (activity: Activity) => void;
+  updateActivityInCache?: (activity: Activity) => void;
 }
 
 const activityTypes: Array<{
@@ -110,7 +111,8 @@ export default function EditActivityModal({
   activity, 
   isOpen, 
   onClose, 
-  onActivityUpdated 
+  onActivityUpdated,
+  updateActivityInCache
 }: EditActivityModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const api = useApi();
@@ -174,10 +176,10 @@ export default function EditActivityModal({
         updateData.completedAt = null;
       }
 
-      // Update activity via API
+      // Update activity via API - use v1 endpoint directly for better performance
       console.log('Updating activity:', activity.id, updateData);
       
-      const response = await api.put(`/api/activities/${activity.id}`, updateData);
+      const response = await api.put(`/api/v1/activities/${activity.id}`, updateData);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -189,6 +191,11 @@ export default function EditActivityModal({
       
       const updatedActivity = result.data || result;
 
+      // Update cache if available (faster than refetching)
+      if (updateActivityInCache) {
+        updateActivityInCache(updatedActivity);
+      }
+      
       onActivityUpdated(updatedActivity);
       onClose();
       
