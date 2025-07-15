@@ -782,19 +782,29 @@ export default function OpportunitiesPage() {
                   </span>
                 </div>
                 
-                {opportunity.client ? (
-                  <div className="flex items-center text-muted-foreground bg-gradient-to-r from-slate-50 to-gray-50 px-2 py-1 rounded-md border border-gray-200">
+                {/* Cliente o Lead */}
+                {opportunity.client && (
+                  <div className="flex items-center text-xs bg-gradient-to-r from-slate-50 to-gray-50 px-2 py-1 rounded-md border border-gray-200">
                     <Building2 className="h-3 w-3 mr-1 text-slate-600" />
-                    <span className="truncate text-slate-700 font-medium">{opportunity.client.name}</span>
+                    <span className="truncate text-slate-700 font-medium">
+                      Cliente: {opportunity.client.name}
+                    </span>
                   </div>
-                ) : null}
+                )}
                 
                 {!opportunity.client && opportunity.lead && (
-                  <div className="flex items-center text-muted-foreground bg-gradient-to-r from-blue-50 to-indigo-50 px-2 py-1 rounded-md border border-blue-200">
+                  <div className="flex items-center text-xs bg-gradient-to-r from-blue-50 to-indigo-50 px-2 py-1 rounded-md border border-blue-200">
                     <User className="h-3 w-3 mr-1 text-blue-600" />
                     <span className="truncate text-blue-700 font-medium">
-                      {opportunity.lead.firstName} {opportunity.lead.lastName}
+                      Prospecto: {opportunity.lead.firstName} {opportunity.lead.lastName}
                     </span>
+                  </div>
+                )}
+                
+                {/* Debug info */}
+                {!opportunity.client && !opportunity.lead && (
+                  <div className="flex items-center text-xs bg-yellow-50 px-2 py-1 rounded-md border border-yellow-200">
+                    <span className="text-yellow-700">Sin cliente/prospecto asignado</span>
                   </div>
                 )}
                 
