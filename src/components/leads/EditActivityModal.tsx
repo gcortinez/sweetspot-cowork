@@ -183,12 +183,12 @@ export default function EditActivityModal({
       
       // Create a timeout promise
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('La solicitud tardó demasiado tiempo')), 30000);
+        setTimeout(() => reject(new Error('La solicitud tardó demasiado tiempo')), 10000);
       });
       
       // Race between the API call and timeout
       const response = await Promise.race([
-        api.put(`/api/activities/${activity.id}`, updateData),
+        api.put(`/api/v1/activities/${activity.id}`, updateData),
         timeoutPromise
       ]) as Response;
       
