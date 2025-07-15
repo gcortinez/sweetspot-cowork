@@ -585,21 +585,21 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
           </div>
           {/* Recent Opportunities */}
           <div className="p-6">
-            <h4 className="text-md font-medium text-gray-900 mb-4">Oportunidades Recientes</h4>
+            <h4 className="text-md font-medium text-foreground mb-4">Oportunidades Recientes</h4>
             <div className="space-y-3">
               {coworkData.opportunities.recent.map((opportunity: any) => (
-                <div key={opportunity.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <div key={opportunity.id} className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50/50 to-indigo-50/50 rounded-lg hover:bg-gradient-to-r hover:from-purple-100/60 hover:to-indigo-100/60 transition-all hover-lift shadow-soft">
                   <div className="flex items-center space-x-3">
-                    <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
-                      <Target className="h-5 w-5 text-purple-600" />
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-brand-purple/20 to-purple-600/30 flex items-center justify-center shadow-purple">
+                      <Target className="h-5 w-5 text-brand-purple" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">{opportunity.title}</p>
-                      <p className="text-sm text-gray-600">{opportunity.client}</p>
+                      <p className="font-medium text-foreground">{opportunity.title}</p>
+                      <p className="text-sm text-muted-foreground">{opportunity.client}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium text-gray-900">
+                    <p className="font-medium text-foreground">
                       ${(opportunity.value / 1000000).toFixed(1)}M
                     </p>
                     <div className="flex items-center space-x-2">
@@ -623,7 +623,7 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
             <div className="mt-4 text-center">
               <Link 
                 href="/opportunities"
-                className="text-purple-600 hover:text-purple-800 text-sm font-medium inline-flex items-center"
+                className="text-brand-purple hover:text-brand-purple/80 text-sm font-medium inline-flex items-center transition-colors"
               >
                 Ver todas las oportunidades
                 <ArrowRight className="h-4 w-4 ml-1" />

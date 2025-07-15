@@ -384,14 +384,14 @@ export default function OpportunitiesPage() {
 
   const getStageColor = (stage: keyof typeof STAGE_METADATA) => {
     const colors = {
-      blue: 'bg-blue-100 text-blue-800 border-blue-200',
-      indigo: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-      purple: 'bg-purple-100 text-purple-800 border-purple-200',
-      orange: 'bg-orange-100 text-orange-800 border-orange-200',
-      yellow: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      green: 'bg-green-100 text-green-800 border-green-200',
-      red: 'bg-red-100 text-red-800 border-red-200',
-      gray: 'bg-gray-100 text-gray-800 border-gray-200',
+      blue: 'bg-gradient-to-r from-blue-100 to-indigo-100 text-brand-blue border-blue-300 shadow-brand',
+      indigo: 'bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-700 border-indigo-300 shadow-soft',
+      purple: 'bg-gradient-to-r from-purple-100 to-pink-100 text-brand-purple border-purple-300 shadow-purple',
+      orange: 'bg-gradient-to-r from-orange-100 to-amber-100 text-warning border-orange-300 shadow-soft',
+      yellow: 'bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-700 border-yellow-300 shadow-soft',
+      green: 'bg-gradient-to-r from-green-100 to-emerald-100 text-success border-green-300 shadow-soft',
+      red: 'bg-gradient-to-r from-red-100 to-pink-100 text-destructive border-red-300 shadow-soft',
+      gray: 'bg-gradient-to-r from-gray-100 to-slate-100 text-muted-foreground border-gray-300 shadow-soft',
     }
     return colors[STAGE_METADATA[stage].color as keyof typeof colors] || colors.gray
   }
@@ -420,8 +420,8 @@ export default function OpportunitiesPage() {
         </div>
         <div 
           ref={setNodeRef}
-          className={`bg-gray-50 min-h-[350px] p-2 rounded-b-lg transition-colors ${
-            isOver ? 'bg-blue-50 ring-2 ring-blue-200' : ''
+          className={`bg-muted/30 min-h-[350px] p-2 rounded-b-lg transition-colors ${
+            isOver ? 'bg-brand-purple/10 ring-2 ring-brand-purple/50' : ''
           }`}
         >
           {children}
@@ -459,9 +459,9 @@ export default function OpportunitiesPage() {
         {...(bulkMode ? {} : listeners)}
         onClick={bulkMode ? () => toggleOpportunitySelection(opportunity.id) : undefined}
       >
-        <Card className={`mb-3 hover:shadow-md transition-shadow ${
+        <Card className={`mb-3 hover:shadow-purple transition-all hover-lift ${
           bulkMode ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'
-        } ${selectedOpportunities.includes(opportunity.id) ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}>
+        } ${selectedOpportunities.includes(opportunity.id) ? 'ring-2 ring-brand-purple bg-gradient-to-r from-purple-50 to-indigo-50' : 'bg-card'}`}>
           <CardContent className="p-4">
             <div className="flex justify-between items-start mb-2">
               {bulkMode && (
@@ -475,15 +475,15 @@ export default function OpportunitiesPage() {
                   }}
                 >
                   {selectedOpportunities.includes(opportunity.id) ? (
-                    <CheckSquare className="h-4 w-4 text-blue-600" />
+                    <CheckSquare className="h-4 w-4 text-brand-purple" />
                   ) : (
-                    <Square className="h-4 w-4 text-gray-400" />
+                    <Square className="h-4 w-4 text-muted-foreground" />
                   )}
                 </Button>
               )}
               <Link 
                 href={`/opportunities/${opportunity.id}`}
-                className="font-medium text-sm truncate flex-1 hover:text-blue-600 transition-colors"
+                className="font-medium text-sm truncate flex-1 hover:text-brand-purple transition-colors"
                 onClick={(e) => e.stopPropagation()}
               >
                 {opportunity.title}
@@ -532,7 +532,7 @@ export default function OpportunitiesPage() {
               </DropdownMenu>
             </div>
             
-            <div className="space-y-2 text-xs text-gray-600">
+            <div className="space-y-2 text-xs text-muted-foreground">
               <div className="flex justify-between">
                 <span>Valor:</span>
                 <span className="font-medium">{formatCurrency(opportunity.value)}</span>
@@ -543,7 +543,7 @@ export default function OpportunitiesPage() {
               </div>
               <div className="flex justify-between">
                 <span>Rev. Esperada:</span>
-                <span className="font-medium text-green-600">
+                <span className="font-medium text-success">
                   {formatCurrency(opportunity.expectedRevenue)}
                 </span>
               </div>
@@ -700,7 +700,7 @@ export default function OpportunitiesPage() {
                 <div className="flex items-center space-x-3">
                   <Link 
                     href={`/opportunities/${opportunity.id}`}
-                    className="font-medium hover:text-blue-600 transition-colors"
+                    className="font-medium hover:text-brand-purple transition-colors"
                   >
                     {opportunity.title}
                   </Link>
@@ -708,7 +708,7 @@ export default function OpportunitiesPage() {
                     {STAGE_METADATA[opportunity.stage].label}
                   </Badge>
                 </div>
-                <div className="mt-2 grid grid-cols-4 gap-4 text-sm text-gray-600">
+                <div className="mt-2 grid grid-cols-4 gap-4 text-sm text-muted-foreground">
                   <div>
                     <span className="font-medium">Valor: </span>
                     {formatCurrency(opportunity.value)}
@@ -719,7 +719,7 @@ export default function OpportunitiesPage() {
                   </div>
                   <div>
                     <span className="font-medium">Rev. Esperada: </span>
-                    <span className="text-green-600">{formatCurrency(opportunity.expectedRevenue)}</span>
+                    <span className="text-success">{formatCurrency(opportunity.expectedRevenue)}</span>
                   </div>
                   <div>
                     <span className="font-medium">Asignado: </span>
@@ -765,7 +765,7 @@ export default function OpportunitiesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <AppHeader 
           currentPage="Oportunidades"
           showBreadcrumb={true}
@@ -774,8 +774,8 @@ export default function OpportunitiesPage() {
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-2 text-gray-600">Cargando oportunidades...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-purple mx-auto"></div>
+              <p className="mt-2 text-muted-foreground">Cargando oportunidades...</p>
             </div>
           </div>
         </main>
@@ -784,7 +784,7 @@ export default function OpportunitiesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <AppHeader 
         currentPage="Oportunidades"
         showBreadcrumb={true}
@@ -832,56 +832,72 @@ export default function OpportunitiesPage() {
         {/* Stats Cards */}
         {stats && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <Card>
+            <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200 shadow-purple hover-lift transition-all">
               <CardContent className="p-6">
                 <div className="flex items-center">
-                  <Target className="h-8 w-8 text-blue-600" />
+                  <Target className="h-8 w-8 text-brand-purple" />
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Total Oportunidades</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-muted-foreground">Total Oportunidades</p>
+                    <p className="text-2xl font-bold text-foreground">
                       {stats.overall.totalOpportunities}
                     </p>
+                    <p className="text-xs text-brand-purple flex items-center mt-1">
+                      <Target className="h-3 w-3 mr-1" />
+                      Pipeline activo
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 shadow-soft hover-lift transition-all">
               <CardContent className="p-6">
                 <div className="flex items-center">
-                  <DollarSign className="h-8 w-8 text-green-600" />
+                  <DollarSign className="h-8 w-8 text-success" />
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Valor Total Pipeline</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-muted-foreground">Valor Total Pipeline</p>
+                    <p className="text-2xl font-bold text-foreground">
                       {formatCurrency(stats.overall.totalValue)}
                     </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <TrendingUp className="h-8 w-8 text-purple-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Revenue Esperado</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {formatCurrency(stats.overall.totalExpectedRevenue)}
+                    <p className="text-xs text-success flex items-center mt-1">
+                      <TrendingUp className="h-3 w-3 mr-1" />
+                      Potencial de ingresos
                     </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-gradient-to-br from-indigo-50 to-blue-50 border-indigo-200 shadow-brand hover-lift transition-all">
               <CardContent className="p-6">
                 <div className="flex items-center">
-                  <Trophy className="h-8 w-8 text-yellow-600" />
+                  <TrendingUp className="h-8 w-8 text-brand-blue" />
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Tasa de Éxito</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-muted-foreground">Revenue Esperado</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {formatCurrency(stats.overall.totalExpectedRevenue)}
+                    </p>
+                    <p className="text-xs text-brand-blue flex items-center mt-1">
+                      <DollarSign className="h-3 w-3 mr-1" />
+                      Proyección de cierre
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200 shadow-soft hover-lift transition-all">
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <Trophy className="h-8 w-8 text-warning" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-muted-foreground">Tasa de Éxito</p>
+                    <p className="text-2xl font-bold text-foreground">
                       {stats.overall.winRate.toFixed(1)}%
+                    </p>
+                    <p className="text-xs text-warning flex items-center mt-1">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Eficiencia del pipeline
                     </p>
                   </div>
                 </div>
@@ -947,9 +963,9 @@ export default function OpportunitiesPage() {
                 <div className="space-y-4">
                   <div>
                     <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm text-gray-600">Cerrar este mes</span>
+                      <span className="text-sm text-muted-foreground">Cerrar este mes</span>
                     </div>
-                    <p className="text-lg font-bold text-green-600">
+                    <p className="text-lg font-bold text-success">
                       {formatCurrency(
                         opportunities
                           .filter(opp => 
@@ -963,9 +979,9 @@ export default function OpportunitiesPage() {
                   </div>
                   <div>
                     <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm text-gray-600">Próximo trimestre</span>
+                      <span className="text-sm text-muted-foreground">Próximo trimestre</span>
                     </div>
-                    <p className="text-lg font-bold text-blue-600">
+                    <p className="text-lg font-bold text-brand-blue">
                       {formatCurrency(
                         opportunities
                           .filter(opp => {
@@ -981,9 +997,9 @@ export default function OpportunitiesPage() {
                   </div>
                   <div>
                     <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm text-gray-600">Confiabilidad promedio</span>
+                      <span className="text-sm text-muted-foreground">Confiabilidad promedio</span>
                     </div>
-                    <p className="text-lg font-bold text-orange-600">
+                    <p className="text-lg font-bold text-warning">
                       {opportunities.length > 0 ? 
                         (opportunities.reduce((sum, opp) => sum + opp.probability, 0) / opportunities.length).toFixed(1) : 0
                       }%
@@ -1020,11 +1036,11 @@ export default function OpportunitiesPage() {
                             metadata.color === 'green' ? 'bg-green-500' :
                             metadata.color === 'red' ? 'bg-red-500' : 'bg-gray-500'
                           }`}></div>
-                          <span className="text-sm text-gray-600">{metadata.label}</span>
+                          <span className="text-sm text-muted-foreground">{metadata.label}</span>
                         </div>
                         <div className="flex items-center space-x-2">
                           <span className="text-sm font-medium">{stageOpportunities.length}</span>
-                          <span className="text-xs text-gray-500">({percentage.toFixed(1)}%)</span>
+                          <span className="text-xs text-muted-foreground">({percentage.toFixed(1)}%)</span>
                         </div>
                       </div>
                     )
@@ -1039,7 +1055,7 @@ export default function OpportunitiesPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div className="flex flex-col sm:flex-row gap-4 flex-1">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 placeholder="Buscar oportunidades..."
                 value={searchTerm}
@@ -1093,17 +1109,17 @@ export default function OpportunitiesPage() {
 
         {/* Bulk Actions Bar */}
         {bulkMode && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-4 mb-6 shadow-purple">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div className="flex items-center gap-4">
-                <span className="text-sm font-medium text-blue-900">
+                <span className="text-sm font-medium text-brand-purple">
                   {selectedOpportunities.length} oportunidades seleccionadas
                 </span>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={selectAllOpportunities}>
+                  <Button size="sm" variant="outline" onClick={selectAllOpportunities} className="border-brand-purple text-brand-purple hover:bg-brand-purple/10">
                     Seleccionar todas ({opportunities.length})
                   </Button>
-                  <Button size="sm" variant="outline" onClick={clearSelection}>
+                  <Button size="sm" variant="outline" onClick={clearSelection} className="border-brand-purple text-brand-purple hover:bg-brand-purple/10">
                     Limpiar selección
                   </Button>
                 </div>
@@ -1113,7 +1129,7 @@ export default function OpportunitiesPage() {
                 <div className="flex gap-2">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button size="sm">
+                      <Button size="sm" className="bg-gradient-to-r from-brand-purple to-purple-700 hover:from-brand-purple/90 hover:to-purple-700/90 shadow-purple">
                         Cambiar etapa
                       </Button>
                     </DropdownMenuTrigger>
