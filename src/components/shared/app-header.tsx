@@ -45,7 +45,7 @@ export function AppHeader({
   const isSuperAdmin = userRole === 'SUPER_ADMIN'
 
   return (
-    <header className="bg-white shadow-sm border-b">
+    <header className="bg-card shadow-soft border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-3">
@@ -53,7 +53,7 @@ export function AppHeader({
               href="/dashboard"
               className="flex items-center space-x-3 group"
             >
-              <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center group-hover:opacity-80 transition-all">
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-brand-purple to-purple-700 flex items-center justify-center group-hover:shadow-purple shadow-soft transition-all">
                 {isMounted && isSuperAdmin ? (
                   <Crown className="h-5 w-5 text-white" />
                 ) : (
@@ -61,27 +61,27 @@ export function AppHeader({
                 )}
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                <h1 className="text-xl font-bold text-foreground group-hover:text-brand-purple transition-colors">
                   SweetSpot
                 </h1>
                 {/* Cowork name display */}
                 {isMounted && !isLoadingCoworks && (
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-muted-foreground">
                     {isSuperAdmin ? (
                       isPlatformView ? (
-                        <span className="text-purple-600 font-medium">Vista General de la Plataforma</span>
+                        <span className="text-brand-purple font-medium">Vista General de la Plataforma</span>
                       ) : (
                         selectedCowork ? (
-                          <span className="text-blue-600 font-medium">{selectedCowork.name}</span>
+                          <span className="text-brand-blue font-medium">{selectedCowork.name}</span>
                         ) : (
-                          <span className="text-gray-500">Seleccionar Cowork</span>
+                          <span className="text-muted-foreground">Seleccionar Cowork</span>
                         )
                       )
                     ) : (
                       selectedCowork ? (
-                        <span className="text-blue-600 font-medium">{selectedCowork.name}</span>
+                        <span className="text-brand-blue font-medium">{selectedCowork.name}</span>
                       ) : (
-                        <span className="text-gray-500">Cargando...</span>
+                        <span className="text-muted-foreground">Cargando...</span>
                       )
                     )}
                   </div>
@@ -91,11 +91,11 @@ export function AppHeader({
             
             {/* Breadcrumb */}
             {showBreadcrumb && breadcrumbItems.length > 0 && (
-              <div className="flex items-center space-x-2 text-sm text-gray-500">
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                 <span>/</span>
                 <Link 
                   href="/dashboard" 
-                  className="hover:text-blue-600 transition-colors flex items-center space-x-1"
+                  className="hover:text-brand-blue transition-colors flex items-center space-x-1"
                 >
                   <Home className="h-3 w-3" />
                   <span>Dashboard</span>
@@ -106,12 +106,12 @@ export function AppHeader({
                     {item.href ? (
                       <Link 
                         href={item.href}
-                        className="hover:text-blue-600 transition-colors"
+                        className="hover:text-brand-blue transition-colors"
                       >
                         {item.label}
                       </Link>
                     ) : (
-                      <span className="text-gray-900">{item.label}</span>
+                      <span className="text-foreground">{item.label}</span>
                     )}
                   </React.Fragment>
                 ))}
@@ -126,23 +126,23 @@ export function AppHeader({
             
             {/* User Role Display */}
             {isSuperAdmin ? (
-              <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded">
+              <span className="bg-brand-purple/10 text-brand-purple text-xs font-medium px-2.5 py-0.5 rounded shadow-soft">
                 Super Admin
               </span>
             ) : (
-              <div className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+              <div className="text-xs bg-brand-blue/10 text-brand-blue px-2 py-1 rounded shadow-soft">
                 {userRole}
               </div>
             )}
             
-            <Bell className="h-5 w-5 text-gray-400 hover:text-gray-600 cursor-pointer" />
+            <Bell className="h-5 w-5 text-muted-foreground hover:text-foreground cursor-pointer transition-colors" />
             
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-muted-foreground">
               Bienvenido, {user?.firstName || user?.emailAddresses[0]?.emailAddress}
             </div>
             
             <SignOutButton>
-              <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm transition-colors">
+              <button className="bg-muted hover:bg-muted/80 text-muted-foreground px-4 py-2 rounded-md text-sm transition-colors">
                 Cerrar Sesión
               </button>
             </SignOutButton>

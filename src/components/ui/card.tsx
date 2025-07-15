@@ -3,19 +3,22 @@ import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 
 const cardVariants = cva(
-  "rounded-xl border bg-card text-card-foreground shadow-sm transition-all duration-200",
+  "rounded-xl border bg-card text-card-foreground shadow-soft transition-all duration-200 hover-lift",
   {
     variants: {
       variant: {
-        default: "border-gray-200 bg-white hover:shadow-md dark:border-gray-700 dark:bg-gray-800",
-        elevated: "border-gray-200 bg-white shadow-md hover:shadow-lg dark:border-gray-700 dark:bg-gray-800",
-        outline: "border-gray-300 bg-transparent shadow-none dark:border-gray-600",
-        ghost: "border-transparent shadow-none hover:bg-gray-50 dark:hover:bg-gray-800/50",
+        default: "border-border bg-card hover:shadow-medium",
+        elevated: "border-border bg-card shadow-medium hover:shadow-strong",
+        outline: "border-border bg-transparent shadow-none",
+        ghost: "border-transparent shadow-none hover:bg-accent/50",
+        purple: "border-purple-200 bg-gradient-to-br from-purple-50/50 to-indigo-50/50 shadow-purple hover:shadow-purple",
+        blue: "border-blue-200 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 shadow-brand hover:shadow-brand",
+        success: "border-green-200 bg-gradient-to-br from-green-50/50 to-emerald-50/50 shadow-soft hover:shadow-medium",
       },
       context: {
         default: "",
-        cowork: "hover:border-blue-200 dark:hover:border-blue-800",
-        "super-admin": "hover:border-purple-200 dark:hover:border-purple-800",
+        cowork: "hover:border-brand-blue",
+        "super-admin": "hover:border-brand-purple",
       },
       interactive: {
         true: "cursor-pointer",
@@ -81,7 +84,7 @@ const CardTitle = React.forwardRef<
     <h3
       ref={ref}
       className={cn(
-        "font-semibold leading-none tracking-tight text-gray-900 dark:text-gray-100",
+        "font-semibold leading-none tracking-tight text-foreground",
         sizeClasses[size],
         className
       )}
@@ -98,7 +101,7 @@ const CardDescription = React.forwardRef<
   <p
     ref={ref}
     className={cn(
-      "text-sm text-gray-500 dark:text-gray-400",
+      "text-sm text-muted-foreground",
       className
     )}
     {...props}
@@ -161,7 +164,7 @@ const CardImage = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "relative overflow-hidden rounded-t-xl bg-gray-100 dark:bg-gray-800",
+        "relative overflow-hidden rounded-t-xl bg-muted",
         aspectRatioClasses[aspectRatio],
         className
       )}
@@ -187,11 +190,11 @@ const CardBadge = React.forwardRef<
   }
 >(({ className, variant = "default", position = "top-right", children, ...props }, ref) => {
   const variantClasses = {
-    default: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300",
-    success: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
-    warning: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300",
-    error: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
-    info: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+    default: "bg-muted text-muted-foreground",
+    success: "bg-success/10 text-success",
+    warning: "bg-warning/10 text-warning",
+    error: "bg-destructive/10 text-destructive",
+    info: "bg-brand-blue/10 text-brand-blue",
   };
 
   const positionClasses = {

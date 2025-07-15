@@ -4,20 +4,20 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] hover-lift",
   {
     variants: {
       variant: {
-        default: "bg-blue-600 text-white shadow hover:bg-blue-700",
+        default: "bg-gradient-to-r from-brand-purple to-purple-700 text-white shadow-purple hover:from-brand-purple/90 hover:to-purple-700/90",
         secondary:
-          "bg-white text-gray-700 border border-gray-200 shadow-sm hover:bg-gray-50",
-        ghost: "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+          "bg-card text-card-foreground border border-border shadow-soft hover:bg-accent hover:text-accent-foreground",
+        ghost: "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
         outline:
-          "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900",
-        success: "bg-green-600 text-white shadow hover:bg-green-700",
-        warning: "bg-yellow-600 text-white shadow hover:bg-yellow-700",
-        destructive: "bg-red-600 text-white shadow hover:bg-red-700",
-        link: "text-blue-600 underline-offset-4 hover:underline",
+          "border border-border bg-background text-foreground hover:bg-accent hover:text-accent-foreground",
+        success: "bg-gradient-to-r from-success to-green-700 text-success-foreground shadow-soft hover:from-success/90 hover:to-green-700/90",
+        warning: "bg-gradient-to-r from-warning to-amber-600 text-warning-foreground shadow-soft hover:from-warning/90 hover:to-amber-600/90",
+        destructive: "bg-gradient-to-r from-destructive to-red-700 text-destructive-foreground shadow-soft hover:from-destructive/90 hover:to-red-700/90",
+        link: "text-brand-purple underline-offset-4 hover:underline hover:text-brand-purple/80",
       },
       size: {
         default: "h-10 px-4 py-2.5",

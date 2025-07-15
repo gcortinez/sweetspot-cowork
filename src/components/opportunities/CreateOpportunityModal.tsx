@@ -155,12 +155,12 @@ export default function CreateOpportunityModal({
         <div className="bg-gradient-to-br from-purple-50 to-indigo-50 p-6 border-b">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-              <div className="h-10 w-10 rounded-full bg-purple-600 flex items-center justify-center">
+              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-brand-purple to-purple-700 flex items-center justify-center shadow-purple">
                 <Target className="h-5 w-5 text-white" />
               </div>
               Crear Nueva Oportunidad
             </DialogTitle>
-            <DialogDescription className="text-gray-600 mt-2">
+            <DialogDescription className="text-muted-foreground mt-2">
               {leadId ? 
                 `Convertir prospecto "${leadName}" en una oportunidad de negocio.` :
                 'Completa la información de la nueva oportunidad. Los campos marcados con * son obligatorios.'
@@ -172,14 +172,14 @@ export default function CreateOpportunityModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Información Básica */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <Target className="h-4 w-4" />
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Target className="h-4 w-4 text-brand-purple" />
               <span>Información Básica</span>
             </div>
-            <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
+            <div className="space-y-4 bg-muted/30 p-4 rounded-lg border border-border">
               <div className="space-y-2">
-                <Label htmlFor="title" className="text-sm font-medium flex items-center gap-1">
-                  Título de la Oportunidad <span className="text-red-500">*</span>
+                <Label htmlFor="title" className="text-sm font-medium flex items-center gap-1 text-foreground">
+                  Título de la Oportunidad <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="title"
@@ -191,7 +191,7 @@ export default function CreateOpportunityModal({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description" className="text-sm font-medium">
+                <Label htmlFor="description" className="text-sm font-medium text-foreground">
                   Descripción
                 </Label>
                 <Textarea
@@ -208,17 +208,17 @@ export default function CreateOpportunityModal({
 
           {/* Información Financiera */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <DollarSign className="h-4 w-4" />
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <DollarSign className="h-4 w-4 text-success" />
               <span>Información Financiera</span>
             </div>
-            <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+            <div className="grid grid-cols-2 gap-4 bg-gradient-to-r from-green-50/50 to-emerald-50/50 p-4 rounded-lg border border-green-200">
               <div className="space-y-2">
-                <Label htmlFor="value" className="text-sm font-medium flex items-center gap-1">
-                  Valor de la Oportunidad (COP) <span className="text-red-500">*</span>
+                <Label htmlFor="value" className="text-sm font-medium flex items-center gap-1 text-foreground">
+                  Valor de la Oportunidad (COP) <span className="text-destructive">*</span>
                 </Label>
                 <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
                     id="value"
                     type="number"
