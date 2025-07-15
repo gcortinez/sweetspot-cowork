@@ -26,12 +26,17 @@ export function AppHeader({
   showBreadcrumb = false,
   breadcrumbItems = []
 }: AppHeaderProps) {
+  const [isMounted, setIsMounted] = React.useState(false)
   const { user } = useUser()
   const {
     selectedCowork,
     isPlatformView,
     isLoadingCoworks
   } = useCoworkSelection()
+
+  React.useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   // Check if user is Super Admin
   const privateMetadata = user?.privateMetadata as any
@@ -48,10 +53,8 @@ export function AppHeader({
               href="/dashboard"
               className="flex items-center space-x-3 group"
             >
-              <div className={`h-8 w-8 rounded-lg flex items-center justify-center group-hover:opacity-80 transition-all ${
-                isSuperAdmin ? 'bg-purple-600' : 'bg-blue-600'
-              }`}>
-                {isSuperAdmin ? (
+              <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center group-hover:opacity-80 transition-all">
+                {isMounted && isSuperAdmin ? (
                   <Crown className="h-5 w-5 text-white" />
                 ) : (
                   <Building2 className="h-5 w-5 text-white" />
@@ -62,7 +65,7 @@ export function AppHeader({
                   SweetSpot
                 </h1>
                 {/* Cowork name display */}
-                {!isLoadingCoworks && (
+                {isMounted && !isLoadingCoworks && (
                   <div className="text-sm text-gray-600">
                     {isSuperAdmin ? (
                       isPlatformView ? (

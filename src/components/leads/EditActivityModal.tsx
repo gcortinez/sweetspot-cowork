@@ -154,9 +154,11 @@ export default function EditActivityModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activity) return;
+    if (!activity || isLoading) return;
 
+    console.log('Starting activity update, setting isLoading to true');
     setIsLoading(true);
+    
     try {
       // Prepare the data for the API
       const updateData: any = {
@@ -179,15 +181,33 @@ export default function EditActivityModal({
       // Update activity via API - use v1 endpoint directly for better performance
       console.log('Updating activity:', activity.id, updateData);
       
-      const response = await api.put(`/api/v1/activities/${activity.id}`, updateData);
+      // Create a timeout promise
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('La solicitud tardó demasiado tiempo')), 30000);
+      });
+      
+      // Race between the API call and timeout
+      const response = await Promise.race([
+        api.put(`/api/activities/${activity.id}`, updateData),
+        timeoutPromise
+      ]) as Response;
+      
+      console.log('Response received:', response.status, response.ok);
       
       if (!response.ok) {
         const errorText = await response.text();
+        console.error('Error response:', errorText);
         throw new Error(`Error ${response.status}: ${errorText || 'Error al actualizar la actividad'}`);
       }
       
-      const result = await response.json();
-      console.log('Activity updated successfully:', result);
+      let result;
+      try {
+        result = await response.json();
+        console.log('Activity updated successfully:', result);
+      } catch (parseError) {
+        console.error('Error parsing response:', parseError);
+        throw new Error('Error al procesar la respuesta del servidor');
+      }
       
       const updatedActivity = result.data || result;
 
@@ -197,13 +217,18 @@ export default function EditActivityModal({
       }
       
       onActivityUpdated(updatedActivity);
-      onClose();
       
       // Show success message
       toast({
         title: "¡Actividad actualizada!",
         description: "La actividad ha sido actualizada exitosamente",
       });
+      
+      // Close modal after successful update
+      setTimeout(() => {
+        setIsLoading(false);
+        onClose();
+      }, 100);
       
     } catch (error) {
       console.error('Error updating activity:', error);
@@ -214,6 +239,7 @@ export default function EditActivityModal({
         variant: "destructive",
       });
     } finally {
+      console.log('Activity update finished, setting isLoading to false');
       setIsLoading(false);
     }
   };
@@ -224,7 +250,11 @@ export default function EditActivityModal({
   const IconComponent = selectedType?.icon || FileText;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open && !isLoading) {
+        onClose();
+      }
+    }}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
         {/* Header */}
         <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 border-b">
