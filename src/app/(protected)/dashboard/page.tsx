@@ -675,6 +675,13 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
                 <Users className="h-4 w-4 mr-2" />
                 Agregar Miembro
               </button>
+              <Link 
+                href="/clients"
+                className="w-full flex items-center justify-start px-4 py-2 text-sm text-muted-foreground hover:bg-muted/30 rounded-md transition-colors"
+              >
+                <Building2 className="h-4 w-4 mr-2" />
+                Gestionar Clientes
+              </Link>
               <a 
                 href="/leads"
                 className="w-full flex items-center justify-start px-4 py-2 text-sm text-muted-foreground hover:bg-muted/30 rounded-md transition-colors"
