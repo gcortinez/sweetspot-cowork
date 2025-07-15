@@ -4,7 +4,7 @@
  */
 
 // Authentication actions
-export * from './auth'
+// export * from './auth' // File doesn't exist yet
 
 // Tenant management actions
 export * from './tenant'
