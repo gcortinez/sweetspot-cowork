@@ -61,5 +61,8 @@ export * from './activities'
 // Opportunity management actions
 export * from './opportunities'
 
+// Client management actions (new)
+export * from './clients'
+
 // TODO: Add more action modules as they are created
 // export * from './contract'

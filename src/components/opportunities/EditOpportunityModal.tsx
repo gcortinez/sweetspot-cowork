@@ -24,6 +24,7 @@ import {
   type UpdateOpportunityInput 
 } from "@/lib/actions/opportunities";
 import { STAGE_METADATA } from "@/lib/validations/opportunities";
+import ClientSelector from "@/components/clients/ClientSelector";
 
 interface Opportunity {
   id: string;
@@ -156,6 +157,9 @@ export default function EditOpportunityModal({
       }
       if (formData.assignedToId !== (opportunity.assignedToId || '')) {
         updateData.assignedToId = formData.assignedToId || undefined;
+      }
+      if (formData.clientId !== (opportunity.clientId || '')) {
+        updateData.clientId = formData.clientId || undefined;
       }
       if (formData.lostReason !== (opportunity.lostReason || '')) {
         updateData.lostReason = formData.lostReason || undefined;
@@ -387,13 +391,13 @@ export default function EditOpportunityModal({
             </div>
           )}
 
-          {/* Asignación */}
+          {/* Asignación y Cliente */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-sm font-medium text-foreground">
               <User className="h-4 w-4 text-brand-blue" />
-              <span>Asignación</span>
+              <span>Asignación y Cliente</span>
             </div>
-            <div className="bg-gradient-to-r from-blue-50/50 to-indigo-50/50 p-4 rounded-lg border border-blue-200">
+            <div className="grid grid-cols-2 gap-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 p-4 rounded-lg border border-blue-200">
               <div className="space-y-2">
                 <Label htmlFor="assignedToId" className="text-sm font-medium text-foreground">
                   Asignado a
@@ -405,6 +409,20 @@ export default function EditOpportunityModal({
                   placeholder="ID del usuario asignado"
                   className="h-11"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="clientId" className="text-sm font-medium text-foreground">
+                  Cliente Asociado
+                </Label>
+                <ClientSelector
+                  value={formData.clientId}
+                  onValueChange={(clientId) => handleInputChange('clientId', clientId || '')}
+                  placeholder="Seleccionar cliente..."
+                  allowCreate={true}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Selecciona el cliente al que pertenece esta oportunidad
+                </p>
               </div>
             </div>
           </div>

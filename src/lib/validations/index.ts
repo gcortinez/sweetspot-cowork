@@ -32,6 +32,26 @@ export * from './activities'
 // Opportunities validations
 export * from './opportunities'
 
+// Clients validations
+export {
+  CLIENT_STATUS,
+  CLIENT_STATUS_METADATA,
+  createClientSchema,
+  updateClientSchema,
+  listClientsSchema,
+  clientStatsSchema,
+  convertLeadToClientSchema,
+  clientSearchSchema,
+  type ClientStatus,
+  type CreateClientInput,
+  type UpdateClientInput,
+  type ListClientsInput,
+  type ClientStatsInput,
+  type ConvertLeadToClientInput,
+  type ClientSearchInput,
+  type ClientWithRelations
+} from './clients'
+
 // Space management validations
 export {
   SpaceTypeSchema,

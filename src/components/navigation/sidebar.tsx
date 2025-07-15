@@ -117,6 +117,12 @@ const getAccountItems = (t: (key: string) => string) => [
 
 const getCrmItems = (t: (key: string) => string) => [
   {
+    title: "Clientes",
+    href: "/clients",
+    icon: Building2,
+    description: "Gestión de clientes",
+  },
+  {
     title: "Prospectos",
     href: "/leads",
     icon: UserCheck,
@@ -594,7 +600,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onCloseMobile }) =>
               icon={Users}
               colorScheme={isSuperAdmin ? "purple" : "default"}
               isCollapsible={true}
-              defaultExpanded={pathname.includes('/leads') || pathname.includes('/opportunities')}
+              defaultExpanded={pathname.includes('/clients') || pathname.includes('/leads') || pathname.includes('/opportunities')}
             >
               <nav className="space-y-1">
                 {crmItems.map((item) => {

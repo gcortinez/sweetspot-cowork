@@ -25,6 +25,7 @@ import {
   type CreateOpportunityInput 
 } from "@/lib/actions/opportunities";
 import { STAGE_METADATA } from "@/lib/validations/opportunities";
+import ClientSelector from "@/components/clients/ClientSelector";
 
 interface CreateOpportunityModalProps {
   onOpportunityCreated?: () => void;
@@ -320,13 +321,15 @@ export default function CreateOpportunityModal({
                 <Label htmlFor="clientId" className="text-sm font-medium text-foreground">
                   Cliente Asociado
                 </Label>
-                <Input
-                  id="clientId"
+                <ClientSelector
                   value={formData.clientId}
-                  onChange={(e) => handleInputChange('clientId', e.target.value)}
-                  placeholder="ID del cliente"
-                  className="h-11"
+                  onValueChange={(clientId) => handleInputChange('clientId', clientId || '')}
+                  placeholder="Seleccionar cliente..."
+                  allowCreate={true}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Selecciona el cliente al que pertenece esta oportunidad
+                </p>
               </div>
             </div>
           </div>
