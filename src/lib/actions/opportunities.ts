@@ -19,6 +19,26 @@ import {
   type OpportunityStatsInput
 } from '@/lib/validations/opportunities'
 
+// Helper function to serialize opportunity data
+function serializeOpportunity(opportunity: any) {
+  return {
+    ...opportunity,
+    value: opportunity.value ? Number(opportunity.value) : 0,
+    expectedRevenue: opportunity.expectedRevenue ? Number(opportunity.expectedRevenue) : 0,
+  }
+}
+
+// Helper function to serialize stats data
+function serializeStats(stats: any) {
+  if (stats.totalValue) {
+    stats.totalValue = Number(stats.totalValue)
+  }
+  if (stats.totalExpectedRevenue) {
+    stats.totalExpectedRevenue = Number(stats.totalExpectedRevenue)
+  }
+  return stats
+}
+
 // Helper function to get user with tenant info
 async function getUserWithTenant() {
   const user = await currentUser()
@@ -103,7 +123,7 @@ export async function createOpportunity(input: CreateOpportunityInput) {
 
     return {
       success: true,
-      data: opportunity,
+      data: serializeOpportunity(opportunity),
     }
   } catch (error) {
     console.error('Error creating opportunity:', error)
@@ -195,7 +215,7 @@ export async function updateOpportunity(id: string, input: UpdateOpportunityInpu
 
     return {
       success: true,
-      data: opportunity,
+      data: serializeOpportunity(opportunity),
     }
   } catch (error) {
     console.error('Error updating opportunity:', error)
@@ -294,7 +314,7 @@ export async function changeOpportunityStage(id: string, input: ChangeStageInput
 
     return {
       success: true,
-      data: opportunity,
+      data: serializeOpportunity(opportunity),
     }
   } catch (error) {
     console.error('Error changing opportunity stage:', error)
@@ -404,7 +424,7 @@ export async function convertLeadToOpportunity(input: ConvertLeadToOpportunityIn
 
     return {
       success: true,
-      data: result,
+      data: serializeOpportunity(result),
     }
   } catch (error) {
     console.error('Error converting lead to opportunity:', error)
@@ -531,7 +551,7 @@ export async function getOpportunity(id: string) {
 
     return {
       success: true,
-      data: opportunity,
+      data: serializeOpportunity(opportunity),
     }
   } catch (error) {
     console.error('Error getting opportunity:', error)
@@ -648,7 +668,7 @@ export async function listOpportunities(input: ListOpportunitiesInput = {}) {
 
     return {
       success: true,
-      data: opportunities,
+      data: opportunities.map(serializeOpportunity),
       pagination: {
         page,
         limit,
@@ -741,20 +761,20 @@ export async function getOpportunityStats(input: OpportunityStatsInput = {}) {
       success: true,
       data: {
         byStage: stageStats.reduce((acc, stat) => {
-          acc[stat.stage] = {
+          acc[stat.stage] = serializeStats({
             count: stat._count,
             totalValue: stat._sum.value || 0,
             totalExpectedRevenue: stat._sum.expectedRevenue || 0,
-          }
+          })
           return acc
         }, {} as Record<string, any>),
-        overall: {
+        overall: serializeStats({
           totalOpportunities: overallStats._count,
           totalValue: overallStats._sum.value || 0,
           totalExpectedRevenue: overallStats._sum.expectedRevenue || 0,
           averageProbability: overallStats._avg.probability || 0,
           winRate,
-        },
+        }),
       },
     }
   } catch (error) {

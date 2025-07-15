@@ -165,7 +165,7 @@ export default function CreateLeadModal({ onLeadCreated }: CreateLeadModalProps)
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button className="gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md">
+        <Button className="gap-2 bg-gradient-to-r from-brand-blue to-blue-700 hover:from-brand-blue/90 hover:to-blue-700/90 shadow-brand hover-lift">
           <Plus className="h-4 w-4" />
           Agregar Prospecto
         </Button>
@@ -174,12 +174,12 @@ export default function CreateLeadModal({ onLeadCreated }: CreateLeadModalProps)
         <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 border-b">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-              <div className="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center">
+              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-brand-blue to-blue-700 flex items-center justify-center shadow-brand">
                 <Sparkles className="h-5 w-5 text-white" />
               </div>
               Crear Nuevo Prospecto
             </DialogTitle>
-            <DialogDescription className="text-gray-600 mt-2">
+            <DialogDescription className="text-muted-foreground mt-2">
               Completa la información del nuevo prospecto. Los campos marcados con * son obligatorios.
             </DialogDescription>
           </DialogHeader>
@@ -188,14 +188,14 @@ export default function CreateLeadModal({ onLeadCreated }: CreateLeadModalProps)
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Información Personal */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <User className="h-4 w-4" />
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <User className="h-4 w-4 text-brand-blue" />
               <span>Información Personal</span>
             </div>
-            <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+            <div className="grid grid-cols-2 gap-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 p-4 rounded-lg border border-blue-200">
               <div className="space-y-2">
-                <Label htmlFor="firstName" className="text-sm font-medium flex items-center gap-1">
-                  Nombre <span className="text-red-500">*</span>
+                <Label htmlFor="firstName" className="text-sm font-medium flex items-center gap-1 text-foreground">
+                  Nombre <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="firstName"
@@ -207,8 +207,8 @@ export default function CreateLeadModal({ onLeadCreated }: CreateLeadModalProps)
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastName" className="text-sm font-medium flex items-center gap-1">
-                  Apellido <span className="text-red-500">*</span>
+                <Label htmlFor="lastName" className="text-sm font-medium flex items-center gap-1 text-foreground">
+                  Apellido <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="lastName"
@@ -224,17 +224,17 @@ export default function CreateLeadModal({ onLeadCreated }: CreateLeadModalProps)
 
           {/* Información de Contacto */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <Mail className="h-4 w-4" />
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Mail className="h-4 w-4 text-brand-green" />
               <span>Información de Contacto</span>
             </div>
-            <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+            <div className="grid grid-cols-2 gap-4 bg-gradient-to-r from-green-50/50 to-emerald-50/50 p-4 rounded-lg border border-green-200">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium flex items-center gap-1">
-                  Email <span className="text-red-500">*</span>
+                <Label htmlFor="email" className="text-sm font-medium flex items-center gap-1 text-foreground">
+                  Email <span className="text-destructive">*</span>
                 </Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
                     id="email"
                     type="email"
@@ -247,11 +247,11 @@ export default function CreateLeadModal({ onLeadCreated }: CreateLeadModalProps)
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-sm font-medium">
+                <Label htmlFor="phone" className="text-sm font-medium text-foreground">
                   Teléfono
                 </Label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
                     id="phone"
                     type="tel"
@@ -267,17 +267,17 @@ export default function CreateLeadModal({ onLeadCreated }: CreateLeadModalProps)
 
           {/* Información Empresarial */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <Building2 className="h-4 w-4" />
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Building2 className="h-4 w-4 text-brand-blue" />
               <span>Información Empresarial</span>
             </div>
-            <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+            <div className="grid grid-cols-2 gap-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 p-4 rounded-lg border border-blue-200">
               <div className="space-y-2">
-                <Label htmlFor="company" className="text-sm font-medium">
+                <Label htmlFor="company" className="text-sm font-medium text-foreground">
                   Empresa
                 </Label>
                 <div className="relative">
-                  <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
                     id="company"
                     value={formData.company}
@@ -288,11 +288,11 @@ export default function CreateLeadModal({ onLeadCreated }: CreateLeadModalProps)
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="position" className="text-sm font-medium">
+                <Label htmlFor="position" className="text-sm font-medium text-foreground">
                   Cargo
                 </Label>
                 <div className="relative">
-                  <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
                     id="position"
                     value={formData.position}
@@ -307,14 +307,14 @@ export default function CreateLeadModal({ onLeadCreated }: CreateLeadModalProps)
 
           {/* Origen y Canal */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <Globe className="h-4 w-4" />
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Globe className="h-4 w-4 text-brand-purple" />
               <span>Origen del Prospecto</span>
             </div>
-            <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+            <div className="grid grid-cols-2 gap-4 bg-gradient-to-r from-purple-50/50 to-indigo-50/50 p-4 rounded-lg border border-purple-200">
               <div className="space-y-2">
-                <Label htmlFor="source" className="text-sm font-medium flex items-center gap-1">
-                  Origen <span className="text-red-500">*</span>
+                <Label htmlFor="source" className="text-sm font-medium flex items-center gap-1 text-foreground">
+                  Origen <span className="text-destructive">*</span>
                 </Label>
                 <Select value={formData.source} onValueChange={(value) => handleInputChange('source', value)}>
                   <SelectTrigger className="w-full h-11">
@@ -330,11 +330,11 @@ export default function CreateLeadModal({ onLeadCreated }: CreateLeadModalProps)
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="channel" className="text-sm font-medium">
+                <Label htmlFor="channel" className="text-sm font-medium text-foreground">
                   Canal específico
                 </Label>
                 <div className="relative">
-                  <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
                     id="channel"
                     value={formData.channel}
@@ -349,17 +349,17 @@ export default function CreateLeadModal({ onLeadCreated }: CreateLeadModalProps)
 
           {/* Presupuesto e Intereses */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <DollarSign className="h-4 w-4" />
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <DollarSign className="h-4 w-4 text-success" />
               <span>Información Comercial</span>
             </div>
-            <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+            <div className="grid grid-cols-2 gap-4 bg-gradient-to-r from-green-50/50 to-emerald-50/50 p-4 rounded-lg border border-green-200">
               <div className="space-y-2">
-                <Label htmlFor="budget" className="text-sm font-medium">
+                <Label htmlFor="budget" className="text-sm font-medium text-foreground">
                   Presupuesto estimado (CLP)
                 </Label>
                 <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
                     id="budget"
                     type="number"
@@ -372,7 +372,7 @@ export default function CreateLeadModal({ onLeadCreated }: CreateLeadModalProps)
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="interests" className="text-sm font-medium">
+                <Label htmlFor="interests" className="text-sm font-medium text-foreground">
                   Servicios de interés
                 </Label>
                 <Input
@@ -388,11 +388,11 @@ export default function CreateLeadModal({ onLeadCreated }: CreateLeadModalProps)
 
           {/* Notas de Calificación */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <MessageSquare className="h-4 w-4" />
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <MessageSquare className="h-4 w-4 text-brand-blue" />
               <span>Notas Adicionales</span>
             </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="bg-gradient-to-r from-blue-50/50 to-indigo-50/50 p-4 rounded-lg border border-blue-200">
               <Textarea
                 id="qualificationNotes"
                 value={formData.qualificationNotes}
@@ -401,7 +401,7 @@ export default function CreateLeadModal({ onLeadCreated }: CreateLeadModalProps)
                 rows={4}
                 className="resize-none"
               />
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-muted-foreground mt-2">
                 Estas notas son privadas y solo serán visibles para tu equipo.
               </p>
             </div>
@@ -409,8 +409,8 @@ export default function CreateLeadModal({ onLeadCreated }: CreateLeadModalProps)
 
           {/* Action Buttons */}
           <div className="flex justify-between items-center pt-6 border-t">
-            <div className="text-sm text-gray-500">
-              <span className="text-red-500">*</span> Campos obligatorios
+            <div className="text-sm text-muted-foreground">
+              <span className="text-destructive">*</span> Campos obligatorios
             </div>
             <div className="flex gap-3">
               <Button 
@@ -425,7 +425,7 @@ export default function CreateLeadModal({ onLeadCreated }: CreateLeadModalProps)
               <Button 
                 type="submit" 
                 disabled={isLoading}
-                className="min-w-[140px] bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                className="min-w-[140px] bg-gradient-to-r from-brand-blue to-blue-700 hover:from-brand-blue/90 hover:to-blue-700/90 shadow-brand hover-lift"
               >
                 {isLoading ? (
                   <>

@@ -209,12 +209,12 @@ export default function EditOpportunityModal({
         <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 border-b">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-              <div className="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center">
+              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-brand-blue to-blue-700 flex items-center justify-center shadow-brand">
                 <Edit className="h-5 w-5 text-white" />
               </div>
               Editar Oportunidad
             </DialogTitle>
-            <DialogDescription className="text-gray-600 mt-2">
+            <DialogDescription className="text-muted-foreground mt-2">
               Actualiza la información de la oportunidad "{opportunity.title}".
             </DialogDescription>
           </DialogHeader>
@@ -223,14 +223,14 @@ export default function EditOpportunityModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Información Básica */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <Target className="h-4 w-4" />
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Target className="h-4 w-4 text-brand-blue" />
               <span>Información Básica</span>
             </div>
-            <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
+            <div className="space-y-4 bg-gradient-to-r from-purple-50/50 to-indigo-50/50 p-4 rounded-lg border border-purple-200">
               <div className="space-y-2">
-                <Label htmlFor="title" className="text-sm font-medium flex items-center gap-1">
-                  Título de la Oportunidad <span className="text-red-500">*</span>
+                <Label htmlFor="title" className="text-sm font-medium flex items-center gap-1 text-foreground">
+                  Título de la Oportunidad <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="title"
@@ -242,7 +242,7 @@ export default function EditOpportunityModal({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description" className="text-sm font-medium">
+                <Label htmlFor="description" className="text-sm font-medium text-foreground">
                   Descripción
                 </Label>
                 <Textarea
@@ -259,17 +259,17 @@ export default function EditOpportunityModal({
 
           {/* Información Financiera */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <DollarSign className="h-4 w-4" />
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <DollarSign className="h-4 w-4 text-success" />
               <span>Información Financiera</span>
             </div>
-            <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+            <div className="grid grid-cols-2 gap-4 bg-gradient-to-r from-green-50/50 to-emerald-50/50 p-4 rounded-lg border border-green-200">
               <div className="space-y-2">
-                <Label htmlFor="value" className="text-sm font-medium flex items-center gap-1">
-                  Valor de la Oportunidad (COP) <span className="text-red-500">*</span>
+                <Label htmlFor="value" className="text-sm font-medium flex items-center gap-1 text-foreground">
+                  Valor de la Oportunidad (COP) <span className="text-destructive">*</span>
                 </Label>
                 <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
                     id="value"
                     type="number"
@@ -283,11 +283,11 @@ export default function EditOpportunityModal({
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="probability" className="text-sm font-medium">
+                <Label htmlFor="probability" className="text-sm font-medium text-foreground">
                   Probabilidad de Cierre (%)
                 </Label>
                 <div className="relative">
-                  <Percent className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Percent className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
                     id="probability"
                     type="number"
@@ -305,13 +305,13 @@ export default function EditOpportunityModal({
 
           {/* Gestión del Pipeline */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <Target className="h-4 w-4" />
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Target className="h-4 w-4 text-brand-purple" />
               <span>Gestión del Pipeline</span>
             </div>
-            <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+            <div className="grid grid-cols-2 gap-4 bg-gradient-to-r from-purple-50/50 to-indigo-50/50 p-4 rounded-lg border border-purple-200">
               <div className="space-y-2">
-                <Label htmlFor="stage" className="text-sm font-medium">
+                <Label htmlFor="stage" className="text-sm font-medium text-foreground">
                   Etapa
                 </Label>
                 <Select value={formData.stage} onValueChange={(value) => handleInputChange('stage', value)}>
@@ -328,11 +328,11 @@ export default function EditOpportunityModal({
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="expectedCloseDate" className="text-sm font-medium">
+                <Label htmlFor="expectedCloseDate" className="text-sm font-medium text-foreground">
                   Fecha de Cierre Esperada
                 </Label>
                 <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
                     id="expectedCloseDate"
                     type="date"
@@ -348,17 +348,17 @@ export default function EditOpportunityModal({
           {/* Fechas de Cierre y Razón de Pérdida */}
           {isClosedStage && (
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <Calendar className="h-4 w-4" />
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Calendar className="h-4 w-4 text-brand-blue" />
                 <span>Información de Cierre</span>
               </div>
-              <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
+              <div className="space-y-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 p-4 rounded-lg border border-blue-200">
                 <div className="space-y-2">
-                  <Label htmlFor="actualCloseDate" className="text-sm font-medium">
+                  <Label htmlFor="actualCloseDate" className="text-sm font-medium text-foreground">
                     Fecha de Cierre Real
                   </Label>
                   <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
                       id="actualCloseDate"
                       type="date"
@@ -370,7 +370,7 @@ export default function EditOpportunityModal({
                 </div>
                 {formData.stage === 'CLOSED_LOST' && (
                   <div className="space-y-2">
-                    <Label htmlFor="lostReason" className="text-sm font-medium">
+                    <Label htmlFor="lostReason" className="text-sm font-medium text-foreground">
                       Razón de Pérdida
                     </Label>
                     <Textarea
@@ -389,13 +389,13 @@ export default function EditOpportunityModal({
 
           {/* Asignación */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <User className="h-4 w-4" />
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <User className="h-4 w-4 text-brand-blue" />
               <span>Asignación</span>
             </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="bg-gradient-to-r from-blue-50/50 to-indigo-50/50 p-4 rounded-lg border border-blue-200">
               <div className="space-y-2">
-                <Label htmlFor="assignedToId" className="text-sm font-medium">
+                <Label htmlFor="assignedToId" className="text-sm font-medium text-foreground">
                   Asignado a
                 </Label>
                 <Input
@@ -411,13 +411,13 @@ export default function EditOpportunityModal({
 
           {/* Información Competitiva */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <Building2 className="h-4 w-4" />
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Building2 className="h-4 w-4 text-brand-purple" />
               <span>Información Competitiva</span>
             </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="bg-gradient-to-r from-purple-50/50 to-indigo-50/50 p-4 rounded-lg border border-purple-200">
               <div className="space-y-2">
-                <Label htmlFor="competitorInfo" className="text-sm font-medium">
+                <Label htmlFor="competitorInfo" className="text-sm font-medium text-foreground">
                   Información de Competidores
                 </Label>
                 <Textarea
@@ -434,8 +434,8 @@ export default function EditOpportunityModal({
 
           {/* Action Buttons */}
           <div className="flex justify-between items-center pt-6 border-t">
-            <div className="text-sm text-gray-500">
-              <span className="text-red-500">*</span> Campos obligatorios
+            <div className="text-sm text-muted-foreground">
+              <span className="text-destructive">*</span> Campos obligatorios
             </div>
             <div className="flex gap-3">
               <Button 
@@ -450,7 +450,7 @@ export default function EditOpportunityModal({
               <Button 
                 type="submit" 
                 disabled={isLoading}
-                className="min-w-[140px] bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                className="min-w-[140px] bg-gradient-to-r from-brand-blue to-blue-700 hover:from-brand-blue/90 hover:to-blue-700/90 shadow-brand hover-lift"
               >
                 {isLoading ? (
                   <>

@@ -232,11 +232,11 @@ export default function CreateOpportunityModal({
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="probability" className="text-sm font-medium">
+                <Label htmlFor="probability" className="text-sm font-medium text-foreground">
                   Probabilidad de Cierre (%)
                 </Label>
                 <div className="relative">
-                  <Percent className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Percent className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
                     id="probability"
                     type="number"
@@ -254,13 +254,13 @@ export default function CreateOpportunityModal({
 
           {/* Gestión del Pipeline */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <Sparkles className="h-4 w-4" />
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Sparkles className="h-4 w-4 text-brand-purple" />
               <span>Gestión del Pipeline</span>
             </div>
-            <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+            <div className="grid grid-cols-2 gap-4 bg-gradient-to-r from-purple-50/50 to-indigo-50/50 p-4 rounded-lg border border-purple-200">
               <div className="space-y-2">
-                <Label htmlFor="stage" className="text-sm font-medium">
+                <Label htmlFor="stage" className="text-sm font-medium text-foreground">
                   Etapa Inicial
                 </Label>
                 <Select value={formData.stage} onValueChange={(value) => handleInputChange('stage', value)}>
@@ -277,11 +277,11 @@ export default function CreateOpportunityModal({
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="expectedCloseDate" className="text-sm font-medium">
+                <Label htmlFor="expectedCloseDate" className="text-sm font-medium text-foreground">
                   Fecha de Cierre Esperada
                 </Label>
                 <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
                     id="expectedCloseDate"
                     type="date"
@@ -296,13 +296,13 @@ export default function CreateOpportunityModal({
 
           {/* Asignación y Relaciones */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <User className="h-4 w-4" />
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <User className="h-4 w-4 text-brand-blue" />
               <span>Asignación y Relaciones</span>
             </div>
-            <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+            <div className="grid grid-cols-2 gap-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 p-4 rounded-lg border border-blue-200">
               <div className="space-y-2">
-                <Label htmlFor="assignedToId" className="text-sm font-medium">
+                <Label htmlFor="assignedToId" className="text-sm font-medium text-foreground">
                   Asignado a
                 </Label>
                 <Input
@@ -312,12 +312,12 @@ export default function CreateOpportunityModal({
                   placeholder="ID del usuario asignado"
                   className="h-11"
                 />
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   Si se deja vacío, se asignará al usuario actual
                 </p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="clientId" className="text-sm font-medium">
+                <Label htmlFor="clientId" className="text-sm font-medium text-foreground">
                   Cliente Asociado
                 </Label>
                 <Input
@@ -333,13 +333,13 @@ export default function CreateOpportunityModal({
 
           {/* Información Competitiva */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <Building2 className="h-4 w-4" />
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Building2 className="h-4 w-4 text-brand-blue" />
               <span>Información Adicional</span>
             </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="bg-gradient-to-r from-blue-50/50 to-indigo-50/50 p-4 rounded-lg border border-blue-200">
               <div className="space-y-2">
-                <Label htmlFor="competitorInfo" className="text-sm font-medium">
+                <Label htmlFor="competitorInfo" className="text-sm font-medium text-foreground">
                   Información de Competidores
                 </Label>
                 <Textarea
@@ -356,8 +356,8 @@ export default function CreateOpportunityModal({
 
           {/* Action Buttons */}
           <div className="flex justify-between items-center pt-6 border-t">
-            <div className="text-sm text-gray-500">
-              <span className="text-red-500">*</span> Campos obligatorios
+            <div className="text-sm text-muted-foreground">
+              <span className="text-destructive">*</span> Campos obligatorios
             </div>
             <div className="flex gap-3">
               <Button 
@@ -372,7 +372,7 @@ export default function CreateOpportunityModal({
               <Button 
                 type="submit" 
                 disabled={isLoading}
-                className="min-w-[140px] bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
+                className="min-w-[140px] bg-gradient-to-r from-brand-purple to-purple-700 hover:from-brand-purple/90 hover:to-purple-700/90 shadow-purple hover-lift"
               >
                 {isLoading ? (
                   <>
