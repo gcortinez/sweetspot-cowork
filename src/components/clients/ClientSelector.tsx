@@ -11,14 +11,6 @@ import {
   PopoverTrigger 
 } from "@/components/ui/popover";
 import { 
-  Command, 
-  CommandEmpty, 
-  CommandGroup, 
-  CommandInput, 
-  CommandItem, 
-  CommandList 
-} from "@/components/ui/command";
-import { 
   Building2, 
   Search, 
   Plus, 
@@ -211,85 +203,95 @@ export default function ClientSelector({
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-full p-0 z-[60]" align="start">
-              <Command>
-                <CommandInput
-                  placeholder="Buscar cliente..."
-                  value={searchQuery}
-                  onValueChange={setSearchQuery}
-                  className="h-11"
-                />
-                <CommandList>
-                  <CommandEmpty>
-                    {isSearching ? (
-                      <div className="flex items-center gap-2 py-4">
-                        <Search className="h-4 w-4 animate-spin" />
-                        <span>Buscando...</span>
+              <div className="p-3">
+                <div className="relative mb-3">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar cliente..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 h-10"
+                  />
+                </div>
+                
+                <div className="max-h-64 overflow-y-auto">
+                  {isSearching ? (
+                    <div className="flex items-center gap-2 py-4 justify-center">
+                      <Search className="h-4 w-4 animate-spin" />
+                      <span>Buscando...</span>
+                    </div>
+                  ) : clients.length === 0 ? (
+                    <div className="py-4 text-center">
+                      <div className="text-sm text-muted-foreground mb-2">
+                        No se encontraron clientes.
                       </div>
-                    ) : (
-                      <div className="py-4">
-                        <div className="text-sm text-muted-foreground mb-2">
-                          No se encontraron clientes.
-                        </div>
-                        {allowCreate && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full"
-                            onClick={handleCreateClient}
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Crear nuevo cliente
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                  </CommandEmpty>
-                  <CommandGroup>
-                    {clients.map((client) => (
-                      <CommandItem
-                        key={client.id}
-                        value={client.id}
-                        onSelect={() => handleClientSelect(client)}
-                        className="flex items-center gap-3 py-3"
-                      >
-                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-brand-purple to-purple-700 flex items-center justify-center flex-shrink-0">
-                          <Building2 className="h-4 w-4 text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium truncate">{client.name}</div>
-                          <div className="text-sm text-muted-foreground truncate">
-                            {client.email}
-                          </div>
-                          {client.contactPerson && (
-                            <div className="text-xs text-muted-foreground truncate">
-                              {client.contactPerson}
-                            </div>
+                      {allowCreate && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={handleCreateClient}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Crear nuevo cliente
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      {clients.map((client) => (
+                        <div
+                          key={client.id}
+                          onClick={() => handleClientSelect(client)}
+                          className={cn(
+                            "flex items-center gap-3 p-3 rounded-md cursor-pointer transition-colors",
+                            "hover:bg-muted",
+                            selectedClient?.id === client.id && "bg-muted"
                           )}
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <Badge className={`${getStatusColor(client.status)} border text-xs`}>
-                            {CLIENT_STATUS_METADATA[client.status].label}
-                          </Badge>
-                          <Check
-                            className={cn(
-                              "h-4 w-4",
-                              selectedClient?.id === client.id ? "opacity-100" : "opacity-0"
+                        >
+                          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-brand-purple to-purple-700 flex items-center justify-center flex-shrink-0">
+                            <Building2 className="h-4 w-4 text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium truncate">{client.name}</div>
+                            <div className="text-sm text-muted-foreground truncate">
+                              {client.email}
+                            </div>
+                            {client.contactPerson && (
+                              <div className="text-xs text-muted-foreground truncate">
+                                {client.contactPerson}
+                              </div>
                             )}
-                          />
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <Badge className={`${getStatusColor(client.status)} border text-xs`}>
+                              {CLIENT_STATUS_METADATA[client.status].label}
+                            </Badge>
+                            <Check
+                              className={cn(
+                                "h-4 w-4",
+                                selectedClient?.id === client.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                          </div>
                         </div>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                  {allowCreate && clients.length > 0 && (
-                    <CommandGroup>
-                      <CommandItem onSelect={handleCreateClient} className="border-t">
-                        <Plus className="h-4 w-4 mr-2" />
-                        <span>Crear nuevo cliente</span>
-                      </CommandItem>
-                    </CommandGroup>
+                      ))}
+                      
+                      {allowCreate && (
+                        <div className="border-t pt-2 mt-2">
+                          <div
+                            onClick={handleCreateClient}
+                            className="flex items-center gap-2 p-3 rounded-md cursor-pointer transition-colors hover:bg-muted"
+                          >
+                            <Plus className="h-4 w-4" />
+                            <span>Crear nuevo cliente</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   )}
-                </CommandList>
-              </Command>
+                </div>
+              </div>
             </PopoverContent>
           </Popover>
         </div>
@@ -311,9 +313,11 @@ export default function ClientSelector({
       </div>
 
       {/* Create Client Modal */}
-      <CreateClientModal
-        onClientCreated={handleClientCreated}
-      />
+      {showCreateModal && (
+        <CreateClientModal
+          onClientCreated={handleClientCreated}
+        />
+      )}
     </>
   );
 }
