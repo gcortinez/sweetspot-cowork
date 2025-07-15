@@ -26,6 +26,9 @@ export {
 // Client and company validations
 export * from './client'
 
+// Activities validations
+export * from './activities'
+
 // Space management validations
 export {
   SpaceTypeSchema,

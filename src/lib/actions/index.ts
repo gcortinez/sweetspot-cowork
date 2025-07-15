@@ -55,5 +55,8 @@ export * from './integration'
 // Lead management actions
 export * from './leads'
 
+// Activity management actions
+export * from './activities'
+
 // TODO: Add more action modules as they are created
 // export * from './contract'

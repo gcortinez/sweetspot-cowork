@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { useApi } from "@/hooks/use-api";
+import { updateActivity } from "@/lib/actions";
 import { 
   Phone, 
   Mail, 
@@ -115,7 +115,6 @@ export default function EditActivityModal({
   updateActivityInCache
 }: EditActivityModalProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const api = useApi();
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
@@ -160,7 +159,7 @@ export default function EditActivityModal({
     setIsLoading(true);
     
     try {
-      // Prepare the data for the API
+      // Prepare the data for Server Action
       const updateData: any = {
         type: formData.type,
         subject: formData.subject.trim(),
@@ -178,38 +177,18 @@ export default function EditActivityModal({
         updateData.completedAt = null;
       }
 
-      // Update activity via API - use v1 endpoint directly for better performance
-      console.log('Updating activity:', activity.id, updateData);
+      console.log('Updating activity with Server Action:', activity.id, updateData);
       
-      // Create a timeout promise
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('La solicitud tardó demasiado tiempo')), 10000);
-      });
+      // Call Server Action directly
+      const result = await updateActivity(activity.id, updateData);
       
-      // Race between the API call and timeout
-      const response = await Promise.race([
-        api.put(`/api/v1/activities/${activity.id}`, updateData),
-        timeoutPromise
-      ]) as Response;
+      console.log('Server Action response:', result);
       
-      console.log('Response received:', response.status, response.ok);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response:', errorText);
-        throw new Error(`Error ${response.status}: ${errorText || 'Error al actualizar la actividad'}`);
+      if (!result.success) {
+        throw new Error(result.error || 'Error al actualizar la actividad');
       }
       
-      let result;
-      try {
-        result = await response.json();
-        console.log('Activity updated successfully:', result);
-      } catch (parseError) {
-        console.error('Error parsing response:', parseError);
-        throw new Error('Error al procesar la respuesta del servidor');
-      }
-      
-      const updatedActivity = result.data || result;
+      const updatedActivity = result.data;
 
       // Update cache if available (faster than refetching)
       if (updateActivityInCache) {
@@ -226,7 +205,6 @@ export default function EditActivityModal({
       
       // Close modal after successful update
       setTimeout(() => {
-        setIsLoading(false);
         onClose();
       }, 100);
       
