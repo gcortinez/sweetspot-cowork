@@ -189,6 +189,44 @@ function DashboardContent({
           createdAt: "2024-01-13T16:45:00Z"
         }
       ]
+    },
+    clients: {
+      stats: {
+        total: 32,
+        active: 24,
+        prospects: 8,
+        inactive: 4,
+        conversionRate: 68
+      },
+      recent: [
+        {
+          id: 1,
+          name: "Tech Innovators SAS",
+          email: "contacto@techinnovators.co",
+          contactPerson: "Ana García",
+          status: "ACTIVE",
+          createdAt: "2024-01-10T09:15:00Z",
+          opportunitiesCount: 3
+        },
+        {
+          id: 2,
+          name: "Digital Solutions Ltd",
+          email: "info@digitalsolutions.com",
+          contactPerson: "Carlos Ruiz",
+          status: "PROSPECT",
+          createdAt: "2024-01-12T14:30:00Z",
+          opportunitiesCount: 1
+        },
+        {
+          id: 3,
+          name: "Startup Unicornio",
+          email: "hola@startupunicornio.io",
+          contactPerson: "Laura Martínez",
+          status: "ACTIVE",
+          createdAt: "2024-01-08T11:45:00Z",
+          opportunitiesCount: 2
+        }
+      ]
     }
   };
 
@@ -522,6 +560,120 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
                 Ver todos los prospectos
                 <ArrowRight className="h-4 w-4 ml-1" />
               </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Clients Section */}
+      <div className="mb-8">
+        <div className="bg-card rounded-lg shadow-soft border">
+          <div className="p-6 border-b bg-gradient-to-r from-purple-50 to-indigo-50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Building2 className="h-6 w-6 text-brand-purple" />
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Gestión de Clientes</h3>
+                  <p className="text-sm text-muted-foreground">Administra tus clientes y empresas</p>
+                </div>
+              </div>
+              <Link 
+                href="/clients"
+                className="bg-gradient-to-r from-brand-purple to-purple-700 hover:from-brand-purple/90 hover:to-purple-700/90 text-white px-4 py-2 rounded-md text-sm flex items-center space-x-2 transition-all shadow-purple hover-lift"
+              >
+                <Building2 className="h-4 w-4" />
+                <span>Ver Clientes</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Clients Stats */}
+          <div className="p-6 border-b bg-gradient-to-r from-purple-50/50 to-indigo-50/50">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-2">
+                  <Building2 className="h-5 w-5 text-brand-purple mr-1" />
+                  <span className="text-2xl font-bold text-foreground">{coworkData.clients.stats.total}</span>
+                </div>
+                <p className="text-sm text-muted-foreground">Total Clientes</p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-2">
+                  <UserCheck className="h-5 w-5 text-success mr-1" />
+                  <span className="text-2xl font-bold text-success">{coworkData.clients.stats.active}</span>
+                </div>
+                <p className="text-sm text-muted-foreground">Activos</p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-2">
+                  <Users className="h-5 w-5 text-warning mr-1" />
+                  <span className="text-2xl font-bold text-warning">{coworkData.clients.stats.prospects}</span>
+                </div>
+                <p className="text-sm text-muted-foreground">Prospectos</p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-2">
+                  <TrendingUp className="h-5 w-5 text-brand-blue mr-1" />
+                  <span className="text-2xl font-bold text-brand-blue">{coworkData.clients.stats.conversionRate}%</span>
+                </div>
+                <p className="text-sm text-muted-foreground">Conversión</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Clients */}
+          <div className="p-6">
+            <h4 className="text-md font-medium text-foreground mb-4">Clientes Recientes</h4>
+            <div className="space-y-3">
+              {coworkData.clients.recent.map((client: any) => (
+                <div key={client.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center space-x-3">
+                    <div className="h-10 w-10 rounded-full bg-brand-purple/10 flex items-center justify-center">
+                      <Building2 className="h-5 w-5 text-brand-purple" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">{client.name}</p>
+                      <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                        <span className="flex items-center">
+                          <Mail className="h-3 w-3 mr-1" />
+                          {client.email}
+                        </span>
+                        {client.contactPerson && (
+                          <span className="flex items-center">
+                            <User className="h-3 w-3 mr-1" />
+                            {client.contactPerson}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="text-right">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        client.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
+                        client.status === 'PROSPECT' ? 'bg-blue-100 text-blue-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {client.status === 'ACTIVE' ? 'Activo' : 
+                         client.status === 'PROSPECT' ? 'Prospecto' : 'Inactivo'}
+                      </span>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {client.opportunitiesCount} oportunidad{client.opportunitiesCount !== 1 ? 'es' : ''}
+                      </p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 text-center">
+              <Link 
+                href="/clients"
+                className="text-brand-purple hover:text-brand-purple/80 text-sm font-medium inline-flex items-center transition-colors"
+              >
+                Ver todos los clientes
+                <ArrowRight className="h-4 w-4 ml-1" />
+              </Link>
             </div>
           </div>
         </div>
