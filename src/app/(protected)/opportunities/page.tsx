@@ -41,7 +41,8 @@ import {
   CheckSquare,
   X,
   Bell,
-  AlertTriangle
+  AlertTriangle,
+  Building2
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -411,20 +412,116 @@ export default function OpportunitiesPage() {
     })
 
     const stageMetadata = STAGE_METADATA[stage]
-
+    
+    // Calcular el valor total de las oportunidades en esta etapa
+    const totalValue = stageOpportunities.reduce((sum, opp) => sum + opp.value, 0)
+    
+    // Configuración de colores y estilos mejorados por etapa
+    const stageConfig = {
+      INITIAL_CONTACT: {
+        gradient: 'from-blue-500 to-indigo-600',
+        bgGradient: 'from-blue-50/80 to-indigo-50/80',
+        icon: '👋',
+        textColor: 'text-blue-700'
+      },
+      NEEDS_ANALYSIS: {
+        gradient: 'from-purple-500 to-indigo-600', 
+        bgGradient: 'from-purple-50/80 to-indigo-50/80',
+        icon: '🔍',
+        textColor: 'text-purple-700'
+      },
+      PROPOSAL_SENT: {
+        gradient: 'from-pink-500 to-purple-600',
+        bgGradient: 'from-pink-50/80 to-purple-50/80', 
+        icon: '📝',
+        textColor: 'text-pink-700'
+      },
+      NEGOTIATION: {
+        gradient: 'from-orange-500 to-amber-600',
+        bgGradient: 'from-orange-50/80 to-amber-50/80',
+        icon: '🤝',
+        textColor: 'text-orange-700'
+      },
+      CONTRACT_REVIEW: {
+        gradient: 'from-yellow-500 to-orange-600',
+        bgGradient: 'from-yellow-50/80 to-orange-50/80',
+        icon: '📜',
+        textColor: 'text-yellow-700'
+      },
+      CLOSED_WON: {
+        gradient: 'from-green-500 to-emerald-600',
+        bgGradient: 'from-green-50/80 to-emerald-50/80',
+        icon: '✅',
+        textColor: 'text-green-700'
+      },
+      CLOSED_LOST: {
+        gradient: 'from-red-500 to-pink-600',
+        bgGradient: 'from-red-50/80 to-pink-50/80',
+        icon: '❌',
+        textColor: 'text-red-700'
+      },
+      ON_HOLD: {
+        gradient: 'from-gray-500 to-slate-600',
+        bgGradient: 'from-gray-50/80 to-slate-50/80',
+        icon: '⏸️',
+        textColor: 'text-gray-700'
+      }
+    }
+    
+    const config = stageConfig[stage] || stageConfig.INITIAL_CONTACT
+    
     return (
-      <div className="min-h-[400px]">
-        <div className={`p-3 rounded-t-lg border-b-2 ${getStageColor(stage)}`}>
-          <h3 className="font-medium text-sm">{stageMetadata.label}</h3>
-          <p className="text-xs opacity-80 mt-1">{stageOpportunities.length} oportunidades</p>
+      <div className="min-h-[480px] bg-white rounded-xl shadow-soft border border-border hover:shadow-medium transition-all duration-300">
+        {/* Header mejorado */}
+        <div className={`relative p-4 rounded-t-xl bg-gradient-to-r ${config.gradient} text-white overflow-hidden`}>
+          <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <span className="text-lg">{config.icon}</span>
+                <h3 className="font-semibold text-sm">{stageMetadata.label}</h3>
+              </div>
+              <div className="bg-white/20 rounded-full px-2 py-1">
+                <span className="text-xs font-medium">{stageOpportunities.length}</span>
+              </div>
+            </div>
+            
+            {/* Valor total de la etapa */}
+            <div className="flex items-center justify-between text-white/90">
+              <span className="text-xs">Valor Total:</span>
+              <span className="text-xs font-medium">{formatCurrency(totalValue)}</span>
+            </div>
+            
+            {/* Barra de progreso */}
+            <div className="mt-2 w-full bg-white/20 rounded-full h-1">
+              <div 
+                className="bg-white h-1 rounded-full transition-all duration-300"
+                style={{ width: `${Math.min((stageOpportunities.length / (opportunities.length || 1)) * 100, 100)}%` }}
+              ></div>
+            </div>
+          </div>
         </div>
+        
+        {/* Contenido de las tarjetas */}
         <div 
           ref={setNodeRef}
-          className={`bg-muted/30 min-h-[350px] p-2 rounded-b-lg transition-colors ${
-            isOver ? 'bg-brand-purple/10 ring-2 ring-brand-purple/50' : ''
+          className={`bg-gradient-to-b ${config.bgGradient} min-h-[400px] p-3 rounded-b-xl transition-all duration-300 ${
+            isOver ? 'bg-brand-purple/10 ring-2 ring-brand-purple/50 shadow-lg' : ''
           }`}
         >
-          {children}
+          <div className="space-y-3">
+            {children}
+          </div>
+          
+          {/* Indicador de zona de drop */}
+          {isOver && (
+            <div className="flex items-center justify-center p-8 border-2 border-dashed border-brand-purple/30 rounded-lg mt-3">
+              <div className="text-center">
+                <div className="text-2xl mb-2">🎯</div>
+                <p className="text-sm text-brand-purple font-medium">Suelta aquí</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     )
@@ -459,115 +556,134 @@ export default function OpportunitiesPage() {
         {...(bulkMode ? {} : listeners)}
         onClick={bulkMode ? () => toggleOpportunitySelection(opportunity.id) : undefined}
       >
-        <Card className={`mb-3 hover:shadow-purple transition-all hover-lift ${
+        <Card className={`mb-3 hover:shadow-xl transition-all duration-300 hover-lift border-0 shadow-md rounded-lg overflow-hidden ${
           bulkMode ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'
-        } ${selectedOpportunities.includes(opportunity.id) ? 'ring-2 ring-brand-purple bg-gradient-to-r from-purple-50 to-indigo-50' : 'bg-card'}`}>
-          <CardContent className="p-4">
-            <div className="flex justify-between items-start mb-2">
-              {bulkMode && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 mr-2"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    toggleOpportunitySelection(opportunity.id)
-                  }}
-                >
-                  {selectedOpportunities.includes(opportunity.id) ? (
-                    <CheckSquare className="h-4 w-4 text-brand-purple" />
-                  ) : (
-                    <Square className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </Button>
-              )}
-              <Link 
-                href={`/opportunities/${opportunity.id}`}
-                className="font-medium text-sm truncate flex-1 hover:text-brand-purple transition-colors"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {opportunity.title}
-              </Link>
-              <div className="flex items-center space-x-1">
-                {healthStatus && (
-                  <div className="group relative">
-                    {healthStatus.type === 'overdue' ? (
-                      <AlertTriangle className="h-3 w-3 text-red-600" />
+        } ${selectedOpportunities.includes(opportunity.id) ? 'ring-2 ring-brand-purple bg-gradient-to-r from-purple-50 to-indigo-50' : 'bg-white hover:bg-gradient-to-r hover:from-white hover:to-gray-50/50'}`}>
+          <CardContent className="p-0">
+            {/* Header de la tarjeta */}
+            <div className="bg-gradient-to-r from-gray-50 to-white p-3 border-b border-gray-100">
+              <div className="flex justify-between items-start mb-1">
+                {bulkMode && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 mr-2"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleOpportunitySelection(opportunity.id)
+                    }}
+                  >
+                    {selectedOpportunities.includes(opportunity.id) ? (
+                      <CheckSquare className="h-4 w-4 text-brand-purple" />
                     ) : (
-                      <Bell className="h-3 w-3 text-orange-600" />
+                      <Square className="h-4 w-4 text-muted-foreground" />
                     )}
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 hidden group-hover:block">
-                      <div className="bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
-                        {healthStatus.message}
+                  </Button>
+                )}
+                <Link 
+                  href={`/opportunities/${opportunity.id}`}
+                  className="font-semibold text-sm truncate flex-1 hover:text-brand-purple transition-colors text-gray-900"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {opportunity.title}
+                </Link>
+                <div className="flex items-center space-x-1">
+                  {healthStatus && (
+                    <div className="group relative">
+                      {healthStatus.type === 'overdue' ? (
+                        <AlertTriangle className="h-3 w-3 text-red-600" />
+                      ) : (
+                        <Bell className="h-3 w-3 text-orange-600" />
+                      )}
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 hidden group-hover:block z-10">
+                        <div className="bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                          {healthStatus.message}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-gray-100">
+                        <MoreHorizontal className="h-3 w-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem asChild>
+                        <Link href={`/opportunities/${opportunity.id}`}>
+                          <ExternalLink className="h-3 w-3 mr-2" />
+                          Ver Detalle
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleEditOpportunity(opportunity)}>
+                        <Edit className="h-3 w-3 mr-2" />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        className="text-red-600"
+                        onClick={() => handleDeleteOpportunity(opportunity.id, opportunity.title)}
+                      >
+                        <Trash2 className="h-3 w-3 mr-2" />
+                        Eliminar
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                    <MoreHorizontal className="h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link href={`/opportunities/${opportunity.id}`}>
-                      <ExternalLink className="h-3 w-3 mr-2" />
-                      Ver Detalle
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleEditOpportunity(opportunity)}>
-                    <Edit className="h-3 w-3 mr-2" />
-                    Editar
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    className="text-red-600"
-                    onClick={() => handleDeleteOpportunity(opportunity.id, opportunity.title)}
-                  >
-                    <Trash2 className="h-3 w-3 mr-2" />
-                    Eliminar
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              </div>
             </div>
             
-            <div className="space-y-2 text-xs text-muted-foreground">
-              <div className="flex justify-between">
-                <span>Valor:</span>
-                <span className="font-medium">{formatCurrency(opportunity.value)}</span>
+            {/* Contenido principal */}
+            <div className="p-3">
+              {/* Badge de valor prominente */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="bg-gradient-to-r from-success/10 to-emerald-100 text-success font-bold text-sm px-3 py-1 rounded-full border border-success/20">
+                  {formatCurrency(opportunity.value)}
+                </div>
+                <div className="bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 font-medium text-xs px-2 py-1 rounded-full">
+                  {opportunity.probability}%
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span>Probabilidad:</span>
-                <span className="font-medium">{opportunity.probability}%</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Rev. Esperada:</span>
-                <span className="font-medium text-success">
-                  {formatCurrency(opportunity.expectedRevenue)}
-                </span>
+              
+              {/* Información compacta */}
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span className="flex items-center">
+                    <DollarSign className="h-3 w-3 mr-1 text-success" />
+                    Rev. Esperada:
+                  </span>
+                  <span className="font-medium text-success">
+                    {formatCurrency(opportunity.expectedRevenue)}
+                  </span>
+                </div>
+                
+                {opportunity.client && (
+                  <div className="flex items-center text-muted-foreground">
+                    <Building2 className="h-3 w-3 mr-1" />
+                    <span className="truncate">{opportunity.client.name}</span>
+                  </div>
+                )}
+                
+                {opportunity.assignedTo && (
+                  <div className="flex items-center text-muted-foreground">
+                    <div className="w-5 h-5 rounded-full bg-gradient-to-r from-brand-purple to-purple-700 flex items-center justify-center mr-2">
+                      <span className="text-white text-xs font-medium">
+                        {opportunity.assignedTo.firstName.charAt(0)}
+                      </span>
+                    </div>
+                    <span className="truncate">
+                      {opportunity.assignedTo.firstName} {opportunity.assignedTo.lastName}
+                    </span>
+                  </div>
+                )}
+                
+                {opportunity.expectedCloseDate && (
+                  <div className="flex items-center text-muted-foreground">
+                    <Calendar className="h-3 w-3 mr-1" />
+                    <span>{new Date(opportunity.expectedCloseDate).toLocaleDateString()}</span>
+                  </div>
+                )}
               </div>
             </div>
-
-            {opportunity.client && (
-              <div className="mt-2 text-xs text-gray-500">
-                Cliente: {opportunity.client.name}
-              </div>
-            )}
-
-            {opportunity.assignedTo && (
-              <div className="mt-2 flex items-center text-xs text-gray-500">
-                <User className="h-3 w-3 mr-1" />
-                {opportunity.assignedTo.firstName} {opportunity.assignedTo.lastName}
-              </div>
-            )}
-
-            {opportunity.expectedCloseDate && (
-              <div className="mt-2 flex items-center text-xs text-gray-500">
-                <Calendar className="h-3 w-3 mr-1" />
-                {new Date(opportunity.expectedCloseDate).toLocaleDateString()}
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
@@ -657,7 +773,7 @@ export default function OpportunitiesPage() {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-8 gap-6">
           {stageOrder.map((stage) => {
             const stageOpportunities = opportunities.filter(opp => opp.stage === stage)
             
