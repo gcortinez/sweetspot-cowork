@@ -59,6 +59,8 @@ import CreateLeadModal from '@/components/leads/CreateLeadModal'
 import LeadDetailModal from '@/components/leads/LeadDetailModal'
 import EditLeadModal from '@/components/leads/EditLeadModal'
 import { useApi } from '@/hooks/use-api'
+import { convertLeadToOpportunity } from '@/lib/actions/opportunities'
+import { useRouter } from 'next/navigation'
 
 interface Lead {
   id: string
@@ -135,6 +137,7 @@ export default function LeadsPage() {
   const [showEditModal, setShowEditModal] = useState(false)
   const { toast } = useToast()
   const api = useApi()
+  const router = useRouter()
 
   // Check if user is Super Admin
   const privateMetadata = user?.privateMetadata as any
@@ -261,7 +264,7 @@ export default function LeadsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <AppHeader 
         currentPage="Prospectos"
@@ -289,12 +292,12 @@ export default function LeadsPage() {
           
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="h-10 w-10 rounded-lg bg-blue-600 flex items-center justify-center">
+              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-brand-blue to-cowork-primary flex items-center justify-center shadow-brand">
                 <UserCheck className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Gestión de Prospectos</h1>
-                <p className="text-gray-600">Administra y da seguimiento a tus leads</p>
+                <h1 className="text-2xl font-bold text-foreground">Gestión de Prospectos</h1>
+                <p className="text-muted-foreground">Administra y da seguimiento a tus leads</p>
               </div>
             </div>
             <CreateLeadModal onLeadCreated={handleLeadCreated} />
@@ -302,48 +305,75 @@ export default function LeadsPage() {
         </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-6 rounded-lg border shadow-sm">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="bg-card p-6 rounded-lg border shadow-soft hover-lift transition-theme">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+              <p className="text-sm font-medium text-muted-foreground">Total</p>
+              <p className="text-2xl font-bold text-foreground">{stats.total}</p>
+              <p className="text-xs text-brand-blue flex items-center mt-1">
+                <Users className="h-3 w-3 mr-1" />
+                Total prospectos
+              </p>
             </div>
-            <Users className="h-8 w-8 text-blue-600" />
+            <Users className="h-8 w-8 text-brand-blue" />
           </div>
         </div>
-        <div className="bg-white p-6 rounded-lg border shadow-sm">
+        <div className="bg-card p-6 rounded-lg border shadow-soft hover-lift transition-theme">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Nuevos</p>
-              <p className="text-2xl font-bold text-blue-600">{stats.new}</p>
+              <p className="text-sm font-medium text-muted-foreground">Nuevos</p>
+              <p className="text-2xl font-bold text-brand-blue">{stats.new}</p>
+              <p className="text-xs text-yellow-600 flex items-center mt-1">
+                <TrendingUp className="h-3 w-3 mr-1" />
+                Recién ingresados
+              </p>
             </div>
-            <Star className="h-8 w-8 text-blue-600" />
+            <Star className="h-8 w-8 text-brand-blue" />
           </div>
         </div>
-        <div className="bg-white p-6 rounded-lg border shadow-sm">
+        <div className="bg-card p-6 rounded-lg border shadow-soft hover-lift transition-theme">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Calificados</p>
-              <p className="text-2xl font-bold text-green-600">{stats.qualified}</p>
+              <p className="text-sm font-medium text-muted-foreground">Calificados</p>
+              <p className="text-2xl font-bold text-success">{stats.qualified}</p>
+              <p className="text-xs text-success flex items-center mt-1">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                Listos para venta
+              </p>
             </div>
-            <Target className="h-8 w-8 text-green-600" />
+            <Target className="h-8 w-8 text-success" />
           </div>
         </div>
-        <div className="bg-white p-6 rounded-lg border shadow-sm">
+        <div className="bg-card p-6 rounded-lg border shadow-soft hover-lift transition-theme">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Convertidos</p>
-              <p className="text-2xl font-bold text-purple-600">{stats.converted}</p>
+              <p className="text-sm font-medium text-muted-foreground">Convertidos</p>
+              <p className="text-2xl font-bold text-brand-purple">{stats.converted}</p>
+              <p className="text-xs text-brand-purple flex items-center mt-1">
+                <Target className="h-3 w-3 mr-1" />
+                Oportunidades creadas
+              </p>
             </div>
-            <TrendingUp className="h-8 w-8 text-purple-600" />
+            <TrendingUp className="h-8 w-8 text-brand-purple" />
           </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded-lg border shadow-sm">
-        <div className="flex flex-col sm:flex-row gap-4">
+      <div className="mb-8">
+        <div className="bg-card rounded-lg shadow-soft border">
+          <div className="p-6 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
+            <div className="flex items-center space-x-3">
+              <Filter className="h-5 w-5 text-brand-blue" />
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">Filtros de Búsqueda</h3>
+                <p className="text-sm text-muted-foreground">Encuentra prospectos específicos usando los filtros</p>
+              </div>
+            </div>
+          </div>
+          <div className="p-6">
+            <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -377,12 +407,29 @@ export default function LeadsPage() {
               ))}
             </SelectContent>
           </Select>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Leads Table */}
-      <div className="bg-white rounded-lg border shadow-sm">
-        <Table>
+      <div className="mb-8">
+        <div className="bg-card rounded-lg shadow-soft border">
+          <div className="p-6 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Users className="h-6 w-6 text-brand-blue" />
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Lista de Prospectos</h3>
+                  <p className="text-sm text-muted-foreground">Gestiona todos tus leads y oportunidades potenciales</p>
+                </div>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {filteredLeads.length} de {leads.length} prospectos
+              </div>
+            </div>
+          </div>
+          <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Prospecto</TableHead>
@@ -400,18 +447,18 @@ export default function LeadsPage() {
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={9} className="text-center py-8">
-                  <div className="flex items-center justify-center space-x-2">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                    <span>Cargando prospectos...</span>
+                  <div className="flex items-center justify-center space-x-2 py-8">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-blue"></div>
+                    <span className="text-muted-foreground">Cargando prospectos...</span>
                   </div>
                 </TableCell>
               </TableRow>
             ) : filteredLeads.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={9} className="text-center py-8">
-                  <div className="text-gray-500">
+                  <div className="text-muted-foreground text-center py-8">
                     <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No se encontraron prospectos</p>
+                    <p className="font-medium">No se encontraron prospectos</p>
                     <p className="text-sm">Intenta ajustar los filtros o crear un nuevo prospecto</p>
                   </div>
                 </TableCell>
@@ -420,46 +467,46 @@ export default function LeadsPage() {
               filteredLeads.map((lead) => {
                 const ScoreIcon = getScoreIcon(lead.score)
                 return (
-                  <TableRow key={lead.id} className="hover:bg-gray-50">
+                  <TableRow key={lead.id} className="hover:bg-muted/50 transition-colors">
                     <TableCell>
                       <div>
-                        <div className="font-medium text-gray-900">
+                        <div className="font-medium text-foreground">
                           {lead.firstName} {lead.lastName}
                         </div>
-                        <div className="text-sm text-gray-500">{lead.email}</div>
+                        <div className="text-sm text-muted-foreground">{lead.email}</div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div>
                         {lead.company && (
-                          <div className="font-medium text-gray-900">{lead.company}</div>
+                          <div className="font-medium text-foreground">{lead.company}</div>
                         )}
                         {lead.position && (
-                          <div className="text-sm text-gray-500">{lead.position}</div>
+                          <div className="text-sm text-muted-foreground">{lead.position}</div>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
                         {lead.phone && (
-                          <div className="flex items-center text-sm text-gray-600">
+                          <div className="flex items-center text-sm text-muted-foreground">
                             <Phone className="h-3 w-3 mr-1" />
                             {lead.phone}
                           </div>
                         )}
-                        <div className="flex items-center text-sm text-gray-600">
+                        <div className="flex items-center text-sm text-muted-foreground">
                           <Mail className="h-3 w-3 mr-1" />
                           {lead.email}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={SOURCE_COLORS[lead.source]}>
+                      <Badge variant="secondary" className={`${SOURCE_COLORS[lead.source]} font-medium`}>
                         {SOURCE_LABELS[lead.source]}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge className={STATUS_COLORS[lead.status]}>
+                      <Badge variant="secondary" className={`${STATUS_COLORS[lead.status]} font-medium`}>
                         {STATUS_LABELS[lead.status]}
                       </Badge>
                     </TableCell>
@@ -470,7 +517,7 @@ export default function LeadsPage() {
                           <span className="font-medium">{lead.score}</span>
                         </div>
                       ) : (
-                        <span className="text-gray-400">-</span>
+                        <span className="text-muted-foreground">-</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -480,11 +527,11 @@ export default function LeadsPage() {
                           ${lead.budget.toLocaleString()}
                         </div>
                       ) : (
-                        <span className="text-gray-400">-</span>
+                        <span className="text-muted-foreground">-</span>
                       )}
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-muted-foreground">
                         {new Date(lead.createdAt).toLocaleDateString()}
                       </div>
                     </TableCell>
@@ -519,7 +566,8 @@ export default function LeadsPage() {
               })
             )}
           </TableBody>
-        </Table>
+          </Table>
+        </div>
       </div>
 
         {/* Modals */}
@@ -532,14 +580,36 @@ export default function LeadsPage() {
                 setShowDetailModal(false)
                 setSelectedLead(null)
               }}
-              onCreateOpportunity={(lead) => {
-                console.log('Creating opportunity from lead:', lead)
-                toast({
-                  title: '¡Oportunidad creada!',
-                  description: `Se ha creado una oportunidad para ${lead.firstName} ${lead.lastName}`,
-                })
-                setShowDetailModal(false)
-                setSelectedLead(null)
+              onCreateOpportunity={async (lead) => {
+                try {
+                  const result = await convertLeadToOpportunity(lead.id, {
+                    title: `Oportunidad - ${lead.firstName} ${lead.lastName}`,
+                    description: `Oportunidad creada a partir del prospecto: ${lead.firstName} ${lead.lastName} (${lead.email})`,
+                    value: lead.budget || 1000000, // Default value if no budget
+                    probability: 25, // Default 25% probability
+                    stage: 'INITIAL_CONTACT'
+                  })
+
+                  if (result.success) {
+                    toast({
+                      title: '¡Oportunidad creada exitosamente!',
+                      description: `Se ha creado una oportunidad para ${lead.firstName} ${lead.lastName}`,
+                    })
+                    setShowDetailModal(false)
+                    setSelectedLead(null)
+                    // Navigate to the new opportunity
+                    router.push(`/opportunities/${result.data.id}`)
+                  } else {
+                    throw new Error(result.error || 'Error al crear la oportunidad')
+                  }
+                } catch (error) {
+                  console.error('Error creating opportunity from lead:', error)
+                  toast({
+                    title: 'Error al crear oportunidad',
+                    description: error instanceof Error ? error.message : 'Ocurrió un error inesperado',
+                    variant: 'destructive'
+                  })
+                }
               }}
               onUpdateScore={async (leadId, newScore) => {
                 try {

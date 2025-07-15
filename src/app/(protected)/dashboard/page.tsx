@@ -2,6 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
+import Link from 'next/link';
 import { 
   Building2, 
   Crown, 
@@ -112,6 +113,43 @@ function DashboardContent({
       { id: 3, type: 'member', text: 'Nuevo miembro registrado', time: 'Hace 2 horas' },
       { id: 4, type: 'space', text: 'Espacio actualizado', time: 'Hace 3 horas' }
     ],
+    opportunities: {
+      stats: {
+        total: 12,
+        active: 8,
+        thisMonth: 4,
+        pipelineValue: 45000000
+      },
+      recent: [
+        {
+          id: 1,
+          title: "Oficina Privada - Tech Startup",
+          value: 15000000,
+          probability: 75,
+          stage: "NEGOTIATION",
+          client: "Tech Startup Inc.",
+          expectedCloseDate: "2024-02-15"
+        },
+        {
+          id: 2,
+          title: "Espacios Flexibles - Agencia Digital",
+          value: 8500000,
+          probability: 60,
+          stage: "PROPOSAL_SENT",
+          client: "Digital Agency Co.",
+          expectedCloseDate: "2024-02-28"
+        },
+        {
+          id: 3,
+          title: "Sala de Conferencias - Consultora",
+          value: 12000000,
+          probability: 90,
+          stage: "CONTRACT_REVIEW",
+          client: "Consultora Ágil SAS",
+          expectedCloseDate: "2024-02-10"
+        }
+      ]
+    },
     leads: {
       stats: {
         total: 18,
@@ -155,9 +193,9 @@ function DashboardContent({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-card shadow-soft border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-3">
@@ -171,25 +209,25 @@ function DashboardContent({
                 )}
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">SweetSpot</h1>
+                <h1 className="text-xl font-bold text-foreground">SweetSpot</h1>
                 {/* Cowork name display */}
                 {!isLoadingCoworks && (
                   <div className="text-sm text-gray-600">
                     {isSuperAdmin ? (
                       isPlatformView ? (
-                        <span className="text-purple-600 font-medium">Vista General de la Plataforma</span>
+                        <span className="text-brand-purple font-medium">Vista General de la Plataforma</span>
                       ) : (
                         selectedCowork ? (
                           <span className="text-blue-600 font-medium">{selectedCowork.name}</span>
                         ) : (
-                          <span className="text-gray-500">Seleccionar Cowork</span>
+                          <span className="text-muted-foreground">Seleccionar Cowork</span>
                         )
                       )
                     ) : (
                       selectedCowork ? (
                         <span className="text-blue-600 font-medium">{selectedCowork.name}</span>
                       ) : (
-                        <span className="text-gray-500">Cargando...</span>
+                        <span className="text-muted-foreground">Cargando...</span>
                       )
                     )}
                   </div>
@@ -213,14 +251,14 @@ function DashboardContent({
                 </div>
               )}
               
-              <Bell className="h-5 w-5 text-gray-400 hover:text-gray-600 cursor-pointer" />
+              <Bell className="h-5 w-5 text-muted-foreground hover:text-foreground cursor-pointer transition-colors" />
               
               <div className="text-sm text-gray-600">
                 Bienvenido, {user.firstName || user.emailAddresses[0]?.emailAddress}
               </div>
               
               <SignOutButton>
-                <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm transition-colors">
+                <button className="bg-muted hover:bg-muted/80 text-muted-foreground px-4 py-2 rounded-md text-sm transition-colors">
                   Cerrar Sesión
                 </button>
               </SignOutButton>
@@ -247,12 +285,12 @@ function SuperAdminDashboard({ coworkData }: { coworkData: any }) {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <Crown className="h-6 w-6 text-purple-600" />
+            <Crown className="h-6 w-6 text-brand-purple" />
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className="text-2xl font-bold text-foreground">
                 Dashboard Super Admin
               </h2>
-              <p className="text-gray-600">
+              <p className="text-muted-foreground">
                 Vista general de toda la plataforma SweetSpot
               </p>
             </div>
@@ -265,9 +303,9 @@ function SuperAdminDashboard({ coworkData }: { coworkData: any }) {
 
       {/* Platform Management Tabs */}
       <div className="mt-12">
-        <div className="border-b border-gray-200 mb-8">
+        <div className="border-b border-border mb-8">
           <nav className="-mb-px flex space-x-8">
-            <div className="py-2 px-1 border-b-2 border-purple-500 text-purple-600 font-medium text-sm">
+            <div className="py-2 px-1 border-b-2 border-brand-purple text-brand-purple font-medium text-sm">
               Gestión de Coworks
             </div>
           </nav>
@@ -279,9 +317,9 @@ function SuperAdminDashboard({ coworkData }: { coworkData: any }) {
 
       {/* User Management Section */}
       <div className="mt-12">
-        <div className="border-b border-gray-200 mb-8">
+        <div className="border-b border-border mb-8">
           <nav className="-mb-px flex space-x-8">
-            <div className="py-2 px-1 border-b-2 border-purple-500 text-purple-600 font-medium text-sm">
+            <div className="py-2 px-1 border-b-2 border-brand-purple text-brand-purple font-medium text-sm">
               Gestión de Usuarios
             </div>
           </nav>
@@ -302,17 +340,17 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <Building2 className="h-6 w-6 text-blue-600" />
+            <Building2 className="h-6 w-6 text-brand-blue" />
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className="text-2xl font-bold text-foreground">
                 Dashboard Cowork
               </h2>
-              <p className="text-gray-600">
+              <p className="text-muted-foreground">
                 Gestiona tu espacio de coworking
               </p>
             </div>
           </div>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm flex items-center space-x-2 transition-colors">
+          <button className="bg-gradient-to-r from-brand-blue to-cowork-primary hover:from-brand-blue/90 hover:to-cowork-primary/90 text-white px-4 py-2 rounded-md text-sm flex items-center space-x-2 transition-all shadow-brand hover-lift">
             <PlusCircle className="h-4 w-4" />
             <span>Nueva Reserva</span>
           </button>
@@ -321,77 +359,77 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
 
       {/* Cowork Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow">
+        <div className="bg-card p-6 rounded-lg shadow-soft border hover-lift transition-theme">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Reservas Hoy</p>
-              <p className="text-2xl font-bold text-gray-900">{coworkData.stats.todayBookings}</p>
-              <p className="text-xs text-green-600 flex items-center mt-1">
+              <p className="text-sm font-medium text-muted-foreground">Reservas Hoy</p>
+              <p className="text-2xl font-bold text-foreground">{coworkData.stats.todayBookings}</p>
+              <p className="text-xs text-success flex items-center mt-1">
                 <TrendingUp className="h-3 w-3 mr-1" />
                 +15% vs ayer
               </p>
             </div>
-            <Calendar className="h-8 w-8 text-blue-600" />
+            <Calendar className="h-8 w-8 text-brand-blue" />
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow">
+        <div className="bg-card p-6 rounded-lg shadow-soft border hover-lift transition-theme">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Miembros Activos</p>
-              <p className="text-2xl font-bold text-gray-900">{coworkData.stats.activeMembers.toLocaleString()}</p>
-              <p className="text-xs text-green-600 flex items-center mt-1">
+              <p className="text-sm font-medium text-muted-foreground">Miembros Activos</p>
+              <p className="text-2xl font-bold text-foreground">{coworkData.stats.activeMembers.toLocaleString()}</p>
+              <p className="text-xs text-success flex items-center mt-1">
                 <TrendingUp className="h-3 w-3 mr-1" />
                 +5% este mes
               </p>
             </div>
-            <Users className="h-8 w-8 text-green-600" />
+            <Users className="h-8 w-8 text-success" />
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow">
+        <div className="bg-card p-6 rounded-lg shadow-soft border hover-lift transition-theme">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Ocupación</p>
-              <p className="text-2xl font-bold text-gray-900">{coworkData.stats.occupancy}%</p>
-              <p className="text-xs text-gray-500">{Math.floor(coworkData.stats.occupancy * 0.35)} de 35 espacios</p>
+              <p className="text-sm font-medium text-muted-foreground">Ocupación</p>
+              <p className="text-2xl font-bold text-foreground">{coworkData.stats.occupancy}%</p>
+              <p className="text-xs text-muted-foreground">{Math.floor(coworkData.stats.occupancy * 0.35)} de 35 espacios</p>
             </div>
-            <BarChart3 className="h-8 w-8 text-orange-600" />
+            <BarChart3 className="h-8 w-8 text-warning" />
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow">
+        <div className="bg-card p-6 rounded-lg shadow-soft border hover-lift transition-theme">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Ingresos Mes</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-muted-foreground">Ingresos Mes</p>
+              <p className="text-2xl font-bold text-foreground">
                 ${coworkData.stats.monthlyRevenue.toLocaleString()}
               </p>
-              <p className="text-xs text-green-600 flex items-center mt-1">
+              <p className="text-xs text-success flex items-center mt-1">
                 <TrendingUp className="h-3 w-3 mr-1" />
                 +8% vs mes anterior
               </p>
             </div>
-            <DollarSign className="h-8 w-8 text-purple-600" />
+            <DollarSign className="h-8 w-8 text-brand-purple" />
           </div>
         </div>
       </div>
 
       {/* Leads Section */}
       <div className="mb-8">
-        <div className="bg-white rounded-lg shadow-sm border">
-          <div className="p-6 border-b">
+        <div className="bg-card rounded-lg shadow-soft border">
+          <div className="p-6 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <UserCheck className="h-6 w-6 text-blue-600" />
+                <UserCheck className="h-6 w-6 text-brand-blue" />
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Gestión de Prospectos</h3>
-                  <p className="text-sm text-gray-600">Nuevos leads y oportunidades de venta</p>
+                  <h3 className="text-lg font-semibold text-foreground">Gestión de Prospectos</h3>
+                  <p className="text-sm text-muted-foreground">Nuevos leads y oportunidades de venta</p>
                 </div>
               </div>
               <a 
                 href="/leads"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm flex items-center space-x-2 transition-colors"
+                className="bg-gradient-to-r from-brand-blue to-cowork-primary hover:from-brand-blue/90 hover:to-cowork-primary/90 text-white px-4 py-2 rounded-md text-sm flex items-center space-x-2 transition-all shadow-brand hover-lift"
               >
                 <PlusCircle className="h-4 w-4" />
                 <span>Ver Todos</span>
@@ -400,52 +438,52 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
           </div>
 
           {/* Leads Stats */}
-          <div className="p-6 border-b bg-gray-50">
+          <div className="p-6 border-b bg-gradient-to-r from-blue-50/50 to-indigo-50/50">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="text-center">
                 <div className="flex items-center justify-center mb-2">
-                  <Users className="h-5 w-5 text-blue-600 mr-1" />
-                  <span className="text-2xl font-bold text-gray-900">{coworkData.leads.stats.total}</span>
+                  <Users className="h-5 w-5 text-brand-blue mr-1" />
+                  <span className="text-2xl font-bold text-foreground">{coworkData.leads.stats.total}</span>
                 </div>
-                <p className="text-sm text-gray-600">Total Prospectos</p>
+                <p className="text-sm text-muted-foreground">Total Prospectos</p>
               </div>
               <div className="text-center">
                 <div className="flex items-center justify-center mb-2">
-                  <Star className="h-5 w-5 text-yellow-600 mr-1" />
-                  <span className="text-2xl font-bold text-yellow-600">{coworkData.leads.stats.new}</span>
+                  <Star className="h-5 w-5 text-warning mr-1" />
+                  <span className="text-2xl font-bold text-warning">{coworkData.leads.stats.new}</span>
                 </div>
-                <p className="text-sm text-gray-600">Nuevos</p>
+                <p className="text-sm text-muted-foreground">Nuevos</p>
               </div>
               <div className="text-center">
                 <div className="flex items-center justify-center mb-2">
-                  <Target className="h-5 w-5 text-green-600 mr-1" />
-                  <span className="text-2xl font-bold text-green-600">{coworkData.leads.stats.qualified}</span>
+                  <Target className="h-5 w-5 text-success mr-1" />
+                  <span className="text-2xl font-bold text-success">{coworkData.leads.stats.qualified}</span>
                 </div>
-                <p className="text-sm text-gray-600">Calificados</p>
+                <p className="text-sm text-muted-foreground">Calificados</p>
               </div>
               <div className="text-center">
                 <div className="flex items-center justify-center mb-2">
-                  <TrendingUp className="h-5 w-5 text-purple-600 mr-1" />
-                  <span className="text-2xl font-bold text-purple-600">{coworkData.leads.stats.converted}</span>
+                  <TrendingUp className="h-5 w-5 text-brand-purple mr-1" />
+                  <span className="text-2xl font-bold text-brand-purple">{coworkData.leads.stats.converted}</span>
                 </div>
-                <p className="text-sm text-gray-600">Convertidos</p>
+                <p className="text-sm text-muted-foreground">Convertidos</p>
               </div>
             </div>
           </div>
 
           {/* Recent Leads */}
           <div className="p-6">
-            <h4 className="text-md font-medium text-gray-900 mb-4">Prospectos Recientes</h4>
+            <h4 className="text-md font-medium text-foreground mb-4">Prospectos Recientes</h4>
             <div className="space-y-3">
               {coworkData.leads.recent.map((lead: any) => (
-                <div key={lead.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <div key={lead.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
                   <div className="flex items-center space-x-3">
-                    <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                      <UserCheck className="h-5 w-5 text-blue-600" />
+                    <div className="h-10 w-10 rounded-full bg-brand-blue/10 flex items-center justify-center">
+                      <UserCheck className="h-5 w-5 text-brand-blue" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">{lead.name}</p>
-                      <div className="flex items-center space-x-4 text-sm text-gray-500">
+                      <p className="font-medium text-foreground">{lead.name}</p>
+                      <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                         <span className="flex items-center">
                           <Mail className="h-3 w-3 mr-1" />
                           {lead.email}
@@ -469,9 +507,9 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
                         {lead.status === 'NEW' ? 'Nuevo' : 
                          lead.status === 'QUALIFIED' ? 'Calificado' : 'Contactado'}
                       </span>
-                      <p className="text-xs text-gray-500 mt-1">Score: {lead.score}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Score: {lead.score}</p>
                     </div>
-                    <ArrowRight className="h-4 w-4 text-gray-400" />
+                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
                   </div>
                 </div>
               ))}
@@ -479,7 +517,7 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
             <div className="mt-4 text-center">
               <a 
                 href="/leads"
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium inline-flex items-center"
+                className="text-brand-blue hover:text-brand-blue/80 text-sm font-medium inline-flex items-center transition-colors"
               >
                 Ver todos los prospectos
                 <ArrowRight className="h-4 w-4 ml-1" />
@@ -489,26 +527,132 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
         </div>
       </div>
 
+      {/* Opportunities Section */}
+      <div className="mb-8">
+        <div className="bg-white rounded-lg shadow-sm border">
+          <div className="p-6 border-b">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Target className="h-6 w-6 text-brand-purple" />
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Pipeline de Oportunidades</h3>
+                  <p className="text-sm text-muted-foreground">Gestiona tu pipeline de ventas y oportunidades de negocio</p>
+                </div>
+              </div>
+              <Link 
+                href="/opportunities"
+                className="bg-gradient-to-r from-brand-purple to-purple-700 hover:from-brand-purple/90 hover:to-purple-700/90 text-white px-4 py-2 rounded-md text-sm flex items-center space-x-2 transition-all shadow-purple hover-lift"
+              >
+                <Target className="h-4 w-4" />
+                <span>Ver Pipeline</span>
+              </Link>
+            </div>
+          </div>
+          {/* Opportunities Stats */}
+          <div className="p-6 border-b bg-gradient-to-r from-purple-50 to-indigo-50">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-2">
+                  <Target className="h-5 w-5 text-purple-600 mr-1" />
+                  <span className="text-2xl font-bold text-gray-900">{coworkData.opportunities.stats.total}</span>
+                </div>
+                <p className="text-sm text-gray-600">Total Oportunidades</p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-2">
+                  <Activity className="h-5 w-5 text-green-600 mr-1" />
+                  <span className="text-2xl font-bold text-gray-900">{coworkData.opportunities.stats.active}</span>
+                </div>
+                <p className="text-sm text-gray-600">Activas</p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-2">
+                  <Calendar className="h-5 w-5 text-orange-600 mr-1" />
+                  <span className="text-2xl font-bold text-gray-900">{coworkData.opportunities.stats.thisMonth}</span>
+                </div>
+                <p className="text-sm text-gray-600">Este Mes</p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-2">
+                  <DollarSign className="h-5 w-5 text-green-600 mr-1" />
+                  <span className="text-2xl font-bold text-gray-900">
+                    ${(coworkData.opportunities.stats.pipelineValue / 1000000).toFixed(1)}M
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600">Valor Pipeline</p>
+              </div>
+            </div>
+          </div>
+          {/* Recent Opportunities */}
+          <div className="p-6">
+            <h4 className="text-md font-medium text-gray-900 mb-4">Oportunidades Recientes</h4>
+            <div className="space-y-3">
+              {coworkData.opportunities.recent.map((opportunity: any) => (
+                <div key={opportunity.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div className="flex items-center space-x-3">
+                    <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
+                      <Target className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{opportunity.title}</p>
+                      <p className="text-sm text-gray-600">{opportunity.client}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium text-gray-900">
+                      ${(opportunity.value / 1000000).toFixed(1)}M
+                    </p>
+                    <div className="flex items-center space-x-2">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        opportunity.stage === 'NEGOTIATION' ? 'bg-orange-100 text-orange-800' :
+                        opportunity.stage === 'PROPOSAL_SENT' ? 'bg-blue-100 text-blue-800' :
+                        opportunity.stage === 'CONTRACT_REVIEW' ? 'bg-green-100 text-green-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {opportunity.stage === 'NEGOTIATION' ? 'Negociación' :
+                         opportunity.stage === 'PROPOSAL_SENT' ? 'Propuesta Enviada' :
+                         opportunity.stage === 'CONTRACT_REVIEW' ? 'Revisión Contrato' :
+                         opportunity.stage}
+                      </span>
+                      <span className="text-xs text-gray-500">{opportunity.probability}%</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 text-center">
+              <Link 
+                href="/opportunities"
+                className="text-purple-600 hover:text-purple-800 text-sm font-medium inline-flex items-center"
+              >
+                Ver todas las oportunidades
+                <ArrowRight className="h-4 w-4 ml-1" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Cowork Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Bookings */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm border">
+        <div className="lg:col-span-2 bg-card p-6 rounded-lg shadow-soft border">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Reservas Recientes</h3>
-            <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">Ver Todas</button>
+            <h3 className="text-lg font-semibold text-foreground">Reservas Recientes</h3>
+            <button className="text-brand-blue hover:text-brand-blue/80 text-sm font-medium transition-colors">Ver Todas</button>
           </div>
           <div className="space-y-4">
             {coworkData.recentBookings.map((booking: any) => (
-              <div key={booking.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <div key={booking.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
                 <div>
-                  <p className="font-medium text-gray-900">{booking.space}</p>
-                  <p className="text-sm text-gray-600">{booking.client}</p>
-                  <p className="text-xs text-gray-500">{booking.time}</p>
+                  <p className="font-medium text-foreground">{booking.space}</p>
+                  <p className="text-sm text-muted-foreground">{booking.client}</p>
+                  <p className="text-xs text-muted-foreground">{booking.time}</p>
                 </div>
                 <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                   booking.status === 'Confirmada' 
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-blue-100 text-blue-800'
+                    ? 'bg-success/10 text-success'
+                    : 'bg-brand-blue/10 text-brand-blue'
                 }`}>
                   {booking.status}
                 </span>
@@ -520,29 +664,36 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Quick Actions */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Acciones Rápidas</h3>
+          <div className="bg-card p-6 rounded-lg shadow-soft border hover-lift transition-theme">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Acciones Rápidas</h3>
             <div className="space-y-3">
-              <button className="w-full flex items-center justify-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors">
+              <button className="w-full flex items-center justify-start px-4 py-2 text-sm text-muted-foreground hover:bg-muted/30 rounded-md transition-colors">
                 <Calendar className="h-4 w-4 mr-2" />
                 Nueva Reserva
               </button>
-              <button className="w-full flex items-center justify-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors">
+              <button className="w-full flex items-center justify-start px-4 py-2 text-sm text-muted-foreground hover:bg-muted/30 rounded-md transition-colors">
                 <Users className="h-4 w-4 mr-2" />
                 Agregar Miembro
               </button>
               <a 
                 href="/leads"
-                className="w-full flex items-center justify-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+                className="w-full flex items-center justify-start px-4 py-2 text-sm text-muted-foreground hover:bg-muted/30 rounded-md transition-colors"
               >
                 <UserCheck className="h-4 w-4 mr-2" />
                 Gestionar Prospectos
               </a>
-              <button className="w-full flex items-center justify-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors">
+              <Link 
+                href="/opportunities"
+                className="w-full flex items-center justify-start px-4 py-2 text-sm text-muted-foreground hover:bg-muted/30 rounded-md transition-colors"
+              >
+                <Target className="h-4 w-4 mr-2" />
+                Pipeline de Oportunidades
+              </Link>
+              <button className="w-full flex items-center justify-start px-4 py-2 text-sm text-muted-foreground hover:bg-muted/30 rounded-md transition-colors">
                 <BarChart3 className="h-4 w-4 mr-2" />
                 Ver Reportes
               </button>
-              <button className="w-full flex items-center justify-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors">
+              <button className="w-full flex items-center justify-start px-4 py-2 text-sm text-muted-foreground hover:bg-muted/30 rounded-md transition-colors">
                 <Settings className="h-4 w-4 mr-2" />
                 Configuración
               </button>
@@ -550,15 +701,15 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
           </div>
 
           {/* Recent Activity */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Actividad Reciente</h3>
+          <div className="bg-card p-6 rounded-lg shadow-soft border hover-lift transition-theme">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Actividad Reciente</h3>
             <div className="space-y-3">
               {coworkData.activities.map((activity: any) => (
                 <div key={activity.id} className="flex items-start space-x-3">
-                  <Activity className="h-4 w-4 text-blue-600 mt-0.5" />
+                  <Activity className="h-4 w-4 text-brand-blue mt-0.5" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">{activity.text}</p>
-                    <p className="text-xs text-gray-500">{activity.time}</p>
+                    <p className="text-sm font-medium text-foreground">{activity.text}</p>
+                    <p className="text-xs text-muted-foreground">{activity.time}</p>
                   </div>
                 </div>
               ))}

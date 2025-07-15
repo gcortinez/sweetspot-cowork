@@ -58,5 +58,8 @@ export * from './leads'
 // Activity management actions
 export * from './activities'
 
+// Opportunity management actions
+export * from './opportunities'
+
 // TODO: Add more action modules as they are created
 // export * from './contract'
