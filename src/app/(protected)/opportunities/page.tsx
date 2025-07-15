@@ -19,6 +19,7 @@ import { STAGE_METADATA } from '@/lib/validations/opportunities'
 import { useToast } from '@/hooks/use-toast'
 import CreateOpportunityModal from '@/components/opportunities/CreateOpportunityModal'
 import EditOpportunityModal from '@/components/opportunities/EditOpportunityModal'
+import OpportunityDetailModal from '@/components/opportunities/OpportunityDetailModal'
 import {
   Target,
   Plus,
@@ -111,6 +112,8 @@ export default function OpportunitiesPage() {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [editingOpportunity, setEditingOpportunity] = useState<Opportunity | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [detailOpportunity, setDetailOpportunity] = useState<Opportunity | null>(null)
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [selectedOpportunities, setSelectedOpportunities] = useState<string[]>([])
   const [bulkMode, setBulkMode] = useState(false)
   const [updatingOpportunities, setUpdatingOpportunities] = useState<Set<string>>(new Set())
@@ -251,6 +254,18 @@ export default function OpportunitiesPage() {
   const handleEditOpportunity = (opportunity: Opportunity) => {
     setEditingOpportunity(opportunity)
     setIsEditModalOpen(true)
+  }
+
+  // Handle view opportunity detail
+  const handleViewOpportunityDetail = (opportunity: Opportunity) => {
+    setDetailOpportunity(opportunity)
+    setIsDetailModalOpen(true)
+  }
+
+  // Handle close detail modal
+  const handleCloseDetailModal = () => {
+    setIsDetailModalOpen(false)
+    setDetailOpportunity(null)
   }
 
   // Handle delete opportunity
@@ -681,13 +696,15 @@ export default function OpportunitiesPage() {
                     )}
                   </Button>
                 )}
-                <Link 
-                  href={`/opportunities/${opportunity.id}`}
-                  className="font-semibold text-sm truncate flex-1 hover:text-brand-purple transition-colors text-gray-900"
-                  onClick={(e) => e.stopPropagation()}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleViewOpportunityDetail(opportunity)
+                  }}
+                  className="font-semibold text-sm truncate flex-1 hover:text-brand-purple transition-colors text-gray-900 text-left cursor-pointer"
                 >
                   {opportunity.title}
-                </Link>
+                </button>
                 <div className="flex items-center space-x-1">
                   {healthStatus && (
                     <div className="group relative">
@@ -758,9 +775,18 @@ export default function OpportunitiesPage() {
                 </div>
                 
                 {opportunity.client && (
-                  <div className="flex items-center text-muted-foreground">
-                    <Building2 className="h-3 w-3 mr-1" />
-                    <span className="truncate">{opportunity.client.name}</span>
+                  <div className="flex items-center text-muted-foreground bg-gradient-to-r from-slate-50 to-gray-50 px-2 py-1 rounded-md border border-gray-200">
+                    <Building2 className="h-3 w-3 mr-1 text-slate-600" />
+                    <span className="truncate text-slate-700 font-medium">{opportunity.client.name}</span>
+                  </div>
+                )}
+                
+                {!opportunity.client && opportunity.lead && (
+                  <div className="flex items-center text-muted-foreground bg-gradient-to-r from-blue-50 to-indigo-50 px-2 py-1 rounded-md border border-blue-200">
+                    <User className="h-3 w-3 mr-1 text-blue-600" />
+                    <span className="truncate text-blue-700 font-medium">
+                      {opportunity.lead.firstName} {opportunity.lead.lastName}
+                    </span>
                   </div>
                 )}
                 
@@ -1409,6 +1435,17 @@ export default function OpportunitiesPage() {
           onOpportunityUpdated={() => { loadData(); loadStats(); }}
         />
       )}
+
+      {/* Opportunity Detail Modal */}
+      <OpportunityDetailModal
+        opportunity={detailOpportunity}
+        isOpen={isDetailModalOpen}
+        onClose={handleCloseDetailModal}
+        onEdit={(opportunity) => {
+          handleCloseDetailModal()
+          handleEditOpportunity(opportunity)
+        }}
+      />
     </div>
   )
 }
