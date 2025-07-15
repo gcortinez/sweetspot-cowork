@@ -42,7 +42,8 @@ import {
   X,
   Bell,
   AlertTriangle,
-  Building2
+  Building2,
+  Loader2
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -112,6 +113,8 @@ export default function OpportunitiesPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedOpportunities, setSelectedOpportunities] = useState<string[]>([])
   const [bulkMode, setBulkMode] = useState(false)
+  const [updatingOpportunities, setUpdatingOpportunities] = useState<Set<string>>(new Set())
+  const [optimisticUpdates, setOptimisticUpdates] = useState<Map<string, { originalStage: keyof typeof STAGE_METADATA, newStage: keyof typeof STAGE_METADATA }>>(new Map())
   
   const { toast } = useToast()
 
@@ -165,27 +168,55 @@ export default function OpportunitiesPage() {
     }
   }
 
-  const handleStageChange = async (opportunityId: string, newStage: keyof typeof STAGE_METADATA) => {
+  const loadStats = async () => {
     try {
+      const statsResult = await getOpportunityStats()
+      if (statsResult.success) {
+        setStats(statsResult.data)
+      }
+    } catch (error) {
+      console.error('Error loading stats:', error)
+    }
+  }
+
+  const handleStageChange = async (opportunityId: string, newStage: keyof typeof STAGE_METADATA) => {
+    // 1. Perform optimistic update immediately
+    updateOpportunityOptimistically(opportunityId, newStage)
+    
+    try {
+      // 2. Call API in background
       const result = await changeOpportunityStage(opportunityId, { stage: newStage })
       
       if (result.success) {
+        // 3. Confirm the update
+        confirmOpportunityUpdate(opportunityId)
+        
+        // Show subtle success feedback
         toast({
           title: "Etapa actualizada",
           description: `Oportunidad movida a ${STAGE_METADATA[newStage].label}`,
+          duration: 2000, // Shorter duration for less interruption
         })
-        loadData() // Refresh data
+        
+        // Refresh stats without reloading opportunities
+        loadStats()
       } else {
+        // 4. Rollback on failure
+        rollbackOpportunityUpdate(opportunityId)
+        
         toast({
-          title: "Error",
-          description: result.error,
+          title: "Error al actualizar",
+          description: result.error || "No se pudo cambiar la etapa",
           variant: "destructive",
         })
       }
     } catch (error) {
+      // 5. Rollback on error
+      rollbackOpportunityUpdate(opportunityId)
+      
       toast({
-        title: "Error",
-        description: "Error al cambiar la etapa",
+        title: "Error de conexión",
+        description: "No se pudo conectar con el servidor. Intenta nuevamente.",
         variant: "destructive",
       })
     }
@@ -236,7 +267,7 @@ export default function OpportunitiesPage() {
           title: "Oportunidad eliminada",
           description: `"${opportunityTitle}" ha sido eliminada exitosamente.`,
         })
-        loadData() // Refresh data
+        loadStats() // Only refresh stats
       } else {
         toast({
           title: "Error",
@@ -352,6 +383,67 @@ export default function OpportunitiesPage() {
       currency: 'COP',
       minimumFractionDigits: 0,
     }).format(amount)
+  }
+
+  // Optimistic update helpers
+  const updateOpportunityOptimistically = (opportunityId: string, newStage: keyof typeof STAGE_METADATA) => {
+    const opportunity = opportunities.find(opp => opp.id === opportunityId)
+    if (!opportunity) return
+
+    const originalStage = opportunity.stage
+    
+    // Store the original stage for potential rollback
+    setOptimisticUpdates(prev => new Map(prev).set(opportunityId, { originalStage, newStage }))
+    
+    // Update opportunities state immediately
+    setOpportunities(prev => prev.map(opp => 
+      opp.id === opportunityId 
+        ? { ...opp, stage: newStage }
+        : opp
+    ))
+
+    // Add to updating set
+    setUpdatingOpportunities(prev => new Set(prev).add(opportunityId))
+  }
+
+  const rollbackOpportunityUpdate = (opportunityId: string) => {
+    const update = optimisticUpdates.get(opportunityId)
+    if (!update) return
+
+    // Rollback to original stage
+    setOpportunities(prev => prev.map(opp => 
+      opp.id === opportunityId 
+        ? { ...opp, stage: update.originalStage }
+        : opp
+    ))
+
+    // Clean up
+    setOptimisticUpdates(prev => {
+      const newMap = new Map(prev)
+      newMap.delete(opportunityId)
+      return newMap
+    })
+    
+    setUpdatingOpportunities(prev => {
+      const newSet = new Set(prev)
+      newSet.delete(opportunityId)
+      return newSet
+    })
+  }
+
+  const confirmOpportunityUpdate = (opportunityId: string) => {
+    // Clean up optimistic update state
+    setOptimisticUpdates(prev => {
+      const newMap = new Map(prev)
+      newMap.delete(opportunityId)
+      return newMap
+    })
+    
+    setUpdatingOpportunities(prev => {
+      const newSet = new Set(prev)
+      newSet.delete(opportunityId)
+      return newSet
+    })
   }
 
   // Pipeline health check functions
@@ -543,7 +635,7 @@ export default function OpportunitiesPage() {
     const style = {
       transform: CSS.Transform.toString(transform),
       transition,
-      opacity: isDragging ? 0.5 : 1,
+      opacity: isDragging ? 0.5 : updatingOpportunities.has(opportunity.id) ? 0.8 : 1,
     }
 
     const healthStatus = getHealthStatus(opportunity)
@@ -556,10 +648,19 @@ export default function OpportunitiesPage() {
         {...(bulkMode ? {} : listeners)}
         onClick={bulkMode ? () => toggleOpportunitySelection(opportunity.id) : undefined}
       >
-        <Card className={`mb-3 hover:shadow-xl transition-all duration-300 hover-lift border-0 shadow-md rounded-lg overflow-hidden ${
+        <Card className={`mb-3 hover:shadow-xl transition-all duration-300 hover-lift border-0 shadow-md rounded-lg overflow-hidden relative ${
           bulkMode ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'
-        } ${selectedOpportunities.includes(opportunity.id) ? 'ring-2 ring-brand-purple bg-gradient-to-r from-purple-50 to-indigo-50' : 'bg-white hover:bg-gradient-to-r hover:from-white hover:to-gray-50/50'}`}>
+        } ${selectedOpportunities.includes(opportunity.id) ? 'ring-2 ring-brand-purple bg-gradient-to-r from-purple-50 to-indigo-50' : 'bg-white hover:bg-gradient-to-r hover:from-white hover:to-gray-50/50'} ${updatingOpportunities.has(opportunity.id) ? 'ring-2 ring-blue-300 bg-blue-50/30' : ''}`}>
           <CardContent className="p-0">
+            {/* Loading indicator */}
+            {updatingOpportunities.has(opportunity.id) && (
+              <div className="absolute top-2 right-2 z-10">
+                <div className="bg-blue-500 text-white p-1 rounded-full shadow-lg">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                </div>
+              </div>
+            )}
+            
             {/* Header de la tarjeta */}
             <div className="bg-gradient-to-r from-gray-50 to-white p-3 border-b border-gray-100">
               <div className="flex justify-between items-start mb-1">
@@ -1219,7 +1320,7 @@ export default function OpportunitiesPage() {
               )}
             </Button>
             
-            <CreateOpportunityModal onOpportunityCreated={loadData} />
+            <CreateOpportunityModal onOpportunityCreated={() => { loadData(); loadStats(); }} />
           </div>
         </div>
 
@@ -1289,7 +1390,7 @@ export default function OpportunitiesPage() {
                 <p className="text-gray-600 mb-4">
                   Comienza creando tu primera oportunidad o convirtiendo un prospecto.
                 </p>
-                <CreateOpportunityModal onOpportunityCreated={loadData} />
+                <CreateOpportunityModal onOpportunityCreated={() => { loadData(); loadStats(); }} />
               </div>
             )}
           </div>
@@ -1305,7 +1406,7 @@ export default function OpportunitiesPage() {
             setIsEditModalOpen(false)
             setEditingOpportunity(null)
           }}
-          onOpportunityUpdated={loadData}
+          onOpportunityUpdated={() => { loadData(); loadStats(); }}
         />
       )}
     </div>
