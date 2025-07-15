@@ -18,6 +18,7 @@ import EditActivityModal from "./EditActivityModal";
 import { useActivitiesWithCache } from "@/hooks/use-activities-cache";
 import { useToast } from "@/hooks/use-toast";
 import { useApi } from "@/hooks/use-api";
+import { deleteActivity } from "@/lib/actions/activities";
 import { useConfirm } from "@/hooks/use-confirm";
 import { 
   User, 
@@ -297,14 +298,15 @@ export default function LeadDetailModal({
     if (!confirmed) return;
 
     try {
-      console.log('Deleting activity:', activity.id);
+      console.log('Deleting activity with Server Action:', activity.id);
       
-      // Delete via API - use v1 endpoint directly
-      const response = await api.delete(`/api/v1/activities/${activity.id}`);
+      // Delete using Server Action
+      const result = await deleteActivity(activity.id);
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error ${response.status}: ${errorText || 'Error al eliminar la actividad'}`);
+      console.log('Server Action response:', result);
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Error al eliminar la actividad');
       }
       
       // Remove from cache instead of refetching (much faster)
