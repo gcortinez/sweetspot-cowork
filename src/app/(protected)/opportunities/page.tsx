@@ -669,10 +669,15 @@ export default function OpportunitiesPage() {
         style={style} 
         {...attributes} 
         {...(bulkMode ? {} : listeners)}
-        onClick={bulkMode ? () => toggleOpportunitySelection(opportunity.id) : undefined}
+        onClick={bulkMode ? () => toggleOpportunitySelection(opportunity.id) : (e) => {
+          // Solo abrir modal si no se hizo clic en botones de acción y no se está haciendo drag
+          if (!e.target.closest('button') && !e.target.closest('[role="menuitem"]') && !isDragging) {
+            handleViewOpportunityDetail(opportunity)
+          }
+        }}
       >
         <Card className={`mb-3 hover:shadow-xl transition-all duration-300 hover-lift border-0 shadow-md rounded-lg overflow-hidden relative ${
-          bulkMode ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'
+          bulkMode ? 'cursor-pointer' : isDragging ? 'cursor-grabbing' : 'cursor-pointer hover:cursor-grab'
         } ${selectedOpportunities.includes(opportunity.id) ? 'ring-2 ring-brand-purple bg-gradient-to-r from-purple-50 to-indigo-50' : 'bg-white hover:bg-gradient-to-r hover:from-white hover:to-gray-50/50'} ${updatingOpportunities.has(opportunity.id) ? 'ring-2 ring-blue-300 bg-blue-50/30' : ''}`}>
           <CardContent className="p-0">
             {/* Loading indicator */}
@@ -704,15 +709,9 @@ export default function OpportunitiesPage() {
                     )}
                   </Button>
                 )}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleViewOpportunityDetail(opportunity)
-                  }}
-                  className="font-semibold text-sm truncate flex-1 hover:text-brand-purple transition-colors text-gray-900 text-left cursor-pointer"
-                >
+                <div className="font-semibold text-sm truncate flex-1 text-gray-900">
                   {opportunity.title}
-                </button>
+                </div>
                 <div className="flex items-center space-x-1">
                   {healthStatus && (
                     <div className="group relative">
