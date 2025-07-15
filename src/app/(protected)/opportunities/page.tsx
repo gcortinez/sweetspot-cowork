@@ -655,6 +655,14 @@ export default function OpportunitiesPage() {
 
     const healthStatus = getHealthStatus(opportunity)
 
+    // Debug - verificar datos del cliente
+    console.log('Opportunity client info:', {
+      id: opportunity.id,
+      title: opportunity.title,
+      client: opportunity.client,
+      lead: opportunity.lead
+    })
+
     return (
       <div 
         ref={setNodeRef} 
@@ -774,12 +782,12 @@ export default function OpportunitiesPage() {
                   </span>
                 </div>
                 
-                {opportunity.client && (
+                {opportunity.client ? (
                   <div className="flex items-center text-muted-foreground bg-gradient-to-r from-slate-50 to-gray-50 px-2 py-1 rounded-md border border-gray-200">
                     <Building2 className="h-3 w-3 mr-1 text-slate-600" />
                     <span className="truncate text-slate-700 font-medium">{opportunity.client.name}</span>
                   </div>
-                )}
+                ) : null}
                 
                 {!opportunity.client && opportunity.lead && (
                   <div className="flex items-center text-muted-foreground bg-gradient-to-r from-blue-50 to-indigo-50 px-2 py-1 rounded-md border border-blue-200">

@@ -131,12 +131,12 @@ export default function OpportunityDetailModal({
               <Edit className="h-4 w-4 mr-2" />
               Editar
             </Button>
-            <Button variant="outline" asChild>
-              <Link href={`/opportunities/${opportunity.id}`}>
+            <Link href={`/opportunities/${opportunity.id}`}>
+              <Button variant="outline">
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Ver página completa
-              </Link>
-            </Button>
+              </Button>
+            </Link>
           </div>
 
           {/* Main Info Grid */}
