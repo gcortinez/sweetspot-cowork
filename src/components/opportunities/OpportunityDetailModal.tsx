@@ -308,6 +308,14 @@ export default function OpportunityDetailModal({
     }
   }
 
+  const handleQuotationDownloadPDF = async (quotationId: string) => {
+    // This will be handled by the individual quotation detail modal
+    const quotation = quotations.find(q => q.id === quotationId)
+    if (quotation) {
+      setSelectedQuotation(quotation)
+    }
+  }
+
   if (!opportunity) return null;
 
   const formatCurrency = (amount: number) => {
@@ -596,6 +604,7 @@ export default function OpportunityDetailModal({
                 onDuplicate={handleQuotationDuplicate}
                 onChangeStatus={handleQuotationStatusChange}
                 onCreateNew={() => setShowCreateQuotationModal(true)}
+                onDownloadPDF={handleQuotationDownloadPDF}
                 isLoading={isLoadingQuotations}
               />
             </TabsContent>

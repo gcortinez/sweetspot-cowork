@@ -37,6 +37,8 @@ import {
 } from 'lucide-react'
 import { useToast } from "@/hooks/use-toast"
 import Link from 'next/link'
+import { useQuotationPDF } from '@/hooks/use-quotation-pdf'
+import { generateQuotationPDFAction, emailQuotationPDFAction } from '@/lib/actions/pdf'
 
 interface Quotation {
   id: string
@@ -171,6 +173,7 @@ export default function QuotationDetailModal({
   onViewVersions
 }: QuotationDetailModalProps) {
   const { toast } = useToast()
+  const { downloadPDF, previewPDF, emailPDF, isGenerating } = useQuotationPDF()
   
   if (!quotation) return null
 
@@ -223,6 +226,88 @@ export default function QuotationDetailModal({
   const handleDelete = () => {
     if (window.confirm(`¿Estás seguro de que quieres eliminar la cotización ${quotation.number}?`)) {
       onDelete?.(quotation.id)
+    }
+  }
+
+  const handleDownloadPDF = async () => {
+    try {
+      const result = await generateQuotationPDFAction({
+        quotationId: quotation.id,
+        includeNotes: false,
+      })
+      
+      if (result.success) {
+        await downloadPDF(result.data.quotation, result.data.coworkInfo)
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al generar PDF",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error('Error downloading PDF:', error)
+      toast({
+        title: "Error",
+        description: "Error al descargar PDF",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handlePreviewPDF = async () => {
+    try {
+      const result = await generateQuotationPDFAction({
+        quotationId: quotation.id,
+        includeNotes: false,
+      })
+      
+      if (result.success) {
+        await previewPDF(result.data.quotation, result.data.coworkInfo)
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al generar PDF",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error('Error previewing PDF:', error)
+      toast({
+        title: "Error",
+        description: "Error al previsualizar PDF",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleEmailPDF = async () => {
+    try {
+      const result = await emailQuotationPDFAction({
+        quotationId: quotation.id,
+        includeNotes: false,
+      })
+      
+      if (result.success) {
+        toast({
+          title: "Email enviado",
+          description: `PDF enviado a ${result.data.recipientEmail}`,
+          duration: 3000,
+        })
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al enviar email",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error('Error emailing PDF:', error)
+      toast({
+        title: "Error",
+        description: "Error al enviar email",
+        variant: "destructive",
+      })
     }
   }
 
@@ -338,23 +423,32 @@ export default function QuotationDetailModal({
               </Button>
             )}
 
-            {onDownloadPDF && (
-              <Button 
-                onClick={() => onDownloadPDF(quotation.id)}
-                variant="outline"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Descargar PDF
-              </Button>
-            )}
+            <Button 
+              onClick={handlePreviewPDF}
+              variant="outline"
+              disabled={isGenerating}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Vista Previa PDF
+            </Button>
 
-            {onSendEmail && quotation.status !== 'DRAFT' && (
+            <Button 
+              onClick={handleDownloadPDF}
+              variant="outline"
+              disabled={isGenerating}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Descargar PDF
+            </Button>
+
+            {quotation.status !== 'DRAFT' && (
               <Button 
-                onClick={() => onSendEmail(quotation.id)}
+                onClick={handleEmailPDF}
                 variant="outline"
+                disabled={isGenerating}
               >
                 <Mail className="h-4 w-4 mr-2" />
-                Reenviar Email
+                Enviar por Email
               </Button>
             )}
 

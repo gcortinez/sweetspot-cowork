@@ -95,6 +95,7 @@ interface QuotationsListProps {
   onDuplicate: (quotation: Quotation) => void
   onChangeStatus: (quotationId: string, status: string) => void
   onCreateNew: () => void
+  onDownloadPDF?: (quotationId: string) => void
   isLoading?: boolean
 }
 
@@ -146,6 +147,7 @@ export default function QuotationsList({
   onDuplicate, 
   onChangeStatus, 
   onCreateNew,
+  onDownloadPDF,
   isLoading = false
 }: QuotationsListProps) {
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null)
@@ -374,10 +376,13 @@ export default function QuotationsList({
                         )}
                         
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                          <Download className="mr-2 h-4 w-4" />
-                          Descargar PDF
-                        </DropdownMenuItem>
+                        
+                        {onDownloadPDF && (
+                          <DropdownMenuItem onClick={() => onDownloadPDF(quotation.id)}>
+                            <Download className="mr-2 h-4 w-4" />
+                            Descargar PDF
+                          </DropdownMenuItem>
+                        )}
                         
                         {['DRAFT', 'REJECTED', 'EXPIRED'].includes(quotation.status) && (
                           <DropdownMenuItem 
