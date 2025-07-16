@@ -58,8 +58,8 @@ import { useToast } from '@/hooks/use-toast'
 import CreateLeadModal from '@/components/leads/CreateLeadModal'
 import LeadDetailModal from '@/components/leads/LeadDetailModal'
 import EditLeadModal from '@/components/leads/EditLeadModal'
+import ConvertToOpportunityModal from '@/components/leads/ConvertToOpportunityModal'
 import { useApi } from '@/hooks/use-api'
-import { convertLeadToOpportunity } from '@/lib/actions/opportunities'
 import { useRouter } from 'next/navigation'
 
 interface Lead {
@@ -135,6 +135,7 @@ export default function LeadsPage() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showConvertModal, setShowConvertModal] = useState(false)
   const { toast } = useToast()
   const api = useApi()
   const router = useRouter()
@@ -580,36 +581,9 @@ export default function LeadsPage() {
                 setShowDetailModal(false)
                 setSelectedLead(null)
               }}
-              onCreateOpportunity={async (lead) => {
-                try {
-                  const result = await convertLeadToOpportunity(lead.id, {
-                    title: `Oportunidad - ${lead.firstName} ${lead.lastName}`,
-                    description: `Oportunidad creada a partir del prospecto: ${lead.firstName} ${lead.lastName} (${lead.email})`,
-                    value: lead.budget || 1000000, // Default value if no budget
-                    probability: 25, // Default 25% probability
-                    stage: 'INITIAL_CONTACT'
-                  })
-
-                  if (result.success) {
-                    toast({
-                      title: '¡Oportunidad creada exitosamente!',
-                      description: `Se ha creado una oportunidad para ${lead.firstName} ${lead.lastName}`,
-                    })
-                    setShowDetailModal(false)
-                    setSelectedLead(null)
-                    // Navigate to the new opportunity
-                    router.push(`/opportunities/${result.data.id}`)
-                  } else {
-                    throw new Error(result.error || 'Error al crear la oportunidad')
-                  }
-                } catch (error) {
-                  console.error('Error creating opportunity from lead:', error)
-                  toast({
-                    title: 'Error al crear oportunidad',
-                    description: error instanceof Error ? error.message : 'Ocurrió un error inesperado',
-                    variant: 'destructive'
-                  })
-                }
+              onCreateOpportunity={(lead) => {
+                setShowDetailModal(false)
+                setShowConvertModal(true)
               }}
               onUpdateScore={async (leadId, newScore) => {
                 try {
@@ -658,6 +632,25 @@ export default function LeadsPage() {
                 setSelectedLead(null)
               }}
               onLeadUpdated={handleLeadCreated}
+            />
+
+            <ConvertToOpportunityModal
+              lead={selectedLead}
+              isOpen={showConvertModal}
+              onClose={() => {
+                setShowConvertModal(false)
+                setSelectedLead(null)
+              }}
+              onSuccess={(opportunityId) => {
+                toast({
+                  title: '¡Conversión exitosa!',
+                  description: `Se ha creado la oportunidad correctamente.`,
+                })
+                setShowConvertModal(false)
+                setSelectedLead(null)
+                loadLeads() // Refresh the leads list
+                router.push(`/opportunities/${opportunityId}`)
+              }}
             />
           </>
         )}
