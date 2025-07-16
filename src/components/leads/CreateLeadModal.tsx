@@ -7,6 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
 import { 
   Plus, 
   Loader2, 
@@ -19,10 +22,15 @@ import {
   Hash, 
   DollarSign,
   MessageSquare,
-  Sparkles
+  Sparkles,
+  Check,
+  ChevronsUpDown,
+  Search,
+  UserPlus
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useApi } from "@/hooks/use-api";
+import { useClients, useCreateLead } from "@/hooks/use-clients";
 
 interface CreateLeadModalProps {
   onLeadCreated?: () => void;
@@ -43,6 +51,14 @@ interface CreateLeadForm {
   interests: string;
   qualificationNotes: string;
   assignedToId: string;
+  clientId: string;
+}
+
+interface Client {
+  id: string;
+  name: string;
+  email: string;
+  status: string;
 }
 
 const initialFormData: CreateLeadForm = {
@@ -58,6 +74,7 @@ const initialFormData: CreateLeadForm = {
   interests: '',
   qualificationNotes: '',
   assignedToId: '',
+  clientId: '',
 };
 
 const sourceOptions = [
@@ -73,98 +90,96 @@ const sourceOptions = [
 
 export default function CreateLeadModal({ onLeadCreated, isOpen: externalIsOpen, onClose }: CreateLeadModalProps) {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<CreateLeadForm>(initialFormData);
+  const [showClientSearch, setShowClientSearch] = useState(false);
+  const [createNewClient, setCreateNewClient] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const { toast } = useToast();
   const api = useApi();
+  
+  // Use React Query for data fetching
+  const { data: clients = [], isLoading: isLoadingClients } = useClients();
+  const createLeadMutation = useCreateLead();
 
   // Use external state if provided, otherwise use internal state
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
   const setIsOpen = onClose ? onClose : setInternalIsOpen;
 
+
   const handleInputChange = (field: keyof CreateLeadForm, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleClientSelect = (client: Client) => {
+    setSelectedClient(client);
+    setFormData(prev => ({ ...prev, clientId: client.id }));
+    setShowClientSearch(false);
+  };
+
+  const handleCreateNewClient = () => {
+    setCreateNewClient(true);
+    setSelectedClient(null);
+    setFormData(prev => ({ ...prev, clientId: '' }));
+    setShowClientSearch(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
 
-    try {
-      // Prepare data for API
-      const leadData = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        phone: formData.phone || undefined,
-        company: formData.company || undefined,
-        position: formData.position || undefined,
-        source: formData.source,
-        channel: formData.channel || undefined,
-        budget: formData.budget ? parseFloat(formData.budget) : undefined,
-        interests: formData.interests ? formData.interests.split(',').map(s => s.trim()) : undefined,
-        qualificationNotes: formData.qualificationNotes || undefined,
-        assignedToId: formData.assignedToId || undefined,
-      };
+    // Prepare data for API
+    const leadData = {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      phone: formData.phone || undefined,
+      company: formData.company || undefined,
+      position: formData.position || undefined,
+      source: formData.source,
+      channel: formData.channel || undefined,
+      budget: formData.budget ? parseFloat(formData.budget) : undefined,
+      interests: formData.interests ? formData.interests.split(',').map(s => s.trim()) : undefined,
+      qualificationNotes: formData.qualificationNotes || undefined,
+      assignedToId: formData.assignedToId || undefined,
+      clientId: formData.clientId || undefined,
+      createNewClient: createNewClient,
+    };
 
-      // Call API - try main API first, fallback to dev mode
-      let response;
-      try {
-        response = await api.post('/api/leads', leadData);
-      } catch (authError) {
-        console.log('Auth failed, using dev mode for demo...');
-        // In dev mode, simulate successful creation
-        response = { 
-          ok: true, 
-          json: async () => ({ 
-            id: `lead_${Date.now()}`, 
-            ...leadData, 
-            status: 'NEW',
-            score: Math.floor(Math.random() * 100),
-            createdAt: new Date().toISOString() 
-          })
-        };
+    createLeadMutation.mutate(leadData, {
+      onSuccess: (result) => {
+        toast({
+          title: "Prospecto creado exitosamente",
+          description: `${formData.firstName} ${formData.lastName} ha sido agregado a tus prospectos.`,
+        });
+
+        // Reset form and close modal
+        resetForm();
+        if (onClose) {
+          onClose();
+        } else {
+          setInternalIsOpen(false);
+        }
+        
+        // Notify parent component
+        if (onLeadCreated) {
+          onLeadCreated();
+        }
+      },
+      onError: (error) => {
+        console.error('Error creating lead:', error);
+        toast({
+          title: "Error al crear prospecto",
+          description: error instanceof Error ? error.message : "Ocurrió un error inesperado",
+          variant: "destructive",
+        });
       }
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Error al crear el prospecto');
-      }
-
-      const result = await response.json();
-
-      toast({
-        title: "Prospecto creado exitosamente",
-        description: `${formData.firstName} ${formData.lastName} ha sido agregado a tus prospectos.`,
-      });
-
-      // Reset form and close modal
-      setFormData(initialFormData);
-      if (onClose) {
-        onClose();
-      } else {
-        setInternalIsOpen(false);
-      }
-      
-      // Notify parent component
-      if (onLeadCreated) {
-        onLeadCreated();
-      }
-
-    } catch (error) {
-      console.error('Error creating lead:', error);
-      toast({
-        title: "Error al crear prospecto",
-        description: error instanceof Error ? error.message : "Ocurrió un error inesperado",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    });
   };
 
   const resetForm = () => {
     setFormData(initialFormData);
+    setSelectedClient(null);
+    setCreateNewClient(false);
+    setShowClientSearch(false);
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -324,6 +339,130 @@ export default function CreateLeadModal({ onLeadCreated, isOpen: externalIsOpen,
             </div>
           </div>
 
+          {/* Cliente Information */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Building2 className="h-4 w-4 text-brand-green" />
+              <span>Información del Cliente</span>
+              <Badge variant="secondary" className="text-xs">Opcional</Badge>
+            </div>
+            <div className="bg-gradient-to-r from-green-50/50 to-emerald-50/50 p-4 rounded-lg border border-green-200">
+              <div className="space-y-4">
+                {/* Client Selection */}
+                <div className="flex gap-2">
+                  <Popover open={showClientSearch} onOpenChange={setShowClientSearch}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={showClientSearch}
+                        className="flex-1 justify-between"
+                      >
+                        {selectedClient ? (
+                          <div className="flex items-center">
+                            <Building2 className="h-4 w-4 mr-2 text-green-600" />
+                            {selectedClient.name}
+                          </div>
+                        ) : (
+                          <div className="flex items-center text-muted-foreground">
+                            <Search className="h-4 w-4 mr-2" />
+                            Buscar cliente existente...
+                          </div>
+                        )}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[400px] p-0">
+                      <Command>
+                        <CommandInput placeholder="Buscar cliente..." />
+                        <CommandList>
+                          <CommandEmpty>No se encontraron clientes.</CommandEmpty>
+                          <CommandGroup>
+                            {clients.map((client) => (
+                              <CommandItem
+                                key={client.id}
+                                value={client.name}
+                                onSelect={() => handleClientSelect(client)}
+                              >
+                                <Check
+                                  className={`mr-2 h-4 w-4 ${
+                                    selectedClient?.id === client.id ? "opacity-100" : "opacity-0"
+                                  }`}
+                                />
+                                <div className="flex items-center justify-between w-full">
+                                  <div>
+                                    <div className="font-medium">{client.name}</div>
+                                    <div className="text-sm text-muted-foreground">{client.email}</div>
+                                  </div>
+                                  <Badge variant="secondary" className="text-xs">
+                                    {client.status}
+                                  </Badge>
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCreateNewClient}
+                    className="shrink-0"
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Crear Nuevo
+                  </Button>
+                </div>
+
+                {/* Show client info if selected */}
+                {selectedClient && (
+                  <div className="p-3 bg-white rounded-lg border border-green-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-green-800">{selectedClient.name}</p>
+                        <p className="text-sm text-green-600">{selectedClient.email}</p>
+                      </div>
+                      <Badge variant="secondary" className="bg-green-100 text-green-800">
+                        {selectedClient.status}
+                      </Badge>
+                    </div>
+                  </div>
+                )}
+
+                {/* Show create new client option */}
+                {createNewClient && (
+                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex items-center text-blue-700">
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      <span className="text-sm font-medium">
+                        Se creará un nuevo cliente con la información de contacto proporcionada
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Reset button */}
+                {(selectedClient || createNewClient) && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedClient(null);
+                      setCreateNewClient(false);
+                      setFormData(prev => ({ ...prev, clientId: '' }));
+                    }}
+                    className="text-xs"
+                  >
+                    Limpiar selección
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Origen y Canal */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-sm font-medium text-foreground">
@@ -436,17 +575,17 @@ export default function CreateLeadModal({ onLeadCreated, isOpen: externalIsOpen,
                 type="button" 
                 variant="outline" 
                 onClick={() => setIsOpen(false)}
-                disabled={isLoading}
+                disabled={createLeadMutation.isPending}
                 className="min-w-[100px]"
               >
                 Cancelar
               </Button>
               <Button 
                 type="submit" 
-                disabled={isLoading}
+                disabled={createLeadMutation.isPending}
                 className="min-w-[140px] bg-gradient-to-r from-brand-blue to-blue-700 hover:from-brand-blue/90 hover:to-blue-700/90 shadow-brand hover-lift"
               >
-                {isLoading ? (
+                {createLeadMutation.isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Creando...

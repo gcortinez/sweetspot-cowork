@@ -86,6 +86,17 @@ export default function CreateOpportunityModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!formData.clientId) {
+      toast({
+        title: "Cliente requerido",
+        description: "Debes seleccionar un cliente para crear la oportunidad.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsLoading(true);
 
     try {
@@ -318,14 +329,15 @@ export default function CreateOpportunityModal({
                 </p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="clientId" className="text-sm font-medium text-foreground">
-                  Cliente Asociado
+                <Label htmlFor="clientId" className="text-sm font-medium flex items-center gap-1 text-foreground">
+                  Cliente Asociado <span className="text-destructive">*</span>
                 </Label>
                 <ClientSelector
                   value={formData.clientId}
                   onValueChange={(clientId) => handleInputChange('clientId', clientId || '')}
                   placeholder="Seleccionar cliente..."
                   allowCreate={true}
+                  required={true}
                 />
                 <p className="text-xs text-muted-foreground">
                   Selecciona el cliente al que pertenece esta oportunidad

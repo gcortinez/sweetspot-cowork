@@ -84,6 +84,26 @@ const nextConfig = {
           },
         ],
       },
+      // Cache static data endpoints for better performance
+      {
+        source: '/api/(health|metrics|stats)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=60, stale-while-revalidate=300',
+          },
+        ],
+      },
+      // Cache user preferences for longer
+      {
+        source: '/api/user/preferences',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'private, max-age=300, stale-while-revalidate=600',
+          },
+        ],
+      },
       {
         source: '/_next/static/(.*)',
         headers: [

@@ -231,6 +231,9 @@ export default function LeadsPage() {
   }
 
   const filteredLeads = leads.filter(lead => {
+    // Hide converted prospects
+    if (lead.status === 'CONVERTED') return false
+    
     const matchesSearch = searchTerm === '' || 
       lead.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       lead.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -657,6 +660,7 @@ export default function LeadsPage() {
                 toast({
                   title: '¡Conversión exitosa!',
                   description: `Se ha creado la oportunidad correctamente.`,
+                  duration: 3000, // Auto-close after 3 seconds
                 })
                 setShowConvertModal(false)
                 setSelectedLead(null)
