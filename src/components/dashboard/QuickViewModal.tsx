@@ -158,6 +158,7 @@ export default function QuickViewModal({ isOpen, onClose, data, type }: QuickVie
               <p className="text-sm text-muted-foreground">
                 {type === 'prospect' ? data.email :
                  type === 'client' ? data.email :
+                 type === 'opportunity' ? (data.client?.name || (data.lead ? `${data.lead.firstName} ${data.lead.lastName}` : 'Cliente no especificado')) :
                  data.client}
               </p>
             </div>
@@ -184,31 +185,70 @@ export default function QuickViewModal({ isOpen, onClose, data, type }: QuickVie
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {data.email && (
+                {/* Email */}
+                {(data.email || data.client?.email || data.lead?.email) && (
                   <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{data.email}</span>
+                    <span className="text-sm">
+                      {data.email || data.client?.email || data.lead?.email}
+                    </span>
                   </div>
                 )}
-                {data.phone && (
+                
+                {/* Phone */}
+                {(data.phone || data.client?.phone || data.lead?.phone) && (
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{data.phone}</span>
+                    <span className="text-sm">
+                      {data.phone || data.client?.phone || data.lead?.phone}
+                    </span>
                   </div>
                 )}
-                {(data.company || data.position) && (
+                
+                {/* Company/Position */}
+                {(data.company || data.position || data.client?.company || data.lead?.company) && (
                   <div className="flex items-center gap-2">
                     <Briefcase className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm">
                       {data.position && data.company ? `${data.position} en ${data.company}` :
-                       data.company || data.position}
+                       data.company || data.position || data.client?.company || data.lead?.company}
                     </span>
                   </div>
                 )}
+                
+                {/* Client/Lead Name for opportunities */}
+                {type === 'opportunity' && (data.client?.name || data.lead) && (
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">
+                      {data.client?.name || (data.lead ? `${data.lead.firstName} ${data.lead.lastName}` : '')}
+                    </span>
+                  </div>
+                )}
+                
+                {/* Contact Person */}
+                {data.client?.contactPerson && (
+                  <div className="flex items-center gap-2">
+                    <UserCheck className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">Contacto: {data.client.contactPerson}</span>
+                  </div>
+                )}
+                
+                {/* Source */}
                 {data.source && (
                   <div className="flex items-center gap-2">
                     <Globe className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm">Origen: {data.source}</span>
+                  </div>
+                )}
+                
+                {/* If no contact information is available */}
+                {!data.email && !data.phone && !data.company && !data.position && 
+                 !data.client?.email && !data.client?.phone && !data.client?.company && !data.client?.name &&
+                 !data.lead?.email && !data.lead?.phone && !data.lead?.company && !data.lead?.firstName && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <User className="h-4 w-4" />
+                    <span className="text-sm">No hay información de contacto disponible</span>
                   </div>
                 )}
               </CardContent>

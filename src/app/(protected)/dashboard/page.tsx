@@ -920,7 +920,10 @@ function CRMTab({ dashboardData, openQuickView }: { dashboardData: any; openQuic
                         </div>
                         <div>
                           <p className="font-semibold text-gray-900 text-lg">{opportunity.title}</p>
-                          <p className="text-purple-600 font-medium">{opportunity.client}</p>
+                          <p className="text-purple-600 font-medium">
+                            {opportunity.client?.name || 
+                             (opportunity.lead ? `${opportunity.lead.firstName} ${opportunity.lead.lastName}` : 'Sin cliente')}
+                          </p>
                           <p className="text-sm text-gray-500">Cierre esperado: {new Date(opportunity.expectedCloseDate).toLocaleDateString()}</p>
                         </div>
                       </div>

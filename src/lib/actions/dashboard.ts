@@ -95,7 +95,26 @@ export async function getDashboardStats() {
         orderBy: { createdAt: 'desc' },
         take: 3,
         include: {
-          client: { select: { name: true } }
+          client: { 
+            select: { 
+              id: true,
+              name: true, 
+              email: true, 
+              phone: true, 
+              company: true,
+              contactPerson: true 
+            } 
+          },
+          lead: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              phone: true,
+              company: true
+            }
+          }
         }
       })
     } catch (error) {
@@ -188,8 +207,10 @@ export async function getDashboardStats() {
             value: Number(opp.value),
             probability: opp.probability,
             stage: opp.stage,
-            client: opp.client?.name || 'Sin cliente',
-            expectedCloseDate: opp.expectedCloseDate?.toISOString() || null
+            client: opp.client,
+            lead: opp.lead,
+            expectedCloseDate: opp.expectedCloseDate?.toISOString() || null,
+            createdAt: opp.createdAt?.toISOString() || null
           }))
         },
         clients: {
