@@ -1,4 +1,4 @@
-import { revalidatePath } from 'next/cache'
+// import { revalidatePath } from 'next/cache' // Removed to avoid client component issues
 import { prisma } from '@/lib/prisma'
 import { getTenantContext } from '@/lib/auth'
 import type { ActionResult } from '@/types/database'
@@ -60,7 +60,7 @@ export async function createServiceAction(data: CreateServiceRequest): Promise<A
       },
     })
 
-    revalidatePath('/services')
+    // revalidatePath('/services') // Removed to avoid client component issues
     
     return { 
       success: true, 
@@ -153,8 +153,8 @@ export async function updateServiceAction(data: UpdateServiceRequest): Promise<A
       },
     })
 
-    revalidatePath('/services')
-    revalidatePath(`/services/${id}`)
+    // revalidatePath('/services') // Removed to avoid client component issues
+    // revalidatePath(`/services/${id}`) // Removed to avoid client component issues
     
     return { 
       success: true, 
@@ -243,7 +243,7 @@ export async function deleteServiceAction(data: DeleteServiceRequest): Promise<A
       },
     })
 
-    revalidatePath('/services')
+    // revalidatePath('/services') // Removed to avoid client component issues
     
     return { success: true }
   } catch (error: any) {
@@ -626,7 +626,7 @@ export async function createCoworkingServicesAction(): Promise<ActionResult<any>
       createdServices.push(service)
     }
 
-    revalidatePath('/services')
+    // revalidatePath('/services') // Removed to avoid client component issues
     
     return { 
       success: true, 
@@ -1055,7 +1055,7 @@ export async function bulkUpdateServicesAction(data: BulkUpdateServicesRequest):
       })
     }
 
-    revalidatePath('/services')
+    // revalidatePath('/services') // Removed to avoid client component issues
     
     return { 
       success: true, 
@@ -1390,7 +1390,7 @@ export async function createServicePackageAction(data: CreateServicePackageReque
       },
     })
 
-    revalidatePath('/services/packages')
+    // revalidatePath('/services/packages') // Removed to avoid client component issues
     
     return { 
       success: true, 
@@ -1480,8 +1480,8 @@ export async function updateServicePackageAction(data: UpdateServicePackageReque
       },
     })
 
-    revalidatePath('/services/packages')
-    revalidatePath(`/services/packages/${id}`)
+    // revalidatePath('/services/packages') // Removed to avoid client component issues
+    // revalidatePath(`/services/packages/${id}`) // Removed to avoid client component issues
     
     return { 
       success: true, 
