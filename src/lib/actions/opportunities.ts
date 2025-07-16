@@ -336,6 +336,7 @@ export async function changeOpportunityStage(id: string, input: ChangeStageInput
 // Convert lead to opportunity
 export async function convertLeadToOpportunity(input: ConvertLeadToOpportunityInput) {
   try {
+    console.log('convertLeadToOpportunity called with input:', input)
     const validatedInput = convertLeadToOpportunitySchema.parse(input)
     const user = await getUserWithTenant()
 
