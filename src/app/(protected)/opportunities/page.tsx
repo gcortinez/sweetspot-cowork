@@ -1417,6 +1417,16 @@ export default function OpportunitiesPage() {
             </Button>
             
             <CreateOpportunityModal onOpportunityCreated={() => { loadData(); loadStats(); }} />
+            
+            <Link href="/quotations">
+              <Button 
+                variant="outline" 
+                className="border-green-300 text-green-700 hover:bg-green-50 hover:text-green-800 transition-colors"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Nueva Cotización
+              </Button>
+            </Link>
           </div>
         </div>
 

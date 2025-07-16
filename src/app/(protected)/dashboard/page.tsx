@@ -340,6 +340,16 @@ function DashboardContent({
                 </Link>
               </div>
               <div className="flex items-center space-x-2">
+                <Link href="/services">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className="border-green-300 text-green-700 hover:bg-green-50 hover:text-green-800 transition-colors"
+                  >
+                    <Zap className="h-4 w-4 mr-2" />
+                    Gestionar Servicios
+                  </Button>
+                </Link>
                 <Link href="/quotations">
                   <Button 
                     size="sm" 
@@ -1001,6 +1011,81 @@ function CRMTab({ dashboardData, openQuickView }: { dashboardData: any; openQuic
                   </Button>
                 </Link>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions Section */}
+      <div className="mb-8">
+        <Card className="bg-gradient-to-br from-white to-gray-50/30 border-gray-200 shadow-xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-gray-700 to-gray-800 text-white">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="h-12 w-12 rounded-xl bg-white/20 flex items-center justify-center shadow-lg">
+                  <Zap className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl font-bold text-white">Acciones Rápidas</CardTitle>
+                  <p className="text-gray-100 mt-1">Gestiona cotizaciones, servicios y más</p>
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+          
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Nueva Cotización */}
+              <Link href="/quotations">
+                <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200">
+                  <CardContent className="p-6 text-center">
+                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center mx-auto mb-4">
+                      <FileText className="h-6 w-6 text-white" />
+                    </div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Nueva Cotización</h3>
+                    <p className="text-sm text-gray-600">Crear propuesta para cliente</p>
+                  </CardContent>
+                </Card>
+              </Link>
+
+              {/* Gestionar Servicios */}
+              <Link href="/services">
+                <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+                  <CardContent className="p-6 text-center">
+                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center mx-auto mb-4">
+                      <Zap className="h-6 w-6 text-white" />
+                    </div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Gestionar Servicios</h3>
+                    <p className="text-sm text-gray-600">Catálogo y planes</p>
+                  </CardContent>
+                </Card>
+              </Link>
+
+              {/* Ver Cotizaciones */}
+              <Link href="/quotations">
+                <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200">
+                  <CardContent className="p-6 text-center">
+                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center mx-auto mb-4">
+                      <FileText className="h-6 w-6 text-white" />
+                    </div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Todas las Cotizaciones</h3>
+                    <p className="text-sm text-gray-600">Gestionar propuestas</p>
+                  </CardContent>
+                </Card>
+              </Link>
+
+              {/* Nueva Oportunidad */}
+              <Link href="/opportunities">
+                <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200">
+                  <CardContent className="p-6 text-center">
+                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center mx-auto mb-4">
+                      <Target className="h-6 w-6 text-white" />
+                    </div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Nueva Oportunidad</h3>
+                    <p className="text-sm text-gray-600">Agregar al pipeline</p>
+                  </CardContent>
+                </Card>
+              </Link>
             </div>
           </CardContent>
         </Card>
