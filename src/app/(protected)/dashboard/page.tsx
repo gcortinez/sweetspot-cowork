@@ -340,26 +340,6 @@ function DashboardContent({
                 </Link>
               </div>
               <div className="flex items-center space-x-2">
-                <Link href="/services">
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    className="border-green-300 text-green-700 hover:bg-green-50 hover:text-green-800 transition-colors"
-                  >
-                    <Zap className="h-4 w-4 mr-2" />
-                    Gestionar Servicios
-                  </Button>
-                </Link>
-                <Link href="/quotations">
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    className="border-purple-300 text-purple-700 hover:bg-purple-50 hover:text-purple-800 transition-colors"
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Nueva Cotización
-                  </Button>
-                </Link>
                 <Button 
                   size="sm" 
                   className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-purple"
