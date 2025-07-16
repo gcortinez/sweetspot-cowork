@@ -206,5 +206,8 @@ export {
 // Integration and migration validations
 export * from './integration'
 
+// Quotation management validations
+export * from './quotations'
+
 // Re-export for convenience
 export { z } from 'zod'

@@ -67,5 +67,8 @@ export * from './clients'
 // Dashboard stats actions
 export * from './dashboard'
 
+// Quotation management actions
+export * from './quotations'
+
 // TODO: Add more action modules as they are created
 // export * from './contract'

@@ -265,6 +265,382 @@ export async function deleteServiceAction(data: DeleteServiceRequest): Promise<A
 }
 
 /**
+ * Get services by category for quotations
+ */
+export async function getServicesByCategoryAction(category?: string): Promise<ActionResult<any>> {
+  try {
+    // Get tenant context and validate auth
+    const { tenantId, user } = await getTenantContext()
+    if (!tenantId || !user) {
+      return { success: false, error: 'Authentication required' }
+    }
+
+    // Build where clause
+    const where: any = {
+      tenantId,
+      isActive: true,
+    }
+
+    if (category) {
+      where.category = category
+    }
+
+    // Get services
+    const services = await prisma.service.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        category: true,
+        price: true,
+        unit: true,
+        serviceType: true,
+        availability: true,
+        maxQuantity: true,
+        minimumOrder: true,
+        pricingTiers: true,
+        dynamicPricing: true,
+        metadata: true,
+        tags: true,
+      },
+      orderBy: [
+        { category: 'asc' },
+        { name: 'asc' },
+      ],
+    })
+
+    // Serialize pricing data
+    const serializedServices = services.map(service => ({
+      ...service,
+      price: service.price ? Number(service.price) : 0,
+      pricingTiers: service.pricingTiers ? JSON.parse(service.pricingTiers as string) : [],
+      metadata: service.metadata ? JSON.parse(service.metadata as string) : {},
+      tags: service.tags ? JSON.parse(service.tags as string) : [],
+    }))
+
+    return { 
+      success: true, 
+      data: serializedServices 
+    }
+
+  } catch (error: any) {
+    console.error('Error getting services by category:', error)
+    return { success: false, error: error.message || 'Failed to get services' }
+  }
+}
+
+/**
+ * Get service packages for quotations
+ */
+export async function getServicePackagesAction(): Promise<ActionResult<any>> {
+  try {
+    // Get tenant context and validate auth
+    const { tenantId, user } = await getTenantContext()
+    if (!tenantId || !user) {
+      return { success: false, error: 'Authentication required' }
+    }
+
+    // Get service packages (services with package configurations)
+    const packages = await prisma.service.findMany({
+      where: {
+        tenantId,
+        isActive: true,
+        serviceType: 'SUBSCRIPTION',
+        pricingTiers: {
+          not: '[]'
+        }
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        category: true,
+        price: true,
+        unit: true,
+        pricingTiers: true,
+        metadata: true,
+        tags: true,
+      },
+      orderBy: [
+        { category: 'asc' },
+        { name: 'asc' },
+      ],
+    })
+
+    // Serialize and format packages
+    const serializedPackages = packages.map(pkg => ({
+      ...pkg,
+      price: pkg.price ? Number(pkg.price) : 0,
+      pricingTiers: pkg.pricingTiers ? JSON.parse(pkg.pricingTiers as string) : [],
+      metadata: pkg.metadata ? JSON.parse(pkg.metadata as string) : {},
+      tags: pkg.tags ? JSON.parse(pkg.tags as string) : [],
+    }))
+
+    return { 
+      success: true, 
+      data: serializedPackages 
+    }
+
+  } catch (error: any) {
+    console.error('Error getting service packages:', error)
+    return { success: false, error: error.message || 'Failed to get service packages' }
+  }
+}
+
+/**
+ * Create predefined coworking services
+ */
+export async function createCoworkingServicesAction(): Promise<ActionResult<any>> {
+  try {
+    // Get tenant context and validate auth
+    const { tenantId, user } = await getTenantContext()
+    if (!tenantId || !user) {
+      return { success: false, error: 'Authentication required' }
+    }
+
+    const predefinedServices = [
+      {
+        name: 'Oficina Virtual - Plan Mensual',
+        description: 'Domicilio comercial, recepción de correspondencia, y acceso a salas de reuniones',
+        category: 'BUSINESS_SUPPORT',
+        serviceType: 'SUBSCRIPTION',
+        price: 50000,
+        unit: 'month',
+        availability: 'ALWAYS',
+        pricingTiers: [
+          { minQuantity: 1, price: 50000, discountType: 'NONE' },
+          { minQuantity: 6, price: 45000, discountType: 'TIER_PRICE' },
+          { minQuantity: 12, price: 40000, discountType: 'TIER_PRICE' },
+        ],
+        metadata: {
+          includes: ['Domicilio comercial', 'Recepción de correspondencia', '2 horas de sala de reuniones'],
+          duration: 'monthly',
+          renewable: true,
+        },
+        tags: ['virtual', 'office', 'monthly', 'business'],
+      },
+      {
+        name: 'Oficina Virtual - Plan Anual',
+        description: 'Domicilio comercial, recepción de correspondencia, y acceso a salas de reuniones - Plan anual con descuento',
+        category: 'BUSINESS_SUPPORT',
+        serviceType: 'SUBSCRIPTION',
+        price: 480000,
+        unit: 'year',
+        availability: 'ALWAYS',
+        pricingTiers: [
+          { minQuantity: 1, price: 480000, discountType: 'NONE' },
+        ],
+        metadata: {
+          includes: ['Domicilio comercial', 'Recepción de correspondencia', '24 horas de sala de reuniones'],
+          duration: 'yearly',
+          renewable: true,
+          discount: '20% vs plan mensual',
+        },
+        tags: ['virtual', 'office', 'annual', 'business', 'discount'],
+      },
+      {
+        name: 'Puesto de Trabajo - Día',
+        description: 'Acceso a puesto de trabajo por día completo',
+        category: 'STORAGE',
+        serviceType: 'CONSUMABLE',
+        price: 15000,
+        unit: 'day',
+        availability: 'BUSINESS_HOURS',
+        pricingTiers: [
+          { minQuantity: 1, price: 15000, discountType: 'NONE' },
+          { minQuantity: 5, discount: 10, discountType: 'PERCENTAGE' },
+          { minQuantity: 10, discount: 15, discountType: 'PERCENTAGE' },
+        ],
+        metadata: {
+          includes: ['Puesto de trabajo', 'Internet WiFi', 'Café básico'],
+          duration: 'daily',
+          workingHours: '8:00 - 20:00',
+        },
+        tags: ['hotdesk', 'daily', 'flexible'],
+      },
+      {
+        name: 'Puesto de Trabajo - Mensual',
+        description: 'Acceso ilimitado a puesto de trabajo por mes',
+        category: 'STORAGE',
+        serviceType: 'SUBSCRIPTION',
+        price: 200000,
+        unit: 'month',
+        availability: 'BUSINESS_HOURS',
+        pricingTiers: [
+          { minQuantity: 1, price: 200000, discountType: 'NONE' },
+          { minQuantity: 3, price: 180000, discountType: 'TIER_PRICE' },
+          { minQuantity: 6, price: 160000, discountType: 'TIER_PRICE' },
+        ],
+        metadata: {
+          includes: ['Puesto de trabajo dedicado', 'Internet WiFi', 'Café ilimitado', 'Casillero'],
+          duration: 'monthly',
+          renewable: true,
+        },
+        tags: ['hotdesk', 'monthly', 'dedicated'],
+      },
+      {
+        name: 'Sala de Reuniones - Por Hora',
+        description: 'Reserva de sala de reuniones equipada',
+        category: 'EVENT_SERVICES',
+        serviceType: 'ON_DEMAND',
+        price: 25000,
+        unit: 'hour',
+        availability: 'BUSINESS_HOURS',
+        maxQuantity: 8,
+        minimumOrder: 1,
+        pricingTiers: [
+          { minQuantity: 1, price: 25000, discountType: 'NONE' },
+          { minQuantity: 4, discount: 10, discountType: 'PERCENTAGE' },
+          { minQuantity: 8, discount: 20, discountType: 'PERCENTAGE' },
+        ],
+        metadata: {
+          includes: ['Sala equipada', 'Proyector', 'Pizarra', 'Café para asistentes'],
+          capacity: '8 personas',
+          equipment: ['Proyector', 'Pizarra', 'Sistema de audio'],
+        },
+        tags: ['meeting', 'room', 'hourly', 'equipped'],
+      },
+      {
+        name: 'Oficina Privada - Mensual',
+        description: 'Oficina privada completamente equipada',
+        category: 'STORAGE',
+        serviceType: 'SUBSCRIPTION',
+        price: 800000,
+        unit: 'month',
+        availability: 'ALWAYS',
+        pricingTiers: [
+          { minQuantity: 1, price: 800000, discountType: 'NONE' },
+          { minQuantity: 6, price: 750000, discountType: 'TIER_PRICE' },
+          { minQuantity: 12, price: 700000, discountType: 'TIER_PRICE' },
+        ],
+        metadata: {
+          includes: ['Oficina privada', 'Muebles completos', 'Internet dedicado', 'Teléfono', 'Limpieza'],
+          size: '15m²',
+          capacity: '4 personas',
+          features: ['Ventana', 'Aire acondicionado', 'Acceso 24/7'],
+        },
+        tags: ['private', 'office', 'monthly', 'premium'],
+      },
+      {
+        name: 'Casillero Postal',
+        description: 'Servicio de casillero postal y manejo de correspondencia',
+        category: 'MAIL',
+        serviceType: 'SUBSCRIPTION',
+        price: 20000,
+        unit: 'month',
+        availability: 'BUSINESS_HOURS',
+        pricingTiers: [
+          { minQuantity: 1, price: 20000, discountType: 'NONE' },
+          { minQuantity: 12, price: 18000, discountType: 'TIER_PRICE' },
+        ],
+        metadata: {
+          includes: ['Casillero postal', 'Recepción de correspondencia', 'Notificaciones'],
+          duration: 'monthly',
+          renewable: true,
+        },
+        tags: ['mail', 'postal', 'monthly', 'business'],
+      },
+      {
+        name: 'Impresión B&N',
+        description: 'Servicio de impresión en blanco y negro',
+        category: 'PRINTING',
+        serviceType: 'CONSUMABLE',
+        price: 50,
+        unit: 'page',
+        availability: 'BUSINESS_HOURS',
+        pricingTiers: [
+          { minQuantity: 1, price: 50, discountType: 'NONE' },
+          { minQuantity: 100, discount: 10, discountType: 'PERCENTAGE' },
+          { minQuantity: 500, discount: 20, discountType: 'PERCENTAGE' },
+        ],
+        metadata: {
+          paperSizes: ['A4', 'Letter'],
+          quality: 'Estándar',
+          delivery: 'Inmediato',
+        },
+        tags: ['printing', 'bw', 'consumable'],
+      },
+      {
+        name: 'Impresión Color',
+        description: 'Servicio de impresión a color',
+        category: 'PRINTING',
+        serviceType: 'CONSUMABLE',
+        price: 200,
+        unit: 'page',
+        availability: 'BUSINESS_HOURS',
+        pricingTiers: [
+          { minQuantity: 1, price: 200, discountType: 'NONE' },
+          { minQuantity: 50, discount: 10, discountType: 'PERCENTAGE' },
+          { minQuantity: 200, discount: 20, discountType: 'PERCENTAGE' },
+        ],
+        metadata: {
+          paperSizes: ['A4', 'Letter'],
+          quality: 'Alta calidad',
+          delivery: 'Inmediato',
+        },
+        tags: ['printing', 'color', 'consumable'],
+      },
+      {
+        name: 'Parking Mensual',
+        description: 'Estacionamiento mensual asegurado',
+        category: 'PARKING',
+        serviceType: 'SUBSCRIPTION',
+        price: 80000,
+        unit: 'month',
+        availability: 'ALWAYS',
+        pricingTiers: [
+          { minQuantity: 1, price: 80000, discountType: 'NONE' },
+          { minQuantity: 6, price: 75000, discountType: 'TIER_PRICE' },
+        ],
+        metadata: {
+          includes: ['Estacionamiento asegurado', 'Acceso 24/7', 'Vigilancia'],
+          duration: 'monthly',
+          renewable: true,
+        },
+        tags: ['parking', 'monthly', 'secure'],
+      },
+    ]
+
+    // Create services
+    const createdServices = []
+    for (const serviceData of predefinedServices) {
+      const service = await prisma.service.create({
+        data: {
+          tenantId,
+          name: serviceData.name,
+          description: serviceData.description,
+          category: serviceData.category as any,
+          serviceType: serviceData.serviceType as any,
+          price: serviceData.price,
+          unit: serviceData.unit,
+          availability: serviceData.availability as any,
+          maxQuantity: serviceData.maxQuantity,
+          minimumOrder: serviceData.minimumOrder,
+          pricingTiers: JSON.stringify(serviceData.pricingTiers),
+          metadata: JSON.stringify(serviceData.metadata),
+          tags: JSON.stringify(serviceData.tags),
+          isActive: true,
+        },
+      })
+      createdServices.push(service)
+    }
+
+    revalidatePath('/services')
+    
+    return { 
+      success: true, 
+      data: createdServices,
+      message: `${createdServices.length} servicios predefinidos creados exitosamente` 
+    }
+
+  } catch (error: any) {
+    console.error('Error creating predefined services:', error)
+    return { success: false, error: error.message || 'Failed to create predefined services' }
+  }
+}
+
+/**
  * Get a service by ID
  */
 export async function getServiceAction(data: GetServiceRequest): Promise<ActionResult<any>> {
