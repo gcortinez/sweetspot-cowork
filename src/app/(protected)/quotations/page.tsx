@@ -1,0 +1,523 @@
+'use client'
+
+import React, { useState, useEffect } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { 
+  FileText, 
+  Plus, 
+  Search, 
+  Filter, 
+  TrendingUp, 
+  DollarSign, 
+  Clock, 
+  Users,
+  Calendar,
+  Eye,
+  Download,
+  Mail
+} from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
+import { listQuotationsAction, changeQuotationStatusAction, duplicateQuotationAction, deleteQuotationAction } from '@/lib/actions/quotations'
+import QuotationsList from '@/components/quotations/QuotationsList'
+import CreateQuotationModal from '@/components/quotations/CreateQuotationModal'
+import QuotationDetailModal from '@/components/quotations/QuotationDetailModal'
+import EditQuotationModal from '@/components/quotations/EditQuotationModal'
+import QuotationVersionsModal from '@/components/quotations/QuotationVersionsModal'
+
+interface Quotation {
+  id: string
+  number: string
+  title: string
+  description?: string
+  subtotal: number
+  discounts: number
+  taxes: number
+  total: number
+  currency: string
+  validUntil: string
+  status: 'DRAFT' | 'SENT' | 'VIEWED' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CONVERTED'
+  notes?: string
+  createdAt: string
+  updatedAt: string
+  client: {
+    id: string
+    name: string
+    email: string
+    company?: string
+  }
+  opportunity?: {
+    id: string
+    title: string
+    stage: string
+    value: number
+  }
+  lead?: {
+    id: string
+    firstName: string
+    lastName: string
+    email: string
+    company?: string
+  }
+  items: Array<{
+    id: string
+    description: string
+    quantity: number
+    unitPrice: number
+    total: number
+  }>
+}
+
+interface QuotationStats {
+  total: number
+  draft: number
+  sent: number
+  accepted: number
+  rejected: number
+  expired: number
+  converted: number
+  totalValue: number
+  averageValue: number
+}
+
+const STATUS_FILTERS = [
+  { value: 'all', label: 'Todos los estados' },
+  { value: 'DRAFT', label: 'Borradores' },
+  { value: 'SENT', label: 'Enviadas' },
+  { value: 'VIEWED', label: 'Vistas' },
+  { value: 'ACCEPTED', label: 'Aceptadas' },
+  { value: 'REJECTED', label: 'Rechazadas' },
+  { value: 'EXPIRED', label: 'Expiradas' },
+  { value: 'CONVERTED', label: 'Convertidas' },
+]
+
+const SORT_OPTIONS = [
+  { value: 'createdAt-desc', label: 'Más recientes primero' },
+  { value: 'createdAt-asc', label: 'Más antiguas primero' },
+  { value: 'number-desc', label: 'Número descendente' },
+  { value: 'number-asc', label: 'Número ascendente' },
+  { value: 'total-desc', label: 'Valor mayor a menor' },
+  { value: 'total-asc', label: 'Valor menor a mayor' },
+]
+
+export default function QuotationsPage() {
+  const [quotations, setQuotations] = useState<Quotation[]>([])
+  const [stats, setStats] = useState<QuotationStats>({
+    total: 0,
+    draft: 0,
+    sent: 0,
+    accepted: 0,
+    rejected: 0,
+    expired: 0,
+    converted: 0,
+    totalValue: 0,
+    averageValue: 0,
+  })
+  const [isLoading, setIsLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [sortBy, setSortBy] = useState('createdAt-desc')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  
+  // Modal states
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null)
+  const [editingQuotation, setEditingQuotation] = useState<Quotation | null>(null)
+  const [versionsQuotation, setVersionsQuotation] = useState<Quotation | null>(null)
+  
+  const { toast } = useToast()
+
+  // Load quotations
+  const loadQuotations = async () => {
+    setIsLoading(true)
+    try {
+      const [sortField, sortOrder] = sortBy.split('-')
+      const result = await listQuotationsAction({
+        search: searchTerm || undefined,
+        status: statusFilter === 'all' ? undefined : statusFilter,
+        page: currentPage,
+        limit: 20,
+        sortBy: sortField as any,
+        sortOrder: sortOrder as 'asc' | 'desc',
+      })
+      
+      if (result.success) {
+        setQuotations(result.data || [])
+        
+        // Calculate stats
+        const allQuotations = result.data || []
+        const stats = {
+          total: allQuotations.length,
+          draft: allQuotations.filter(q => q.status === 'DRAFT').length,
+          sent: allQuotations.filter(q => q.status === 'SENT').length,
+          accepted: allQuotations.filter(q => q.status === 'ACCEPTED').length,
+          rejected: allQuotations.filter(q => q.status === 'REJECTED').length,
+          expired: allQuotations.filter(q => q.status === 'EXPIRED').length,
+          converted: allQuotations.filter(q => q.status === 'CONVERTED').length,
+          totalValue: allQuotations.reduce((sum, q) => sum + q.total, 0),
+          averageValue: allQuotations.length > 0 ? allQuotations.reduce((sum, q) => sum + q.total, 0) / allQuotations.length : 0,
+        }
+        setStats(stats)
+        
+        // Set pagination (placeholder for now)
+        setTotalPages(Math.ceil(allQuotations.length / 20))
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al cargar las cotizaciones",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error('Error loading quotations:', error)
+      toast({
+        title: "Error",
+        description: "Error al cargar las cotizaciones",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Load quotations on mount and when filters change
+  useEffect(() => {
+    loadQuotations()
+  }, [searchTerm, statusFilter, sortBy, currentPage])
+
+  // Debounced search
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (currentPage !== 1) {
+        setCurrentPage(1)
+      } else {
+        loadQuotations()
+      }
+    }, 300)
+
+    return () => clearTimeout(timeoutId)
+  }, [searchTerm])
+
+  // Action handlers
+  const handleQuotationCreated = () => {
+    setShowCreateModal(false)
+    loadQuotations()
+  }
+
+  const handleQuotationUpdated = () => {
+    setEditingQuotation(null)
+    loadQuotations()
+  }
+
+  const handleQuotationView = (quotation: Quotation) => {
+    setSelectedQuotation(quotation)
+  }
+
+  const handleQuotationEdit = (quotation: Quotation) => {
+    setEditingQuotation(quotation)
+  }
+
+  const handleQuotationDelete = async (quotationId: string) => {
+    try {
+      const result = await deleteQuotationAction({ id: quotationId })
+      
+      if (result.success) {
+        toast({
+          title: "Cotización eliminada",
+          description: "La cotización ha sido eliminada exitosamente",
+          duration: 3000,
+        })
+        loadQuotations()
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al eliminar la cotización",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error('Error deleting quotation:', error)
+      toast({
+        title: "Error",
+        description: "Error al eliminar la cotización",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleQuotationDuplicate = async (quotation: Quotation) => {
+    try {
+      const result = await duplicateQuotationAction({ id: quotation.id })
+      
+      if (result.success) {
+        toast({
+          title: "Cotización duplicada",
+          description: "Se ha creado una nueva versión de la cotización",
+          duration: 3000,
+        })
+        loadQuotations()
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al duplicar la cotización",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error('Error duplicating quotation:', error)
+      toast({
+        title: "Error",
+        description: "Error al duplicar la cotización",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleQuotationStatusChange = async (quotationId: string, newStatus: string) => {
+    try {
+      const result = await changeQuotationStatusAction({
+        id: quotationId,
+        status: newStatus,
+      })
+      
+      if (result.success) {
+        toast({
+          title: "Estado actualizado",
+          description: "El estado de la cotización ha sido actualizado",
+          duration: 3000,
+        })
+        loadQuotations()
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al actualizar el estado",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error('Error changing quotation status:', error)
+      toast({
+        title: "Error",
+        description: "Error al actualizar el estado",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleViewVersions = (quotation: Quotation) => {
+    setVersionsQuotation(quotation)
+    setSelectedQuotation(null)
+  }
+
+  const handleVersionAction = (action: string, quotation: Quotation) => {
+    switch (action) {
+      case 'view':
+        setSelectedQuotation(quotation)
+        setVersionsQuotation(null)
+        break
+      case 'edit':
+        setEditingQuotation(quotation)
+        setVersionsQuotation(null)
+        break
+      case 'duplicate':
+        handleQuotationDuplicate(quotation)
+        setVersionsQuotation(null)
+        break
+    }
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+    }).format(amount)
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Cotizaciones</h1>
+          <p className="text-gray-600 mt-1">Gestiona todas las cotizaciones de tu cowork</p>
+        </div>
+        <Button 
+          onClick={() => setShowCreateModal(true)}
+          className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Nueva Cotización
+        </Button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Cotizaciones</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.total}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.draft} borradores, {stats.sent} enviadas
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(stats.totalValue)}</div>
+            <p className="text-xs text-muted-foreground">
+              Promedio: {formatCurrency(stats.averageValue)}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Aceptadas</CardTitle>
+            <TrendingUp className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{stats.accepted}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.converted} convertidas
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pendientes</CardTitle>
+            <Clock className="h-4 w-4 text-orange-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">{stats.sent}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.expired} expiradas
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Filtros</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Buscar</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Buscar por número, título o cliente..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Estado</label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_FILTERS.map(filter => (
+                    <SelectItem key={filter.value} value={filter.value}>
+                      {filter.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Ordenar por</label>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona orden" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SORT_OPTIONS.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quotations List */}
+      <QuotationsList
+        quotations={quotations}
+        onEdit={handleQuotationEdit}
+        onDelete={handleQuotationDelete}
+        onView={handleQuotationView}
+        onDuplicate={handleQuotationDuplicate}
+        onChangeStatus={handleQuotationStatusChange}
+        onCreateNew={() => setShowCreateModal(true)}
+        onDownloadPDF={(quotationId) => {
+          const quotation = quotations.find(q => q.id === quotationId)
+          if (quotation) setSelectedQuotation(quotation)
+        }}
+        isLoading={isLoading}
+      />
+
+      {/* Create Quotation Modal */}
+      <CreateQuotationModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onQuotationCreated={handleQuotationCreated}
+      />
+
+      {/* Quotation Detail Modal */}
+      <QuotationDetailModal
+        quotation={selectedQuotation}
+        isOpen={!!selectedQuotation}
+        onClose={() => setSelectedQuotation(null)}
+        onEdit={handleQuotationEdit}
+        onDelete={handleQuotationDelete}
+        onDuplicate={handleQuotationDuplicate}
+        onStatusChange={handleQuotationStatusChange}
+        onViewVersions={handleViewVersions}
+      />
+
+      {/* Edit Quotation Modal */}
+      <EditQuotationModal
+        quotation={editingQuotation}
+        isOpen={!!editingQuotation}
+        onClose={() => setEditingQuotation(null)}
+        onQuotationUpdated={handleQuotationUpdated}
+      />
+
+      {/* Quotation Versions Modal */}
+      <QuotationVersionsModal
+        baseQuotation={versionsQuotation}
+        isOpen={!!versionsQuotation}
+        onClose={() => setVersionsQuotation(null)}
+        onViewVersion={(quotation) => handleVersionAction('view', quotation)}
+        onEditVersion={(quotation) => handleVersionAction('edit', quotation)}
+        onDuplicateVersion={(quotation) => handleVersionAction('duplicate', quotation)}
+      />
+    </div>
+  )
+}
