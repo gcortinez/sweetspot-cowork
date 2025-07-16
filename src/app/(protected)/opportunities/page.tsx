@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast'
 import CreateOpportunityModal from '@/components/opportunities/CreateOpportunityModal'
 import EditOpportunityModal from '@/components/opportunities/EditOpportunityModal'
 import OpportunityDetailModal from '@/components/opportunities/OpportunityDetailModal'
+import CreateActivityModal from '@/components/activities/CreateActivityModal'
 import {
   Target,
   Plus,
@@ -44,7 +45,9 @@ import {
   Bell,
   AlertTriangle,
   Building2,
-  Loader2
+  Loader2,
+  Activity,
+  MessageSquare
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -87,12 +90,16 @@ interface Opportunity {
     id: string
     name: string
     email: string
+    phone?: string
+    contactPerson?: string
+    status: string
   }
   lead?: {
     id: string
     firstName: string
     lastName: string
     email: string
+    phone?: string
   }
   assignedTo?: {
     id: string
@@ -118,6 +125,8 @@ export default function OpportunitiesPage() {
   const [bulkMode, setBulkMode] = useState(false)
   const [updatingOpportunities, setUpdatingOpportunities] = useState<Set<string>>(new Set())
   const [optimisticUpdates, setOptimisticUpdates] = useState<Map<string, { originalStage: keyof typeof STAGE_METADATA, newStage: keyof typeof STAGE_METADATA }>>(new Map())
+  const [isCreateActivityModalOpen, setIsCreateActivityModalOpen] = useState(false)
+  const [activityOpportunityId, setActivityOpportunityId] = useState<string | null>(null)
   
   const { toast } = useToast()
 
@@ -266,6 +275,12 @@ export default function OpportunitiesPage() {
   const handleCloseDetailModal = () => {
     setIsDetailModalOpen(false)
     setDetailOpportunity(null)
+  }
+
+  // Handle create activity
+  const handleCreateActivity = (opportunityId: string) => {
+    setActivityOpportunityId(opportunityId)
+    setIsCreateActivityModalOpen(true)
   }
 
   // Handle delete opportunity
@@ -743,6 +758,15 @@ export default function OpportunitiesPage() {
                       <DropdownMenuItem onClick={() => handleEditOpportunity(opportunity)}>
                         <Edit className="h-3 w-3 mr-2" />
                         Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleCreateActivity(opportunity.id)
+                        }}
+                      >
+                        <Activity className="h-3 w-3 mr-2" />
+                        Nueva Actividad
                       </DropdownMenuItem>
                       <DropdownMenuItem 
                         className="text-red-600"
@@ -1491,7 +1515,28 @@ export default function OpportunitiesPage() {
           handleCloseDetailModal()
           handleEditOpportunity(opportunity)
         }}
+        onCreateActivity={(opportunityId) => {
+          handleCloseDetailModal()
+          handleCreateActivity(opportunityId)
+        }}
       />
+
+      {/* Create Activity Modal */}
+      {isCreateActivityModalOpen && activityOpportunityId && (
+        <CreateActivityModal
+          isOpen={isCreateActivityModalOpen}
+          onClose={() => {
+            setIsCreateActivityModalOpen(false)
+            setActivityOpportunityId(null)
+          }}
+          onActivityCreated={() => {
+            setIsCreateActivityModalOpen(false)
+            setActivityOpportunityId(null)
+            // Could refresh opportunities if needed
+          }}
+          opportunityId={activityOpportunityId}
+        />
+      )}
     </div>
   )
 }

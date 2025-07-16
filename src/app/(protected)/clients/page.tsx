@@ -231,11 +231,31 @@ export default function ClientsPage() {
   }
 
   return (
-    <div className="flex-1 space-y-6 p-6">
+    <div className="min-h-screen bg-gray-50">
       <AppHeader 
-        title="Gestión de Clientes"
-        description="Administra y da seguimiento a tus clientes y prospectos"
+        currentPage="Clientes"
+        showBreadcrumb={true}
+        breadcrumbItems={[
+          { label: 'Clientes' }
+        ]}
       />
+      
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Page Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-600 to-purple-700 flex items-center justify-center shadow-lg">
+                <Building2 className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Gestión de Clientes</h1>
+                <p className="text-gray-600">Administra y da seguimiento a tus clientes y prospectos</p>
+              </div>
+            </div>
+            <CreateClientModal onClientCreated={handleClientCreated} />
+          </div>
+        </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -371,7 +391,6 @@ export default function ClientsPage() {
               >
                 <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
               </Button>
-              <CreateClientModal onClientCreated={handleClientCreated} />
             </div>
           </div>
         </CardHeader>
@@ -419,6 +438,7 @@ export default function ClientsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </main>
     </div>
   )
 }

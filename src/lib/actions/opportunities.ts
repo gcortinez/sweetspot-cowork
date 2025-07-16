@@ -370,6 +370,9 @@ export async function convertLeadToOpportunity(input: ConvertLeadToOpportunityIn
               id: true,
               name: true,
               email: true,
+              phone: true,
+              contactPerson: true,
+              status: true,
             },
           },
           lead: {
@@ -378,6 +381,7 @@ export async function convertLeadToOpportunity(input: ConvertLeadToOpportunityIn
               firstName: true,
               lastName: true,
               email: true,
+              phone: true,
             },
           },
         },
@@ -694,6 +698,9 @@ export async function listOpportunities(input: ListOpportunitiesInput = {}) {
               id: true,
               name: true,
               email: true,
+              phone: true,
+              contactPerson: true,
+              status: true,
             },
           },
           lead: {
@@ -702,6 +709,7 @@ export async function listOpportunities(input: ListOpportunitiesInput = {}) {
               firstName: true,
               lastName: true,
               email: true,
+              phone: true,
             },
           },
           assignedTo: {

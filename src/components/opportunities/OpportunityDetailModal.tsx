@@ -18,7 +18,8 @@ import {
   Mail,
   Phone,
   MapPin,
-  Percent
+  Percent,
+  Activity
 } from 'lucide-react';
 import { STAGE_METADATA } from '@/lib/validations/opportunities';
 import Link from 'next/link';
@@ -40,12 +41,16 @@ interface Opportunity {
     id: string
     name: string
     email: string
+    phone?: string
+    contactPerson?: string
+    status: string
   }
   lead?: {
     id: string
     firstName: string
     lastName: string
     email: string
+    phone?: string
   }
   assignedTo?: {
     id: string
@@ -60,13 +65,15 @@ interface OpportunityDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   onEdit?: (opportunity: Opportunity) => void;
+  onCreateActivity?: (opportunityId: string) => void;
 }
 
 export default function OpportunityDetailModal({ 
   opportunity, 
   isOpen, 
   onClose,
-  onEdit
+  onEdit,
+  onCreateActivity
 }: OpportunityDetailModalProps) {
   if (!opportunity) return null;
 
@@ -131,6 +138,15 @@ export default function OpportunityDetailModal({
               <Edit className="h-4 w-4 mr-2" />
               Editar
             </Button>
+            {onCreateActivity && (
+              <Button 
+                onClick={() => onCreateActivity(opportunity.id)}
+                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
+              >
+                <Activity className="h-4 w-4 mr-2" />
+                Nueva Actividad
+              </Button>
+            )}
             <Link href={`/opportunities/${opportunity.id}`}>
               <Button variant="outline">
                 <ExternalLink className="h-4 w-4 mr-2" />

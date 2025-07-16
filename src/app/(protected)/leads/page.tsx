@@ -106,23 +106,23 @@ const STATUS_LABELS = {
 }
 
 const STATUS_COLORS = {
-  NEW: 'bg-blue-100 text-blue-800',
-  CONTACTED: 'bg-yellow-100 text-yellow-800',
-  QUALIFIED: 'bg-green-100 text-green-800',
-  UNQUALIFIED: 'bg-gray-100 text-gray-800',
-  CONVERTED: 'bg-purple-100 text-purple-800',
-  LOST: 'bg-red-100 text-red-800'
+  NEW: 'bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 border border-blue-200',
+  CONTACTED: 'bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-700 border border-yellow-200',
+  QUALIFIED: 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border border-green-200',
+  UNQUALIFIED: 'bg-gradient-to-r from-gray-100 to-slate-100 text-gray-700 border border-gray-200',
+  CONVERTED: 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border border-purple-200',
+  LOST: 'bg-gradient-to-r from-red-100 to-pink-100 text-red-700 border border-red-200'
 }
 
 const SOURCE_COLORS = {
-  WEBSITE: 'bg-blue-100 text-blue-700',
-  REFERRAL: 'bg-green-100 text-green-700',
-  SOCIAL_MEDIA: 'bg-pink-100 text-pink-700',
-  COLD_CALL: 'bg-orange-100 text-orange-700',
-  EMAIL_CAMPAIGN: 'bg-purple-100 text-purple-700',
-  WALK_IN: 'bg-indigo-100 text-indigo-700',
-  PARTNER: 'bg-teal-100 text-teal-700',
-  OTHER: 'bg-gray-100 text-gray-700'
+  WEBSITE: 'bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 border border-blue-200',
+  REFERRAL: 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border border-green-200',
+  SOCIAL_MEDIA: 'bg-gradient-to-r from-pink-100 to-rose-100 text-pink-700 border border-pink-200',
+  COLD_CALL: 'bg-gradient-to-r from-orange-100 to-amber-100 text-orange-700 border border-orange-200',
+  EMAIL_CAMPAIGN: 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border border-purple-200',
+  WALK_IN: 'bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-700 border border-indigo-200',
+  PARTNER: 'bg-gradient-to-r from-teal-100 to-cyan-100 text-teal-700 border border-teal-200',
+  OTHER: 'bg-gradient-to-r from-gray-100 to-slate-100 text-gray-700 border border-gray-200'
 }
 
 export default function LeadsPage() {
@@ -265,7 +265,7 @@ export default function LeadsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <AppHeader 
         currentPage="Prospectos"
@@ -283,7 +283,7 @@ export default function LeadsPage() {
             <div className="flex items-center space-x-3">
               <Link 
                 href="/dashboard"
-                className="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors mb-2"
+                className="flex items-center space-x-2 text-gray-500 hover:text-purple-600 transition-colors mb-2"
               >
                 <ArrowLeft className="h-4 w-4" />
                 <span className="text-sm">Volver al Dashboard</span>
@@ -293,12 +293,12 @@ export default function LeadsPage() {
           
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-brand-blue to-cowork-primary flex items-center justify-center shadow-brand">
+              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-600 to-purple-700 flex items-center justify-center shadow-lg">
                 <UserCheck className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-foreground">Gestión de Prospectos</h1>
-                <p className="text-muted-foreground">Administra y da seguimiento a tus leads</p>
+                <h1 className="text-2xl font-bold text-gray-900">Gestión de Prospectos</h1>
+                <p className="text-gray-600">Administra y da seguimiento a tus leads</p>
               </div>
             </div>
             <CreateLeadModal onLeadCreated={handleLeadCreated} />
@@ -307,69 +307,79 @@ export default function LeadsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-card p-6 rounded-lg border shadow-soft hover-lift transition-theme">
+        <div className="bg-white p-6 rounded-xl border shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Total</p>
-              <p className="text-2xl font-bold text-foreground">{stats.total}</p>
-              <p className="text-xs text-brand-blue flex items-center mt-1">
+              <p className="text-sm font-medium text-gray-600">Total</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+              <p className="text-xs text-purple-600 flex items-center mt-1">
                 <Users className="h-3 w-3 mr-1" />
                 Total prospectos
               </p>
             </div>
-            <Users className="h-8 w-8 text-brand-blue" />
+            <div className="h-12 w-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
+              <Users className="h-6 w-6 text-white" />
+            </div>
           </div>
         </div>
-        <div className="bg-card p-6 rounded-lg border shadow-soft hover-lift transition-theme">
+        <div className="bg-white p-6 rounded-xl border shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Nuevos</p>
-              <p className="text-2xl font-bold text-brand-blue">{stats.new}</p>
+              <p className="text-sm font-medium text-gray-600">Nuevos</p>
+              <p className="text-2xl font-bold text-blue-600">{stats.new}</p>
               <p className="text-xs text-yellow-600 flex items-center mt-1">
                 <TrendingUp className="h-3 w-3 mr-1" />
                 Recién ingresados
               </p>
             </div>
-            <Star className="h-8 w-8 text-brand-blue" />
+            <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+              <Star className="h-6 w-6 text-white" />
+            </div>
           </div>
         </div>
-        <div className="bg-card p-6 rounded-lg border shadow-soft hover-lift transition-theme">
+        <div className="bg-white p-6 rounded-xl border shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Calificados</p>
-              <p className="text-2xl font-bold text-success">{stats.qualified}</p>
-              <p className="text-xs text-success flex items-center mt-1">
+              <p className="text-sm font-medium text-gray-600">Calificados</p>
+              <p className="text-2xl font-bold text-green-600">{stats.qualified}</p>
+              <p className="text-xs text-green-600 flex items-center mt-1">
                 <CheckCircle className="h-3 w-3 mr-1" />
                 Listos para venta
               </p>
             </div>
-            <Target className="h-8 w-8 text-success" />
+            <div className="h-12 w-12 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center">
+              <Target className="h-6 w-6 text-white" />
+            </div>
           </div>
         </div>
-        <div className="bg-card p-6 rounded-lg border shadow-soft hover-lift transition-theme">
+        <div className="bg-white p-6 rounded-xl border shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Convertidos</p>
-              <p className="text-2xl font-bold text-brand-purple">{stats.converted}</p>
-              <p className="text-xs text-brand-purple flex items-center mt-1">
+              <p className="text-sm font-medium text-gray-600">Convertidos</p>
+              <p className="text-2xl font-bold text-purple-600">{stats.converted}</p>
+              <p className="text-xs text-purple-600 flex items-center mt-1">
                 <Target className="h-3 w-3 mr-1" />
                 Oportunidades creadas
               </p>
             </div>
-            <TrendingUp className="h-8 w-8 text-brand-purple" />
+            <div className="h-12 w-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
+              <TrendingUp className="h-6 w-6 text-white" />
+            </div>
           </div>
         </div>
       </div>
 
       {/* Filters */}
       <div className="mb-8">
-        <div className="bg-card rounded-lg shadow-soft border">
-          <div className="p-6 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="bg-white rounded-xl shadow-lg border">
+          <div className="p-6 border-b bg-gradient-to-r from-purple-50 to-indigo-50">
             <div className="flex items-center space-x-3">
-              <Filter className="h-5 w-5 text-brand-blue" />
+              <div className="h-10 w-10 bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
+                <Filter className="h-5 w-5 text-white" />
+              </div>
               <div>
-                <h3 className="text-lg font-semibold text-foreground">Filtros de Búsqueda</h3>
-                <p className="text-sm text-muted-foreground">Encuentra prospectos específicos usando los filtros</p>
+                <h3 className="text-lg font-semibold text-gray-900">Filtros de Búsqueda</h3>
+                <p className="text-sm text-gray-600">Encuentra prospectos específicos usando los filtros</p>
               </div>
             </div>
           </div>
@@ -415,17 +425,19 @@ export default function LeadsPage() {
 
       {/* Leads Table */}
       <div className="mb-8">
-        <div className="bg-card rounded-lg shadow-soft border">
-          <div className="p-6 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="bg-white rounded-xl shadow-lg border">
+          <div className="p-6 border-b bg-gradient-to-r from-purple-50 to-indigo-50">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <Users className="h-6 w-6 text-brand-blue" />
+                <div className="h-10 w-10 bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
+                  <Users className="h-6 w-6 text-white" />
+                </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground">Lista de Prospectos</h3>
-                  <p className="text-sm text-muted-foreground">Gestiona todos tus leads y oportunidades potenciales</p>
+                  <h3 className="text-lg font-semibold text-gray-900">Lista de Prospectos</h3>
+                  <p className="text-sm text-gray-600">Gestiona todos tus leads y oportunidades potenciales</p>
                 </div>
               </div>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-gray-600">
                 {filteredLeads.length} de {leads.length} prospectos
               </div>
             </div>
@@ -449,8 +461,8 @@ export default function LeadsPage() {
               <TableRow>
                 <TableCell colSpan={9} className="text-center py-8">
                   <div className="flex items-center justify-center space-x-2 py-8">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-blue"></div>
-                    <span className="text-muted-foreground">Cargando prospectos...</span>
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
+                    <span className="text-gray-600">Cargando prospectos...</span>
                   </div>
                 </TableCell>
               </TableRow>
@@ -502,12 +514,12 @@ export default function LeadsPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className={`${SOURCE_COLORS[lead.source]} font-medium`}>
+                      <Badge variant="secondary" className={`${SOURCE_COLORS[lead.source]} font-medium rounded-full`}>
                         {SOURCE_LABELS[lead.source]}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className={`${STATUS_COLORS[lead.status]} font-medium`}>
+                      <Badge variant="secondary" className={`${STATUS_COLORS[lead.status]} font-medium rounded-full`}>
                         {STATUS_LABELS[lead.status]}
                       </Badge>
                     </TableCell>

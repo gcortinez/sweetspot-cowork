@@ -26,6 +26,8 @@ import { useApi } from "@/hooks/use-api";
 
 interface CreateLeadModalProps {
   onLeadCreated?: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 interface CreateLeadForm {
@@ -69,12 +71,16 @@ const sourceOptions = [
   { value: 'OTHER', label: 'Otro' },
 ];
 
-export default function CreateLeadModal({ onLeadCreated }: CreateLeadModalProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export default function CreateLeadModal({ onLeadCreated, isOpen: externalIsOpen, onClose }: CreateLeadModalProps) {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<CreateLeadForm>(initialFormData);
   const { toast } = useToast();
   const api = useApi();
+
+  // Use external state if provided, otherwise use internal state
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
+  const setIsOpen = onClose ? onClose : setInternalIsOpen;
 
   const handleInputChange = (field: keyof CreateLeadForm, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -134,7 +140,11 @@ export default function CreateLeadModal({ onLeadCreated }: CreateLeadModalProps)
 
       // Reset form and close modal
       setFormData(initialFormData);
-      setIsOpen(false);
+      if (onClose) {
+        onClose();
+      } else {
+        setInternalIsOpen(false);
+      }
       
       // Notify parent component
       if (onLeadCreated) {
@@ -158,18 +168,27 @@ export default function CreateLeadModal({ onLeadCreated }: CreateLeadModalProps)
   };
 
   const handleOpenChange = (open: boolean) => {
-    setIsOpen(open);
-    if (!open) resetForm();
+    if (onClose) {
+      if (!open) {
+        onClose();
+        resetForm();
+      }
+    } else {
+      setInternalIsOpen(open);
+      if (!open) resetForm();
+    }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button className="gap-2 bg-gradient-to-r from-brand-blue to-blue-700 hover:from-brand-blue/90 hover:to-blue-700/90 shadow-brand hover-lift">
-          <Plus className="h-4 w-4" />
-          Agregar Prospecto
-        </Button>
-      </DialogTrigger>
+      {!onClose && (
+        <DialogTrigger asChild>
+          <Button className="gap-2 bg-gradient-to-r from-brand-blue to-blue-700 hover:from-brand-blue/90 hover:to-blue-700/90 shadow-brand hover-lift">
+            <Plus className="h-4 w-4" />
+            Agregar Prospecto
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0">
         <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 border-b">
           <DialogHeader>

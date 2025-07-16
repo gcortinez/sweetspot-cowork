@@ -17,6 +17,7 @@ import { listActivities } from '@/lib/actions/activities'
 import { STAGE_METADATA } from '@/lib/validations/opportunities'
 import { useToast } from '@/hooks/use-toast'
 import EditOpportunityModal from '@/components/opportunities/EditOpportunityModal'
+import CreateActivityModal from '@/components/activities/CreateActivityModal'
 import {
   Target,
   ArrowLeft,
@@ -64,6 +65,8 @@ interface Opportunity {
     name: string
     email: string
     phone?: string
+    contactPerson?: string
+    status: string
   }
   lead?: {
     id: string
@@ -102,6 +105,7 @@ export default function OpportunityDetailPage() {
   const [activities, setActivities] = useState<OpportunityActivity[]>([])
   const [loading, setLoading] = useState(true)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isCreateActivityModalOpen, setIsCreateActivityModalOpen] = useState(false)
   
   const { toast } = useToast()
 
@@ -432,10 +436,20 @@ export default function OpportunityDetailPage() {
             {/* Activities Tab */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Activity className="h-5 w-5 mr-2" />
-                  Actividades Relacionadas
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center">
+                    <Activity className="h-5 w-5 mr-2" />
+                    Actividades Relacionadas
+                  </CardTitle>
+                  <Button
+                    onClick={() => setIsCreateActivityModalOpen(true)}
+                    size="sm"
+                    className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
+                  >
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Nueva Actividad
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {activities.length > 0 ? (
@@ -636,6 +650,19 @@ export default function OpportunityDetailPage() {
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
           onOpportunityUpdated={loadOpportunityData}
+        />
+      )}
+
+      {/* Create Activity Modal */}
+      {isCreateActivityModalOpen && (
+        <CreateActivityModal
+          isOpen={isCreateActivityModalOpen}
+          onClose={() => setIsCreateActivityModalOpen(false)}
+          onActivityCreated={() => {
+            loadOpportunityData();
+            setIsCreateActivityModalOpen(false);
+          }}
+          opportunityId={opportunityId}
         />
       )}
     </div>

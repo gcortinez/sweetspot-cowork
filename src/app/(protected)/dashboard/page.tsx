@@ -39,8 +39,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import { getDashboardStats, getRecentActivities } from '@/lib/actions/dashboard';
 import { useToast } from '@/hooks/use-toast';
+import CreateLeadModal from '@/components/leads/CreateLeadModal';
 
 // Client-side dashboard page
 export default function DashboardPage() {
@@ -92,6 +100,7 @@ function DashboardContent({
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCreateLeadModal, setShowCreateLeadModal] = useState(false);
   const { toast } = useToast();
 
   // Load dashboard data
@@ -284,17 +293,17 @@ function DashboardContent({
                   Dashboard
                 </Button>
                 <span className="text-gray-300">/</span>
-                <Link href="/opportunities">
-                  <Button variant="ghost" size="sm" className="text-gray-600 hover:text-purple-700 hover:bg-purple-50 transition-colors">
-                    <Target className="h-4 w-4 mr-2" />
-                    Oportunidades
-                  </Button>
-                </Link>
-                <span className="text-gray-300">/</span>
                 <Link href="/leads">
                   <Button variant="ghost" size="sm" className="text-gray-600 hover:text-purple-700 hover:bg-purple-50 transition-colors">
                     <UserCheck className="h-4 w-4 mr-2" />
                     Prospectos
+                  </Button>
+                </Link>
+                <span className="text-gray-300">/</span>
+                <Link href="/opportunities">
+                  <Button variant="ghost" size="sm" className="text-gray-600 hover:text-purple-700 hover:bg-purple-50 transition-colors">
+                    <Target className="h-4 w-4 mr-2" />
+                    Oportunidades
                   </Button>
                 </Link>
                 <span className="text-gray-300">/</span>
@@ -313,9 +322,13 @@ function DashboardContent({
                 </Link>
               </div>
               <div className="flex items-center space-x-2">
-                <Button size="sm" className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-purple">
+                <Button 
+                  size="sm" 
+                  className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-purple"
+                  onClick={() => setShowCreateLeadModal(true)}
+                >
                   <PlusCircle className="h-4 w-4 mr-2" />
-                  Nueva Oportunidad
+                  Nuevo Prospecto
                 </Button>
               </div>
             </div>
@@ -327,8 +340,24 @@ function DashboardContent({
       {isSuperAdmin ? (
         <SuperAdminDashboard />
       ) : (
-        <CoworkDashboard dashboardData={dashboardData} />
+        <CoworkDashboard 
+          dashboardData={dashboardData} 
+          showCreateLeadModal={showCreateLeadModal}
+          setShowCreateLeadModal={setShowCreateLeadModal}
+        />
       )}
+
+      {/* Create Lead Modal */}
+      <CreateLeadModal 
+        isOpen={showCreateLeadModal}
+        onClose={() => setShowCreateLeadModal(false)}
+        onLeadCreated={() => {
+          toast({
+            title: "¡Prospecto creado!",
+            description: "El nuevo prospecto ha sido creado exitosamente.",
+          });
+        }}
+      />
     </div>
   );
 }
@@ -389,13 +418,67 @@ function SuperAdminDashboard() {
 }
 
 // Regular Cowork Dashboard with Purple Gradient Design
-function CoworkDashboard({ dashboardData }: { dashboardData: any }) {
+function CoworkDashboard({ 
+  dashboardData, 
+  showCreateLeadModal, 
+  setShowCreateLeadModal 
+}: { 
+  dashboardData: any;
+  showCreateLeadModal: boolean;
+  setShowCreateLeadModal: (value: boolean) => void;
+}) {
+  const [activeTab, setActiveTab] = useState('crm')
+  
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
       currency: 'COP',
       minimumFractionDigits: 0,
     }).format(amount)
+  }
+
+  // Function to get quick actions based on active tab
+  const getQuickActions = () => {
+    switch (activeTab) {
+      case 'crm':
+        return [
+          { icon: UserCheck, label: 'Crear Prospecto', action: () => setShowCreateLeadModal(true) },
+          { icon: Target, label: 'Crear Oportunidad', action: () => window.location.href = '/opportunities/create' },
+          { icon: Building2, label: 'Crear Cliente', action: () => window.location.href = '/clients/create' },
+          { separator: true },
+          { icon: Users, label: 'Ver Prospectos', action: () => window.location.href = '/leads' },
+          { icon: Target, label: 'Ver Oportunidades', action: () => window.location.href = '/opportunities' },
+          { icon: Building2, label: 'Ver Clientes', action: () => window.location.href = '/clients' },
+        ]
+      case 'operacion':
+        return [
+          { icon: Calendar, label: 'Nueva Reserva', action: () => window.location.href = '/bookings/create' },
+          { icon: Building2, label: 'Gestionar Espacios', action: () => window.location.href = '/spaces' },
+          { icon: Users, label: 'Gestionar Miembros', action: () => window.location.href = '/members' },
+          { separator: true },
+          { icon: Calendar, label: 'Ver Reservas', action: () => window.location.href = '/bookings' },
+          { icon: Settings, label: 'Configuración', action: () => window.location.href = '/settings' },
+        ]
+      case 'analitica':
+        return [
+          { icon: BarChart3, label: 'Reporte de Ventas', action: () => window.location.href = '/reports/sales' },
+          { icon: TrendingUp, label: 'Métricas CRM', action: () => window.location.href = '/reports/crm' },
+          { icon: Users, label: 'Análisis de Clientes', action: () => window.location.href = '/reports/clients' },
+          { separator: true },
+          { icon: FileText, label: 'Exportar Datos', action: () => window.location.href = '/reports/export' },
+        ]
+      case 'facturacion':
+        return [
+          { icon: FileText, label: 'Nueva Factura', action: () => window.location.href = '/invoices/create' },
+          { icon: DollarSign, label: 'Crear Pago', action: () => window.location.href = '/payments/create' },
+          { icon: Calendar, label: 'Programar Pago', action: () => window.location.href = '/payments/schedule' },
+          { separator: true },
+          { icon: FileText, label: 'Ver Facturas', action: () => window.location.href = '/invoices' },
+          { icon: DollarSign, label: 'Historial de Pagos', action: () => window.location.href = '/payments' },
+        ]
+      default:
+        return []
+    }
   }
 
   return (
@@ -412,10 +495,10 @@ function CoworkDashboard({ dashboardData }: { dashboardData: any }) {
                 </div>
                 <div>
                   <h2 className="text-3xl font-bold text-white mb-2">
-                    Dashboard CRM
+                    Dashboard SweetSpot
                   </h2>
                   <p className="text-purple-100 text-lg">
-                    Gestiona tu pipeline de ventas y oportunidades
+                    Gestiona tu coworking de manera integral
                   </p>
                   <div className="flex items-center space-x-4 mt-3">
                     <div className="flex items-center text-purple-100">
@@ -430,10 +513,28 @@ function CoworkDashboard({ dashboardData }: { dashboardData: any }) {
                 </div>
               </div>
               <div className="text-right">
-                <Button className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm transition-all duration-300 hover:scale-105 shadow-lg">
-                  <Zap className="h-4 w-4 mr-2" />
-                  <span>Acciones Rápidas</span>
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm transition-all duration-300 hover:scale-105 shadow-lg">
+                      <Zap className="h-4 w-4 mr-2" />
+                      <span>Acciones Rápidas</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    {getQuickActions().map((action, index) => {
+                      if (action.separator) {
+                        return <DropdownMenuSeparator key={`separator-${index}`} />
+                      }
+                      const IconComponent = action.icon
+                      return (
+                        <DropdownMenuItem key={index} onClick={action.action}>
+                          <IconComponent className="h-4 w-4 mr-2" />
+                          {action.label}
+                        </DropdownMenuItem>
+                      )
+                    })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </div>
@@ -442,6 +543,60 @@ function CoworkDashboard({ dashboardData }: { dashboardData: any }) {
           <div className="absolute bottom-0 left-0 -ml-8 -mb-8 h-24 w-24 rounded-full bg-white/5"></div>
         </div>
       </div>
+
+      {/* Dashboard Tabs */}
+      <Tabs defaultValue="crm" className="w-full" onValueChange={(value) => setActiveTab(value)}>
+        <TabsList className="grid w-full grid-cols-4 bg-white shadow-md rounded-xl p-1">
+          <TabsTrigger value="crm" className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+            <Target className="h-4 w-4" />
+            CRM
+          </TabsTrigger>
+          <TabsTrigger value="operacion" className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+            <Settings className="h-4 w-4" />
+            Operación
+          </TabsTrigger>
+          <TabsTrigger value="analitica" className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+            <BarChart3 className="h-4 w-4" />
+            Analítica
+          </TabsTrigger>
+          <TabsTrigger value="facturacion" className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+            <DollarSign className="h-4 w-4" />
+            Facturación
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="crm" className="mt-6">
+          <CRMTab dashboardData={dashboardData} />
+        </TabsContent>
+
+        <TabsContent value="operacion" className="mt-6">
+          <OperacionTab />
+        </TabsContent>
+
+        <TabsContent value="analitica" className="mt-6">
+          <AnaliticaTab />
+        </TabsContent>
+
+        <TabsContent value="facturacion" className="mt-6">
+          <FacturacionTab />
+        </TabsContent>
+      </Tabs>
+    </main>
+  )
+}
+
+// CRM Tab Component
+function CRMTab({ dashboardData }: { dashboardData: any }) {
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+    }).format(amount)
+  }
+
+  return (
+    <div className="space-y-6">
 
       {/* Enhanced CRM Stats Grid with Purple Gradient Design */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -648,134 +803,6 @@ function CoworkDashboard({ dashboardData }: { dashboardData: any }) {
         </Card>
       </div>
 
-      {/* Enhanced Clients Section */}
-      <div className="mb-8">
-        <Card className="bg-gradient-to-br from-white to-purple-50/30 border-purple-100 shadow-xl overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-600 text-white">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="h-12 w-12 rounded-xl bg-white/20 flex items-center justify-center shadow-lg">
-                  <Building2 className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <CardTitle className="text-xl font-bold text-white">Gestión de Clientes</CardTitle>
-                  <p className="text-purple-100 mt-1">Administra tus clientes y empresas activas</p>
-                </div>
-              </div>
-              <Link href="/clients">
-                <Button className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm transition-all duration-300 hover:scale-105">
-                  <Building2 className="h-4 w-4 mr-2" />
-                  Ver Todos los Clientes
-                </Button>
-              </Link>
-            </div>
-          </CardHeader>
-
-          <CardContent className="p-0">
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 border-b border-purple-100">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="text-center bg-white/60 rounded-xl p-4 shadow-sm">
-                  <div className="flex items-center justify-center mb-3">
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
-                      <Building2 className="h-5 w-5 text-white" />
-                    </div>
-                  </div>
-                  <span className="text-2xl font-bold text-purple-900">{dashboardData?.clients?.stats?.total || 0}</span>
-                  <p className="text-sm text-purple-600 font-medium mt-1">Total Clientes</p>
-                </div>
-                <div className="text-center bg-white/60 rounded-xl p-4 shadow-sm">
-                  <div className="flex items-center justify-center mb-3">
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-                      <UserCheck className="h-5 w-5 text-white" />
-                    </div>
-                  </div>
-                  <span className="text-2xl font-bold text-green-900">{dashboardData?.clients?.stats?.active || 0}</span>
-                  <p className="text-sm text-green-600 font-medium mt-1">Activos</p>
-                </div>
-                <div className="text-center bg-white/60 rounded-xl p-4 shadow-sm">
-                  <div className="flex items-center justify-center mb-3">
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-                      <Users className="h-5 w-5 text-white" />
-                    </div>
-                  </div>
-                  <span className="text-2xl font-bold text-amber-900">{dashboardData?.clients?.stats?.prospects || 0}</span>
-                  <p className="text-sm text-amber-600 font-medium mt-1">Prospectos</p>
-                </div>
-                <div className="text-center bg-white/60 rounded-xl p-4 shadow-sm">
-                  <div className="flex items-center justify-center mb-3">
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                      <TrendingUp className="h-5 w-5 text-white" />
-                    </div>
-                  </div>
-                  <span className="text-2xl font-bold text-blue-900">{dashboardData?.clients?.stats?.conversionRate || 0}%</span>
-                  <p className="text-sm text-blue-600 font-medium mt-1">Conversión</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Recent Clients with Enhanced Design */}
-            <div className="p-6">
-              <h4 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
-                <Star className="h-5 w-5 text-purple-600 mr-2" />
-                Clientes Destacados
-              </h4>
-              <div className="space-y-4">
-                {(dashboardData?.clients?.recent || []).map((client: any) => (
-                  <div key={client.id} className="bg-gradient-to-r from-white to-purple-50/50 border border-purple-100 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg">
-                          <Building2 className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900 text-lg">{client.name}</p>
-                          <div className="flex items-center space-x-4 text-sm text-gray-600">
-                            <span className="flex items-center">
-                              <Mail className="h-3 w-3 mr-1" />
-                              {client.email}
-                            </span>
-                            {client.contactPerson && (
-                              <span className="flex items-center">
-                                <User className="h-3 w-3 mr-1" />
-                                {client.contactPerson}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">Registrado: {new Date(client.createdAt).toLocaleDateString()}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <Badge className={`${
-                            client.status === 'ACTIVE' ? 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 border-green-300' :
-                            client.status === 'PROSPECT' ? 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border-blue-300' :
-                            'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 border-gray-300'
-                          } text-xs font-medium px-3 py-1`}>
-                            {client.status === 'ACTIVE' ? 'Activo' : 
-                             client.status === 'PROSPECT' ? 'Prospecto' : 'Inactivo'}
-                          </Badge>
-                        </div>
-                        <div className="bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
-                          {client.opportunitiesCount} oportunidad{client.opportunitiesCount !== 1 ? 'es' : ''}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-6 text-center">
-                <Link href="/clients">
-                  <Button variant="outline" className="border-purple-300 text-purple-700 hover:bg-purple-50 hover:text-purple-800 transition-colors">
-                    Ver todos los clientes
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Enhanced Opportunities Section with Purple Gradient Design */}
       <div className="mb-8">
         <Card className="bg-gradient-to-br from-white to-purple-50/30 border-purple-100 shadow-xl overflow-hidden">
@@ -902,138 +929,476 @@ function CoworkDashboard({ dashboardData }: { dashboardData: any }) {
         </Card>
       </div>
 
-      {/* Enhanced Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Enhanced Recent Bookings */}
-        <div className="lg:col-span-2">
-          <Card className="bg-gradient-to-br from-white to-indigo-50/30 border-indigo-100 shadow-xl overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-indigo-600 to-purple-700 text-white">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center shadow-lg">
-                    <Calendar className="h-5 w-5 text-white" />
-                  </div>
-                  <CardTitle className="text-lg font-bold text-white">Actividad Reciente</CardTitle>
+      {/* Enhanced Clients Section */}
+      <div className="mb-8">
+        <Card className="bg-gradient-to-br from-white to-purple-50/30 border-purple-100 shadow-xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="h-12 w-12 rounded-xl bg-white/20 flex items-center justify-center shadow-lg">
+                  <Building2 className="h-6 w-6 text-white" />
                 </div>
-                <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
-                  Ver Todas
-                </Button>
+                <div>
+                  <CardTitle className="text-xl font-bold text-white">Gestión de Clientes</CardTitle>
+                  <p className="text-purple-100 mt-1">Administra tus clientes y empresas activas</p>
+                </div>
               </div>
-            </CardHeader>
-            <CardContent className="p-6">
+              <Link href="/clients">
+                <Button className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm transition-all duration-300 hover:scale-105">
+                  <Building2 className="h-4 w-4 mr-2" />
+                  Ver Todos los Clientes
+                </Button>
+              </Link>
+            </div>
+          </CardHeader>
+
+          <CardContent className="p-0">
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 border-b border-purple-100">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="text-center bg-white/60 rounded-xl p-4 shadow-sm">
+                  <div className="flex items-center justify-center mb-3">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+                      <Building2 className="h-5 w-5 text-white" />
+                    </div>
+                  </div>
+                  <span className="text-2xl font-bold text-purple-900">{dashboardData?.clients?.stats?.total || 0}</span>
+                  <p className="text-sm text-purple-600 font-medium mt-1">Total Clientes</p>
+                </div>
+                <div className="text-center bg-white/60 rounded-xl p-4 shadow-sm">
+                  <div className="flex items-center justify-center mb-3">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                      <UserCheck className="h-5 w-5 text-white" />
+                    </div>
+                  </div>
+                  <span className="text-2xl font-bold text-green-900">{dashboardData?.clients?.stats?.active || 0}</span>
+                  <p className="text-sm text-green-600 font-medium mt-1">Activos</p>
+                </div>
+                <div className="text-center bg-white/60 rounded-xl p-4 shadow-sm">
+                  <div className="flex items-center justify-center mb-3">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                      <Users className="h-5 w-5 text-white" />
+                    </div>
+                  </div>
+                  <span className="text-2xl font-bold text-amber-900">{dashboardData?.clients?.stats?.prospects || 0}</span>
+                  <p className="text-sm text-purple-600 font-medium mt-1">Prospectos</p>
+                </div>
+                <div className="text-center bg-white/60 rounded-xl p-4 shadow-sm">
+                  <div className="flex items-center justify-center mb-3">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                      <TrendingUp className="h-5 w-5 text-white" />
+                    </div>
+                  </div>
+                  <span className="text-2xl font-bold text-blue-900">{dashboardData?.clients?.stats?.conversionRate || 0}%</span>
+                  <p className="text-sm text-blue-600 font-medium mt-1">Conversión</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Clients with Enhanced Design */}
+            <div className="p-6">
+              <h4 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                <Star className="h-5 w-5 text-purple-600 mr-2" />
+                Clientes Destacados
+              </h4>
               <div className="space-y-4">
-                {(dashboardData?.recentBookings || []).map((booking: any) => (
-                  <div key={booking.id} className="bg-gradient-to-r from-white to-indigo-50/50 border border-indigo-100 rounded-xl p-4 hover:shadow-md transition-all duration-300">
+                {(dashboardData?.clients?.recent || []).map((client: any) => (
+                  <div key={client.id} className="bg-gradient-to-r from-white to-purple-50/50 border border-purple-100 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                          <Calendar className="h-5 w-5 text-white" />
+                      <div className="flex items-center space-x-4">
+                        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg">
+                          <Building2 className="h-6 w-6 text-white" />
                         </div>
                         <div>
-                          <p className="font-semibold text-gray-900">{booking.space}</p>
-                          <p className="text-sm text-gray-600">{booking.client}</p>
-                          <p className="text-xs text-gray-500">{booking.time}</p>
+                          <p className="font-semibold text-gray-900 text-lg">{client.name}</p>
+                          <div className="flex items-center space-x-4 text-sm text-gray-600">
+                            <span className="flex items-center">
+                              <Mail className="h-3 w-3 mr-1" />
+                              {client.email}
+                            </span>
+                            {client.contactPerson && (
+                              <span className="flex items-center">
+                                <User className="h-3 w-3 mr-1" />
+                                {client.contactPerson}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">Registrado: {new Date(client.createdAt).toLocaleDateString()}</p>
                         </div>
                       </div>
-                      <Badge className={`${
-                        booking.status === 'Confirmada' 
-                          ? 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 border-green-300'
-                          : 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border-blue-300'
-                      } font-medium`}>
-                        {booking.status}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Enhanced Sidebar */}
-        <div className="space-y-6">
-          {/* Enhanced Quick Actions */}
-          <Card className="bg-gradient-to-br from-white to-purple-50/30 border-purple-100 shadow-xl overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-600 text-white">
-              <CardTitle className="text-lg font-bold text-white flex items-center">
-                <Zap className="h-5 w-5 mr-2" />
-                Acciones Rápidas
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              <div className="space-y-2">
-                <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors">
-                  <Calendar className="h-4 w-4 mr-3" />
-                  Nueva Reserva
-                </Button>
-                <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors">
-                  <Users className="h-4 w-4 mr-3" />
-                  Agregar Miembro
-                </Button>
-                <Link href="/clients" className="block w-full">
-                  <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors">
-                    <Building2 className="h-4 w-4 mr-3" />
-                    Gestionar Clientes
-                  </Button>
-                </Link>
-                <Link href="/leads" className="block w-full">
-                  <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors">
-                    <UserCheck className="h-4 w-4 mr-3" />
-                    Gestionar Prospectos
-                  </Button>
-                </Link>
-                <Link href="/opportunities" className="block w-full">
-                  <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors">
-                    <Target className="h-4 w-4 mr-3" />
-                    Pipeline de Oportunidades
-                  </Button>
-                </Link>
-                <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors">
-                  <BarChart3 className="h-4 w-4 mr-3" />
-                  Ver Reportes
-                </Button>
-                <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors">
-                  <Settings className="h-4 w-4 mr-3" />
-                  Configuración
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Enhanced Recent Activity */}
-          <Card className="bg-gradient-to-br from-white to-indigo-50/30 border-indigo-100 shadow-xl overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white">
-              <CardTitle className="text-lg font-bold text-white flex items-center">
-                <Activity className="h-5 w-5 mr-2" />
-                Notificaciones
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              <div className="space-y-3">
-                {(dashboardData?.activities || []).map((activity: any) => (
-                  <div key={activity.id} className="bg-gradient-to-r from-white to-indigo-50/50 border border-indigo-100 rounded-lg p-3 hover:shadow-sm transition-all">
-                    <div className="flex items-start space-x-3">
-                      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center flex-shrink-0">
-                        <Activity className="h-4 w-4 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900">{activity.text}</p>
-                        <p className="text-xs text-gray-500">{activity.time}</p>
+                      <div className="text-right">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <Badge className={`${
+                            client.status === 'ACTIVE' ? 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 border-green-300' :
+                            client.status === 'PROSPECT' ? 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border-blue-300' :
+                            'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 border-gray-300'
+                          } text-xs font-medium px-3 py-1`}>
+                            {client.status === 'ACTIVE' ? 'Activo' : 
+                             client.status === 'PROSPECT' ? 'Prospecto' : 'Inactivo'}
+                          </Badge>
+                        </div>
+                        <div className="bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
+                          {client.opportunitiesCount} oportunidad{client.opportunitiesCount !== 1 ? 'es' : ''}
+                        </div>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-              <div className="mt-4">
-                <Button variant="outline" size="sm" className="w-full border-indigo-300 text-indigo-700 hover:bg-indigo-50">
-                  <Bell className="h-4 w-4 mr-2" />
-                  Ver todas las notificaciones
-                </Button>
+              <div className="mt-6 text-center">
+                <Link href="/clients">
+                  <Button variant="outline" className="border-purple-300 text-purple-700 hover:bg-purple-50 hover:text-purple-800 transition-colors">
+                    Ver todos los clientes
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </Link>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </main>
+
+    </div>
+  );
+}
+
+// Operacion Tab Component
+function OperacionTab() {
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-blue-700">
+              <Settings className="h-5 w-5" />
+              Espacios de Trabajo
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Disponibles:</span>
+                <span className="font-bold text-2xl text-blue-600">12</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Ocupados:</span>
+                <span className="font-bold text-2xl text-green-600">8</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Tasa Ocupación:</span>
+                <span className="font-bold text-lg text-purple-600">67%</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-green-700">
+              <Calendar className="h-5 w-5" />
+              Reservas Hoy
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Confirmadas:</span>
+                <span className="font-bold text-2xl text-green-600">15</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Pendientes:</span>
+                <span className="font-bold text-2xl text-orange-600">3</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Check-ins:</span>
+                <span className="font-bold text-lg text-blue-600">12</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-orange-700">
+              <Users className="h-5 w-5" />
+              Miembros Activos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Presentes:</span>
+                <span className="font-bold text-2xl text-orange-600">25</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Membresías:</span>
+                <span className="font-bold text-2xl text-purple-600">45</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Nuevos:</span>
+                <span className="font-bold text-lg text-green-600">5</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold text-gray-900">Gestión Operativa</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Button className="h-16 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white">
+              <div className="text-center">
+                <Settings className="h-6 w-6 mx-auto mb-1" />
+                <div className="text-sm">Configurar Espacios</div>
+              </div>
+            </Button>
+            <Button className="h-16 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white">
+              <div className="text-center">
+                <Calendar className="h-6 w-6 mx-auto mb-1" />
+                <div className="text-sm">Gestionar Reservas</div>
+              </div>
+            </Button>
+            <Button className="h-16 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
+              <div className="text-center">
+                <Users className="h-6 w-6 mx-auto mb-1" />
+                <div className="text-sm">Administrar Miembros</div>
+              </div>
+            </Button>
+            <Button className="h-16 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white">
+              <div className="text-center">
+                <Bell className="h-6 w-6 mx-auto mb-1" />
+                <div className="text-sm">Notificaciones</div>
+              </div>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Analitica Tab Component
+function AnaliticaTab() {
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-purple-700">
+              <BarChart3 className="h-5 w-5" />
+              Ingresos Mensuales
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-purple-900">$12,500,000</div>
+            <p className="text-sm text-purple-600 mt-1">+15% vs mes anterior</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-green-700">
+              <TrendingUp className="h-5 w-5" />
+              Tasa de Ocupación
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-900">78%</div>
+            <p className="text-sm text-green-600 mt-1">+5% vs mes anterior</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-blue-700">
+              <Users className="h-5 w-5" />
+              Retención de Miembros
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-blue-900">92%</div>
+            <p className="text-sm text-blue-600 mt-1">+3% vs mes anterior</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-orange-700">
+              <Star className="h-5 w-5" />
+              Satisfacción
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-orange-900">4.8/5</div>
+            <p className="text-sm text-orange-600 mt-1">Basado en 150 reseñas</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold text-gray-900">Reportes y Análisis</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Button className="h-20 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white">
+              <div className="text-center">
+                <BarChart3 className="h-8 w-8 mx-auto mb-2" />
+                <div className="text-sm">Reporte Financiero</div>
+              </div>
+            </Button>
+            <Button className="h-20 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white">
+              <div className="text-center">
+                <TrendingUp className="h-8 w-8 mx-auto mb-2" />
+                <div className="text-sm">Análisis de Ocupación</div>
+              </div>
+            </Button>
+            <Button className="h-20 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white">
+              <div className="text-center">
+                <Users className="h-8 w-8 mx-auto mb-2" />
+                <div className="text-sm">Comportamiento de Usuarios</div>
+              </div>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Facturacion Tab Component
+function FacturacionTab() {
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-green-700">
+              <DollarSign className="h-5 w-5" />
+              Ingresos del Mes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-900">$8,750,000</div>
+            <p className="text-sm text-green-600 mt-1">+12% vs mes anterior</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-blue-700">
+              <FileText className="h-5 w-5" />
+              Facturas Pendientes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-blue-900">15</div>
+            <p className="text-sm text-blue-600 mt-1">$2,300,000 en total</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-orange-700">
+              <Clock className="h-5 w-5" />
+              Pagos Vencidos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-orange-900">3</div>
+            <p className="text-sm text-orange-600 mt-1">$450,000 en total</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-purple-700">
+              <TrendingUp className="h-5 w-5" />
+              Tasa de Cobro
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-purple-900">94%</div>
+            <p className="text-sm text-purple-600 mt-1">Promedio mensual</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold text-gray-900">Gestión de Facturación</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Button className="h-16 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white">
+              <div className="text-center">
+                <FileText className="h-6 w-6 mx-auto mb-1" />
+                <div className="text-sm">Crear Factura</div>
+              </div>
+            </Button>
+            <Button className="h-16 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white">
+              <div className="text-center">
+                <DollarSign className="h-6 w-6 mx-auto mb-1" />
+                <div className="text-sm">Registrar Pago</div>
+              </div>
+            </Button>
+            <Button className="h-16 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white">
+              <div className="text-center">
+                <Clock className="h-6 w-6 mx-auto mb-1" />
+                <div className="text-sm">Seguimiento</div>
+              </div>
+            </Button>
+            <Button className="h-16 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
+              <div className="text-center">
+                <BarChart3 className="h-6 w-6 mx-auto mb-1" />
+                <div className="text-sm">Reportes</div>
+              </div>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold text-gray-900">Facturas Recientes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
+              <div>
+                <p className="font-semibold text-green-900">Factura #001-2024</p>
+                <p className="text-sm text-green-600">Empresa ABC - Membresía Premium</p>
+              </div>
+              <div className="text-right">
+                <div className="text-lg font-bold text-green-900">$850,000</div>
+                <Badge className="bg-green-100 text-green-800">Pagada</Badge>
+              </div>
+            </div>
+            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+              <div>
+                <p className="font-semibold text-blue-900">Factura #002-2024</p>
+                <p className="text-sm text-blue-600">StartupXYZ - Oficina Privada</p>
+              </div>
+              <div className="text-right">
+                <div className="text-lg font-bold text-blue-900">$1,200,000</div>
+                <Badge className="bg-blue-100 text-blue-800">Pendiente</Badge>
+              </div>
+            </div>
+            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-lg">
+              <div>
+                <p className="font-semibold text-orange-900">Factura #003-2024</p>
+                <p className="text-sm text-orange-600">Tech Solutions - Sala de Reuniones</p>
+              </div>
+              <div className="text-right">
+                <div className="text-lg font-bold text-orange-900">$450,000</div>
+                <Badge className="bg-orange-100 text-orange-800">Vencida</Badge>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
