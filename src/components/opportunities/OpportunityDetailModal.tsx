@@ -31,6 +31,8 @@ import { useToast } from "@/hooks/use-toast";
 import { listQuotationsAction, changeQuotationStatusAction, duplicateQuotationAction, deleteQuotationAction } from '@/lib/actions/quotations';
 import QuotationsList from '@/components/quotations/QuotationsList';
 import CreateQuotationModal from '@/components/quotations/CreateQuotationModal';
+import QuotationDetailModal from '@/components/quotations/QuotationDetailModal';
+import EditQuotationModal from '@/components/quotations/EditQuotationModal';
 
 interface Opportunity {
   id: string
@@ -130,6 +132,8 @@ export default function OpportunityDetailModal({
   const [quotations, setQuotations] = useState<Quotation[]>([])
   const [isLoadingQuotations, setIsLoadingQuotations] = useState(false)
   const [showCreateQuotationModal, setShowCreateQuotationModal] = useState(false)
+  const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null)
+  const [editingQuotation, setEditingQuotation] = useState<Quotation | null>(null)
   const { toast } = useToast()
 
   // Load quotations for this opportunity
@@ -268,13 +272,16 @@ export default function OpportunityDetailModal({
   }
 
   const handleQuotationView = (quotation: Quotation) => {
-    // TODO: Implement quotation detail modal
-    console.log('View quotation:', quotation)
+    setSelectedQuotation(quotation)
   }
 
   const handleQuotationEdit = (quotation: Quotation) => {
-    // TODO: Implement quotation edit modal
-    console.log('Edit quotation:', quotation)
+    setEditingQuotation(quotation)
+  }
+
+  const handleQuotationUpdated = () => {
+    setEditingQuotation(null)
+    loadQuotations()
   }
 
   if (!opportunity) return null;
@@ -579,6 +586,25 @@ export default function OpportunityDetailModal({
           opportunityId={opportunity.id}
           clientId={opportunity.client?.id}
           leadId={opportunity.lead?.id}
+        />
+
+        {/* Quotation Detail Modal */}
+        <QuotationDetailModal
+          quotation={selectedQuotation}
+          isOpen={!!selectedQuotation}
+          onClose={() => setSelectedQuotation(null)}
+          onEdit={handleQuotationEdit}
+          onDelete={handleQuotationDelete}
+          onDuplicate={handleQuotationDuplicate}
+          onStatusChange={handleQuotationStatusChange}
+        />
+
+        {/* Edit Quotation Modal */}
+        <EditQuotationModal
+          quotation={editingQuotation}
+          isOpen={!!editingQuotation}
+          onClose={() => setEditingQuotation(null)}
+          onQuotationUpdated={handleQuotationUpdated}
         />
       </DialogContent>
     </Dialog>
