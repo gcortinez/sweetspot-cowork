@@ -1,10 +1,11 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   DollarSign, 
   Calendar, 
@@ -19,10 +20,17 @@ import {
   Phone,
   MapPin,
   Percent,
-  Activity
+  Activity,
+  FileText,
+  Plus,
+  Loader2
 } from 'lucide-react';
 import { STAGE_METADATA } from '@/lib/validations/opportunities';
 import Link from 'next/link';
+import { useToast } from "@/hooks/use-toast";
+import { listQuotationsAction, changeQuotationStatusAction, duplicateQuotationAction, deleteQuotationAction } from '@/lib/actions/quotations';
+import QuotationsList from '@/components/quotations/QuotationsList';
+import CreateQuotationModal from '@/components/quotations/CreateQuotationModal';
 
 interface Opportunity {
   id: string
@@ -68,6 +76,49 @@ interface OpportunityDetailModalProps {
   onCreateActivity?: (opportunityId: string) => void;
 }
 
+interface Quotation {
+  id: string
+  number: string
+  title: string
+  description?: string
+  subtotal: number
+  discounts: number
+  taxes: number
+  total: number
+  currency: string
+  validUntil: string
+  status: 'DRAFT' | 'SENT' | 'VIEWED' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CONVERTED'
+  notes?: string
+  createdAt: string
+  updatedAt: string
+  client: {
+    id: string
+    name: string
+    email: string
+    company?: string
+  }
+  opportunity?: {
+    id: string
+    title: string
+    stage: string
+    value: number
+  }
+  lead?: {
+    id: string
+    firstName: string
+    lastName: string
+    email: string
+    company?: string
+  }
+  items: Array<{
+    id: string
+    description: string
+    quantity: number
+    unitPrice: number
+    total: number
+  }>
+}
+
 export default function OpportunityDetailModal({ 
   opportunity, 
   isOpen, 
@@ -75,6 +126,157 @@ export default function OpportunityDetailModal({
   onEdit,
   onCreateActivity
 }: OpportunityDetailModalProps) {
+  const [activeTab, setActiveTab] = useState('details')
+  const [quotations, setQuotations] = useState<Quotation[]>([])
+  const [isLoadingQuotations, setIsLoadingQuotations] = useState(false)
+  const [showCreateQuotationModal, setShowCreateQuotationModal] = useState(false)
+  const { toast } = useToast()
+
+  // Load quotations for this opportunity
+  const loadQuotations = async () => {
+    if (!opportunity) return
+    
+    setIsLoadingQuotations(true)
+    try {
+      const result = await listQuotationsAction({
+        opportunityId: opportunity.id
+      })
+      
+      if (result.success) {
+        setQuotations(result.data || [])
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al cargar las cotizaciones",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error('Error loading quotations:', error)
+      toast({
+        title: "Error",
+        description: "Error al cargar las cotizaciones",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoadingQuotations(false)
+    }
+  }
+
+  // Load quotations when modal opens and quotations tab is accessed
+  React.useEffect(() => {
+    if (isOpen && activeTab === 'quotations') {
+      loadQuotations()
+    }
+  }, [isOpen, activeTab, opportunity])
+
+  // Handle quotation actions
+  const handleQuotationCreated = () => {
+    setShowCreateQuotationModal(false)
+    loadQuotations()
+  }
+
+  const handleQuotationStatusChange = async (quotationId: string, newStatus: string) => {
+    try {
+      const result = await changeQuotationStatusAction({
+        id: quotationId,
+        status: newStatus
+      })
+      
+      if (result.success) {
+        toast({
+          title: "Estado actualizado",
+          description: "El estado de la cotización ha sido actualizado",
+          duration: 3000,
+        })
+        loadQuotations()
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al actualizar el estado",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error('Error changing quotation status:', error)
+      toast({
+        title: "Error",
+        description: "Error al actualizar el estado",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleQuotationDuplicate = async (quotation: Quotation) => {
+    try {
+      const result = await duplicateQuotationAction({
+        id: quotation.id
+      })
+      
+      if (result.success) {
+        toast({
+          title: "Cotización duplicada",
+          description: "Se ha creado una nueva versión de la cotización",
+          duration: 3000,
+        })
+        loadQuotations()
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al duplicar la cotización",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error('Error duplicating quotation:', error)
+      toast({
+        title: "Error",
+        description: "Error al duplicar la cotización",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleQuotationDelete = async (quotationId: string) => {
+    try {
+      const result = await deleteQuotationAction({
+        id: quotationId
+      })
+      
+      if (result.success) {
+        toast({
+          title: "Cotización eliminada",
+          description: "La cotización ha sido eliminada exitosamente",
+          duration: 3000,
+        })
+        loadQuotations()
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al eliminar la cotización",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error('Error deleting quotation:', error)
+      toast({
+        title: "Error",
+        description: "Error al eliminar la cotización",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleQuotationView = (quotation: Quotation) => {
+    // TODO: Implement quotation detail modal
+    console.log('View quotation:', quotation)
+  }
+
+  const handleQuotationEdit = (quotation: Quotation) => {
+    // TODO: Implement quotation edit modal
+    console.log('Edit quotation:', quotation)
+  }
+
   if (!opportunity) return null;
 
   const formatCurrency = (amount: number) => {
@@ -147,6 +349,13 @@ export default function OpportunityDetailModal({
                 Nueva Actividad
               </Button>
             )}
+            <Button 
+              onClick={() => setShowCreateQuotationModal(true)}
+              className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nueva Cotización
+            </Button>
             <Link href={`/opportunities/${opportunity.id}`}>
               <Button variant="outline">
                 <ExternalLink className="h-4 w-4 mr-2" />
@@ -155,10 +364,25 @@ export default function OpportunityDetailModal({
             </Link>
           </div>
 
-          {/* Main Info Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Financial Info */}
-            <Card>
+          {/* Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="details" className="flex items-center gap-2">
+                <Target className="h-4 w-4" />
+                Detalles
+              </TabsTrigger>
+              <TabsTrigger value="quotations" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Cotizaciones ({quotations.length})
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Details Tab */}
+            <TabsContent value="details" className="space-y-6 mt-6">
+              {/* Main Info Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Financial Info */}
+                <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <DollarSign className="h-5 w-5 text-success" />
@@ -207,129 +431,155 @@ export default function OpportunityDetailModal({
                   </div>
                 )}
               </CardContent>
-            </Card>
-          </div>
+                </Card>
+              </div>
 
-          {/* Contact Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Client/Lead Info */}
-            {(opportunity.client || opportunity.lead) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    {opportunity.client ? (
-                      <>
-                        <Building2 className="h-5 w-5 text-brand-purple" />
-                        Cliente
-                      </>
-                    ) : (
-                      <>
-                        <User className="h-5 w-5 text-brand-blue" />
-                        Prospecto
-                      </>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {opportunity.client && (
-                    <>
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{opportunity.client.name}</span>
+              {/* Contact Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Client/Lead Info */}
+                {(opportunity.client || opportunity.lead) && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        {opportunity.client ? (
+                          <>
+                            <Building2 className="h-5 w-5 text-brand-purple" />
+                            Cliente
+                          </>
+                        ) : (
+                          <>
+                            <User className="h-5 w-5 text-brand-blue" />
+                            Prospecto
+                          </>
+                        )}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {opportunity.client && (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{opportunity.client.name}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">{opportunity.client.email}</span>
+                          </div>
+                        </>
+                      )}
+                      {opportunity.lead && (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{opportunity.lead.firstName} {opportunity.lead.lastName}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">{opportunity.lead.email}</span>
+                          </div>
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Assigned To */}
+                {opportunity.assignedTo && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <User className="h-5 w-5 text-brand-green" />
+                        Asignado a
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-brand-purple to-purple-700 flex items-center justify-center">
+                          <span className="text-white font-medium">
+                            {opportunity.assignedTo.firstName.charAt(0)}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="font-medium">{opportunity.assignedTo.firstName} {opportunity.assignedTo.lastName}</div>
+                          <div className="text-sm text-muted-foreground">{opportunity.assignedTo.email}</div>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{opportunity.client.email}</span>
-                      </div>
-                    </>
-                  )}
-                  {opportunity.lead && (
-                    <>
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{opportunity.lead.firstName} {opportunity.lead.lastName}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{opportunity.lead.email}</span>
-                      </div>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
 
-            {/* Assigned To */}
-            {opportunity.assignedTo && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <User className="h-5 w-5 text-brand-green" />
-                    Asignado a
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-brand-purple to-purple-700 flex items-center justify-center">
-                      <span className="text-white font-medium">
-                        {opportunity.assignedTo.firstName.charAt(0)}
-                      </span>
-                    </div>
-                    <div>
-                      <div className="font-medium">{opportunity.assignedTo.firstName} {opportunity.assignedTo.lastName}</div>
-                      <div className="text-sm text-muted-foreground">{opportunity.assignedTo.email}</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+              {/* Description */}
+              {opportunity.description && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Target className="h-5 w-5 text-brand-blue" />
+                      Descripción
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground whitespace-pre-wrap">{opportunity.description}</p>
+                  </CardContent>
+                </Card>
+              )}
 
-          {/* Description */}
-          {opportunity.description && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Target className="h-5 w-5 text-brand-blue" />
-                  Descripción
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground whitespace-pre-wrap">{opportunity.description}</p>
-              </CardContent>
-            </Card>
-          )}
+              {/* Competitive Info */}
+              {opportunity.competitorInfo && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <TrendingUp className="h-5 w-5 text-orange-600" />
+                      Información Competitiva
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground whitespace-pre-wrap">{opportunity.competitorInfo}</p>
+                  </CardContent>
+                </Card>
+              )}
 
-          {/* Competitive Info */}
-          {opportunity.competitorInfo && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <TrendingUp className="h-5 w-5 text-orange-600" />
-                  Información Competitiva
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground whitespace-pre-wrap">{opportunity.competitorInfo}</p>
-              </CardContent>
-            </Card>
-          )}
+              {/* Lost Reason */}
+              {opportunity.lostReason && (
+                <Card className="border-red-200 bg-red-50/50">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg text-red-700">
+                      <Clock className="h-5 w-5" />
+                      Razón de Pérdida
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-red-700 whitespace-pre-wrap">{opportunity.lostReason}</p>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
 
-          {/* Lost Reason */}
-          {opportunity.lostReason && (
-            <Card className="border-red-200 bg-red-50/50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg text-red-700">
-                  <Clock className="h-5 w-5" />
-                  Razón de Pérdida
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-red-700 whitespace-pre-wrap">{opportunity.lostReason}</p>
-              </CardContent>
-            </Card>
-          )}
+            {/* Quotations Tab */}
+            <TabsContent value="quotations" className="space-y-6 mt-6">
+              <QuotationsList
+                quotations={quotations}
+                onEdit={handleQuotationEdit}
+                onDelete={handleQuotationDelete}
+                onView={handleQuotationView}
+                onDuplicate={handleQuotationDuplicate}
+                onChangeStatus={handleQuotationStatusChange}
+                onCreateNew={() => setShowCreateQuotationModal(true)}
+                isLoading={isLoadingQuotations}
+              />
+            </TabsContent>
+          </Tabs>
         </div>
+
+        {/* Create Quotation Modal */}
+        <CreateQuotationModal
+          isOpen={showCreateQuotationModal}
+          onClose={() => setShowCreateQuotationModal(false)}
+          onQuotationCreated={handleQuotationCreated}
+          opportunityId={opportunity.id}
+          clientId={opportunity.client?.id}
+          leadId={opportunity.lead?.id}
+        />
       </DialogContent>
     </Dialog>
   );
