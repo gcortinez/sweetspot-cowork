@@ -14,6 +14,7 @@ import {
   TrendingUp,
   Activity,
   PlusCircle,
+  Plus,
   Settings,
   Bell,
   UserCheck,
