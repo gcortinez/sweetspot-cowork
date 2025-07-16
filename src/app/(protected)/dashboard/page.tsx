@@ -49,6 +49,7 @@ import {
 import { getDashboardStats, getRecentActivities } from '@/lib/actions/dashboard';
 import { useToast } from '@/hooks/use-toast';
 import CreateLeadModal from '@/components/leads/CreateLeadModal';
+import QuickViewModal from '@/components/dashboard/QuickViewModal';
 
 // Client-side dashboard page
 export default function DashboardPage() {
@@ -428,6 +429,9 @@ function CoworkDashboard({
   setShowCreateLeadModal: (value: boolean) => void;
 }) {
   const [activeTab, setActiveTab] = useState('crm')
+  const [quickViewData, setQuickViewData] = useState<any>(null)
+  const [quickViewType, setQuickViewType] = useState<'prospect' | 'client' | 'opportunity' | null>(null)
+  const [showQuickView, setShowQuickView] = useState(false)
   
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
@@ -435,6 +439,19 @@ function CoworkDashboard({
       currency: 'COP',
       minimumFractionDigits: 0,
     }).format(amount)
+  }
+
+  // Function to open quick view modal
+  const openQuickView = (data: any, type: 'prospect' | 'client' | 'opportunity') => {
+    setQuickViewData(data)
+    setQuickViewType(type)
+    setShowQuickView(true)
+  }
+
+  const closeQuickView = () => {
+    setShowQuickView(false)
+    setQuickViewData(null)
+    setQuickViewType(null)
   }
 
   // Function to get quick actions based on active tab
@@ -566,7 +583,7 @@ function CoworkDashboard({
         </TabsList>
 
         <TabsContent value="crm" className="mt-6">
-          <CRMTab dashboardData={dashboardData} />
+          <CRMTab dashboardData={dashboardData} openQuickView={openQuickView} />
         </TabsContent>
 
         <TabsContent value="operacion" className="mt-6">
@@ -581,12 +598,20 @@ function CoworkDashboard({
           <FacturacionTab />
         </TabsContent>
       </Tabs>
+
+      {/* Quick View Modal */}
+      <QuickViewModal 
+        isOpen={showQuickView}
+        onClose={closeQuickView}
+        data={quickViewData}
+        type={quickViewType!}
+      />
     </main>
   )
 }
 
 // CRM Tab Component
-function CRMTab({ dashboardData }: { dashboardData: any }) {
+function CRMTab({ dashboardData, openQuickView }: { dashboardData: any; openQuickView: (data: any, type: 'prospect' | 'client' | 'opportunity') => void }) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -748,7 +773,11 @@ function CRMTab({ dashboardData }: { dashboardData: any }) {
               </h4>
               <div className="space-y-4">
                 {(dashboardData?.leads?.recent || []).map((lead: any) => (
-                  <div key={lead.id} className="bg-gradient-to-r from-white to-blue-50/50 border border-blue-100 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer">
+                  <div 
+                    key={lead.id} 
+                    className="bg-gradient-to-r from-white to-blue-50/50 border border-blue-100 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer"
+                    onClick={() => openQuickView(lead, 'prospect')}
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
                         <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
@@ -879,7 +908,11 @@ function CRMTab({ dashboardData }: { dashboardData: any }) {
               </h4>
               <div className="space-y-4">
                 {(dashboardData?.opportunities?.recent || []).map((opportunity: any) => (
-                  <div key={opportunity.id} className="bg-gradient-to-r from-white to-purple-50/50 border border-purple-100 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer">
+                  <div 
+                    key={opportunity.id} 
+                    className="bg-gradient-to-r from-white to-purple-50/50 border border-purple-100 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer"
+                    onClick={() => openQuickView(opportunity, 'opportunity')}
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
                         <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg">
@@ -1002,7 +1035,11 @@ function CRMTab({ dashboardData }: { dashboardData: any }) {
               </h4>
               <div className="space-y-4">
                 {(dashboardData?.clients?.recent || []).map((client: any) => (
-                  <div key={client.id} className="bg-gradient-to-r from-white to-purple-50/50 border border-purple-100 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer">
+                  <div 
+                    key={client.id} 
+                    className="bg-gradient-to-r from-white to-purple-50/50 border border-purple-100 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer"
+                    onClick={() => openQuickView(client, 'client')}
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
                         <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg">
