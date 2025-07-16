@@ -32,7 +32,8 @@ import {
   TrendingUp,
   Target,
   Hash,
-  Info
+  Info,
+  History
 } from 'lucide-react'
 import { useToast } from "@/hooks/use-toast"
 import Link from 'next/link'
@@ -114,6 +115,7 @@ interface QuotationDetailModalProps {
   onStatusChange?: (quotationId: string, status: string) => void
   onSendEmail?: (quotationId: string) => void
   onDownloadPDF?: (quotationId: string) => void
+  onViewVersions?: (quotation: Quotation) => void
 }
 
 const STATUS_LABELS = {
@@ -165,7 +167,8 @@ export default function QuotationDetailModal({
   onDuplicate,
   onStatusChange,
   onSendEmail,
-  onDownloadPDF
+  onDownloadPDF,
+  onViewVersions
 }: QuotationDetailModalProps) {
   const { toast } = useToast()
   
@@ -324,6 +327,16 @@ export default function QuotationDetailModal({
               <Copy className="h-4 w-4 mr-2" />
               Duplicar
             </Button>
+
+            {onViewVersions && (
+              <Button 
+                onClick={() => onViewVersions(quotation)}
+                variant="outline"
+              >
+                <History className="h-4 w-4 mr-2" />
+                Ver Versiones
+              </Button>
+            )}
 
             {onDownloadPDF && (
               <Button 

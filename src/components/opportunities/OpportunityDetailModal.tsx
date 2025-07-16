@@ -33,6 +33,7 @@ import QuotationsList from '@/components/quotations/QuotationsList';
 import CreateQuotationModal from '@/components/quotations/CreateQuotationModal';
 import QuotationDetailModal from '@/components/quotations/QuotationDetailModal';
 import EditQuotationModal from '@/components/quotations/EditQuotationModal';
+import QuotationVersionsModal from '@/components/quotations/QuotationVersionsModal';
 
 interface Opportunity {
   id: string
@@ -134,6 +135,7 @@ export default function OpportunityDetailModal({
   const [showCreateQuotationModal, setShowCreateQuotationModal] = useState(false)
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null)
   const [editingQuotation, setEditingQuotation] = useState<Quotation | null>(null)
+  const [versionsQuotation, setVersionsQuotation] = useState<Quotation | null>(null)
   const { toast } = useToast()
 
   // Load quotations for this opportunity
@@ -282,6 +284,28 @@ export default function OpportunityDetailModal({
   const handleQuotationUpdated = () => {
     setEditingQuotation(null)
     loadQuotations()
+  }
+
+  const handleViewVersions = (quotation: Quotation) => {
+    setVersionsQuotation(quotation)
+    setSelectedQuotation(null) // Close detail modal
+  }
+
+  const handleVersionAction = (action: string, quotation: Quotation) => {
+    switch (action) {
+      case 'view':
+        setSelectedQuotation(quotation)
+        setVersionsQuotation(null)
+        break
+      case 'edit':
+        setEditingQuotation(quotation)
+        setVersionsQuotation(null)
+        break
+      case 'duplicate':
+        handleQuotationDuplicate(quotation)
+        setVersionsQuotation(null)
+        break
+    }
   }
 
   if (!opportunity) return null;
@@ -597,6 +621,7 @@ export default function OpportunityDetailModal({
           onDelete={handleQuotationDelete}
           onDuplicate={handleQuotationDuplicate}
           onStatusChange={handleQuotationStatusChange}
+          onViewVersions={handleViewVersions}
         />
 
         {/* Edit Quotation Modal */}
@@ -605,6 +630,16 @@ export default function OpportunityDetailModal({
           isOpen={!!editingQuotation}
           onClose={() => setEditingQuotation(null)}
           onQuotationUpdated={handleQuotationUpdated}
+        />
+
+        {/* Quotation Versions Modal */}
+        <QuotationVersionsModal
+          baseQuotation={versionsQuotation}
+          isOpen={!!versionsQuotation}
+          onClose={() => setVersionsQuotation(null)}
+          onViewVersion={(quotation) => handleVersionAction('view', quotation)}
+          onEditVersion={(quotation) => handleVersionAction('edit', quotation)}
+          onDuplicateVersion={(quotation) => handleVersionAction('duplicate', quotation)}
         />
       </DialogContent>
     </Dialog>
