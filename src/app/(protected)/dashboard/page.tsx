@@ -123,6 +123,8 @@ function DashboardContent({
         ]);
 
         if (statsResult.success) {
+          console.log('🔍 Dashboard data loaded:', statsResult.data);
+          console.log('📊 Recent opportunities:', statsResult.data?.opportunities?.recent);
           setDashboardData(statsResult.data);
         } else {
           setError(statsResult.error || 'Error al cargar datos del dashboard');
@@ -907,7 +909,20 @@ function CRMTab({ dashboardData, openQuickView }: { dashboardData: any; openQuic
                 Oportunidades Destacadas
               </h4>
               <div className="space-y-4">
-                {(dashboardData?.opportunities?.recent || []).map((opportunity: any) => (
+                {(dashboardData?.opportunities?.recent || []).length === 0 ? (
+                  <div className="text-center py-8 bg-gradient-to-r from-purple-50/50 to-indigo-50/50 border border-purple-100 rounded-xl">
+                    <Target className="h-12 w-12 text-purple-400 mx-auto mb-4" />
+                    <p className="text-gray-600 font-medium">No hay oportunidades creadas aún</p>
+                    <p className="text-sm text-gray-500 mt-1">Comienza creando tu primera oportunidad de negocio</p>
+                    <Link href="/opportunities">
+                      <Button className="mt-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Crear Oportunidad
+                      </Button>
+                    </Link>
+                  </div>
+                ) : (
+                  (dashboardData?.opportunities?.recent || []).map((opportunity: any) => (
                   <div 
                     key={opportunity.id} 
                     className="bg-gradient-to-r from-white to-purple-50/50 border border-purple-100 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer"
@@ -950,7 +965,8 @@ function CRMTab({ dashboardData, openQuickView }: { dashboardData: any; openQuic
                       </div>
                     </div>
                   </div>
-                ))}
+                  ))
+                )}
               </div>
               <div className="mt-6 text-center">
                 <Link href="/opportunities">
@@ -1037,7 +1053,20 @@ function CRMTab({ dashboardData, openQuickView }: { dashboardData: any; openQuic
                 Clientes Destacados
               </h4>
               <div className="space-y-4">
-                {(dashboardData?.clients?.recent || []).map((client: any) => (
+                {(dashboardData?.clients?.recent || []).length === 0 ? (
+                  <div className="text-center py-8 bg-gradient-to-r from-purple-50/50 to-pink-50/50 border border-purple-100 rounded-xl">
+                    <Building2 className="h-12 w-12 text-purple-400 mx-auto mb-4" />
+                    <p className="text-gray-600 font-medium">No hay clientes registrados aún</p>
+                    <p className="text-sm text-gray-500 mt-1">Comienza agregando tu primer cliente</p>
+                    <Link href="/clients">
+                      <Button className="mt-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Agregar Cliente
+                      </Button>
+                    </Link>
+                  </div>
+                ) : (
+                  (dashboardData?.clients?.recent || []).map((client: any) => (
                   <div 
                     key={client.id} 
                     className="bg-gradient-to-r from-white to-purple-50/50 border border-purple-100 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer"
@@ -1082,7 +1111,8 @@ function CRMTab({ dashboardData, openQuickView }: { dashboardData: any; openQuic
                       </div>
                     </div>
                   </div>
-                ))}
+                  ))
+                )}
               </div>
               <div className="mt-6 text-center">
                 <Link href="/clients">

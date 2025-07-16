@@ -90,6 +90,7 @@ export async function getDashboardStats() {
         }
       })
 
+      console.log('🔍 Querying opportunities for tenantId:', user.tenantId)
       recentOpportunities = await db.opportunity.findMany({
         where: { tenantId: user.tenantId },
         orderBy: { createdAt: 'desc' },
@@ -117,6 +118,7 @@ export async function getDashboardStats() {
           }
         }
       })
+      console.log('📊 Found opportunities:', recentOpportunities.length)
     } catch (error) {
       console.error('Error loading opportunities:', error)
     }
