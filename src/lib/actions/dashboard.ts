@@ -102,7 +102,6 @@ export async function getDashboardStats() {
               name: true, 
               email: true, 
               phone: true, 
-              company: true,
               contactPerson: true 
             } 
           },
