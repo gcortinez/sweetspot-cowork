@@ -18,6 +18,12 @@ import { STAGE_METADATA } from '@/lib/validations/opportunities'
 import { useToast } from '@/hooks/use-toast'
 import EditOpportunityModal from '@/components/opportunities/EditOpportunityModal'
 import CreateActivityModal from '@/components/activities/CreateActivityModal'
+import { listQuotationsAction, changeQuotationStatusAction, duplicateQuotationAction, deleteQuotationAction } from '@/lib/actions/quotations'
+import QuotationsList from '@/components/quotations/QuotationsList'
+import CreateQuotationModal from '@/components/quotations/CreateQuotationModal'
+import QuotationDetailModal from '@/components/quotations/QuotationDetailModal'
+import EditQuotationModal from '@/components/quotations/EditQuotationModal'
+import QuotationVersionsModal from '@/components/quotations/QuotationVersionsModal'
 import {
   Target,
   ArrowLeft,
@@ -37,7 +43,8 @@ import {
   Phone,
   Mail,
   FileText,
-  AlertCircle
+  AlertCircle,
+  Plus
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -107,11 +114,20 @@ export default function OpportunityDetailPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isCreateActivityModalOpen, setIsCreateActivityModalOpen] = useState(false)
   
+  // Quotations states
+  const [quotations, setQuotations] = useState<any[]>([])
+  const [quotationsLoading, setQuotationsLoading] = useState(true)
+  const [showCreateQuotationModal, setShowCreateQuotationModal] = useState(false)
+  const [selectedQuotation, setSelectedQuotation] = useState<any>(null)
+  const [editingQuotation, setEditingQuotation] = useState<any>(null)
+  const [versionsQuotation, setVersionsQuotation] = useState<any>(null)
+  
   const { toast } = useToast()
 
   // Load opportunity and activities
   useEffect(() => {
     loadOpportunityData()
+    loadQuotations()
   }, [opportunityId])
 
   const loadOpportunityData = async () => {
@@ -146,6 +162,148 @@ export default function OpportunityDetailPage() {
       router.push('/opportunities')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Load quotations for this opportunity
+  const loadQuotations = async () => {
+    setQuotationsLoading(true)
+    try {
+      const result = await listQuotationsAction({
+        opportunityId: opportunityId,
+        page: 1,
+        limit: 50
+      })
+      
+      if (result.success) {
+        setQuotations(result.data || [])
+      }
+    } catch (error) {
+      console.error('Error loading quotations:', error)
+    } finally {
+      setQuotationsLoading(false)
+    }
+  }
+
+  // Quotation handlers
+  const handleQuotationCreated = () => {
+    setShowCreateQuotationModal(false)
+    loadQuotations()
+  }
+
+  const handleQuotationUpdated = () => {
+    setEditingQuotation(null)
+    loadQuotations()
+  }
+
+  const handleQuotationView = (quotation: any) => {
+    setSelectedQuotation(quotation)
+  }
+
+  const handleQuotationEdit = (quotation: any) => {
+    setEditingQuotation(quotation)
+  }
+
+  const handleQuotationDelete = async (quotationId: string) => {
+    try {
+      const result = await deleteQuotationAction({ id: quotationId })
+      
+      if (result.success) {
+        toast({
+          title: "Cotización eliminada",
+          description: "La cotización ha sido eliminada exitosamente",
+        })
+        loadQuotations()
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al eliminar la cotización",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Error al eliminar la cotización",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleQuotationDuplicate = async (quotation: any) => {
+    try {
+      const result = await duplicateQuotationAction({ id: quotation.id })
+      
+      if (result.success) {
+        toast({
+          title: "Cotización duplicada",
+          description: "Se ha creado una nueva versión de la cotización",
+        })
+        loadQuotations()
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al duplicar la cotización",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Error al duplicar la cotización",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleQuotationStatusChange = async (quotationId: string, newStatus: string) => {
+    try {
+      const result = await changeQuotationStatusAction({
+        id: quotationId,
+        status: newStatus,
+      })
+      
+      if (result.success) {
+        toast({
+          title: "Estado actualizado",
+          description: "El estado de la cotización ha sido actualizado",
+        })
+        loadQuotations()
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al actualizar el estado",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Error al actualizar el estado",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleViewVersions = (quotation: any) => {
+    setVersionsQuotation(quotation)
+    setSelectedQuotation(null)
+  }
+
+  const handleVersionAction = (action: string, quotation: any) => {
+    switch (action) {
+      case 'view':
+        setSelectedQuotation(quotation)
+        setVersionsQuotation(null)
+        break
+      case 'edit':
+        setEditingQuotation(quotation)
+        setVersionsQuotation(null)
+        break
+      case 'duplicate':
+        handleQuotationDuplicate(quotation)
+        setVersionsQuotation(null)
+        break
     }
   }
 
@@ -433,54 +591,95 @@ export default function OpportunityDetailPage() {
               </CardContent>
             </Card>
 
-            {/* Activities Tab */}
+            {/* Activities and Quotations Tabs */}
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center">
-                    <Activity className="h-5 w-5 mr-2" />
-                    Actividades Relacionadas
-                  </CardTitle>
-                  <Button
-                    onClick={() => setIsCreateActivityModalOpen(true)}
-                    size="sm"
-                    className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
-                  >
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Nueva Actividad
-                  </Button>
-                </div>
+                <CardTitle className="flex items-center">
+                  <Activity className="h-5 w-5 mr-2" />
+                  Actividades y Cotizaciones
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                {activities.length > 0 ? (
-                  <div className="space-y-4">
-                    {activities.map((activity) => (
-                      <div key={activity.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="flex-shrink-0">
-                          {getActivityIcon(activity.type)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-900">{activity.title}</p>
-                          {activity.description && (
-                            <p className="text-gray-600 text-sm mt-1">{activity.description}</p>
-                          )}
-                          <div className="flex items-center mt-2 text-xs text-gray-500">
-                            <User className="h-3 w-3 mr-1" />
-                            {activity.user.firstName} {activity.user.lastName}
-                            <span className="mx-2">•</span>
-                            <Clock className="h-3 w-3 mr-1" />
-                            {new Date(activity.createdAt).toLocaleDateString()}
+                <Tabs defaultValue="activities" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="activities" className="flex items-center gap-2">
+                      <Activity className="h-4 w-4" />
+                      Actividades
+                    </TabsTrigger>
+                    <TabsTrigger value="quotations" className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Cotizaciones
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="activities" className="space-y-6 mt-6">
+                    <div className="flex justify-end">
+                      <Button
+                        onClick={() => setIsCreateActivityModalOpen(true)}
+                        size="sm"
+                        className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
+                      >
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Nueva Actividad
+                      </Button>
+                    </div>
+                    
+                    {activities.length > 0 ? (
+                      <div className="space-y-4">
+                        {activities.map((activity) => (
+                          <div key={activity.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                            <div className="flex-shrink-0">
+                              {getActivityIcon(activity.type)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-gray-900">{activity.title}</p>
+                              {activity.description && (
+                                <p className="text-gray-600 text-sm mt-1">{activity.description}</p>
+                              )}
+                              <div className="flex items-center mt-2 text-xs text-gray-500">
+                                <User className="h-3 w-3 mr-1" />
+                                {activity.user.firstName} {activity.user.lastName}
+                                <span className="mx-2">•</span>
+                                <Clock className="h-3 w-3 mr-1" />
+                                {new Date(activity.createdAt).toLocaleDateString()}
+                              </div>
+                            </div>
                           </div>
-                        </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">No hay actividades registradas para esta oportunidad.</p>
-                  </div>
-                )}
+                    ) : (
+                      <div className="text-center py-8">
+                        <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-600">No hay actividades registradas para esta oportunidad.</p>
+                      </div>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="quotations" className="space-y-6 mt-6">
+                    <div className="flex justify-end">
+                      <Button
+                        onClick={() => setShowCreateQuotationModal(true)}
+                        size="sm"
+                        className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        Nueva Cotización
+                      </Button>
+                    </div>
+                    
+                    <QuotationsList
+                      quotations={quotations}
+                      onEdit={handleQuotationEdit}
+                      onDelete={handleQuotationDelete}
+                      onView={handleQuotationView}
+                      onDuplicate={handleQuotationDuplicate}
+                      onChangeStatus={handleQuotationStatusChange}
+                      onCreateNew={() => setShowCreateQuotationModal(true)}
+                      onDownloadPDF={handleQuotationView}
+                      isLoading={quotationsLoading}
+                    />
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </div>
@@ -665,6 +864,46 @@ export default function OpportunityDetailPage() {
           opportunityId={opportunityId}
         />
       )}
+
+      {/* Create Quotation Modal */}
+      <CreateQuotationModal
+        isOpen={showCreateQuotationModal}
+        onClose={() => setShowCreateQuotationModal(false)}
+        onQuotationCreated={handleQuotationCreated}
+        opportunityId={opportunityId}
+        clientId={opportunity?.clientId}
+        leadId={opportunity?.leadId}
+      />
+
+      {/* Quotation Detail Modal */}
+      <QuotationDetailModal
+        quotation={selectedQuotation}
+        isOpen={!!selectedQuotation}
+        onClose={() => setSelectedQuotation(null)}
+        onEdit={handleQuotationEdit}
+        onDelete={handleQuotationDelete}
+        onDuplicate={handleQuotationDuplicate}
+        onStatusChange={handleQuotationStatusChange}
+        onViewVersions={handleViewVersions}
+      />
+
+      {/* Edit Quotation Modal */}
+      <EditQuotationModal
+        quotation={editingQuotation}
+        isOpen={!!editingQuotation}
+        onClose={() => setEditingQuotation(null)}
+        onQuotationUpdated={handleQuotationUpdated}
+      />
+
+      {/* Quotation Versions Modal */}
+      <QuotationVersionsModal
+        baseQuotation={versionsQuotation}
+        isOpen={!!versionsQuotation}
+        onClose={() => setVersionsQuotation(null)}
+        onViewVersion={(quotation) => handleVersionAction('view', quotation)}
+        onEditVersion={(quotation) => handleVersionAction('edit', quotation)}
+        onDuplicateVersion={(quotation) => handleVersionAction('duplicate', quotation)}
+      />
     </div>
   )
 }

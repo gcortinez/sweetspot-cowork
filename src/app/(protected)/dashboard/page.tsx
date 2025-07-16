@@ -317,6 +317,20 @@ function DashboardContent({
                   </Button>
                 </Link>
                 <span className="text-gray-300">/</span>
+                <Link href="/quotations">
+                  <Button variant="ghost" size="sm" className="text-gray-600 hover:text-purple-700 hover:bg-purple-50 transition-colors">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Cotizaciones
+                  </Button>
+                </Link>
+                <span className="text-gray-300">/</span>
+                <Link href="/services">
+                  <Button variant="ghost" size="sm" className="text-gray-600 hover:text-purple-700 hover:bg-purple-50 transition-colors">
+                    <Zap className="h-4 w-4 mr-2" />
+                    Servicios
+                  </Button>
+                </Link>
+                <span className="text-gray-300">/</span>
                 <Link href="/analytics">
                   <Button variant="ghost" size="sm" className="text-gray-600 hover:text-purple-700 hover:bg-purple-50 transition-colors">
                     <BarChart3 className="h-4 w-4 mr-2" />
@@ -325,6 +339,16 @@ function DashboardContent({
                 </Link>
               </div>
               <div className="flex items-center space-x-2">
+                <Link href="/quotations">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className="border-purple-300 text-purple-700 hover:bg-purple-50 hover:text-purple-800 transition-colors"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Nueva Cotización
+                  </Button>
+                </Link>
                 <Button 
                   size="sm" 
                   className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-purple"
