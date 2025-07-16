@@ -65,7 +65,7 @@ export function AppHeader({
                   SweetSpot
                 </h1>
                 {/* Cowork name display */}
-                {isMounted && !isLoadingCoworks && (
+                {isMounted && (
                   <div className="text-sm text-muted-foreground">
                     {isSuperAdmin ? (
                       isPlatformView ? (
@@ -78,11 +78,7 @@ export function AppHeader({
                         )
                       )
                     ) : (
-                      selectedCowork ? (
-                        <span className="text-brand-blue font-medium">{selectedCowork.name}</span>
-                      ) : (
-                        <span className="text-muted-foreground">Cargando...</span>
-                      )
+                      <span className="text-brand-purple font-medium">Plataforma CRM</span>
                     )}
                   </div>
                 )}
