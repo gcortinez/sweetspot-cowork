@@ -83,22 +83,26 @@ export default function ConvertToOpportunityModal({
 
     setIsLoading(true);
     try {
-      const result = await convertLeadToOpportunity({
+      const submitData = {
         leadId: lead.id,
         title: formData.title,
         description: formData.description || undefined,
         value: parseFloat(formData.value) || 0,
         probability: parseInt(formData.probability),
-        expectedCloseDate: formData.expectedCloseDate ? new Date(formData.expectedCloseDate).toISOString() : undefined,
+        expectedCloseDate: formData.expectedCloseDate && formData.expectedCloseDate.trim() ? new Date(formData.expectedCloseDate + 'T12:00:00.000Z').toISOString() : undefined,
         stage: formData.stage,
-      });
+      };
+      
+      console.log('Converting lead with data:', submitData);
+      
+      const result = await convertLeadToOpportunity(submitData);
 
       if (result.success) {
         toast({
           title: "¡Conversión exitosa!",
           description: "El prospecto ha sido convertido a oportunidad correctamente.",
         });
-        onSuccess(result.opportunity.id);
+        onSuccess(result.data.id);
         onClose();
       } else {
         toast({
