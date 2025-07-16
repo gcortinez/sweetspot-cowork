@@ -89,7 +89,7 @@ export default function ConvertToOpportunityModal({
         description: formData.description || undefined,
         value: parseFloat(formData.value) || 0,
         probability: parseInt(formData.probability),
-        expectedCloseDate: formData.expectedCloseDate || undefined,
+        expectedCloseDate: formData.expectedCloseDate ? new Date(formData.expectedCloseDate).toISOString() : undefined,
         stage: formData.stage,
       });
 
@@ -109,11 +109,23 @@ export default function ConvertToOpportunityModal({
       }
     } catch (error) {
       console.error('Error converting lead:', error);
-      toast({
-        title: "Error inesperado",
-        description: "Ocurrió un error al convertir el prospecto.",
-        variant: "destructive",
-      });
+      
+      // Handle Zod validation errors
+      if (error && typeof error === 'object' && 'issues' in error) {
+        const zodError = error as any;
+        const firstIssue = zodError.issues[0];
+        toast({
+          title: "Error de validación",
+          description: `${firstIssue.path.join('.')}: ${firstIssue.message}`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error inesperado",
+          description: "Ocurrió un error al convertir el prospecto.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
