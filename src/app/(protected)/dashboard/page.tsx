@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { 
   Building2, 
   Crown, 
@@ -25,7 +26,8 @@ import {
   Zap,
   FileText,
   Clock,
-  CheckCircle
+  CheckCircle,
+  Loader2
 } from "lucide-react";
 import { SignOutButton } from "@clerk/nextjs";
 import { CoworkSelector } from "@/components/admin/cowork-selector";
@@ -37,6 +39,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getDashboardStats, getRecentActivities } from '@/lib/actions/dashboard';
+import { useToast } from '@/hooks/use-toast';
 
 // Client-side dashboard page
 export default function DashboardPage() {
@@ -85,159 +89,111 @@ function DashboardContent({
     isLoadingCoworks
   } = useCoworkSelection();
 
-  // Mock data for demonstration
-  const coworkData = {
-    stats: {
-      todayBookings: 12,
-      activeMembers: 145,
-      occupancy: 85,
-      monthlyRevenue: 125000
-    },
-    recentBookings: [
-      {
-        id: 1,
-        space: "Sala de Conferencias A",
-        client: "Tech Startup Inc.",
-        time: "10:00 AM - 12:00 PM",
-        status: "Confirmada"
-      },
-      {
-        id: 2,
-        space: "Oficina Privada 5",
-        client: "Digital Agency",
-        time: "2:00 PM - 6:00 PM",
-        status: "En Progreso"
-      },
-      {
-        id: 3,
-        space: "Escritorio Flexible #12",
-        client: "Freelancer Juan",
-        time: "9:00 AM - 5:00 PM",
-        status: "Confirmada"
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  // Load dashboard data
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      if (isSuperAdmin) {
+        // For super admin, we'll handle differently later
+        setIsLoading(false);
+        return;
       }
-    ],
-    activities: [
-      { id: 1, type: 'booking', text: 'Nueva reserva confirmada', time: 'Hace 5 min' },
-      { id: 2, type: 'payment', text: 'Pago recibido', time: 'Hace 1 hora' },
-      { id: 3, type: 'member', text: 'Nuevo miembro registrado', time: 'Hace 2 horas' },
-      { id: 4, type: 'space', text: 'Espacio actualizado', time: 'Hace 3 horas' }
-    ],
-    opportunities: {
-      stats: {
-        total: 12,
-        active: 8,
-        thisMonth: 4,
-        pipelineValue: 45000000
-      },
-      recent: [
-        {
-          id: 1,
-          title: "Oficina Privada - Tech Startup",
-          value: 15000000,
-          probability: 75,
-          stage: "NEGOTIATION",
-          client: "Tech Startup Inc.",
-          expectedCloseDate: "2024-02-15"
-        },
-        {
-          id: 2,
-          title: "Espacios Flexibles - Agencia Digital",
-          value: 8500000,
-          probability: 60,
-          stage: "PROPOSAL_SENT",
-          client: "Digital Agency Co.",
-          expectedCloseDate: "2024-02-28"
-        },
-        {
-          id: 3,
-          title: "Sala de Conferencias - Consultora",
-          value: 12000000,
-          probability: 90,
-          stage: "CONTRACT_REVIEW",
-          client: "Consultora Ágil SAS",
-          expectedCloseDate: "2024-02-10"
+
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const [statsResult, activitiesResult] = await Promise.all([
+          getDashboardStats(),
+          getRecentActivities()
+        ]);
+
+        if (statsResult.success) {
+          setDashboardData(statsResult.data);
+        } else {
+          setError(statsResult.error || 'Error al cargar datos del dashboard');
+          toast({
+            title: "Error",
+            description: statsResult.error || 'Error al cargar datos del dashboard',
+            variant: "destructive",
+          });
         }
-      ]
-    },
-    leads: {
-      stats: {
-        total: 18,
-        new: 7,
-        qualified: 5,
-        converted: 2
-      },
-      recent: [
-        {
-          id: 1,
-          name: "María González",
-          email: "maria@startup.cl",
-          company: "Startup Innovadora",
-          status: "NEW",
-          score: 92,
-          source: "WEBSITE",
-          createdAt: "2024-01-15T10:30:00Z"
-        },
-        {
-          id: 2,
-          name: "Juan Pérez",
-          email: "juan@empresa.com", 
-          company: "Tech Solutions",
-          status: "QUALIFIED",
-          score: 85,
-          source: "REFERRAL",
-          createdAt: "2024-01-14T14:20:00Z"
-        },
-        {
-          id: 3,
-          name: "Pedro Martínez",
-          email: "pedro@consultora.com",
-          company: "Consultora Ágil",
-          status: "CONTACTED",
-          score: 78,
-          source: "SOCIAL_MEDIA",
-          createdAt: "2024-01-13T16:45:00Z"
-        }
-      ]
-    },
-    clients: {
-      stats: {
-        total: 32,
-        active: 24,
-        prospects: 8,
-        inactive: 4,
-        conversionRate: 68
-      },
-      recent: [
-        {
-          id: 1,
-          name: "Tech Innovators SAS",
-          email: "contacto@techinnovators.co",
-          contactPerson: "Ana García",
-          status: "ACTIVE",
-          createdAt: "2024-01-10T09:15:00Z",
-          opportunitiesCount: 3
-        },
-        {
-          id: 2,
-          name: "Digital Solutions Ltd",
-          email: "info@digitalsolutions.com",
-          contactPerson: "Carlos Ruiz",
-          status: "PROSPECT",
-          createdAt: "2024-01-12T14:30:00Z",
-          opportunitiesCount: 1
-        },
-        {
-          id: 3,
-          name: "Startup Unicornio",
-          email: "hola@startupunicornio.io",
-          contactPerson: "Laura Martínez",
-          status: "ACTIVE",
-          createdAt: "2024-01-08T11:45:00Z",
-          opportunitiesCount: 2
-        }
-      ]
-    }
-  };
+      } catch (err) {
+        console.error('Error loading dashboard data:', err);
+        setError('Error de conexión');
+        toast({
+          title: "Error de conexión",
+          description: 'No se pudo conectar con el servidor',
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadDashboardData();
+  }, [isSuperAdmin, toast]);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50/30 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-purple-600 mx-auto mb-4" />
+          <p className="text-gray-600">Cargando dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error && !dashboardData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50/30 flex items-center justify-center">
+        <div className="text-center">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <p className="font-medium">Error al cargar el dashboard</p>
+            <p className="text-sm">{error}</p>
+          </div>
+          <Button onClick={() => window.location.reload()} variant="outline">
+            Reintentar
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show message when no data is available
+  if (!dashboardData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50/30 flex items-center justify-center">
+        <div className="text-center">
+          <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded mb-4">
+            <p className="font-medium">No hay datos disponibles</p>
+            <p className="text-sm">Comienza creando tu primera oportunidad, cliente o prospecto</p>
+          </div>
+          <div className="space-x-2">
+            <Link href="/opportunities">
+              <Button variant="outline" size="sm">
+                <Target className="h-4 w-4 mr-2" />
+                Crear Oportunidad
+              </Button>
+            </Link>
+            <Link href="/clients">
+              <Button variant="outline" size="sm">
+                <Building2 className="h-4 w-4 mr-2" />
+                Crear Cliente
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50/30">
@@ -261,27 +217,21 @@ function DashboardContent({
                 <div>
                   <h1 className="text-xl font-bold text-gray-900 group-hover:text-purple-700 transition-colors">SweetSpot</h1>
                   {/* Cowork name display */}
-                  {!isLoadingCoworks && (
-                    <div className="text-sm">
-                      {isSuperAdmin ? (
-                        isPlatformView ? (
-                          <span className="text-purple-600 font-medium">Vista General de la Plataforma</span>
-                        ) : (
-                          selectedCowork ? (
-                            <span className="text-indigo-600 font-medium">{selectedCowork.name}</span>
-                          ) : (
-                            <span className="text-gray-500">Seleccionar Cowork</span>
-                          )
-                        )
+                  <div className="text-sm">
+                    {isSuperAdmin ? (
+                      isPlatformView ? (
+                        <span className="text-purple-600 font-medium">Vista General de la Plataforma</span>
                       ) : (
                         selectedCowork ? (
                           <span className="text-indigo-600 font-medium">{selectedCowork.name}</span>
                         ) : (
-                          <span className="text-gray-500">Cargando...</span>
+                          <span className="text-gray-500">Seleccionar Cowork</span>
                         )
-                      )}
-                    </div>
-                  )}
+                      )
+                    ) : (
+                      <span className="text-purple-600 font-medium">Plataforma CRM</span>
+                    )}
+                  </div>
                 </div>
               </Link>
             </div>
@@ -375,16 +325,16 @@ function DashboardContent({
 
       {/* Main Content */}
       {isSuperAdmin ? (
-        <SuperAdminDashboard coworkData={coworkData} />
+        <SuperAdminDashboard />
       ) : (
-        <CoworkDashboard coworkData={coworkData} />
+        <CoworkDashboard dashboardData={dashboardData} />
       )}
     </div>
   );
 }
 
 // Super Admin Dashboard with platform view
-function SuperAdminDashboard({ coworkData }: { coworkData: any }) {
+function SuperAdminDashboard() {
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Platform Header */}
@@ -439,7 +389,7 @@ function SuperAdminDashboard({ coworkData }: { coworkData: any }) {
 }
 
 // Regular Cowork Dashboard with Purple Gradient Design
-function CoworkDashboard({ coworkData }: { coworkData: any }) {
+function CoworkDashboard({ dashboardData }: { dashboardData: any }) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -500,7 +450,7 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-purple-600">Oportunidades Activas</p>
-                <p className="text-3xl font-bold text-purple-900">{coworkData.opportunities.stats.active}</p>
+                <p className="text-3xl font-bold text-purple-900">{dashboardData?.opportunities?.stats?.active || 0}</p>
                 <p className="text-xs text-purple-600 flex items-center mt-2">
                   <Target className="h-3 w-3 mr-1" />
                   Pipeline en progreso
@@ -519,7 +469,7 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
               <div>
                 <p className="text-sm font-medium text-green-600">Valor Pipeline</p>
                 <p className="text-3xl font-bold text-green-900">
-                  {formatCurrency(coworkData.opportunities.stats.pipelineValue)}
+                  {formatCurrency(dashboardData?.opportunities?.stats?.pipelineValue || 0)}
                 </p>
                 <p className="text-xs text-green-600 flex items-center mt-2">
                   <DollarSign className="h-3 w-3 mr-1" />
@@ -538,7 +488,7 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-blue-600">Clientes Activos</p>
-                <p className="text-3xl font-bold text-blue-900">{coworkData.clients.stats.active}</p>
+                <p className="text-3xl font-bold text-blue-900">{dashboardData?.clients?.stats?.active || 0}</p>
                 <p className="text-xs text-blue-600 flex items-center mt-2">
                   <Building2 className="h-3 w-3 mr-1" />
                   Empresas registradas
@@ -556,7 +506,7 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-orange-600">Prospectos Nuevos</p>
-                <p className="text-3xl font-bold text-orange-900">{coworkData.leads.stats.new}</p>
+                <p className="text-3xl font-bold text-orange-900">{dashboardData?.leads?.stats?.new || 0}</p>
                 <p className="text-xs text-orange-600 flex items-center mt-2">
                   <UserCheck className="h-3 w-3 mr-1" />
                   Este mes
@@ -602,7 +552,7 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
                       <Users className="h-5 w-5 text-white" />
                     </div>
                   </div>
-                  <span className="text-2xl font-bold text-blue-900">{coworkData.leads.stats.total}</span>
+                  <span className="text-2xl font-bold text-blue-900">{dashboardData?.leads?.stats?.total || 0}</span>
                   <p className="text-sm text-blue-600 font-medium mt-1">Total Prospectos</p>
                 </div>
                 <div className="text-center bg-white/60 rounded-xl p-4 shadow-sm">
@@ -611,7 +561,7 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
                       <Star className="h-5 w-5 text-white" />
                     </div>
                   </div>
-                  <span className="text-2xl font-bold text-amber-900">{coworkData.leads.stats.new}</span>
+                  <span className="text-2xl font-bold text-amber-900">{dashboardData?.leads?.stats?.new || 0}</span>
                   <p className="text-sm text-amber-600 font-medium mt-1">Nuevos</p>
                 </div>
                 <div className="text-center bg-white/60 rounded-xl p-4 shadow-sm">
@@ -620,7 +570,7 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
                       <Target className="h-5 w-5 text-white" />
                     </div>
                   </div>
-                  <span className="text-2xl font-bold text-green-900">{coworkData.leads.stats.qualified}</span>
+                  <span className="text-2xl font-bold text-green-900">{dashboardData?.leads?.stats?.qualified || 0}</span>
                   <p className="text-sm text-green-600 font-medium mt-1">Calificados</p>
                 </div>
                 <div className="text-center bg-white/60 rounded-xl p-4 shadow-sm">
@@ -629,7 +579,7 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
                       <TrendingUp className="h-5 w-5 text-white" />
                     </div>
                   </div>
-                  <span className="text-2xl font-bold text-purple-900">{coworkData.leads.stats.converted}</span>
+                  <span className="text-2xl font-bold text-purple-900">{dashboardData?.leads?.stats?.converted || 0}</span>
                   <p className="text-sm text-purple-600 font-medium mt-1">Convertidos</p>
                 </div>
               </div>
@@ -642,7 +592,7 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
                 Prospectos Prioritarios
               </h4>
               <div className="space-y-4">
-                {coworkData.leads.recent.map((lead: any) => (
+                {(dashboardData?.leads?.recent || []).map((lead: any) => (
                   <div key={lead.id} className="bg-gradient-to-r from-white to-blue-50/50 border border-blue-100 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
@@ -730,7 +680,7 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
                       <Building2 className="h-5 w-5 text-white" />
                     </div>
                   </div>
-                  <span className="text-2xl font-bold text-purple-900">{coworkData.clients.stats.total}</span>
+                  <span className="text-2xl font-bold text-purple-900">{dashboardData?.clients?.stats?.total || 0}</span>
                   <p className="text-sm text-purple-600 font-medium mt-1">Total Clientes</p>
                 </div>
                 <div className="text-center bg-white/60 rounded-xl p-4 shadow-sm">
@@ -739,7 +689,7 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
                       <UserCheck className="h-5 w-5 text-white" />
                     </div>
                   </div>
-                  <span className="text-2xl font-bold text-green-900">{coworkData.clients.stats.active}</span>
+                  <span className="text-2xl font-bold text-green-900">{dashboardData?.clients?.stats?.active || 0}</span>
                   <p className="text-sm text-green-600 font-medium mt-1">Activos</p>
                 </div>
                 <div className="text-center bg-white/60 rounded-xl p-4 shadow-sm">
@@ -748,7 +698,7 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
                       <Users className="h-5 w-5 text-white" />
                     </div>
                   </div>
-                  <span className="text-2xl font-bold text-amber-900">{coworkData.clients.stats.prospects}</span>
+                  <span className="text-2xl font-bold text-amber-900">{dashboardData?.clients?.stats?.prospects || 0}</span>
                   <p className="text-sm text-amber-600 font-medium mt-1">Prospectos</p>
                 </div>
                 <div className="text-center bg-white/60 rounded-xl p-4 shadow-sm">
@@ -757,7 +707,7 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
                       <TrendingUp className="h-5 w-5 text-white" />
                     </div>
                   </div>
-                  <span className="text-2xl font-bold text-blue-900">{coworkData.clients.stats.conversionRate}%</span>
+                  <span className="text-2xl font-bold text-blue-900">{dashboardData?.clients?.stats?.conversionRate || 0}%</span>
                   <p className="text-sm text-blue-600 font-medium mt-1">Conversión</p>
                 </div>
               </div>
@@ -770,7 +720,7 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
                 Clientes Destacados
               </h4>
               <div className="space-y-4">
-                {coworkData.clients.recent.map((client: any) => (
+                {(dashboardData?.clients?.recent || []).map((client: any) => (
                   <div key={client.id} className="bg-gradient-to-r from-white to-purple-50/50 border border-purple-100 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
@@ -859,7 +809,7 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
                       <Target className="h-5 w-5 text-white" />
                     </div>
                   </div>
-                  <span className="text-2xl font-bold text-purple-900">{coworkData.opportunities.stats.total}</span>
+                  <span className="text-2xl font-bold text-purple-900">{dashboardData?.opportunities?.stats?.total || 0}</span>
                   <p className="text-sm text-purple-600 font-medium mt-1">Total Oportunidades</p>
                 </div>
                 <div className="text-center bg-white/60 rounded-xl p-4 shadow-sm">
@@ -868,7 +818,7 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
                       <Activity className="h-5 w-5 text-white" />
                     </div>
                   </div>
-                  <span className="text-2xl font-bold text-green-900">{coworkData.opportunities.stats.active}</span>
+                  <span className="text-2xl font-bold text-green-900">{dashboardData?.opportunities?.stats?.active || 0}</span>
                   <p className="text-sm text-green-600 font-medium mt-1">Activas</p>
                 </div>
                 <div className="text-center bg-white/60 rounded-xl p-4 shadow-sm">
@@ -877,7 +827,7 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
                       <Calendar className="h-5 w-5 text-white" />
                     </div>
                   </div>
-                  <span className="text-2xl font-bold text-orange-900">{coworkData.opportunities.stats.thisMonth}</span>
+                  <span className="text-2xl font-bold text-orange-900">{dashboardData?.opportunities?.stats?.thisMonth || 0}</span>
                   <p className="text-sm text-orange-600 font-medium mt-1">Este Mes</p>
                 </div>
                 <div className="text-center bg-white/60 rounded-xl p-4 shadow-sm">
@@ -887,7 +837,7 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
                     </div>
                   </div>
                   <span className="text-2xl font-bold text-emerald-900">
-                    {formatCurrency(coworkData.opportunities.stats.pipelineValue)}
+                    {formatCurrency(dashboardData?.opportunities?.stats?.pipelineValue || 0)}
                   </span>
                   <p className="text-sm text-emerald-600 font-medium mt-1">Valor Pipeline</p>
                 </div>
@@ -901,7 +851,7 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
                 Oportunidades Destacadas
               </h4>
               <div className="space-y-4">
-                {coworkData.opportunities.recent.map((opportunity: any) => (
+                {(dashboardData?.opportunities?.recent || []).map((opportunity: any) => (
                   <div key={opportunity.id} className="bg-gradient-to-r from-white to-purple-50/50 border border-purple-100 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
@@ -972,7 +922,7 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
             </CardHeader>
             <CardContent className="p-6">
               <div className="space-y-4">
-                {coworkData.recentBookings.map((booking: any) => (
+                {(dashboardData?.recentBookings || []).map((booking: any) => (
                   <div key={booking.id} className="bg-gradient-to-r from-white to-indigo-50/50 border border-indigo-100 rounded-xl p-4 hover:shadow-md transition-all duration-300">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
@@ -1060,7 +1010,7 @@ function CoworkDashboard({ coworkData }: { coworkData: any }) {
             </CardHeader>
             <CardContent className="p-4">
               <div className="space-y-3">
-                {coworkData.activities.map((activity: any) => (
+                {(dashboardData?.activities || []).map((activity: any) => (
                   <div key={activity.id} className="bg-gradient-to-r from-white to-indigo-50/50 border border-indigo-100 rounded-lg p-3 hover:shadow-sm transition-all">
                     <div className="flex items-start space-x-3">
                       <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center flex-shrink-0">
