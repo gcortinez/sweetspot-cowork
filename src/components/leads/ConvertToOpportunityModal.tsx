@@ -101,15 +101,31 @@ export default function ConvertToOpportunityModal({
         toast({
           title: "¡Conversión exitosa!",
           description: "El prospecto ha sido convertido a oportunidad correctamente.",
+          variant: "success",
         });
         onSuccess(result.data.id);
         onClose();
       } else {
-        toast({
-          title: "Error en la conversión",
-          description: result.error || "No se pudo convertir el prospecto.",
-          variant: "destructive",
-        });
+        // Check if lead is already converted and has existing opportunity
+        if (result.existingOpportunity) {
+          toast({
+            title: "Prospecto ya convertido",
+            description: "Este prospecto ya fue convertido a una oportunidad.",
+            variant: "destructive",
+          });
+          
+          // Show existing opportunity and redirect
+          setTimeout(() => {
+            onSuccess(result.existingOpportunity.id);
+            onClose();
+          }, 1500);
+        } else {
+          toast({
+            title: "Error en la conversión",
+            description: result.error || "No se pudo convertir el prospecto.",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       console.error('Error converting lead:', error);

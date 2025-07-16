@@ -859,6 +859,22 @@ export default function OpportunitiesPage() {
         </div>
         
         <div className="space-y-2 text-xs text-gray-600">
+          {/* Cliente información */}
+          {opportunity.client && (
+            <div className="flex items-center gap-1 text-blue-600 bg-blue-50 px-2 py-1 rounded">
+              <Building2 className="h-3 w-3" />
+              <span className="font-medium text-xs truncate">{opportunity.client.name}</span>
+            </div>
+          )}
+          {opportunity.lead && !opportunity.client && (
+            <div className="flex items-center gap-1 text-amber-600 bg-amber-50 px-2 py-1 rounded">
+              <User className="h-3 w-3" />
+              <span className="font-medium text-xs truncate">
+                {opportunity.lead.firstName} {opportunity.lead.lastName}
+              </span>
+            </div>
+          )}
+          
           <div className="flex justify-between">
             <span>Valor:</span>
             <span className="font-medium">{formatCurrency(opportunity.value)}</span>
@@ -875,11 +891,6 @@ export default function OpportunitiesPage() {
           </div>
         </div>
 
-        {opportunity.client && (
-          <div className="mt-2 text-xs text-gray-500">
-            Cliente: {opportunity.client.name}
-          </div>
-        )}
 
         {opportunity.assignedTo && (
           <div className="mt-2 flex items-center text-xs text-gray-500">
@@ -968,6 +979,24 @@ export default function OpportunitiesPage() {
                     {STAGE_METADATA[opportunity.stage].label}
                   </Badge>
                 </div>
+                {/* Cliente información */}
+                {opportunity.client && (
+                  <div className="mt-2 flex items-center gap-2 text-sm">
+                    <Building2 className="h-4 w-4 text-blue-600" />
+                    <span className="text-blue-600 font-medium">{opportunity.client.name}</span>
+                    <span className="text-xs text-muted-foreground">({opportunity.client.email})</span>
+                  </div>
+                )}
+                {opportunity.lead && !opportunity.client && (
+                  <div className="mt-2 flex items-center gap-2 text-sm">
+                    <User className="h-4 w-4 text-amber-600" />
+                    <span className="text-amber-600 font-medium">
+                      {opportunity.lead.firstName} {opportunity.lead.lastName}
+                    </span>
+                    <span className="text-xs text-muted-foreground">({opportunity.lead.email})</span>
+                  </div>
+                )}
+
                 <div className="mt-2 grid grid-cols-4 gap-4 text-sm text-muted-foreground">
                   <div>
                     <span className="font-medium">Valor: </span>

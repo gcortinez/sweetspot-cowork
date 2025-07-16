@@ -47,7 +47,8 @@ import {
   ClipboardList,
   Edit,
   Trash2,
-  MoreHorizontal
+  MoreHorizontal,
+  CheckCircle
 } from "lucide-react";
 
 interface Activity {
@@ -479,13 +480,35 @@ export default function LeadDetailModal({
         {/* Action Buttons */}
         <div className="p-6 border-b bg-gray-50">
           <div className="flex justify-center">
-            <Button 
-              onClick={() => onCreateOpportunity(lead)}
-              className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 px-8"
-            >
-              <TrendingUp className="h-4 w-4 mr-2" />
-              Convertir a Oportunidad
-            </Button>
+            {lead.status === 'CONVERTED' ? (
+              <div className="text-center">
+                <div className="mb-2">
+                  <Badge className="bg-green-100 text-green-800 border-green-200">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Convertido
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Este prospecto ya fue convertido a una oportunidad
+                </p>
+                <Button 
+                  onClick={() => onCreateOpportunity(lead)}
+                  variant="outline"
+                  className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                >
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Ver Oportunidad
+                </Button>
+              </div>
+            ) : (
+              <Button 
+                onClick={() => onCreateOpportunity(lead)}
+                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 px-8"
+              >
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Convertir a Oportunidad
+              </Button>
+            )}
           </div>
         </div>
 

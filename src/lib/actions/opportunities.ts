@@ -361,23 +361,62 @@ export async function convertLeadToOpportunity(input: ConvertLeadToOpportunityIn
 
     // Check if lead is already converted
     if (lead.status === 'CONVERTED') {
-      return {
-        success: false,
-        error: 'Este prospecto ya ha sido convertido',
+      // Find existing opportunity for this lead
+      const existingOpportunity = await db.opportunity.findFirst({
+        where: { leadId: validatedInput.leadId },
+        include: {
+          client: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          lead: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
+          },
+        },
+      })
+
+      if (existingOpportunity) {
+        return {
+          success: false,
+          error: 'Este prospecto ya ha sido convertido',
+          existingOpportunity: serializeOpportunity(existingOpportunity),
+        }
       }
     }
 
     // Calculate expected revenue
     const expectedRevenue = (validatedInput.value * validatedInput.probability) / 100
 
-    // Create opportunity and update lead status in a transaction
+    // Create client, opportunity and update lead status in a transaction
     const result = await db.$transaction(async (tx) => {
-      // Create opportunity
+      // Create client from lead data
+      const client = await tx.client.create({
+        data: {
+          name: lead.company || `${lead.firstName} ${lead.lastName}`,
+          email: lead.email,
+          phone: lead.phone,
+          contactPerson: `${lead.firstName} ${lead.lastName}`,
+          status: 'PROSPECT',
+          notes: `Cliente creado automáticamente a partir del prospecto: ${lead.firstName} ${lead.lastName}`,
+          tenantId: user.tenantId,
+        },
+      })
+
+      // Create opportunity with linked client
       const opportunity = await tx.opportunity.create({
         data: {
           ...validatedInput,
           expectedRevenue,
           tenantId: user.tenantId,
+          clientId: client.id,
           assignedToId: validatedInput.assignedToId || user.id,
           expectedCloseDate: validatedInput.expectedCloseDate ? new Date(validatedInput.expectedCloseDate) : undefined,
         },
@@ -387,6 +426,8 @@ export async function convertLeadToOpportunity(input: ConvertLeadToOpportunityIn
               id: true,
               name: true,
               email: true,
+              contactPerson: true,
+              status: true,
             },
           },
           lead: {
@@ -414,12 +455,25 @@ export async function convertLeadToOpportunity(input: ConvertLeadToOpportunityIn
         data: { status: 'CONVERTED' },
       })
 
+      // Create lead conversion record for traceability
+      await tx.leadConversion.create({
+        data: {
+          leadId: validatedInput.leadId,
+          clientId: client.id,
+          opportunityId: opportunity.id,
+          convertedById: user.id,
+          conversionNotes: `Conversión automática: Lead → Cliente → Oportunidad`,
+          tenantId: user.tenantId,
+        },
+      })
+
       return opportunity
     })
 
     // Revalidate relevant paths
     revalidatePath('/opportunities')
     revalidatePath('/leads')
+    revalidatePath('/clients')
     revalidatePath('/dashboard')
     revalidatePath(`/leads/${validatedInput.leadId}`)
 
