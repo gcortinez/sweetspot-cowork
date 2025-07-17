@@ -22,7 +22,7 @@ import {
   Edit
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { updateServiceAction } from '@/lib/actions/service'
+// Removed direct server action import to avoid client/server component conflicts
 
 interface Service {
   id: string
@@ -215,9 +215,17 @@ export default function EditServiceModal({ service, isOpen, onClose, onServiceUp
         },
       }
 
-      const result = await updateServiceAction(serviceData)
+      const response = await fetch(`/api/services/${service.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(serviceData)
+      })
       
-      if (result.success) {
+      const result = await response.json()
+      
+      if (response.ok && result.success) {
         toast({
           title: "Servicio actualizado",
           description: "El servicio ha sido actualizado exitosamente",
@@ -225,6 +233,7 @@ export default function EditServiceModal({ service, isOpen, onClose, onServiceUp
         })
         onServiceUpdated()
       } else {
+        setErrors(result.fieldErrors || {})
         toast({
           title: "Error al actualizar servicio",
           description: result.error || "Ocurrió un error inesperado",

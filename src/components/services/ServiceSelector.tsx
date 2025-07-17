@@ -20,7 +20,7 @@ import {
   ShoppingCart,
   Calculator
 } from "lucide-react"
-import { getServicesByCategoryAction } from '@/lib/actions/service'
+// Removed direct server action import to avoid client/server component conflicts
 import { useToast } from "@/hooks/use-toast"
 
 interface Service {
@@ -94,10 +94,22 @@ export default function ServiceSelector({ selectedServices, onSelectionChange, c
   const loadServices = async () => {
     try {
       setIsLoading(true)
-      const category = selectedCategory === 'all' ? undefined : selectedCategory
-      const result = await getServicesByCategoryAction(category)
       
-      if (result.success) {
+      const params = new URLSearchParams({
+        page: '1',
+        limit: '100',
+        sortBy: 'name',
+        sortOrder: 'asc'
+      })
+      
+      if (selectedCategory !== 'all') {
+        params.append('category', selectedCategory)
+      }
+      
+      const response = await fetch(`/api/services?${params.toString()}`)
+      const result = await response.json()
+      
+      if (response.ok && result.success) {
         setAvailableServices(result.data || [])
       } else {
         toast({
