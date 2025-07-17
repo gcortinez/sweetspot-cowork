@@ -79,6 +79,24 @@ interface ServicesTableProps {
   deletingServiceId?: string | null
 }
 
+const CATEGORY_LABELS = {
+  'PRINTING': 'Impresión',
+  'COFFEE': 'Café',
+  'FOOD': 'Comida',
+  'PARKING': 'Estacionamiento',
+  'STORAGE': 'Almacenamiento',
+  'MAIL': 'Correo',
+  'PHONE': 'Teléfono',
+  'INTERNET': 'Internet',
+  'CLEANING': 'Limpieza',
+  'BUSINESS_SUPPORT': 'Soporte Empresarial',
+  'EVENT_SERVICES': 'Servicios de Eventos',
+  'WELLNESS': 'Bienestar',
+  'TRANSPORTATION': 'Transporte',
+  'CONSULTING': 'Consultoría',
+  'MAINTENANCE': 'Mantenimiento'
+}
+
 const SERVICE_TYPE_LABELS = {
   'CONSUMABLE': 'Consumible',
   'SUBSCRIPTION': 'Suscripción',
@@ -339,7 +357,7 @@ export default function ServicesTable({
               <TableCell>
                 <Badge className={`${getCategoryColor(service.category)} flex items-center gap-1 w-fit`}>
                   {getCategoryIcon(service.category)}
-                  {service.category.replace('_', ' ')}
+                  {CATEGORY_LABELS[service.category as keyof typeof CATEGORY_LABELS] || service.category}
                 </Badge>
               </TableCell>
               <TableCell>

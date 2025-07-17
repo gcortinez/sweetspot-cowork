@@ -90,6 +90,24 @@ const categories = [
   'CONSULTING', 'MAINTENANCE'
 ]
 
+const CATEGORY_LABELS = {
+  'PRINTING': 'Impresión',
+  'COFFEE': 'Café',
+  'FOOD': 'Comida',
+  'PARKING': 'Estacionamiento',
+  'STORAGE': 'Almacenamiento',
+  'MAIL': 'Correo',
+  'PHONE': 'Teléfono',
+  'INTERNET': 'Internet',
+  'CLEANING': 'Limpieza',
+  'BUSINESS_SUPPORT': 'Soporte Empresarial',
+  'EVENT_SERVICES': 'Servicios de Eventos',
+  'WELLNESS': 'Bienestar',
+  'TRANSPORTATION': 'Transporte',
+  'CONSULTING': 'Consultoría',
+  'MAINTENANCE': 'Mantenimiento'
+}
+
 const CATEGORY_ICONS = {
   'PRINTING': Printer,
   'COFFEE': Coffee,
@@ -515,7 +533,7 @@ export default function ServicesPage() {
                 <SelectItem value="all">Todas las categorías</SelectItem>
                 {categories.map(category => (
                   <SelectItem key={category} value={category}>
-                    {category.replace('_', ' ')}
+                    {CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS] || category}
                   </SelectItem>
                 ))}
               </SelectContent>
