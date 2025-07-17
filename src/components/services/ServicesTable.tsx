@@ -33,6 +33,17 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  Coffee,
+  Printer,
+  Car,
+  Mail,
+  Phone,
+  Users,
+  Wrench,
+  Globe,
+  Settings,
+  Building2,
+  Activity,
 } from 'lucide-react'
 
 interface Service {
@@ -56,8 +67,7 @@ interface ServicesTableProps {
   services: Service[]
   onEdit: (service: Service) => void
   onDelete: (serviceId: string) => void
-  categoryIcons: Record<string, React.ComponentType<{ className?: string }>>
-  categoryColors: Record<string, string>
+  isLoading?: boolean
 }
 
 const SERVICE_TYPE_LABELS = {
@@ -86,12 +96,47 @@ const AVAILABILITY_COLORS = {
   'SCHEDULED': 'bg-orange-100 text-orange-800',
 }
 
+const CATEGORY_ICONS = {
+  'PRINTING': Printer,
+  'COFFEE': Coffee,
+  'FOOD': Coffee,
+  'PARKING': Car,
+  'STORAGE': Package,
+  'MAIL': Mail,
+  'PHONE': Phone,
+  'INTERNET': Globe,
+  'CLEANING': Settings,
+  'BUSINESS_SUPPORT': Building2,
+  'EVENT_SERVICES': Calendar,
+  'WELLNESS': Activity,
+  'TRANSPORTATION': Car,
+  'CONSULTING': Users,
+  'MAINTENANCE': Wrench,
+}
+
+const CATEGORY_COLORS = {
+  'PRINTING': 'bg-blue-100 text-blue-800',
+  'COFFEE': 'bg-yellow-100 text-yellow-800',
+  'FOOD': 'bg-orange-100 text-orange-800',
+  'PARKING': 'bg-purple-100 text-purple-800',
+  'STORAGE': 'bg-gray-100 text-gray-800',
+  'MAIL': 'bg-green-100 text-green-800',
+  'PHONE': 'bg-indigo-100 text-indigo-800',
+  'INTERNET': 'bg-cyan-100 text-cyan-800',
+  'CLEANING': 'bg-pink-100 text-pink-800',
+  'BUSINESS_SUPPORT': 'bg-emerald-100 text-emerald-800',
+  'EVENT_SERVICES': 'bg-violet-100 text-violet-800',
+  'WELLNESS': 'bg-green-100 text-green-800',
+  'TRANSPORTATION': 'bg-blue-100 text-blue-800',
+  'CONSULTING': 'bg-slate-100 text-slate-800',
+  'MAINTENANCE': 'bg-amber-100 text-amber-800',
+}
+
 export default function ServicesTable({ 
   services, 
   onEdit, 
   onDelete, 
-  categoryIcons, 
-  categoryColors 
+  isLoading = false
 }: ServicesTableProps) {
   const formatPrice = (price: number, unit: string) => {
     return `$${price.toLocaleString()} / ${unit}`
@@ -106,12 +151,12 @@ export default function ServicesTable({
   }
 
   const getCategoryIcon = (category: string) => {
-    const IconComponent = categoryIcons[category]
+    const IconComponent = CATEGORY_ICONS[category as keyof typeof CATEGORY_ICONS]
     return IconComponent ? <IconComponent className="h-4 w-4" /> : <Package className="h-4 w-4" />
   }
 
   const getCategoryColor = (category: string) => {
-    return categoryColors[category] || 'bg-gray-100 text-gray-800'
+    return CATEGORY_COLORS[category as keyof typeof CATEGORY_COLORS] || 'bg-gray-100 text-gray-800'
   }
 
   const getServiceTypeColor = (serviceType: string) => {
@@ -160,7 +205,23 @@ export default function ServicesTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {services.map((service) => (
+          {isLoading ? (
+            <TableRow>
+              <TableCell colSpan={7} className="text-center py-8">
+                <div className="flex items-center justify-center">
+                  <Package className="h-8 w-8 animate-spin text-gray-400 mr-2" />
+                  <span className="text-gray-500">Cargando servicios...</span>
+                </div>
+              </TableCell>
+            </TableRow>
+          ) : services.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={7} className="text-center py-8">
+                <div className="text-gray-500">No hay servicios disponibles</div>
+              </TableCell>
+            </TableRow>
+          ) : (
+            services.map((service) => (
             <TableRow key={service.id}>
               <TableCell className="font-medium">
                 <div className="space-y-1">
@@ -263,7 +324,8 @@ export default function ServicesTable({
                 </DropdownMenu>
               </TableCell>
             </TableRow>
-          ))}
+          ))
+          )}
         </TableBody>
       </Table>
     </div>
