@@ -138,8 +138,8 @@ export default function EditServiceModal({ service, isOpen, onClose, onServiceUp
         isActive: service.isActive,
       })
       
-      setPricingTiers(service.pricingTiers || [])
-      setTags(service.tags || [])
+      setPricingTiers(Array.isArray(service.pricingTiers) ? service.pricingTiers : [])
+      setTags(Array.isArray(service.tags) ? service.tags : [])
     }
   }, [isOpen, service])
 

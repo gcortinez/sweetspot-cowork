@@ -383,7 +383,7 @@ export default function ServiceSelector({ selectedServices, onSelectionChange, c
             </div>
             
             {/* Pricing Tiers Info */}
-            {selectedServiceForAdd.pricingTiers.length > 0 && !customPrice && (
+            {selectedServiceForAdd.pricingTiers && Array.isArray(selectedServiceForAdd.pricingTiers) && selectedServiceForAdd.pricingTiers.length > 0 && !customPrice && (
               <div className="p-3 bg-white rounded-md border">
                 <Label className="text-sm font-medium mb-2 block">Niveles de Precio Disponibles:</Label>
                 <div className="space-y-1">
