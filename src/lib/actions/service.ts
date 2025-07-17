@@ -29,6 +29,19 @@ import {
 } from '@/lib/validations/service'
 import { PricingCalculator } from '@/lib/utils/pricing'
 
+// Helper function to safely parse JSON fields
+function safeJsonParse(value: string | null, fallback: any = null) {
+  if (!value) return fallback
+  
+  try {
+    return JSON.parse(value)
+  } catch (error) {
+    // If parsing fails, return the original value or fallback
+    console.warn('Failed to parse JSON field:', value, error)
+    return value === 'null' ? fallback : value
+  }
+}
+
 // Helper function to get user with tenant info using Clerk auth
 async function getUserWithTenant() {
   const { userId } = await auth()
@@ -97,13 +110,13 @@ export async function createServiceAction(data: CreateServiceRequest): Promise<A
       success: true, 
       data: {
         ...service,
-        pricing: service.pricing ? JSON.parse(service.pricing) : null,
-        availability: service.availability ? JSON.parse(service.availability) : null,
-        requirements: service.requirements ? JSON.parse(service.requirements) : null,
-        images: service.images ? JSON.parse(service.images) : [],
-        tags: service.tags ? JSON.parse(service.tags) : [],
-        duration: service.duration ? JSON.parse(service.duration) : null,
-        metadata: service.metadata ? JSON.parse(service.metadata) : null,
+        pricing: safeJsonParse(service.pricing),
+        availability: safeJsonParse(service.availability),
+        requirements: safeJsonParse(service.requirements),
+        images: safeJsonParse(service.images, []),
+        tags: safeJsonParse(service.tags, []),
+        duration: safeJsonParse(service.duration),
+        metadata: safeJsonParse(service.metadata),
       }
     }
   } catch (error: any) {
@@ -192,13 +205,13 @@ export async function updateServiceAction(data: UpdateServiceRequest): Promise<A
       success: true, 
       data: {
         ...service,
-        pricing: service.pricing ? JSON.parse(service.pricing) : null,
-        availability: service.availability ? JSON.parse(service.availability) : null,
-        requirements: service.requirements ? JSON.parse(service.requirements) : null,
-        images: service.images ? JSON.parse(service.images) : [],
-        tags: service.tags ? JSON.parse(service.tags) : [],
-        duration: service.duration ? JSON.parse(service.duration) : null,
-        metadata: service.metadata ? JSON.parse(service.metadata) : null,
+        pricing: safeJsonParse(service.pricing),
+        availability: safeJsonParse(service.availability),
+        requirements: safeJsonParse(service.requirements),
+        images: safeJsonParse(service.images, []),
+        tags: safeJsonParse(service.tags, []),
+        duration: safeJsonParse(service.duration),
+        metadata: safeJsonParse(service.metadata),
       }
     }
   } catch (error: any) {
@@ -710,13 +723,13 @@ export async function getServiceAction(data: GetServiceRequest): Promise<ActionR
       success: true, 
       data: {
         ...service,
-        pricing: service.pricing ? JSON.parse(service.pricing) : null,
-        availability: service.availability ? JSON.parse(service.availability) : null,
-        requirements: service.requirements ? JSON.parse(service.requirements) : null,
-        images: service.images ? JSON.parse(service.images) : [],
-        tags: service.tags ? JSON.parse(service.tags) : [],
-        duration: service.duration ? JSON.parse(service.duration) : null,
-        metadata: service.metadata ? JSON.parse(service.metadata) : null,
+        pricing: safeJsonParse(service.pricing),
+        availability: safeJsonParse(service.availability),
+        requirements: safeJsonParse(service.requirements),
+        images: safeJsonParse(service.images, []),
+        tags: safeJsonParse(service.tags, []),
+        duration: safeJsonParse(service.duration),
+        metadata: safeJsonParse(service.metadata),
       }
     }
   } catch (error: any) {
@@ -811,16 +824,16 @@ export async function listServicesAction(data: ListServicesRequest = {}): Promis
       },
     })
 
-    // Process JSON fields
+    // Process JSON fields safely
     const processedServices = services.map(service => ({
       ...service,
-      pricing: service.pricing ? JSON.parse(service.pricing) : null,
-      availability: service.availability ? JSON.parse(service.availability) : null,
-      requirements: service.requirements ? JSON.parse(service.requirements) : null,
-      images: service.images ? JSON.parse(service.images) : [],
-      tags: service.tags ? JSON.parse(service.tags) : [],
-      duration: service.duration ? JSON.parse(service.duration) : null,
-      metadata: service.metadata ? JSON.parse(service.metadata) : null,
+      pricing: safeJsonParse(service.pricing),
+      availability: safeJsonParse(service.availability),
+      requirements: safeJsonParse(service.requirements),
+      images: safeJsonParse(service.images, []),
+      tags: safeJsonParse(service.tags, []),
+      duration: safeJsonParse(service.duration),
+      metadata: safeJsonParse(service.metadata),
     }))
     
     return { 
@@ -883,7 +896,7 @@ export async function checkServiceAvailabilityAction(data: CheckServiceAvailabil
     }
 
     // Parse availability rules
-    const availability = service.availability ? JSON.parse(service.availability) : null
+    const availability = safeJsonParse(service.availability)
     
     // Check basic availability
     let isAvailable = true
@@ -973,7 +986,7 @@ export async function checkServiceAvailabilityAction(data: CheckServiceAvailabil
         isAvailable = false
         issues.push('Specified space not found or not available')
       } else {
-        const requirements = service.requirements ? JSON.parse(service.requirements) : null
+        const requirements = safeJsonParse(service.requirements)
         
         if (requirements) {
           // Check space type compatibility
@@ -1073,7 +1086,7 @@ export async function bulkUpdateServicesAction(data: BulkUpdateServicesRequest):
 
       // Update each service individually to modify pricing
       for (const service of services) {
-        const pricing = service.pricing ? JSON.parse(service.pricing) : {}
+        const pricing = safeJsonParse(service.pricing, {})
         pricing.basePrice = validatedData.updates.basePrice
         
         await prisma.service.update({
@@ -1230,7 +1243,7 @@ export async function calculateServicePricingAction(data: CalculateServicePricin
     }
 
     // Parse pricing configuration
-    const pricing = service.pricing ? JSON.parse(service.pricing) : null
+    const pricing = safeJsonParse(service.pricing)
 
     if (!pricing) {
       return { success: false, error: 'Service pricing not configured' }
