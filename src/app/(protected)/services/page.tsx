@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { AppHeader } from '@/components/shared/app-header'
 // Removed direct server action imports to avoid client/server component conflicts
 // Using API routes instead
 import { useToast } from '@/hooks/use-toast'
@@ -48,7 +49,9 @@ import {
   Download,
   Eye,
   Globe,
-  Zap
+  Zap,
+  Layers,
+  TrendingUp
 } from 'lucide-react'
 
 interface Service {
@@ -233,92 +236,118 @@ export default function ServicesPage() {
   }, [searchTerm, selectedCategory, activeTab])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50/30">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-white via-purple-50/50 to-indigo-50/50 shadow-lg border-b border-purple-100/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="min-h-screen bg-background">
+      {/* App Header */}
+      <AppHeader />
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Page Header */}
+        <div className="mb-8">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-600 to-emerald-700 flex items-center justify-center shadow-lg">
-                <Settings className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Gestión de Servicios</h1>
-                <p className="text-gray-600">Administra los servicios disponibles en tu cowork</p>
-              </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Servicios</h1>
+              <p className="text-gray-600 mt-2">Gestiona el catálogo de servicios de tu coworking</p>
             </div>
-            <Button 
-              onClick={() => setShowCreateModal(true)}
-              className="bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 text-white shadow-lg"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nuevo Servicio
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button 
+                onClick={handleCreatePredefinedServices}
+                variant="outline"
+                disabled={isCreatingPredefined}
+                className="border-purple-300 text-purple-700 hover:bg-purple-50"
+              >
+                {isCreatingPredefined ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Creando...
+                  </>
+                ) : (
+                  <>
+                    <Package className="h-4 w-4 mr-2" />
+                    Servicios Predefinidos
+                  </>
+                )}
+              </Button>
+              <Button 
+                onClick={() => setShowCreateModal(true)}
+                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-purple"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Nuevo Servicio
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards */}
         {stats && (
-          <div className="mb-8">
-            <Card className="bg-gradient-to-br from-white to-green-50/30 border-green-100 shadow-xl overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-600 text-white">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="h-12 w-12 rounded-xl bg-white/20 flex items-center justify-center shadow-lg">
-                      <Settings className="h-6 w-6 text-white" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl font-bold text-white">Estadísticas de Servicios</CardTitle>
-                      <p className="text-green-100 mt-1">Resumen de la gestión de servicios</p>
-                    </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200 shadow-purple hover-lift transition-all">
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <Settings className="h-8 w-8 text-brand-purple" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-muted-foreground">Total Servicios</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {stats.totalServices}
+                    </p>
+                    <p className="text-xs text-brand-purple flex items-center mt-1">
+                      <Settings className="h-3 w-3 mr-1" />
+                      Catálogo completo
+                    </p>
                   </div>
                 </div>
-              </CardHeader>
-              
-              <CardContent className="p-0">
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 border-b border-green-100">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div className="text-center bg-white/60 rounded-xl p-4 shadow-sm">
-                      <div className="flex items-center justify-center mb-3">
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-                          <Settings className="h-5 w-5 text-white" />
-                        </div>
-                      </div>
-                      <span className="text-2xl font-bold text-blue-900">{stats.totalServices}</span>
-                      <p className="text-sm text-blue-600 font-medium mt-1">Total Servicios</p>
-                    </div>
-                    
-                    <div className="text-center bg-white/60 rounded-xl p-4 shadow-sm">
-                      <div className="flex items-center justify-center mb-3">
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-                          <CheckCircle className="h-5 w-5 text-white" />
-                        </div>
-                      </div>
-                      <span className="text-2xl font-bold text-green-900">{stats.activeServices}</span>
-                      <p className="text-sm text-green-600 font-medium mt-1">Activos</p>
-                    </div>
-                    
-                    <div className="text-center bg-white/60 rounded-xl p-4 shadow-sm">
-                      <div className="flex items-center justify-center mb-3">
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
-                          <Package className="h-5 w-5 text-white" />
-                        </div>
-                      </div>
-                      <span className="text-2xl font-bold text-purple-900">{stats.categoriesCount}</span>
-                      <p className="text-sm text-purple-600 font-medium mt-1">Categorías</p>
-                    </div>
-                    
-                    <div className="text-center bg-white/60 rounded-xl p-4 shadow-sm">
-                      <div className="flex items-center justify-center mb-3">
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center">
-                          <DollarSign className="h-5 w-5 text-white" />
-                        </div>
-                      </div>
-                      <span className="text-2xl font-bold text-emerald-900">${stats.averagePrice.toFixed(0)}</span>
-                      <p className="text-sm text-emerald-600 font-medium mt-1">Precio Promedio</p>
-                    </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 shadow-soft hover-lift transition-all">
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <CheckCircle className="h-8 w-8 text-success" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-muted-foreground">Servicios Activos</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {stats.activeServices}
+                    </p>
+                    <p className="text-xs text-success flex items-center mt-1">
+                      <Activity className="h-3 w-3 mr-1" />
+                      Disponibles
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200 shadow-soft hover-lift transition-all">
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <Package className="h-8 w-8 text-warning" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-muted-foreground">Categorías</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {stats.categoriesCount}
+                    </p>
+                    <p className="text-xs text-warning flex items-center mt-1">
+                      <Layers className="h-3 w-3 mr-1" />
+                      Tipos de servicio
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200 shadow-soft hover-lift transition-all">
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <DollarSign className="h-8 w-8 text-brand-blue" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-muted-foreground">Precio Promedio</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      ${stats.averagePrice.toFixed(0)}
+                    </p>
+                    <p className="text-xs text-brand-blue flex items-center mt-1">
+                      <TrendingUp className="h-3 w-3 mr-1" />
+                      Por servicio
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -326,9 +355,10 @@ export default function ServicesPage() {
           </div>
         )}
 
-        {/* Controls */}
-        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between mb-6">
-          <div className="flex flex-col sm:flex-row gap-3 flex-1">
+
+        {/* Filters and Tabs */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row gap-4 flex-1">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
@@ -355,46 +385,86 @@ export default function ServicesPage() {
           </div>
 
           <div className="flex gap-2">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList>
+                <TabsTrigger value="all">Todos</TabsTrigger>
+                <TabsTrigger value="active">Activos</TabsTrigger>
+                <TabsTrigger value="inactive">Inactivos</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            
             <Button 
               variant="outline" 
               onClick={handleCreatePredefinedServices}
               disabled={isCreatingPredefined}
-              className="gap-2"
+              className="border-purple-300 text-purple-700 hover:bg-purple-50"
             >
               {isCreatingPredefined ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creando...
+                </>
               ) : (
-                <Download className="h-4 w-4" />
+                <>
+                  <Download className="h-4 w-4 mr-2" />
+                  Servicios Predefinidos
+                </>
               )}
-              Servicios Predefinidos
             </Button>
           </div>
         </div>
 
         {/* Services Table */}
-        <Card className="bg-white/80 backdrop-blur-sm border-gray-200 shadow-lg">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-xl font-bold text-gray-900">Lista de Servicios</CardTitle>
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-auto">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="all">Todos</TabsTrigger>
-                  <TabsTrigger value="active">Activos</TabsTrigger>
-                  <TabsTrigger value="inactive">Inactivos</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
+        <div className="bg-white rounded-lg shadow-sm border">
+          <div className="p-6">
             <ServicesTable
               services={services}
               isLoading={isLoading}
               onEdit={handleServiceEdit}
               onDelete={handleServiceDeleted}
             />
-          </CardContent>
-        </Card>
-      </div>
+            
+            {services.length === 0 && !isLoading && (
+              <div className="text-center py-12">
+                <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No hay servicios
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Comienza creando tu primer servicio o importando servicios predefinidos.
+                </p>
+                <div className="flex gap-3 justify-center">
+                  <Button 
+                    onClick={() => setShowCreateModal(true)}
+                    className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-purple"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Crear Servicio
+                  </Button>
+                  <Button 
+                    onClick={handleCreatePredefinedServices}
+                    variant="outline"
+                    disabled={isCreatingPredefined}
+                    className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                  >
+                    {isCreatingPredefined ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Creando...
+                      </>
+                    ) : (
+                      <>
+                        <Package className="h-4 w-4 mr-2" />
+                        Servicios Predefinidos
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
 
       {/* Create Service Modal */}
       <CreateServiceModal
