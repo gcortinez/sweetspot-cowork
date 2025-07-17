@@ -116,6 +116,7 @@ export default function EditServiceModal({ service, isOpen, onClose, onServiceUp
   const [tags, setTags] = useState<string[]>([])
   const [newTag, setNewTag] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const { toast } = useToast()
 
   // Load service data when modal opens
@@ -140,6 +141,7 @@ export default function EditServiceModal({ service, isOpen, onClose, onServiceUp
       
       setPricingTiers(Array.isArray(service.pricingTiers) ? service.pricingTiers : [])
       setTags(Array.isArray(service.tags) ? service.tags : [])
+      setErrors({}) // Clear any previous errors
     }
   }, [isOpen, service])
 
@@ -226,6 +228,7 @@ export default function EditServiceModal({ service, isOpen, onClose, onServiceUp
       const result = await response.json()
       
       if (response.ok && result.success) {
+        setErrors({}) // Clear errors on success
         toast({
           title: "Servicio actualizado",
           description: "El servicio ha sido actualizado exitosamente",
