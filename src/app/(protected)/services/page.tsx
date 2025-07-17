@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast'
 import ServicesTable from '@/components/services/ServicesTable'
 import CreateServiceModal from '@/components/services/CreateServiceModal'
 import EditServiceModal from '@/components/services/EditServiceModal'
+import ServiceDetailModal from '@/components/services/ServiceDetailModal'
 import {
   Settings,
   Plus,
@@ -115,6 +116,7 @@ export default function ServicesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [editingService, setEditingService] = useState<Service | null>(null)
+  const [detailService, setDetailService] = useState<Service | null>(null)
   const [isCreatingPredefined, setIsCreatingPredefined] = useState(false)
   const { toast } = useToast()
 
@@ -229,6 +231,15 @@ export default function ServicesPage() {
 
   const handleServiceEdit = (service: Service) => {
     setEditingService(service)
+  }
+
+  const handleServiceDetail = (service: Service) => {
+    setDetailService(service)
+  }
+
+  const handleServiceDetailEdit = (service: Service) => {
+    setDetailService(null) // Close detail modal
+    setEditingService(service) // Open edit modal
   }
 
   useEffect(() => {
@@ -422,6 +433,7 @@ export default function ServicesPage() {
               isLoading={isLoading}
               onEdit={handleServiceEdit}
               onDelete={handleServiceDeleted}
+              onDetail={handleServiceDetail}
             />
             
             {services.length === 0 && !isLoading && (
@@ -479,6 +491,14 @@ export default function ServicesPage() {
         isOpen={!!editingService}
         onClose={() => setEditingService(null)}
         onServiceUpdated={handleServiceUpdated}
+      />
+
+      {/* Service Detail Modal */}
+      <ServiceDetailModal
+        service={detailService}
+        isOpen={!!detailService}
+        onClose={() => setDetailService(null)}
+        onEdit={handleServiceDetailEdit}
       />
     </div>
   )

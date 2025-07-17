@@ -67,6 +67,7 @@ interface ServicesTableProps {
   services: Service[]
   onEdit: (service: Service) => void
   onDelete: (serviceId: string) => void
+  onDetail?: (service: Service) => void
   isLoading?: boolean
 }
 
@@ -136,6 +137,7 @@ export default function ServicesTable({
   services, 
   onEdit, 
   onDelete, 
+  onDetail,
   isLoading = false
 }: ServicesTableProps) {
   const formatPrice = (price: number, unit: string) => {
@@ -222,7 +224,11 @@ export default function ServicesTable({
             </TableRow>
           ) : (
             services.map((service) => (
-            <TableRow key={service.id}>
+            <TableRow 
+              key={service.id}
+              className={onDetail ? "cursor-pointer hover:bg-gray-50" : ""}
+              onClick={() => onDetail?.(service)}
+            >
               <TableCell className="font-medium">
                 <div className="space-y-1">
                   <div className="font-semibold">{service.name}</div>
@@ -304,17 +310,32 @@ export default function ServicesTable({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                    {onDetail && (
+                      <DropdownMenuItem onClick={(e) => {
+                        e.stopPropagation()
+                        onDetail(service)
+                      }}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        Ver Detalle
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => navigator.clipboard.writeText(service.id)}>
                       <Copy className="mr-2 h-4 w-4" />
                       Copiar ID
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => onEdit(service)}>
+                    <DropdownMenuItem onClick={(e) => {
+                      e.stopPropagation()
+                      onEdit(service)
+                    }}>
                       <Edit className="mr-2 h-4 w-4" />
                       Editar
                     </DropdownMenuItem>
                     <DropdownMenuItem 
-                      onClick={() => handleDelete(service.id, service.name)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDelete(service.id, service.name)
+                      }}
                       className="text-red-600 focus:text-red-600"
                     >
                       <Trash2 className="mr-2 h-4 w-4" />

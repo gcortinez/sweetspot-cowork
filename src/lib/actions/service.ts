@@ -651,9 +651,23 @@ export async function createCoworkingServicesAction(): Promise<ActionResult<any>
       },
     ]
 
-    // Create services
+    // Check which services already exist to avoid duplicates
+    const existingServices = await prisma.service.findMany({
+      where: {
+        tenantId,
+        name: {
+          in: predefinedServices.map(s => s.name)
+        }
+      },
+      select: { name: true }
+    })
+
+    const existingServiceNames = new Set(existingServices.map(s => s.name))
+    const servicesToCreate = predefinedServices.filter(s => !existingServiceNames.has(s.name))
+
+    // Create only non-existing services
     const createdServices = []
-    for (const serviceData of predefinedServices) {
+    for (const serviceData of servicesToCreate) {
       const service = await prisma.service.create({
         data: {
           tenantId,
@@ -675,12 +689,34 @@ export async function createCoworkingServicesAction(): Promise<ActionResult<any>
       createdServices.push(service)
     }
 
+    // Build response message
+    const totalPredefined = predefinedServices.length
+    const alreadyExisting = existingServices.length
+    const newlyCreated = createdServices.length
+
+    let message = ''
+    if (newlyCreated > 0 && alreadyExisting > 0) {
+      message = `${newlyCreated} servicios nuevos creados, ${alreadyExisting} ya existían`
+    } else if (newlyCreated > 0) {
+      message = `${newlyCreated} servicios predefinidos creados exitosamente`
+    } else {
+      message = `Todos los servicios predefinidos (${totalPredefined}) ya existen`
+    }
+
     // revalidatePath('/services') // Removed to avoid client component issues
     
     return { 
       success: true, 
-      data: createdServices,
-      message: `${createdServices.length} servicios predefinidos creados exitosamente` 
+      data: {
+        created: createdServices,
+        existing: existingServices,
+        summary: {
+          total: totalPredefined,
+          created: newlyCreated,
+          existing: alreadyExisting
+        }
+      },
+      message 
     }
 
   } catch (error: any) {
