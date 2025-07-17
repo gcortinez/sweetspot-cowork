@@ -27,13 +27,14 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const data = await request.json()
+    const { id } = await params
     
     const result = await updateServiceAction({
-      serviceId: params.id,
+      serviceId: id,
       ...data
     })
     

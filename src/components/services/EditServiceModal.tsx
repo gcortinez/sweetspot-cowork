@@ -60,22 +60,14 @@ interface PricingTier {
 }
 
 const SERVICE_CATEGORIES = [
-  { value: 'PRINTING', label: 'Impresión' },
-  { value: 'COFFEE', label: 'Café' },
-  { value: 'FOOD', label: 'Comida' },
-  { value: 'PARKING', label: 'Estacionamiento' },
-  { value: 'STORAGE', label: 'Almacenamiento' },
-  { value: 'MAIL', label: 'Correo' },
-  { value: 'PHONE', label: 'Teléfono' },
-  { value: 'INTERNET', label: 'Internet' },
-  { value: 'CLEANING', label: 'Limpieza' },
-  { value: 'BUSINESS_SUPPORT', label: 'Soporte Empresarial' },
-  { value: 'EVENT_SERVICES', label: 'Servicios de Eventos' },
-  { value: 'WELLNESS', label: 'Bienestar' },
-  { value: 'TRANSPORTATION', label: 'Transporte' },
-  { value: 'CONSULTING', label: 'Consultoría' },
-  { value: 'MAINTENANCE', label: 'Mantenimiento' },
+  { value: 'CORE_SERVICES', label: 'Servicios Principales' },
+  { value: 'ADD_ON_SERVICES', label: 'Servicios Adicionales' },
+  { value: 'PREMIUM_SERVICES', label: 'Servicios Premium' },
+  { value: 'PACKAGE_SERVICES', label: 'Paquetes de Servicios' },
+  { value: 'CUSTOM_SERVICES', label: 'Servicios Personalizados' },
+  { value: 'RECURRING_SERVICES', label: 'Servicios Recurrentes' },
 ]
+
 
 const SERVICE_TYPES = [
   { value: 'CONSUMABLE', label: 'Consumible', description: 'Artículos físicos que se consumen' },
@@ -177,6 +169,27 @@ export default function EditServiceModal({ service, isOpen, onClose, onServiceUp
     setTags(prev => prev.filter(tag => tag !== tagToRemove))
   }
 
+  // Helper function to transform availability string to object
+  const transformAvailability = (availabilityString: string) => {
+    switch (availabilityString) {
+      case 'ALWAYS':
+        return { isAlwaysAvailable: true }
+      case 'BUSINESS_HOURS':
+        return { 
+          isAlwaysAvailable: false,
+          availableDays: [1, 2, 3, 4, 5], // Monday to Friday
+          availableHours: { start: '09:00', end: '18:00' }
+        }
+      case 'SCHEDULED':
+        return { 
+          isAlwaysAvailable: false,
+          advanceBookingRequired: 24
+        }
+      default:
+        return { isAlwaysAvailable: false }
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -196,19 +209,14 @@ export default function EditServiceModal({ service, isOpen, onClose, onServiceUp
         id: service.id,
         name: formData.name,
         description: formData.description || undefined,
+        type: formData.serviceType, // Map serviceType to type field expected by schema
         category: formData.category,
-        serviceType: formData.serviceType,
-        price: parseFloat(formData.price),
-        unit: formData.unit,
-        availability: formData.availability,
-        maxQuantity: formData.maxQuantity ? parseInt(formData.maxQuantity) : undefined,
-        minimumOrder: parseInt(formData.minimumOrder),
-        requiresApproval: formData.requiresApproval,
-        estimatedDeliveryTime: formData.estimatedDeliveryTime || undefined,
-        instructions: formData.instructions || undefined,
-        dynamicPricing: formData.dynamicPricing,
-        isActive: formData.isActive,
-        pricingTiers: pricingTiers.length > 0 ? pricingTiers : undefined,
+        pricing: {
+          basePrice: parseFloat(formData.price),
+          currency: 'USD',
+          pricingModel: 'FIXED'
+        },
+        availability: transformAvailability(formData.availability),
         tags: tags.length > 0 ? tags : undefined,
         metadata: {
           ...service.metadata,
