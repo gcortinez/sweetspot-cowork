@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useApi } from "@/hooks/use-api";
-import { useClients, useCreateLead } from "@/hooks/use-clients";
+import { useCreateLead } from "@/hooks/use-clients";
 
 interface CreateLeadModalProps {
   onLeadCreated?: () => void;
@@ -97,13 +97,37 @@ export default function CreateLeadModal({ onLeadCreated, isOpen: externalIsOpen,
   const { toast } = useToast();
   const api = useApi();
   
-  // Use React Query for data fetching
-  const { data: clients = [], isLoading: isLoadingClients } = useClients();
+  // State for lazy-loaded clients
+  const [clients, setClients] = useState<Client[]>([]);
+  const [isLoadingClients, setIsLoadingClients] = useState(false);
   const createLeadMutation = useCreateLead();
 
   // Use external state if provided, otherwise use internal state
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
   const setIsOpen = onClose ? onClose : setInternalIsOpen;
+
+  // Load clients only when needed (when client search is opened)
+  const loadClients = async () => {
+    if (clients.length > 0) return; // Already loaded
+    
+    try {
+      setIsLoadingClients(true);
+      const response = await api.get('/api/clients');
+      if (response.ok) {
+        const data = await response.json();
+        setClients(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error loading clients:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los clientes",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingClients(false);
+    }
+  };
 
 
   const handleInputChange = (field: keyof CreateLeadForm, value: string) => {
@@ -204,7 +228,7 @@ export default function CreateLeadModal({ onLeadCreated, isOpen: externalIsOpen,
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-[95vw] sm:max-w-2xl lg:max-w-3xl max-h-[90vh] overflow-y-auto p-0">
         <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 border-b">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold flex items-center gap-2">
@@ -226,7 +250,7 @@ export default function CreateLeadModal({ onLeadCreated, isOpen: externalIsOpen,
               <User className="h-4 w-4 text-brand-blue" />
               <span>Información Personal</span>
             </div>
-            <div className="grid grid-cols-2 gap-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 p-4 rounded-lg border border-blue-200">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 p-4 rounded-lg border border-blue-200">
               <div className="space-y-2">
                 <Label htmlFor="firstName" className="text-sm font-medium flex items-center gap-1 text-foreground">
                   Nombre <span className="text-destructive">*</span>
@@ -262,7 +286,7 @@ export default function CreateLeadModal({ onLeadCreated, isOpen: externalIsOpen,
               <Mail className="h-4 w-4 text-brand-green" />
               <span>Información de Contacto</span>
             </div>
-            <div className="grid grid-cols-2 gap-4 bg-gradient-to-r from-green-50/50 to-emerald-50/50 p-4 rounded-lg border border-green-200">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gradient-to-r from-green-50/50 to-emerald-50/50 p-4 rounded-lg border border-green-200">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium flex items-center gap-1 text-foreground">
                   Email <span className="text-destructive">*</span>
@@ -305,7 +329,7 @@ export default function CreateLeadModal({ onLeadCreated, isOpen: externalIsOpen,
               <Building2 className="h-4 w-4 text-brand-blue" />
               <span>Información Empresarial</span>
             </div>
-            <div className="grid grid-cols-2 gap-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 p-4 rounded-lg border border-blue-200">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 p-4 rounded-lg border border-blue-200">
               <div className="space-y-2">
                 <Label htmlFor="company" className="text-sm font-medium text-foreground">
                   Empresa
@@ -350,7 +374,10 @@ export default function CreateLeadModal({ onLeadCreated, isOpen: externalIsOpen,
               <div className="space-y-4">
                 {/* Client Selection */}
                 <div className="flex gap-2">
-                  <Popover open={showClientSearch} onOpenChange={setShowClientSearch}>
+                  <Popover open={showClientSearch} onOpenChange={(open) => {
+                    setShowClientSearch(open);
+                    if (open) loadClients();
+                  }}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
@@ -469,7 +496,7 @@ export default function CreateLeadModal({ onLeadCreated, isOpen: externalIsOpen,
               <Globe className="h-4 w-4 text-brand-purple" />
               <span>Origen del Prospecto</span>
             </div>
-            <div className="grid grid-cols-2 gap-4 bg-gradient-to-r from-purple-50/50 to-indigo-50/50 p-4 rounded-lg border border-purple-200">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gradient-to-r from-purple-50/50 to-indigo-50/50 p-4 rounded-lg border border-purple-200">
               <div className="space-y-2">
                 <Label htmlFor="source" className="text-sm font-medium flex items-center gap-1 text-foreground">
                   Origen <span className="text-destructive">*</span>
@@ -511,7 +538,7 @@ export default function CreateLeadModal({ onLeadCreated, isOpen: externalIsOpen,
               <DollarSign className="h-4 w-4 text-success" />
               <span>Información Comercial</span>
             </div>
-            <div className="grid grid-cols-2 gap-4 bg-gradient-to-r from-green-50/50 to-emerald-50/50 p-4 rounded-lg border border-green-200">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gradient-to-r from-green-50/50 to-emerald-50/50 p-4 rounded-lg border border-green-200">
               <div className="space-y-2">
                 <Label htmlFor="budget" className="text-sm font-medium text-foreground">
                   Presupuesto estimado (CLP)

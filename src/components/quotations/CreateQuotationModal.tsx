@@ -24,7 +24,7 @@ import {
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { createQuotationAction } from '@/lib/actions/quotations'
-import { useClients } from '@/hooks/use-clients'
+import { useApi } from '@/hooks/use-api'
 import ServiceSelector from '@/components/services/ServiceSelector'
 
 interface CreateQuotationModalProps {
@@ -69,7 +69,41 @@ export default function CreateQuotationModal({
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
-  const { data: clients = [], isLoading: isLoadingClients } = useClients()
+  const api = useApi()
+  
+  // State for lazy-loaded clients
+  const [clients, setClients] = useState<any[]>([])
+  const [isLoadingClients, setIsLoadingClients] = useState(false)
+
+  // Load clients only when modal is opened
+  const loadClients = async () => {
+    if (clients.length > 0) return // Already loaded
+    
+    try {
+      setIsLoadingClients(true)
+      const response = await api.get('/api/clients')
+      if (response.ok) {
+        const data = await response.json()
+        setClients(data.data || [])
+      }
+    } catch (error) {
+      console.error('Error loading clients:', error)
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los clientes",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoadingClients(false)
+    }
+  }
+
+  // Load clients when modal opens
+  React.useEffect(() => {
+    if (isOpen && !clientId) {
+      loadClients()
+    }
+  }, [isOpen, clientId])
 
   // Calculate totals
   const subtotal = selectedServices.reduce((sum, service) => sum + service.total, 0)
@@ -193,7 +227,7 @@ export default function CreateQuotationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] sm:max-w-4xl lg:max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-full bg-gradient-to-br from-green-500 to-blue-600 flex items-center justify-center">
@@ -216,7 +250,7 @@ export default function CreateQuotationModal({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="title">Título de la Cotización <span className="text-red-500">*</span></Label>
                   <Input
@@ -328,7 +362,7 @@ export default function CreateQuotationModal({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="discounts">Descuentos ({formData.currency})</Label>
                   <Input

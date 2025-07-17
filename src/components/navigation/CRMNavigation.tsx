@@ -4,6 +4,13 @@ import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu'
 import { 
   Building2, 
   Target, 
@@ -15,7 +22,9 @@ import {
   Users,
   Calendar,
   Settings,
-  Home
+  Home,
+  MoreHorizontal,
+  ChevronDown
 } from 'lucide-react'
 
 interface CRMNavigationProps {
@@ -85,72 +94,176 @@ export default function CRMNavigation({ onCreateLead, onCreateQuotation }: CRMNa
     return pathname.startsWith(href)
   }
 
+  // Split navigation items for mobile
+  const primaryItems = navigationItems.slice(0, 4) // Show first 4 items always
+  const secondaryItems = navigationItems.slice(4) // Rest in dropdown
+
   return (
     <div className="bg-white border-b border-gray-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between py-4">
+        <div className="flex items-center justify-between py-3 lg:py-4">
           {/* Navigation Items */}
-          <nav className="flex items-center space-x-1">
-            {navigationItems.map((item) => {
-              const Icon = item.icon
-              const active = isActive(item.href)
+          <nav className="flex items-center">
+            {/* Mobile: Horizontal scroll for primary items */}
+            <div className="flex items-center space-x-1 overflow-x-auto scrollbar-hide mobile-nav-scroll touch-pan-x lg:space-x-2">
+              {primaryItems.map((item) => {
+                const Icon = item.icon
+                const active = isActive(item.href)
+                
+                return (
+                  <Link key={item.href} href={item.href}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={`whitespace-nowrap transition-colors mobile-nav-item ${
+                        active
+                          ? 'text-purple-700 bg-purple-50 hover:bg-purple-100'
+                          : 'text-gray-600 hover:text-purple-700 hover:bg-purple-50'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">{item.label}</span>
+                    </Button>
+                  </Link>
+                )
+              })}
               
-              return (
-                <Link key={item.href} href={item.href}>
+              {/* Desktop: Show all remaining items */}
+              <div className="hidden lg:flex items-center space-x-1">
+                {secondaryItems.map((item) => {
+                  const Icon = item.icon
+                  const active = isActive(item.href)
+                  
+                  return (
+                    <Link key={item.href} href={item.href}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={`transition-colors ${
+                          active
+                            ? 'text-purple-700 bg-purple-50 hover:bg-purple-100'
+                            : 'text-gray-600 hover:text-purple-700 hover:bg-purple-50'
+                        }`}
+                      >
+                        <Icon className="h-4 w-4 mr-2" />
+                        {item.label}
+                      </Button>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Mobile: More menu dropdown for secondary items */}
+            {secondaryItems.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className={`transition-colors ${
-                      active
-                        ? 'text-purple-700 bg-purple-50 hover:bg-purple-100'
-                        : 'text-gray-600 hover:text-purple-700 hover:bg-purple-50'
-                    }`}
+                    className="ml-1 lg:hidden text-gray-600 hover:text-purple-700 hover:bg-purple-50"
                   >
-                    <Icon className="h-4 w-4 mr-2" />
-                    {item.label}
+                    <MoreHorizontal className="h-4 w-4" />
                   </Button>
-                </Link>
-              )
-            })}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-48">
+                  {secondaryItems.map((item) => {
+                    const Icon = item.icon
+                    const active = isActive(item.href)
+                    
+                    return (
+                      <DropdownMenuItem key={item.href} asChild>
+                        <Link 
+                          href={item.href}
+                          className={`flex items-center ${
+                            active ? 'text-purple-700 bg-purple-50' : ''
+                          }`}
+                        >
+                          <Icon className="h-4 w-4 mr-2" />
+                          {item.label}
+                        </Link>
+                      </DropdownMenuItem>
+                    )
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </nav>
 
           {/* Action Buttons */}
           <div className="flex items-center space-x-2">
-            {/* Nueva Cotización */}
-            {onCreateQuotation && (
-              <Button
-                onClick={onCreateQuotation}
-                size="sm"
-                variant="outline"
-                className="border-purple-300 text-purple-700 hover:bg-purple-50 hover:text-purple-800 transition-colors"
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Nueva Cotización
-              </Button>
-            )}
+            {/* Mobile: Compact actions dropdown */}
+            <div className="lg:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    size="sm"
+                    className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white"
+                  >
+                    <PlusCircle className="h-4 w-4 mr-1" />
+                    <span className="hidden sm:inline">Acciones</span>
+                    <ChevronDown className="h-3 w-3 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  {onCreateLead && (
+                    <DropdownMenuItem onClick={onCreateLead}>
+                      <PlusCircle className="h-4 w-4 mr-2" />
+                      Nuevo Prospecto
+                    </DropdownMenuItem>
+                  )}
+                  {onCreateQuotation && (
+                    <DropdownMenuItem onClick={onCreateQuotation}>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Nueva Cotización
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/quotations">
+                      <FileText className="h-4 w-4 mr-2" />
+                      Ir a Cotizaciones
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
 
-            {/* Nuevo Prospecto */}
-            {onCreateLead && (
-              <Button
-                onClick={onCreateLead}
-                size="sm"
-                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-purple"
-              >
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Nuevo Prospecto
-              </Button>
-            )}
+            {/* Desktop: Full action buttons */}
+            <div className="hidden lg:flex items-center space-x-2">
+              {onCreateQuotation && (
+                <Button
+                  onClick={onCreateQuotation}
+                  size="sm"
+                  variant="outline"
+                  className="border-purple-300 text-purple-700 hover:bg-purple-50 hover:text-purple-800 transition-colors"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Nueva Cotización
+                </Button>
+              )}
 
-            {/* Acceso directo a nueva cotización desde cualquier página */}
-            <Link href="/quotations">
-              <Button
-                size="sm"
-                className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white"
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Ir a Cotizaciones
-              </Button>
-            </Link>
+              {onCreateLead && (
+                <Button
+                  onClick={onCreateLead}
+                  size="sm"
+                  className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white"
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Nuevo Prospecto
+                </Button>
+              )}
+
+              <Link href="/quotations">
+                <Button
+                  size="sm"
+                  className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Ir a Cotizaciones
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>

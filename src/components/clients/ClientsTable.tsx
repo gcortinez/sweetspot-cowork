@@ -154,8 +154,8 @@ export default function ClientsTable({
         </div>
       </div>
 
-      {/* Table */}
-      <div className="border rounded-lg overflow-hidden">
+      {/* Table - Desktop View */}
+      <div className="border rounded-lg overflow-hidden hidden md:block">
         <Table>
           <TableHeader>
             <TableRow className="bg-gradient-to-r from-brand-purple/5 to-purple-50/50">
@@ -269,6 +269,102 @@ export default function ClientsTable({
             )}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Mobile Card Layout */}
+      <div className="md:hidden space-y-3">
+        {clients.length === 0 ? (
+          <div className="border rounded-lg p-8 text-center">
+            <div className="flex flex-col items-center gap-2">
+              <Building2 className="h-12 w-12 text-muted-foreground/50" />
+              <div>
+                <p className="font-medium">No se encontraron clientes</p>
+                <p className="text-sm text-muted-foreground">Ajusta los filtros o crea un nuevo cliente</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          clients.map((client) => (
+            <div key={client.id} className="border rounded-lg p-4 bg-white space-y-3">
+              {/* Client Header */}
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-brand-purple to-purple-700 flex items-center justify-center">
+                    <Building2 className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <div className="font-medium">{client.name}</div>
+                    <div className="text-sm text-muted-foreground">{client.email}</div>
+                  </div>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onViewClient(client.id)}>
+                      <Eye className="h-4 w-4 mr-2" />
+                      Ver detalles
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onEditClient(client)}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => onDeleteClient(client.id)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Eliminar
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              {/* Client Details */}
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <div className="text-muted-foreground">Estado</div>
+                  <Badge className={`${getStatusColor(client.status)} border mt-1`}>
+                    {CLIENT_STATUS_METADATA[client.status].label}
+                  </Badge>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">Oportunidades</div>
+                  <div className="flex items-center gap-1 mt-1">
+                    <Target className="h-4 w-4 text-brand-purple" />
+                    <span className="font-medium">{client._count?.opportunities || 0}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact Info */}
+              {(client.contactPerson || client.phone) && (
+                <div className="border-t pt-3 space-y-1">
+                  {client.contactPerson && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <User className="h-3 w-3 text-muted-foreground" />
+                      <span>{client.contactPerson}</span>
+                    </div>
+                  )}
+                  {client.phone && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Phone className="h-3 w-3" />
+                      <span>{client.phone}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Creation Date */}
+              <div className="text-xs text-muted-foreground border-t pt-2">
+                Creado: {new Date(client.createdAt).toLocaleDateString()}
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Pagination */}

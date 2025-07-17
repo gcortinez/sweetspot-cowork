@@ -513,4 +513,34 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+
+  /* Hide scrollbar for mobile navigation */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+  }
+
+  /* Mobile touch improvements */
+  .touch-pan-x {
+    touch-action: pan-x;
+  }
+
+  .touch-pan-y {
+    touch-action: pan-y;
+  }
+
+  /* Mobile navigation improvements */
+  .mobile-nav-scroll {
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+  }
+
+  .mobile-nav-item {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+  }
 }
