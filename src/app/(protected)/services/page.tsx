@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -53,7 +54,9 @@ import {
   Globe,
   Zap,
   Layers,
-  TrendingUp
+  TrendingUp,
+  Home,
+  ChevronRight
 } from 'lucide-react'
 
 interface Service {
@@ -389,6 +392,28 @@ export default function ServicesPage() {
       <AppHeader />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Breadcrumb */}
+        <div className="mb-6">
+          <nav className="flex" aria-label="Breadcrumb">
+            <ol className="flex items-center space-x-2">
+              <li>
+                <div className="flex items-center">
+                  <Home className="h-4 w-4 text-gray-400" />
+                  <Link href="/dashboard" className="ml-2 text-sm font-medium text-gray-500 hover:text-gray-700">
+                    Dashboard
+                  </Link>
+                </div>
+              </li>
+              <li>
+                <div className="flex items-center">
+                  <ChevronRight className="h-4 w-4 text-gray-400" />
+                  <span className="ml-2 text-sm font-medium text-gray-900">Servicios</span>
+                </div>
+              </li>
+            </ol>
+          </nav>
+        </div>
         
         {/* Page Header */}
         <div className="mb-8">
