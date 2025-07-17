@@ -1,7 +1,7 @@
 // import { revalidatePath } from 'next/cache' // Removed to avoid client component issues
 import { prisma } from '@/lib/prisma'
 import { auth } from '@clerk/nextjs/server'
-import { getUserAction } from '@/lib/actions/user'
+// Remove broken getUserAction import
 import type { ActionResult } from '@/types/database'
 import {
   createServiceSchema,
@@ -29,26 +29,46 @@ import {
 } from '@/lib/validations/service'
 import { PricingCalculator } from '@/lib/utils/pricing'
 
+// Helper function to get user with tenant info using Clerk auth
+async function getUserWithTenant() {
+  const { userId } = await auth()
+  
+  if (!userId) {
+    throw new Error('Authentication required')
+  }
+
+  const dbUser = await prisma.user.findUnique({
+    where: { clerkId: userId },
+    select: { 
+      id: true, 
+      tenantId: true, 
+      role: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      clerkId: true
+    }
+  })
+
+  if (!dbUser) {
+    throw new Error('User not found in database')
+  }
+
+  if (!dbUser.tenantId) {
+    throw new Error('User does not have a tenant assigned')
+  }
+
+  return dbUser
+}
+
 /**
  * Create a new service
  */
 export async function createServiceAction(data: CreateServiceRequest): Promise<ActionResult<any>> {
   try {
     // Get current user and validate auth
-    const { userId } = await auth()
-    if (!userId) {
-      return { success: false, error: 'Authentication required' }
-    }
-
-    const user = await getUserAction(userId)
-    if (!user.success || !user.user) {
-      return { success: false, error: 'User not found' }
-    }
-
-    const tenantId = user.user.tenantId
-    if (!tenantId) {
-      return { success: false, error: 'Tenant context required' }
-    }
+    const user = await getUserWithTenant()
+    const tenantId = user.tenantId
 
     // Validate input data
     const validatedData = createServiceSchema.parse(data)
@@ -110,17 +130,8 @@ export async function createServiceAction(data: CreateServiceRequest): Promise<A
 export async function updateServiceAction(data: UpdateServiceRequest): Promise<ActionResult<any>> {
   try {
     // Get current user and validate auth
-    const { userId } = await auth()
-    if (!userId) {
-      return { success: false, error: 'Authentication required' }
-    }
-
-    const user = await getUserAction(userId)
-    if (!user.success || !user.user) {
-      return { success: false, error: 'User not found' }
-    }
-
-    const tenantId = user.user.tenantId
+    const user = await getUserWithTenant()
+    const tenantId = user.tenantId
     if (!tenantId) {
       return { success: false, error: 'Tenant context required' }
     }
@@ -214,17 +225,8 @@ export async function updateServiceAction(data: UpdateServiceRequest): Promise<A
 export async function deleteServiceAction(data: DeleteServiceRequest): Promise<ActionResult<void>> {
   try {
     // Get current user and validate auth
-    const { userId } = await auth()
-    if (!userId) {
-      return { success: false, error: 'Authentication required' }
-    }
-
-    const user = await getUserAction(userId)
-    if (!user.success || !user.user) {
-      return { success: false, error: 'User not found' }
-    }
-
-    const tenantId = user.user.tenantId
+    const user = await getUserWithTenant()
+    const tenantId = user.tenantId
     if (!tenantId) {
       return { success: false, error: 'Tenant context required' }
     }
@@ -301,17 +303,8 @@ export async function deleteServiceAction(data: DeleteServiceRequest): Promise<A
 export async function getServicesByCategoryAction(category?: string): Promise<ActionResult<any>> {
   try {
     // Get current user and validate auth
-    const { userId } = await auth()
-    if (!userId) {
-      return { success: false, error: 'Authentication required' }
-    }
-
-    const user = await getUserAction(userId)
-    if (!user.success || !user.user) {
-      return { success: false, error: 'User not found' }
-    }
-
-    const tenantId = user.user.tenantId
+    const user = await getUserWithTenant()
+    const tenantId = user.tenantId
     if (!tenantId) {
       return { success: false, error: 'Tenant context required' }
     }
@@ -377,17 +370,8 @@ export async function getServicesByCategoryAction(category?: string): Promise<Ac
 export async function getServicePackagesAction(): Promise<ActionResult<any>> {
   try {
     // Get current user and validate auth
-    const { userId } = await auth()
-    if (!userId) {
-      return { success: false, error: 'Authentication required' }
-    }
-
-    const user = await getUserAction(userId)
-    if (!user.success || !user.user) {
-      return { success: false, error: 'User not found' }
-    }
-
-    const tenantId = user.user.tenantId
+    const user = await getUserWithTenant()
+    const tenantId = user.tenantId
     if (!tenantId) {
       return { success: false, error: 'Tenant context required' }
     }
@@ -445,17 +429,8 @@ export async function getServicePackagesAction(): Promise<ActionResult<any>> {
 export async function createCoworkingServicesAction(): Promise<ActionResult<any>> {
   try {
     // Get current user and validate auth
-    const { userId } = await auth()
-    if (!userId) {
-      return { success: false, error: 'Authentication required' }
-    }
-
-    const user = await getUserAction(userId)
-    if (!user.success || !user.user) {
-      return { success: false, error: 'User not found' }
-    }
-
-    const tenantId = user.user.tenantId
+    const user = await getUserWithTenant()
+    const tenantId = user.tenantId
     if (!tenantId) {
       return { success: false, error: 'Tenant context required' }
     }
@@ -707,17 +682,8 @@ export async function createCoworkingServicesAction(): Promise<ActionResult<any>
 export async function getServiceAction(data: GetServiceRequest): Promise<ActionResult<any>> {
   try {
     // Get current user and validate auth
-    const { userId } = await auth()
-    if (!userId) {
-      return { success: false, error: 'Authentication required' }
-    }
-
-    const user = await getUserAction(userId)
-    if (!user.success || !user.user) {
-      return { success: false, error: 'User not found' }
-    }
-
-    const tenantId = user.user.tenantId
+    const user = await getUserWithTenant()
+    const tenantId = user.tenantId
     if (!tenantId) {
       return { success: false, error: 'Tenant context required' }
     }
@@ -777,17 +743,8 @@ export async function getServiceAction(data: GetServiceRequest): Promise<ActionR
 export async function listServicesAction(data: ListServicesRequest = {}): Promise<ActionResult<any>> {
   try {
     // Get current user and validate auth
-    const { userId } = await auth()
-    if (!userId) {
-      return { success: false, error: 'Authentication required' }
-    }
-
-    const user = await getUserAction(userId)
-    if (!user.success || !user.user) {
-      return { success: false, error: 'User not found' }
-    }
-
-    const tenantId = user.user.tenantId
+    const user = await getUserWithTenant()
+    const tenantId = user.tenantId
     if (!tenantId) {
       return { success: false, error: 'Tenant context required' }
     }
@@ -902,17 +859,8 @@ export async function listServicesAction(data: ListServicesRequest = {}): Promis
 export async function checkServiceAvailabilityAction(data: CheckServiceAvailabilityRequest): Promise<ActionResult<any>> {
   try {
     // Get current user and validate auth
-    const { userId } = await auth()
-    if (!userId) {
-      return { success: false, error: 'Authentication required' }
-    }
-
-    const user = await getUserAction(userId)
-    if (!user.success || !user.user) {
-      return { success: false, error: 'User not found' }
-    }
-
-    const tenantId = user.user.tenantId
+    const user = await getUserWithTenant()
+    const tenantId = user.tenantId
     if (!tenantId) {
       return { success: false, error: 'Tenant context required' }
     }
@@ -1084,17 +1032,8 @@ export async function checkServiceAvailabilityAction(data: CheckServiceAvailabil
 export async function bulkUpdateServicesAction(data: BulkUpdateServicesRequest): Promise<ActionResult<any>> {
   try {
     // Get current user and validate auth
-    const { userId } = await auth()
-    if (!userId) {
-      return { success: false, error: 'Authentication required' }
-    }
-
-    const user = await getUserAction(userId)
-    if (!user.success || !user.user) {
-      return { success: false, error: 'User not found' }
-    }
-
-    const tenantId = user.user.tenantId
+    const user = await getUserWithTenant()
+    const tenantId = user.tenantId
     if (!tenantId) {
       return { success: false, error: 'Tenant context required' }
     }
@@ -1189,17 +1128,8 @@ export async function bulkUpdateServicesAction(data: BulkUpdateServicesRequest):
 export async function getServiceStatsAction(data: GetServiceStatsRequest = {}): Promise<ActionResult<any>> {
   try {
     // Get current user and validate auth
-    const { userId } = await auth()
-    if (!userId) {
-      return { success: false, error: 'Authentication required' }
-    }
-
-    const user = await getUserAction(userId)
-    if (!user.success || !user.user) {
-      return { success: false, error: 'User not found' }
-    }
-
-    const tenantId = user.user.tenantId
+    const user = await getUserWithTenant()
+    const tenantId = user.tenantId
     if (!tenantId) {
       return { success: false, error: 'Tenant context required' }
     }
@@ -1277,17 +1207,8 @@ export async function getServiceStatsAction(data: GetServiceStatsRequest = {}): 
 export async function calculateServicePricingAction(data: CalculateServicePricingRequest): Promise<ActionResult<any>> {
   try {
     // Get current user and validate auth
-    const { userId } = await auth()
-    if (!userId) {
-      return { success: false, error: 'Authentication required' }
-    }
-
-    const user = await getUserAction(userId)
-    if (!user.success || !user.user) {
-      return { success: false, error: 'User not found' }
-    }
-
-    const tenantId = user.user.tenantId
+    const user = await getUserWithTenant()
+    const tenantId = user.tenantId
     if (!tenantId) {
       return { success: false, error: 'Tenant context required' }
     }
@@ -1475,17 +1396,8 @@ export async function calculateServicePricingAction(data: CalculateServicePricin
 export async function createServicePackageAction(data: CreateServicePackageRequest): Promise<ActionResult<any>> {
   try {
     // Get current user and validate auth
-    const { userId } = await auth()
-    if (!userId) {
-      return { success: false, error: 'Authentication required' }
-    }
-
-    const user = await getUserAction(userId)
-    if (!user.success || !user.user) {
-      return { success: false, error: 'User not found' }
-    }
-
-    const tenantId = user.user.tenantId
+    const user = await getUserWithTenant()
+    const tenantId = user.tenantId
     if (!tenantId) {
       return { success: false, error: 'Tenant context required' }
     }
@@ -1555,17 +1467,8 @@ export async function createServicePackageAction(data: CreateServicePackageReque
 export async function updateServicePackageAction(data: UpdateServicePackageRequest): Promise<ActionResult<any>> {
   try {
     // Get current user and validate auth
-    const { userId } = await auth()
-    if (!userId) {
-      return { success: false, error: 'Authentication required' }
-    }
-
-    const user = await getUserAction(userId)
-    if (!user.success || !user.user) {
-      return { success: false, error: 'User not found' }
-    }
-
-    const tenantId = user.user.tenantId
+    const user = await getUserWithTenant()
+    const tenantId = user.tenantId
     if (!tenantId) {
       return { success: false, error: 'Tenant context required' }
     }
