@@ -8,7 +8,7 @@ const nextConfig = {
   experimental: {
     // Enable server actions (object format for Next.js 15)
     serverActions: {
-      allowedOrigins: ['localhost:3000', 'sweetspotcowork.com'],
+      allowedOrigins: ['localhost:3000', 'sweetspotcowork.com', 'sweetspot-cowork.vercel.app'],
       bodySizeLimit: '2mb',
     },
   },
@@ -36,6 +36,7 @@ const nextConfig = {
       'localhost',
       'sweetspotcowork.com',
       'cdn.sweetspotcowork.com',
+      'sweetspot-cowork.vercel.app',
       // Supabase storage domain
       process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('https://', '').replace('http://', '') || '',
     ],
@@ -235,11 +236,11 @@ if (process.env.NODE_ENV === 'production') {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://*.clerk.accounts.dev",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.clerk.accounts.dev",
+              "font-src 'self' https://fonts.gstatic.com https://*.clerk.accounts.dev",
               "img-src 'self' data: https: blob:",
-              "connect-src 'self' https:",
+              "connect-src 'self' https: https://*.clerk.accounts.dev",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
