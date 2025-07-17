@@ -35,6 +35,7 @@ export const nameSchema = z
 
 // ID validation
 export const uuidSchema = z.string().uuid('Invalid ID format')
+export const cuidSchema = z.string().regex(/^c[a-z0-9]{24}$/, 'Invalid CUID format')
 
 export const slugSchema = z
   .string()

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { cuidSchema } from './common'
 
 // Enums for service-related fields
 export const ServiceTypeSchema = z.enum([
@@ -125,17 +126,17 @@ export const createServiceSchema = baseServiceSchema
 
 // Update service schema (all fields optional except ID)
 export const updateServiceSchema = z.object({
-  id: z.string().uuid('Invalid service ID'),
+  id: cuidSchema,
 }).merge(baseServiceSchema.partial())
 
 // Delete service schema
 export const deleteServiceSchema = z.object({
-  id: z.string().uuid('Invalid service ID'),
+  id: cuidSchema,
 })
 
 // Get service schema
 export const getServiceSchema = z.object({
-  id: z.string().uuid('Invalid service ID'),
+  id: cuidSchema,
 })
 
 // List services schema
@@ -159,7 +160,7 @@ export const listServicesSchema = z.object({
 
 // Service availability check schema
 export const checkServiceAvailabilitySchema = z.object({
-  serviceId: z.string().uuid('Invalid service ID'),
+  serviceId: cuidSchema,
   date: z.date({
     required_error: 'Date is required',
     invalid_type_error: 'Date must be a valid date',
@@ -172,7 +173,7 @@ export const checkServiceAvailabilitySchema = z.object({
 
 // Bulk update services schema
 export const bulkUpdateServicesSchema = z.object({
-  serviceIds: z.array(z.string().uuid('Invalid service ID')).min(1, 'At least one service ID is required'),
+  serviceIds: z.array(cuidSchema).min(1, 'At least one service ID is required'),
   updates: z.object({
     status: ServiceStatusSchema.optional(),
     category: ServiceCategorySchema.optional(),
@@ -191,7 +192,7 @@ export const bulkUpdateServicesSchema = z.object({
 
 // Service statistics schema
 export const getServiceStatsSchema = z.object({
-  serviceId: z.string().uuid('Invalid service ID').optional(),
+  serviceId: cuidSchema.optional(),
   startDate: z.date().optional(),
   endDate: z.date().optional(),
   groupBy: z.enum(['day', 'week', 'month']).default('day'),
@@ -199,7 +200,7 @@ export const getServiceStatsSchema = z.object({
 
 // Service pricing calculation schema
 export const calculateServicePricingSchema = z.object({
-  serviceId: z.string().uuid('Invalid service ID'),
+  serviceId: cuidSchema,
   quantity: z.number().int().min(1, 'Quantity must be at least 1').default(1),
   duration: z.number().positive('Duration must be positive').optional(), // in hours
   date: z.date({
@@ -217,7 +218,7 @@ export const servicePackageSchema = z.object({
   name: z.string().min(1, 'Package name is required').max(100, 'Name must be less than 100 characters'),
   description: z.string().max(500, 'Description must be less than 500 characters').optional(),
   services: z.array(z.object({
-    serviceId: z.string().uuid('Invalid service ID'),
+    serviceId: cuidSchema,
     quantity: z.number().int().min(1, 'Quantity must be at least 1').default(1),
     isRequired: z.boolean().default(true),
     discountPercentage: z.number().min(0).max(100).optional(),
