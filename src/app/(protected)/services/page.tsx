@@ -176,6 +176,49 @@ export default function ServicesPage() {
     }
   }
 
+  const handleDeleteAllServices = async () => {
+    if (!window.confirm('¿Estás seguro de que quieres eliminar TODOS los servicios? Esta acción no se puede deshacer.')) {
+      return
+    }
+    
+    try {
+      setIsLoading(true)
+      
+      const response = await fetch('/api/services', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'deleteAll' })
+      })
+      
+      const result = await response.json()
+      
+      if (response.ok && result.success) {
+        toast({
+          title: "Servicios eliminados",
+          description: "Se han eliminado todos los servicios exitosamente",
+        })
+        loadServices()
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al eliminar los servicios",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error('Error deleting all services:', error)
+      toast({
+        title: "Error",
+        description: "Error al eliminar los servicios",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const handleCreatePredefinedServices = async () => {
     try {
       setIsCreatingPredefined(true)
@@ -261,6 +304,14 @@ export default function ServicesPage() {
               <p className="text-gray-600 mt-2">Gestiona el catálogo de servicios de tu coworking</p>
             </div>
             <div className="flex items-center gap-3">
+              <Button 
+                onClick={handleDeleteAllServices}
+                variant="outline"
+                className="border-red-300 text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Eliminar Todos
+              </Button>
               <Button 
                 onClick={handleCreatePredefinedServices}
                 variant="outline"
@@ -434,46 +485,10 @@ export default function ServicesPage() {
               onEdit={handleServiceEdit}
               onDelete={handleServiceDeleted}
               onDetail={handleServiceDetail}
+              onCreateService={() => setShowCreateModal(true)}
+              onCreatePredefined={handleCreatePredefinedServices}
+              isCreatingPredefined={isCreatingPredefined}
             />
-            
-            {services.length === 0 && !isLoading && (
-              <div className="text-center py-12">
-                <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No hay servicios
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  Comienza creando tu primer servicio o importando servicios predefinidos.
-                </p>
-                <div className="flex gap-3 justify-center">
-                  <Button 
-                    onClick={() => setShowCreateModal(true)}
-                    className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-purple"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Crear Servicio
-                  </Button>
-                  <Button 
-                    onClick={handleCreatePredefinedServices}
-                    variant="outline"
-                    disabled={isCreatingPredefined}
-                    className="border-purple-300 text-purple-700 hover:bg-purple-50"
-                  >
-                    {isCreatingPredefined ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Creando...
-                      </>
-                    ) : (
-                      <>
-                        <Package className="h-4 w-4 mr-2" />
-                        Servicios Predefinidos
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </main>

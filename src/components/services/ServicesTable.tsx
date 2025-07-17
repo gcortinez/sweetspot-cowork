@@ -44,6 +44,7 @@ import {
   Settings,
   Building2,
   Activity,
+  Plus,
 } from 'lucide-react'
 
 interface Service {
@@ -69,6 +70,9 @@ interface ServicesTableProps {
   onDelete: (serviceId: string) => void
   onDetail?: (service: Service) => void
   isLoading?: boolean
+  onCreateService?: () => void
+  onCreatePredefined?: () => void
+  isCreatingPredefined?: boolean
 }
 
 const SERVICE_TYPE_LABELS = {
@@ -138,7 +142,10 @@ export default function ServicesTable({
   onEdit, 
   onDelete, 
   onDetail,
-  isLoading = false
+  isLoading = false,
+  onCreateService,
+  onCreatePredefined,
+  isCreatingPredefined = false
 }: ServicesTableProps) {
   const formatPrice = (price: number, unit: string) => {
     return `$${price.toLocaleString()} / ${unit}`
@@ -175,7 +182,7 @@ export default function ServicesTable({
     }
   }
 
-  if (services.length === 0) {
+  if (services.length === 0 && !isLoading) {
     return (
       <Card className="p-8">
         <div className="text-center">
@@ -183,9 +190,40 @@ export default function ServicesTable({
           <h3 className="text-lg font-semibold text-muted-foreground mb-2">
             No hay servicios disponibles
           </h3>
-          <p className="text-sm text-muted-foreground">
-            Crea tu primer servicio para comenzar
+          <p className="text-sm text-muted-foreground mb-4">
+            Crea tu primer servicio para comenzar o importa servicios predefinidos
           </p>
+          <div className="flex gap-3 justify-center">
+            {onCreateService && (
+              <Button 
+                onClick={onCreateService}
+                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Crear Servicio
+              </Button>
+            )}
+            {onCreatePredefined && (
+              <Button 
+                onClick={onCreatePredefined}
+                variant="outline"
+                disabled={isCreatingPredefined}
+                className="border-purple-300 text-purple-700 hover:bg-purple-50"
+              >
+                {isCreatingPredefined ? (
+                  <>
+                    <Activity className="h-4 w-4 mr-2 animate-spin" />
+                    Creando...
+                  </>
+                ) : (
+                  <>
+                    <Package className="h-4 w-4 mr-2" />
+                    Servicios Predefinidos
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
         </div>
       </Card>
     )

@@ -3,7 +3,8 @@ import {
   listServicesAction,
   createCoworkingServicesAction,
   getServicesByCategoryAction,
-  getServicePackagesAction 
+  getServicePackagesAction,
+  deleteAllServicesAction
 } from '@/lib/actions/service'
 
 export async function GET(request: NextRequest) {
@@ -61,6 +62,19 @@ export async function POST(request: NextRequest) {
       } else {
         return NextResponse.json(
           { error: result.error || 'Failed to create services' },
+          { status: 400 }
+        )
+      }
+    }
+    
+    if (action === 'deleteAll') {
+      const result = await deleteAllServicesAction()
+      
+      if (result.success) {
+        return NextResponse.json(result)
+      } else {
+        return NextResponse.json(
+          { error: result.error || 'Failed to delete services' },
           { status: 400 }
         )
       }

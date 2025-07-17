@@ -726,6 +726,32 @@ export async function createCoworkingServicesAction(): Promise<ActionResult<any>
 }
 
 /**
+ * Delete all services for the current tenant (for development/testing)
+ */
+export async function deleteAllServicesAction(): Promise<ActionResult<any>> {
+  try {
+    // Get current user and validate auth
+    const user = await getUserWithTenant()
+    const tenantId = user.tenantId
+
+    // Delete all services for this tenant
+    const result = await prisma.service.deleteMany({
+      where: { tenantId }
+    })
+
+    return { 
+      success: true, 
+      data: { deletedCount: result.count },
+      message: `${result.count} servicios eliminados exitosamente` 
+    }
+
+  } catch (error: any) {
+    console.error('Error deleting all services:', error)
+    return { success: false, error: error.message || 'Failed to delete all services' }
+  }
+}
+
+/**
  * Get a service by ID
  */
 export async function getServiceAction(data: GetServiceRequest): Promise<ActionResult<any>> {
