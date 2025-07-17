@@ -131,6 +131,39 @@ export const createServiceRequestSchema = z.object({
   priority: z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']).default('NORMAL'),
 })
 
+// Additional schemas for service operations
+export const checkServiceAvailabilitySchema = z.object({
+  serviceId: cuidSchema,
+  date: z.date(),
+  quantity: z.number().int().min(1).default(1),
+})
+
+export const getServiceStatsSchema = z.object({
+  serviceId: cuidSchema.optional(),
+  startDate: z.date().optional(),
+  endDate: z.date().optional(),
+  groupBy: z.enum(['day', 'week', 'month']).default('day'),
+})
+
+export const calculateServicePricingSchema = z.object({
+  serviceId: cuidSchema,
+  quantity: z.number().int().min(1),
+  customizations: z.record(z.any()).optional(),
+})
+
+export const createServicePackageSchema = z.object({
+  name: z.string().min(1, 'Package name is required'),
+  description: z.string().optional(),
+  serviceIds: z.array(cuidSchema).min(1, 'At least one service is required'),
+  discountType: z.enum(['PERCENTAGE', 'FIXED']),
+  discountValue: z.number().min(0),
+  isActive: z.boolean().default(true),
+})
+
+export const updateServicePackageSchema = z.object({
+  id: cuidSchema,
+}).merge(createServicePackageSchema.partial())
+
 // Export types
 export type ServiceCategory = z.infer<typeof ServiceCategorySchema>
 export type ServiceType = z.infer<typeof ServiceTypeSchema>
@@ -142,3 +175,8 @@ export type ServiceConsumptionRequest = z.infer<typeof serviceConsumptionSchema>
 export type BulkUpdateServicesRequest = z.infer<typeof bulkUpdateServicesSchema>
 export type ServiceAnalyticsRequest = z.infer<typeof getServiceAnalyticsSchema>
 export type CreateServiceRequestSchema = z.infer<typeof createServiceRequestSchema>
+export type CheckServiceAvailabilityRequest = z.infer<typeof checkServiceAvailabilitySchema>
+export type GetServiceStatsRequest = z.infer<typeof getServiceStatsSchema>
+export type CalculateServicePricingRequest = z.infer<typeof calculateServicePricingSchema>
+export type CreateServicePackageRequest = z.infer<typeof createServicePackageSchema>
+export type UpdateServicePackageRequest = z.infer<typeof updateServicePackageSchema>

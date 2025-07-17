@@ -198,7 +198,8 @@ export default function ServicesTable({
   }
 
   const confirmDelete = async () => {
-    await onDelete(deleteConfirmation.serviceId)
+    const serviceId = deleteConfirmation.serviceId
+    await onDelete(serviceId)
     setDeleteConfirmation({
       isOpen: false,
       serviceId: '',
