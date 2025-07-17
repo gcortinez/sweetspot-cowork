@@ -261,7 +261,7 @@ export default function ServiceDetailModal({
           </div>
 
           {/* Niveles de precio */}
-          {service.pricingTiers && service.pricingTiers.length > 0 && (
+          {service.pricingTiers && Array.isArray(service.pricingTiers) && service.pricingTiers.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Niveles de Precio</CardTitle>
@@ -293,7 +293,7 @@ export default function ServiceDetailModal({
           )}
 
           {/* Etiquetas */}
-          {service.tags && service.tags.length > 0 && (
+          {service.tags && Array.isArray(service.tags) && service.tags.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Etiquetas</CardTitle>

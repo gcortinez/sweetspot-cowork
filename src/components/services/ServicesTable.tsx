@@ -275,7 +275,7 @@ export default function ServicesTable({
                       {service.description}
                     </div>
                   )}
-                  {service.tags && service.tags.length > 0 && (
+                  {service.tags && Array.isArray(service.tags) && service.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {service.tags.slice(0, 3).map((tag, index) => (
                         <Badge key={index} variant="outline" className="text-xs">
@@ -309,7 +309,7 @@ export default function ServicesTable({
                     {formatPrice(service.price, service.unit)}
                   </span>
                 </div>
-                {service.pricingTiers && service.pricingTiers.length > 0 && (
+                {service.pricingTiers && Array.isArray(service.pricingTiers) && service.pricingTiers.length > 0 && (
                   <div className="text-xs text-muted-foreground">
                     {service.pricingTiers.length} nivel{service.pricingTiers.length > 1 ? 'es' : ''} de precio
                   </div>
