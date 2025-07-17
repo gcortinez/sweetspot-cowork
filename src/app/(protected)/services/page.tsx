@@ -7,12 +7,8 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { 
-  listServicesAction, 
-  createCoworkingServicesAction,
-  getServicesByCategoryAction,
-  getServicePackagesAction 
-} from '@/lib/actions/service'
+// Removed direct server action imports to avoid client/server component conflicts
+// Using API routes instead
 import { useToast } from '@/hooks/use-toast'
 import ServicesTable from '@/components/services/ServicesTable'
 import CreateServiceModal from '@/components/services/CreateServiceModal'
@@ -122,23 +118,29 @@ export default function ServicesPage() {
   const loadServices = async () => {
     try {
       setIsLoading(true)
-      const result = await listServicesAction({
-        page: 1,
-        limit: 100,
-        search: searchTerm,
-        category: selectedCategory === 'all' ? undefined : selectedCategory,
-        isActive: activeTab === 'active' ? true : activeTab === 'inactive' ? false : undefined,
+      
+      const params = new URLSearchParams({
+        page: '1',
+        limit: '100',
         sortBy: 'name',
         sortOrder: 'asc'
       })
       
-      if (result.success) {
+      if (searchTerm) params.append('search', searchTerm)
+      if (selectedCategory !== 'all') params.append('category', selectedCategory)
+      if (activeTab === 'active') params.append('isActive', 'true')
+      if (activeTab === 'inactive') params.append('isActive', 'false')
+      
+      const response = await fetch(`/api/services?${params.toString()}`)
+      const result = await response.json()
+
+      if (response.ok && result.success) {
         setServices(result.data || [])
         // Calculate stats
         const totalServices = result.data?.length || 0
-        const activeServices = result.data?.filter(s => s.isActive).length || 0
-        const categoriesCount = new Set(result.data?.map(s => s.category)).size
-        const averagePrice = result.data?.reduce((sum, s) => sum + s.basePrice, 0) / totalServices || 0
+        const activeServices = result.data?.filter((s: any) => s.isActive).length || 0
+        const categoriesCount = new Set(result.data?.map((s: any) => s.category)).size
+        const averagePrice = result.data?.reduce((sum: number, s: any) => sum + s.basePrice, 0) / totalServices || 0
         
         setStats({
           totalServices,
@@ -146,7 +148,14 @@ export default function ServicesPage() {
           categoriesCount,
           averagePrice,
           mostPopularCategory: 'COFFEE',
-          maxPrice: Math.max(...(result.data?.map(s => s.basePrice) || [0]))
+          maxPrice: Math.max(...(result.data?.map((s: any) => s.basePrice) || [0]))
+        })
+      } else {
+        console.error('Error loading services:', result.error)
+        toast({
+          title: "Error",
+          description: result.error || "Error al cargar los servicios",
+          variant: "destructive",
         })
       }
     } catch (error) {
@@ -164,9 +173,18 @@ export default function ServicesPage() {
   const handleCreatePredefinedServices = async () => {
     try {
       setIsCreatingPredefined(true)
-      const result = await createCoworkingServicesAction()
       
-      if (result.success) {
+      const response = await fetch('/api/services', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'createPredefined' })
+      })
+      
+      const result = await response.json()
+      
+      if (response.ok && result.success) {
         toast({
           title: "Servicios creados",
           description: "Se han creado los servicios predefinidos exitosamente",

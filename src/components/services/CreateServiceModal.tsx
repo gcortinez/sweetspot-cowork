@@ -27,7 +27,7 @@ import {
   Trash2
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { createServiceAction } from '@/lib/actions/service'
+// Removed direct server action import to avoid client/server component conflicts
 
 interface CreateServiceModalProps {
   isOpen: boolean
@@ -172,9 +172,17 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
         },
       }
 
-      const result = await createServiceAction(serviceData)
+      const response = await fetch('/api/services/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(serviceData)
+      })
       
-      if (result.success) {
+      const result = await response.json()
+      
+      if (response.ok && result.success) {
         toast({
           title: "Servicio creado",
           description: "El servicio ha sido creado exitosamente",
@@ -183,6 +191,7 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
         onServiceCreated()
         resetForm()
       } else {
+        setErrors(result.fieldErrors || {})
         toast({
           title: "Error al crear servicio",
           description: result.error || "Ocurrió un error inesperado",
