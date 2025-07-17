@@ -110,7 +110,7 @@ export default function ServiceSelector({ selectedServices, onSelectionChange, c
       const result = await response.json()
       
       if (response.ok && result.success) {
-        setAvailableServices(result.data || [])
+        setAvailableServices(result.data?.services || [])
       } else {
         toast({
           title: "Error",

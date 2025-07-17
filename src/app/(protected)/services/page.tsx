@@ -135,12 +135,13 @@ export default function ServicesPage() {
       const result = await response.json()
 
       if (response.ok && result.success) {
-        setServices(result.data || [])
+        const services = result.data?.services || []
+        setServices(services)
         // Calculate stats
-        const totalServices = result.data?.length || 0
-        const activeServices = result.data?.filter((s: any) => s.isActive).length || 0
-        const categoriesCount = new Set(result.data?.map((s: any) => s.category)).size
-        const averagePrice = result.data?.reduce((sum: number, s: any) => sum + s.basePrice, 0) / totalServices || 0
+        const totalServices = services.length || 0
+        const activeServices = services.filter((s: any) => s.isActive).length || 0
+        const categoriesCount = new Set(services.map((s: any) => s.category)).size
+        const averagePrice = services.reduce((sum: number, s: any) => sum + s.basePrice, 0) / totalServices || 0
         
         setStats({
           totalServices,
@@ -148,7 +149,7 @@ export default function ServicesPage() {
           categoriesCount,
           averagePrice,
           mostPopularCategory: 'COFFEE',
-          maxPrice: Math.max(...(result.data?.map((s: any) => s.basePrice) || [0]))
+          maxPrice: Math.max(...(services.map((s: any) => s.basePrice) || [0]))
         })
       } else {
         console.error('Error loading services:', result.error)
