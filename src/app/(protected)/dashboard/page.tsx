@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Building2, 
   Crown, 
@@ -51,6 +51,8 @@ import { getDashboardStats, getRecentActivities } from '@/lib/actions/dashboard'
 import { useToast } from '@/hooks/use-toast';
 import CreateLeadModal from '@/components/leads/CreateLeadModal';
 import QuickViewModal from '@/components/dashboard/QuickViewModal';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
+import { FullPageLoader } from '@/components/ui/loading-spinner';
 
 // Client-side dashboard page
 export default function DashboardPage() {
@@ -81,7 +83,9 @@ export default function DashboardPage() {
   });
 
   return (
-    <DashboardContent user={user} isSuperAdmin={isSuperAdmin} />
+    <ErrorBoundary>
+      <DashboardContent user={user} isSuperAdmin={isSuperAdmin} />
+    </ErrorBoundary>
   );
 }
 
@@ -105,62 +109,56 @@ function DashboardContent({
   const [showCreateLeadModal, setShowCreateLeadModal] = useState(false);
   const { toast } = useToast();
 
-  // Load dashboard data
-  useEffect(() => {
-    const loadDashboardData = async () => {
-      if (isSuperAdmin) {
-        // For super admin, we'll handle differently later
-        setIsLoading(false);
-        return;
-      }
+  // Memoized dashboard data loader
+  const loadDashboardData = useCallback(async () => {
+    if (isSuperAdmin) {
+      // For super admin, we'll handle differently later
+      setIsLoading(false);
+      return;
+    }
 
-      try {
-        setIsLoading(true);
-        setError(null);
+    try {
+      setIsLoading(true);
+      setError(null);
 
-        const [statsResult, activitiesResult] = await Promise.all([
-          getDashboardStats(),
-          getRecentActivities()
-        ]);
+      const [statsResult, activitiesResult] = await Promise.all([
+        getDashboardStats(),
+        getRecentActivities()
+      ]);
 
-        if (statsResult.success) {
-          console.log('🔍 Dashboard data loaded:', statsResult.data);
-          console.log('📊 Recent opportunities:', statsResult.data?.opportunities?.recent);
-          setDashboardData(statsResult.data);
-        } else {
-          setError(statsResult.error || 'Error al cargar datos del dashboard');
-          toast({
-            title: "Error",
-            description: statsResult.error || 'Error al cargar datos del dashboard',
-            variant: "destructive",
-          });
-        }
-      } catch (err) {
-        console.error('Error loading dashboard data:', err);
-        setError('Error de conexión');
+      if (statsResult.success) {
+        console.log('🔍 Dashboard data loaded:', statsResult.data);
+        console.log('📊 Recent opportunities:', statsResult.data?.opportunities?.recent);
+        setDashboardData(statsResult.data);
+      } else {
+        setError(statsResult.error || 'Error al cargar datos del dashboard');
         toast({
-          title: "Error de conexión",
-          description: 'No se pudo conectar con el servidor',
+          title: "Error",
+          description: statsResult.error || 'Error al cargar datos del dashboard',
           variant: "destructive",
         });
-      } finally {
-        setIsLoading(false);
       }
-    };
-
-    loadDashboardData();
+    } catch (err) {
+      console.error('Error loading dashboard data:', err);
+      setError('Error de conexión');
+      toast({
+        title: "Error de conexión",
+        description: 'No se pudo conectar con el servidor',
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }, [isSuperAdmin, toast]);
+
+  // Load dashboard data
+  useEffect(() => {
+    loadDashboardData();
+  }, [loadDashboardData]);
 
   // Show loading state
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50/30 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-purple-600 mx-auto mb-4" />
-          <p className="text-gray-600">Cargando dashboard...</p>
-        </div>
-      </div>
-    );
+    return <FullPageLoader text="Cargando dashboard..." />;
   }
 
   // Show error state
@@ -286,67 +284,73 @@ function DashboardContent({
         </div>
       </header>
 
-      {/* CRM Navigation Menu */}
+      {/* CRM Navigation Menu - Mobile Responsive */}
       {!isSuperAdmin && (
         <div className="bg-white border-b border-gray-200 shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between py-4">
-              <div className="flex items-center space-x-1">
-                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-purple-700 hover:bg-purple-50 transition-colors">
-                  <Building2 className="h-4 w-4 mr-2" />
-                  Dashboard
-                </Button>
-                <span className="text-gray-300">/</span>
-                <Link href="/leads">
-                  <Button variant="ghost" size="sm" className="text-gray-600 hover:text-purple-700 hover:bg-purple-50 transition-colors">
-                    <UserCheck className="h-4 w-4 mr-2" />
-                    Prospectos
+            <div className="flex items-center justify-between py-3 lg:py-4">
+              {/* Navigation Items */}
+              <nav className="flex items-center min-w-0 flex-1">
+                {/* Mobile: Horizontal scroll */}
+                <div className="flex items-center space-x-1 overflow-x-auto scrollbar-hide mobile-nav-scroll touch-pan-x lg:space-x-2">
+                  <Button variant="ghost" size="sm" className="whitespace-nowrap mobile-nav-item text-purple-700 bg-purple-50 hover:bg-purple-100 flex-shrink-0">
+                    <Building2 className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Dashboard</span>
                   </Button>
-                </Link>
-                <span className="text-gray-300">/</span>
-                <Link href="/opportunities">
-                  <Button variant="ghost" size="sm" className="text-gray-600 hover:text-purple-700 hover:bg-purple-50 transition-colors">
-                    <Target className="h-4 w-4 mr-2" />
-                    Oportunidades
-                  </Button>
-                </Link>
-                <span className="text-gray-300">/</span>
-                <Link href="/clients">
-                  <Button variant="ghost" size="sm" className="text-gray-600 hover:text-purple-700 hover:bg-purple-50 transition-colors">
-                    <Building2 className="h-4 w-4 mr-2" />
-                    Clientes
-                  </Button>
-                </Link>
-                <span className="text-gray-300">/</span>
-                <Link href="/quotations">
-                  <Button variant="ghost" size="sm" className="text-gray-600 hover:text-purple-700 hover:bg-purple-50 transition-colors">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Cotizaciones
-                  </Button>
-                </Link>
-                <span className="text-gray-300">/</span>
-                <Link href="/services">
-                  <Button variant="ghost" size="sm" className="text-gray-600 hover:text-purple-700 hover:bg-purple-50 transition-colors">
-                    <Zap className="h-4 w-4 mr-2" />
-                    Servicios
-                  </Button>
-                </Link>
-                <span className="text-gray-300">/</span>
-                <Link href="/analytics">
-                  <Button variant="ghost" size="sm" className="text-gray-600 hover:text-purple-700 hover:bg-purple-50 transition-colors">
-                    <BarChart3 className="h-4 w-4 mr-2" />
-                    Analytics
-                  </Button>
-                </Link>
-              </div>
-              <div className="flex items-center space-x-2">
+                  <span className="text-gray-300 hidden sm:inline">/</span>
+                  <Link href="/leads">
+                    <Button variant="ghost" size="sm" className="whitespace-nowrap mobile-nav-item text-gray-600 hover:text-purple-700 hover:bg-purple-50 transition-colors flex-shrink-0">
+                      <UserCheck className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Prospectos</span>
+                    </Button>
+                  </Link>
+                  <span className="text-gray-300 hidden sm:inline">/</span>
+                  <Link href="/opportunities">
+                    <Button variant="ghost" size="sm" className="whitespace-nowrap mobile-nav-item text-gray-600 hover:text-purple-700 hover:bg-purple-50 transition-colors flex-shrink-0">
+                      <Target className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Oportunidades</span>
+                    </Button>
+                  </Link>
+                  <span className="text-gray-300 hidden sm:inline">/</span>
+                  <Link href="/clients">
+                    <Button variant="ghost" size="sm" className="whitespace-nowrap mobile-nav-item text-gray-600 hover:text-purple-700 hover:bg-purple-50 transition-colors flex-shrink-0">
+                      <Building2 className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Clientes</span>
+                    </Button>
+                  </Link>
+                  <span className="text-gray-300 hidden sm:inline">/</span>
+                  <Link href="/quotations">
+                    <Button variant="ghost" size="sm" className="whitespace-nowrap mobile-nav-item text-gray-600 hover:text-purple-700 hover:bg-purple-50 transition-colors flex-shrink-0">
+                      <FileText className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Cotizaciones</span>
+                    </Button>
+                  </Link>
+                  <span className="text-gray-300 hidden sm:inline">/</span>
+                  <Link href="/services">
+                    <Button variant="ghost" size="sm" className="whitespace-nowrap mobile-nav-item text-gray-600 hover:text-purple-700 hover:bg-purple-50 transition-colors flex-shrink-0">
+                      <Zap className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Servicios</span>
+                    </Button>
+                  </Link>
+                  <span className="text-gray-300 hidden sm:inline">/</span>
+                  <Link href="/analytics">
+                    <Button variant="ghost" size="sm" className="whitespace-nowrap mobile-nav-item text-gray-600 hover:text-purple-700 hover:bg-purple-50 transition-colors flex-shrink-0">
+                      <BarChart3 className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Analytics</span>
+                    </Button>
+                  </Link>
+                </div>
+              </nav>
+
+              {/* Action Button */}
+              <div className="flex items-center ml-4 flex-shrink-0">
                 <Button 
                   size="sm" 
-                  className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-purple"
+                  className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-purple whitespace-nowrap"
                   onClick={() => setShowCreateLeadModal(true)}
                 >
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Nuevo Prospecto
+                  <PlusCircle className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Nuevo Prospecto</span>
                 </Button>
               </div>
             </div>
@@ -365,17 +369,19 @@ function DashboardContent({
         />
       )}
 
-      {/* Create Lead Modal */}
-      <CreateLeadModal 
-        isOpen={showCreateLeadModal}
-        onClose={() => setShowCreateLeadModal(false)}
-        onLeadCreated={() => {
-          toast({
-            title: "¡Prospecto creado!",
-            description: "El nuevo prospecto ha sido creado exitosamente.",
-          });
-        }}
-      />
+      {/* Create Lead Modal - Only render when needed */}
+      {showCreateLeadModal && (
+        <CreateLeadModal 
+          isOpen={showCreateLeadModal}
+          onClose={() => setShowCreateLeadModal(false)}
+          onLeadCreated={() => {
+            toast({
+              title: "¡Prospecto creado!",
+              description: "El nuevo prospecto ha sido creado exitosamente.",
+            });
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -580,24 +586,49 @@ function CoworkDashboard({
 
       {/* Dashboard Tabs */}
       <Tabs defaultValue="crm" className="w-full" onValueChange={(value) => setActiveTab(value)}>
-        <TabsList className="grid w-full grid-cols-4 bg-white shadow-md rounded-xl p-1">
-          <TabsTrigger value="crm" className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
-            <Target className="h-4 w-4" />
-            CRM
-          </TabsTrigger>
-          <TabsTrigger value="operacion" className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
-            <Settings className="h-4 w-4" />
-            Operación
-          </TabsTrigger>
-          <TabsTrigger value="analitica" className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
-            <BarChart3 className="h-4 w-4" />
-            Analítica
-          </TabsTrigger>
-          <TabsTrigger value="facturacion" className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
-            <DollarSign className="h-4 w-4" />
-            Facturación
-          </TabsTrigger>
-        </TabsList>
+        {/* Mobile: Horizontal scroll tabs */}
+        <div className="md:hidden">
+          <TabsList className="flex w-full bg-white shadow-md rounded-xl p-1 overflow-x-auto scrollbar-hide">
+            <TabsTrigger value="crm" className="flex items-center gap-2 whitespace-nowrap px-4 py-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+              <Target className="h-4 w-4" />
+              CRM
+            </TabsTrigger>
+            <TabsTrigger value="operacion" className="flex items-center gap-2 whitespace-nowrap px-4 py-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+              <Settings className="h-4 w-4" />
+              Operación
+            </TabsTrigger>
+            <TabsTrigger value="analitica" className="flex items-center gap-2 whitespace-nowrap px-4 py-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+              <BarChart3 className="h-4 w-4" />
+              Analítica
+            </TabsTrigger>
+            <TabsTrigger value="facturacion" className="flex items-center gap-2 whitespace-nowrap px-4 py-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+              <DollarSign className="h-4 w-4" />
+              Facturación
+            </TabsTrigger>
+          </TabsList>
+        </div>
+        
+        {/* Desktop: Grid layout */}
+        <div className="hidden md:block">
+          <TabsList className="grid w-full grid-cols-4 bg-white shadow-md rounded-xl p-1">
+            <TabsTrigger value="crm" className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+              <Target className="h-4 w-4" />
+              CRM
+            </TabsTrigger>
+            <TabsTrigger value="operacion" className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+              <Settings className="h-4 w-4" />
+              Operación
+            </TabsTrigger>
+            <TabsTrigger value="analitica" className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+              <BarChart3 className="h-4 w-4" />
+              Analítica
+            </TabsTrigger>
+            <TabsTrigger value="facturacion" className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+              <DollarSign className="h-4 w-4" />
+              Facturación
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="crm" className="mt-6">
           <CRMTab dashboardData={dashboardData} openQuickView={openQuickView} />
