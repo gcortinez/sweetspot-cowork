@@ -117,6 +117,7 @@ export default function ServicesPage() {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isFiltering, setIsFiltering] = useState(false)
+  const [hasInitialLoad, setHasInitialLoad] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [editingService, setEditingService] = useState<Service | null>(null)
   const [detailService, setDetailService] = useState<Service | null>(null)
@@ -126,6 +127,9 @@ export default function ServicesPage() {
   const { toast } = useToast()
 
   const loadServices = useCallback(async (isInitialLoad = false) => {
+    console.log('LoadServices called with isInitialLoad:', isInitialLoad)
+    console.log('Current filters:', { debouncedSearchTerm, selectedCategory, activeTab })
+    
     try {
       if (isInitialLoad) {
         setIsLoading(true)
@@ -145,11 +149,16 @@ export default function ServicesPage() {
       if (activeTab === 'active') params.append('isActive', 'true')
       if (activeTab === 'inactive') params.append('isActive', 'false')
       
-      const response = await fetch(`/api/services?${params.toString()}`)
+      const url = `/api/services?${params.toString()}`
+      console.log('Fetching URL:', url)
+      
+      const response = await fetch(url)
       const result = await response.json()
+      console.log('API Response:', result)
 
       if (response.ok && result.success) {
         const services = result.data?.services || []
+        console.log('Services loaded:', services.length)
         setServices(services)
         // Calculate stats
         const totalServices = services.length || 0
@@ -183,6 +192,9 @@ export default function ServicesPage() {
     } finally {
       setIsLoading(false)
       setIsFiltering(false)
+      if (isInitialLoad) {
+        setHasInitialLoad(true)
+      }
     }
   }, [debouncedSearchTerm, selectedCategory, activeTab, toast])
 
@@ -347,10 +359,11 @@ export default function ServicesPage() {
 
   // Load services when filters change
   useEffect(() => {
-    if (debouncedSearchTerm !== '' || selectedCategory !== 'all' || activeTab !== 'all') {
+    // Only load services when filters change after initial load
+    if (hasInitialLoad) {
       loadServices(false)
     }
-  }, [debouncedSearchTerm, selectedCategory, activeTab, loadServices])
+  }, [debouncedSearchTerm, selectedCategory, activeTab, loadServices, hasInitialLoad])
 
   return (
     <div className="min-h-screen bg-background">
