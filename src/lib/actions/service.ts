@@ -37,7 +37,10 @@ function safeJsonParse(value: string | null, fallback: any = null) {
     return JSON.parse(value)
   } catch (error) {
     // If parsing fails, return the original value or fallback
-    console.warn('Failed to parse JSON field:', value, error)
+    // Suppress warnings for simple strings that are expected not to be JSON
+    if (value !== 'ALWAYS' && value !== 'BUSINESS_HOURS' && value !== 'SCHEDULED') {
+      console.warn('Failed to parse JSON field:', value, error)
+    }
     return value === 'null' ? fallback : value
   }
 }

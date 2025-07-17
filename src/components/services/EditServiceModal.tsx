@@ -70,10 +70,25 @@ const SERVICE_CATEGORIES = [
 
 
 const SERVICE_TYPES = [
-  { value: 'CONSUMABLE', label: 'Consumible', description: 'Artículos físicos que se consumen' },
-  { value: 'SUBSCRIPTION', label: 'Suscripción', description: 'Servicios recurrentes' },
-  { value: 'ON_DEMAND', label: 'Bajo Demanda', description: 'Servicios solicitados según necesidad' },
-  { value: 'APPOINTMENT', label: 'Cita', description: 'Servicios programados' },
+  { value: 'SPACE_RENTAL', label: 'Alquiler de Espacios', description: 'Alquiler de oficinas, salas de reuniones' },
+  { value: 'CATERING', label: 'Catering', description: 'Servicios de comida y bebida' },
+  { value: 'EQUIPMENT', label: 'Equipamiento', description: 'Alquiler de equipos y dispositivos' },
+  { value: 'CLEANING', label: 'Limpieza', description: 'Servicios de limpieza y mantenimiento' },
+  { value: 'SECURITY', label: 'Seguridad', description: 'Servicios de seguridad y vigilancia' },
+  { value: 'TECHNICAL_SUPPORT', label: 'Soporte Técnico', description: 'Soporte técnico e IT' },
+  { value: 'CONCIERGE', label: 'Conserjería', description: 'Servicios de conserjería y atención' },
+  { value: 'PRINTING', label: 'Impresión', description: 'Servicios de impresión y copia' },
+  { value: 'MAIL_HANDLING', label: 'Gestión de Correo', description: 'Manejo de correspondencia' },
+  { value: 'PARKING', label: 'Estacionamiento', description: 'Servicios de parqueo' },
+  { value: 'STORAGE', label: 'Almacenamiento', description: 'Servicios de almacenaje' },
+  { value: 'WELLNESS', label: 'Bienestar', description: 'Servicios de salud y bienestar' },
+  { value: 'NETWORKING', label: 'Networking', description: 'Eventos y conexiones profesionales' },
+  { value: 'CONSULTING', label: 'Consultoría', description: 'Servicios de consultoría profesional' },
+  { value: 'TRAINING', label: 'Capacitación', description: 'Cursos y entrenamientos' },
+  { value: 'EVENT_PLANNING', label: 'Organización de Eventos', description: 'Planificación y gestión de eventos' },
+  { value: 'VIRTUAL_OFFICE', label: 'Oficina Virtual', description: 'Servicios de oficina virtual' },
+  { value: 'TELECOMMUNICATIONS', label: 'Telecomunicaciones', description: 'Servicios de telefonía e internet' },
+  { value: 'OTHER', label: 'Otros', description: 'Otros servicios no categorizados' },
 ]
 
 const AVAILABILITY_OPTIONS = [
@@ -117,8 +132,8 @@ export default function EditServiceModal({ service, isOpen, onClose, onServiceUp
       setFormData({
         name: service.name,
         description: service.description || '',
-        category: service.category,
-        serviceType: service.serviceType,
+        category: mapOldCategoryToNew(service.category),
+        serviceType: mapOldServiceTypeToNew(service.serviceType),
         price: service.price.toString(),
         unit: service.unit,
         availability: service.availability,
@@ -167,6 +182,42 @@ export default function EditServiceModal({ service, isOpen, onClose, onServiceUp
 
   const handleRemoveTag = (tagToRemove: string) => {
     setTags(prev => prev.filter(tag => tag !== tagToRemove))
+  }
+
+  // Helper function to map old category values to new schema
+  const mapOldCategoryToNew = (oldCategory: string) => {
+    const categoryMap: Record<string, string> = {
+      'PRINTING': 'ADD_ON_SERVICES',
+      'COFFEE': 'ADD_ON_SERVICES', 
+      'FOOD': 'ADD_ON_SERVICES',
+      'PARKING': 'ADD_ON_SERVICES',
+      'STORAGE': 'ADD_ON_SERVICES',
+      'MAIL': 'ADD_ON_SERVICES',
+      'PHONE': 'ADD_ON_SERVICES',
+      'INTERNET': 'CORE_SERVICES',
+      'CLEANING': 'CORE_SERVICES',
+      'BUSINESS_SUPPORT': 'CORE_SERVICES',
+      'EVENT_SERVICES': 'PREMIUM_SERVICES',
+      'WELLNESS': 'PREMIUM_SERVICES',
+      'TRANSPORTATION': 'ADD_ON_SERVICES',
+      'CONSULTING': 'PREMIUM_SERVICES',
+      'MAINTENANCE': 'CORE_SERVICES',
+    }
+    return categoryMap[oldCategory] || 'ADD_ON_SERVICES'
+  }
+
+  // Helper function to map old service types to new schema
+  const mapOldServiceTypeToNew = (oldServiceType: string) => {
+    const typeMap: Record<string, string> = {
+      'CONSUMABLE': 'EQUIPMENT',
+      'SUBSCRIPTION': 'SPACE_RENTAL', 
+      'ON_DEMAND': 'CONCIERGE',
+      'APPOINTMENT': 'CONSULTING',
+      'MAIL': 'MAIL_HANDLING',
+      'PHONE': 'TELECOMMUNICATIONS',
+      'INTERNET': 'TECHNICAL_SUPPORT',
+    }
+    return typeMap[oldServiceType] || 'OTHER'
   }
 
   // Helper function to transform availability string to object
