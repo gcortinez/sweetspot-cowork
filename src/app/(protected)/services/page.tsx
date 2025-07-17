@@ -277,14 +277,17 @@ export default function ServicesPage() {
   }
 
   const handleServiceDeleted = async (serviceId: string) => {
+    console.log('ServicesPage: handleServiceDeleted called with:', serviceId)
     try {
       setDeletingServiceId(serviceId)
+      console.log('ServicesPage: Set deletingServiceId to:', serviceId)
       
       const response = await fetch(`/api/services/${serviceId}`, {
         method: 'DELETE'
       })
       
       const result = await response.json()
+      console.log('ServicesPage: Delete response:', result)
       
       if (response.ok && result.success) {
         toast({
@@ -310,6 +313,7 @@ export default function ServicesPage() {
         duration: 5000,
       })
     } finally {
+      console.log('ServicesPage: Setting deletingServiceId to null')
       setDeletingServiceId(null)
     }
   }

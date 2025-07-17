@@ -37,14 +37,18 @@ export function ConfirmationDialog({
   const [isLoading, setIsLoading] = useState(false)
   
   const handleConfirm = async () => {
+    console.log('ConfirmationDialog: Starting confirmation')
     setIsLoading(true)
     try {
+      console.log('ConfirmationDialog: Calling onConfirm')
       await onConfirm()
-      onClose()
+      console.log('ConfirmationDialog: onConfirm completed')
     } catch (error) {
       console.error('Error in confirmation:', error)
     } finally {
+      console.log('ConfirmationDialog: Setting loading to false and closing')
       setIsLoading(false)
+      onClose()
     }
   }
 

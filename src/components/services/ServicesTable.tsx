@@ -200,13 +200,12 @@ export default function ServicesTable({
   }
 
   const confirmDelete = async () => {
+    console.log('ServicesTable: confirmDelete called')
     const serviceId = deleteConfirmation.serviceId
+    console.log('ServicesTable: Calling onDelete with serviceId:', serviceId)
     await onDelete(serviceId)
-    setDeleteConfirmation({
-      isOpen: false,
-      serviceId: '',
-      serviceName: ''
-    })
+    console.log('ServicesTable: onDelete completed')
+    // Don't close here - let the ConfirmationDialog handle it
   }
 
   const cancelDelete = () => {
