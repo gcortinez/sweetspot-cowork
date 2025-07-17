@@ -10,6 +10,7 @@ type ToastProps = {
   description?: React.ReactNode
   action?: ToastActionElement
   variant?: "default" | "destructive" | "success" | "warning"
+  duration?: number
 }
 
 const TOAST_LIMIT = 1
@@ -23,6 +24,7 @@ type ToasterToast = ToastProps & {
   open?: boolean
   onOpenChange?: (open: boolean) => void
   variant?: "default" | "destructive" | "success" | "warning"
+  duration?: number
 }
 
 const actionTypes = {
@@ -65,18 +67,19 @@ interface State {
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
-const addToRemoveQueue = (toastId: string) => {
+const addToRemoveQueue = (toastId: string, duration?: number) => {
   if (toastTimeouts.has(toastId)) {
     return
   }
 
+  const delay = duration || TOAST_REMOVE_DELAY
   const timeout = setTimeout(() => {
     toastTimeouts.delete(toastId)
     dispatch({
       type: "REMOVE_TOAST",
       toastId: toastId,
     })
-  }, TOAST_REMOVE_DELAY)
+  }, delay)
 
   toastTimeouts.set(toastId, timeout)
 }
@@ -101,10 +104,11 @@ export const reducer = (state: State, action: Action): State => {
       const { toastId } = action
 
       if (toastId) {
-        addToRemoveQueue(toastId)
+        const toast = state.toasts.find(t => t.id === toastId)
+        addToRemoveQueue(toastId, toast?.duration)
       } else {
         state.toasts.forEach((toast) => {
-          addToRemoveQueue(toast.id)
+          addToRemoveQueue(toast.id, toast.duration)
         })
       }
 
@@ -169,6 +173,13 @@ function toast({ ...props }: Toast) {
     },
   })
 
+  // Auto-dismiss after duration if specified
+  if (props.duration) {
+    setTimeout(() => {
+      dismiss()
+    }, props.duration)
+  }
+
   return {
     id: id,
     dismiss,
@@ -193,13 +204,7 @@ function useToast() {
     ...state,
     toast,
     dismiss: (toastId?: string) => {
-      console.log('Dismiss called for:', toastId);
       dispatch({ type: "DISMISS_TOAST", toastId });
-      // Force immediate removal after a short delay
-      setTimeout(() => {
-        console.log('Force removing toast:', toastId);
-        dispatch({ type: "REMOVE_TOAST", toastId });
-      }, 200);
     },
   }
 }

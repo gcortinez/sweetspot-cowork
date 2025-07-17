@@ -1,9 +1,10 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import {
   Table,
   TableBody,
@@ -45,6 +46,7 @@ import {
   Building2,
   Activity,
   Plus,
+  Loader2,
 } from 'lucide-react'
 
 interface Service {
@@ -67,12 +69,13 @@ interface Service {
 interface ServicesTableProps {
   services: Service[]
   onEdit: (service: Service) => void
-  onDelete: (serviceId: string) => void
+  onDelete: (serviceId: string) => Promise<void>
   onDetail?: (service: Service) => void
   isLoading?: boolean
   onCreateService?: () => void
   onCreatePredefined?: () => void
   isCreatingPredefined?: boolean
+  deletingServiceId?: string | null
 }
 
 const SERVICE_TYPE_LABELS = {
@@ -145,8 +148,18 @@ export default function ServicesTable({
   isLoading = false,
   onCreateService,
   onCreatePredefined,
-  isCreatingPredefined = false
+  isCreatingPredefined = false,
+  deletingServiceId
 }: ServicesTableProps) {
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean
+    serviceId: string
+    serviceName: string
+  }>({
+    isOpen: false,
+    serviceId: '',
+    serviceName: ''
+  })
   const formatPrice = (price: number, unit: string) => {
     return `$${price.toLocaleString()} / ${unit}`
   }
@@ -177,9 +190,28 @@ export default function ServicesTable({
   }
 
   const handleDelete = (serviceId: string, serviceName: string) => {
-    if (window.confirm(`¿Estás seguro de que quieres eliminar el servicio "${serviceName}"?`)) {
-      onDelete(serviceId)
-    }
+    setDeleteConfirmation({
+      isOpen: true,
+      serviceId,
+      serviceName
+    })
+  }
+
+  const confirmDelete = async () => {
+    await onDelete(deleteConfirmation.serviceId)
+    setDeleteConfirmation({
+      isOpen: false,
+      serviceId: '',
+      serviceName: ''
+    })
+  }
+
+  const cancelDelete = () => {
+    setDeleteConfirmation({
+      isOpen: false,
+      serviceId: '',
+      serviceName: ''
+    })
   }
 
   if (services.length === 0 && !isLoading) {
@@ -341,7 +373,11 @@ export default function ServicesTable({
               <TableCell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
+                    <Button 
+                      variant="ghost" 
+                      className="h-8 w-8 p-0"
+                      disabled={deletingServiceId === service.id}
+                    >
                       <span className="sr-only">Abrir menú</span>
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
@@ -349,23 +385,32 @@ export default function ServicesTable({
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                     {onDetail && (
-                      <DropdownMenuItem onClick={(e) => {
-                        e.stopPropagation()
-                        onDetail(service)
-                      }}>
+                      <DropdownMenuItem 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onDetail(service)
+                        }}
+                        disabled={deletingServiceId === service.id}
+                      >
                         <Eye className="mr-2 h-4 w-4" />
                         Ver Detalle
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onClick={() => navigator.clipboard.writeText(service.id)}>
+                    <DropdownMenuItem 
+                      onClick={() => navigator.clipboard.writeText(service.id)}
+                      disabled={deletingServiceId === service.id}
+                    >
                       <Copy className="mr-2 h-4 w-4" />
                       Copiar ID
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={(e) => {
-                      e.stopPropagation()
-                      onEdit(service)
-                    }}>
+                    <DropdownMenuItem 
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onEdit(service)
+                      }}
+                      disabled={deletingServiceId === service.id}
+                    >
                       <Edit className="mr-2 h-4 w-4" />
                       Editar
                     </DropdownMenuItem>
@@ -375,9 +420,14 @@ export default function ServicesTable({
                         handleDelete(service.id, service.name)
                       }}
                       className="text-red-600 focus:text-red-600"
+                      disabled={deletingServiceId === service.id}
                     >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Eliminar
+                      {deletingServiceId === service.id ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="mr-2 h-4 w-4" />
+                      )}
+                      {deletingServiceId === service.id ? 'Eliminando...' : 'Eliminar'}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -387,6 +437,17 @@ export default function ServicesTable({
           )}
         </TableBody>
       </Table>
+
+      <ConfirmationDialog
+        isOpen={deleteConfirmation.isOpen}
+        onClose={cancelDelete}
+        onConfirm={confirmDelete}
+        title="Eliminar Servicio"
+        description={`¿Estás seguro de que quieres eliminar el servicio "${deleteConfirmation.serviceName}"? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        variant="destructive"
+      />
     </div>
   )
 }

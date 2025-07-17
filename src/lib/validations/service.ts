@@ -30,7 +30,8 @@ export const ServiceTypeSchema = z.enum([
 export const ServiceAvailabilitySchema = z.enum([
   'ALWAYS',        // Available 24/7
   'BUSINESS_HOURS', // Available during business hours
-  'SCHEDULED'      // Available at specific times
+  'SCHEDULED',     // Available at specific times
+  'ON_REQUEST'     // Available upon request
 ])
 
 // Base service schema matching Prisma model exactly

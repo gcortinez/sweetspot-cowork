@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AppHeader } from '@/components/shared/app-header'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 // Removed direct server action imports to avoid client/server component conflicts
 // Using API routes instead
 import { useToast } from '@/hooks/use-toast'
@@ -113,14 +114,17 @@ export default function ServicesPage() {
   const [activeTab, setActiveTab] = useState('all')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [editingService, setEditingService] = useState<Service | null>(null)
   const [detailService, setDetailService] = useState<Service | null>(null)
   const [isCreatingPredefined, setIsCreatingPredefined] = useState(false)
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false)
+  const [deletingServiceId, setDeletingServiceId] = useState<string | null>(null)
   const { toast } = useToast()
 
-  const loadServices = async () => {
+  const loadServices = useCallback(async () => {
     try {
       setIsLoading(true)
       
@@ -131,7 +135,7 @@ export default function ServicesPage() {
         sortOrder: 'asc'
       })
       
-      if (searchTerm) params.append('search', searchTerm)
+      if (debouncedSearchTerm) params.append('search', debouncedSearchTerm)
       if (selectedCategory !== 'all') params.append('category', selectedCategory)
       if (activeTab === 'active') params.append('isActive', 'true')
       if (activeTab === 'inactive') params.append('isActive', 'false')
@@ -174,13 +178,9 @@ export default function ServicesPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [debouncedSearchTerm, selectedCategory, activeTab, toast])
 
   const handleDeleteAllServices = async () => {
-    if (!window.confirm('¿Estás seguro de que quieres eliminar TODOS los servicios? Esta acción no se puede deshacer.')) {
-      return
-    }
-    
     try {
       setIsLoading(true)
       
@@ -198,6 +198,7 @@ export default function ServicesPage() {
         toast({
           title: "Servicios eliminados",
           description: "Se han eliminado todos los servicios exitosamente",
+          duration: 3000,
         })
         loadServices()
       } else {
@@ -237,6 +238,7 @@ export default function ServicesPage() {
         toast({
           title: "Servicios creados",
           description: "Se han creado los servicios predefinidos exitosamente",
+          duration: 3000,
         })
         loadServices()
       } else {
@@ -268,8 +270,42 @@ export default function ServicesPage() {
     loadServices()
   }
 
-  const handleServiceDeleted = () => {
-    loadServices()
+  const handleServiceDeleted = async (serviceId: string) => {
+    try {
+      setDeletingServiceId(serviceId)
+      
+      const response = await fetch(`/api/services/${serviceId}`, {
+        method: 'DELETE'
+      })
+      
+      const result = await response.json()
+      
+      if (response.ok && result.success) {
+        toast({
+          title: "Servicio eliminado",
+          description: "El servicio ha sido eliminado exitosamente",
+          duration: 4000,
+        })
+        await loadServices()
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al eliminar el servicio",
+          variant: "destructive",
+          duration: 5000,
+        })
+      }
+    } catch (error) {
+      console.error('Error deleting service:', error)
+      toast({
+        title: "Error",
+        description: "Error al eliminar el servicio",
+        variant: "destructive",
+        duration: 5000,
+      })
+    } finally {
+      setDeletingServiceId(null)
+    }
   }
 
   const handleServiceEdit = (service: Service) => {
@@ -285,9 +321,19 @@ export default function ServicesPage() {
     setEditingService(service) // Open edit modal
   }
 
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [searchTerm])
+
+  // Load services when filters change
   useEffect(() => {
     loadServices()
-  }, [searchTerm, selectedCategory, activeTab])
+  }, [loadServices])
 
   return (
     <div className="min-h-screen bg-background">
@@ -305,7 +351,7 @@ export default function ServicesPage() {
             </div>
             <div className="flex items-center gap-3">
               <Button 
-                onClick={handleDeleteAllServices}
+                onClick={() => setShowDeleteAllConfirm(true)}
                 variant="outline"
                 className="border-red-300 text-red-700 hover:bg-red-50"
               >
@@ -488,6 +534,7 @@ export default function ServicesPage() {
               onCreateService={() => setShowCreateModal(true)}
               onCreatePredefined={handleCreatePredefinedServices}
               isCreatingPredefined={isCreatingPredefined}
+              deletingServiceId={deletingServiceId}
             />
           </div>
         </div>
@@ -514,6 +561,21 @@ export default function ServicesPage() {
         isOpen={!!detailService}
         onClose={() => setDetailService(null)}
         onEdit={handleServiceDetailEdit}
+      />
+
+      {/* Delete All Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={showDeleteAllConfirm}
+        onClose={() => setShowDeleteAllConfirm(false)}
+        onConfirm={() => {
+          setShowDeleteAllConfirm(false)
+          handleDeleteAllServices()
+        }}
+        title="Eliminar Todos los Servicios"
+        description="¿Estás seguro de que quieres eliminar TODOS los servicios? Esta acción no se puede deshacer y eliminará permanentemente todos los servicios del catálogo."
+        confirmText="Eliminar Todos"
+        cancelText="Cancelar"
+        variant="destructive"
       />
     </div>
   )

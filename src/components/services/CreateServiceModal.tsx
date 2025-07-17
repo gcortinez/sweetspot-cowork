@@ -71,6 +71,7 @@ const AVAILABILITY_OPTIONS = [
   { value: 'ALWAYS', label: '24/7', description: 'Disponible las 24 horas' },
   { value: 'BUSINESS_HOURS', label: 'Horario Laboral', description: 'Disponible en horario de oficina' },
   { value: 'SCHEDULED', label: 'Programado', description: 'Disponible en horarios específicos' },
+  { value: 'ON_REQUEST', label: 'Bajo Petición', description: 'Disponible previa solicitud' },
 ]
 
 const COMMON_UNITS = [
@@ -99,6 +100,7 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
   const [tags, setTags] = useState<string[]>([])
   const [newTag, setNewTag] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const { toast } = useToast()
 
   const handleInputChange = (field: string, value: string | boolean | number) => {
@@ -146,6 +148,7 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
     }
 
     setIsSubmitting(true)
+    setErrors({})
     
     try {
       const serviceData = {
@@ -183,6 +186,7 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
       const result = await response.json()
       
       if (response.ok && result.success) {
+        setErrors({}) // Clear errors on success
         toast({
           title: "Servicio creado",
           description: "El servicio ha sido creado exitosamente",
@@ -230,6 +234,7 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
     setPricingTiers([])
     setTags([])
     setNewTag('')
+    setErrors({})
   }
 
   const handleClose = () => {

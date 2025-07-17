@@ -94,13 +94,12 @@ export async function createServiceAction(data: CreateServiceRequest): Promise<A
       data: {
         ...validatedData,
         tenantId,
-        pricing: validatedData.pricing ? JSON.stringify(validatedData.pricing) : null,
-        availability: validatedData.availability ? JSON.stringify(validatedData.availability) : null,
-        requirements: validatedData.requirements ? JSON.stringify(validatedData.requirements) : null,
-        images: validatedData.images ? JSON.stringify(validatedData.images) : null,
+        // JSON fields that need stringification
         tags: validatedData.tags ? JSON.stringify(validatedData.tags) : null,
-        duration: validatedData.duration ? JSON.stringify(validatedData.duration) : null,
         metadata: validatedData.metadata ? JSON.stringify(validatedData.metadata) : null,
+        pricingTiers: validatedData.pricingTiers ? JSON.stringify(validatedData.pricingTiers) : null,
+        // These fields are removed as they don't exist in the Prisma schema
+        // pricing, requirements, images, duration are not in the Service model
       },
       include: {
         tenant: true,
@@ -252,34 +251,41 @@ export async function deleteServiceAction(data: DeleteServiceRequest): Promise<A
       return { success: false, error: 'Service not found' }
     }
 
-    // Check for active bookings with this service
-    const activeBookings = await prisma.booking.count({
+    // Check for active service requests
+    const activeServiceRequests = await prisma.serviceRequest.count({
       where: {
-        services: {
-          some: {
-            serviceId: validatedData.id,
-            status: {
-              in: ['PENDING', 'CONFIRMED', 'IN_PROGRESS'],
-            },
-          },
+        serviceId: validatedData.id,
+        status: {
+          in: ['PENDING', 'APPROVED', 'IN_PROGRESS'],
         },
       },
     })
 
-    if (activeBookings > 0) {
+    if (activeServiceRequests > 0) {
       return { 
         success: false, 
-        error: 'Cannot delete service with active bookings. Please complete or cancel all bookings first.' 
+        error: 'Cannot delete service with active service requests. Please complete or cancel all pending requests first.' 
       }
     }
 
-    // Soft delete by setting isActive to false instead of actual deletion
-    await prisma.service.update({
-      where: { id: validatedData.id },
-      data: { 
-        isActive: false,
-        status: 'DISCONTINUED',
+    // Check for unpaid service consumptions
+    const unpaidConsumptions = await prisma.serviceConsumption.count({
+      where: {
+        serviceId: validatedData.id,
+        invoiced: false,
       },
+    })
+
+    if (unpaidConsumptions > 0) {
+      return { 
+        success: false, 
+        error: 'Cannot delete service with unpaid consumptions. Please process all pending invoices first.' 
+      }
+    }
+
+    // Hard delete - permanently remove the service from database
+    await prisma.service.delete({
+      where: { id: validatedData.id },
     })
 
     // revalidatePath('/services') // Removed to avoid client component issues

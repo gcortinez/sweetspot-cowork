@@ -3,10 +3,11 @@ import { updateServiceAction, deleteServiceAction, getServiceAction } from '@/li
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const result = await getServiceAction({ serviceId: params.id })
+    const { id } = await params
+    const result = await getServiceAction({ id })
     
     if (result.success) {
       return NextResponse.json(result)
@@ -34,7 +35,7 @@ export async function PUT(
     const { id } = await params
     
     const result = await updateServiceAction({
-      serviceId: id,
+      id,
       ...data
     })
     
@@ -61,10 +62,11 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const result = await deleteServiceAction({ serviceId: params.id })
+    const { id } = await params
+    const result = await deleteServiceAction({ id })
     
     if (result.success) {
       return NextResponse.json(result)
