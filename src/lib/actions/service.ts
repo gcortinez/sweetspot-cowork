@@ -168,28 +168,18 @@ export async function updateServiceAction(data: UpdateServiceRequest): Promise<A
       return { success: false, error: 'Service not found' }
     }
 
-    // Prepare update data with JSON stringification
+    // Prepare update data with JSON stringification for JSON fields only
     const processedUpdateData: any = { ...updateData }
-    if (updateData.pricing) {
-      processedUpdateData.pricing = JSON.stringify(updateData.pricing)
-    }
-    if (updateData.availability) {
-      processedUpdateData.availability = JSON.stringify(updateData.availability)
-    }
-    if (updateData.requirements) {
-      processedUpdateData.requirements = JSON.stringify(updateData.requirements)
-    }
-    if (updateData.images) {
-      processedUpdateData.images = JSON.stringify(updateData.images)
-    }
-    if (updateData.tags) {
+    
+    // Only stringify the fields that are stored as JSON in Prisma
+    if (updateData.tags && Array.isArray(updateData.tags)) {
       processedUpdateData.tags = JSON.stringify(updateData.tags)
     }
-    if (updateData.duration) {
-      processedUpdateData.duration = JSON.stringify(updateData.duration)
-    }
-    if (updateData.metadata) {
+    if (updateData.metadata && typeof updateData.metadata === 'object') {
       processedUpdateData.metadata = JSON.stringify(updateData.metadata)
+    }
+    if (updateData.pricingTiers && Array.isArray(updateData.pricingTiers)) {
+      processedUpdateData.pricingTiers = JSON.stringify(updateData.pricingTiers)
     }
 
     // Update service

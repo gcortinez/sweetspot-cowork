@@ -60,35 +60,28 @@ interface PricingTier {
 }
 
 const SERVICE_CATEGORIES = [
-  { value: 'CORE_SERVICES', label: 'Servicios Principales' },
-  { value: 'ADD_ON_SERVICES', label: 'Servicios Adicionales' },
-  { value: 'PREMIUM_SERVICES', label: 'Servicios Premium' },
-  { value: 'PACKAGE_SERVICES', label: 'Paquetes de Servicios' },
-  { value: 'CUSTOM_SERVICES', label: 'Servicios Personalizados' },
-  { value: 'RECURRING_SERVICES', label: 'Servicios Recurrentes' },
+  { value: 'PRINTING', label: 'Impresión' },
+  { value: 'COFFEE', label: 'Café' },
+  { value: 'FOOD', label: 'Comida' },
+  { value: 'PARKING', label: 'Estacionamiento' },
+  { value: 'STORAGE', label: 'Almacenamiento' },
+  { value: 'MAIL', label: 'Correo' },
+  { value: 'PHONE', label: 'Teléfono' },
+  { value: 'INTERNET', label: 'Internet' },
+  { value: 'CLEANING', label: 'Limpieza' },
+  { value: 'BUSINESS_SUPPORT', label: 'Soporte Empresarial' },
+  { value: 'EVENT_SERVICES', label: 'Servicios de Eventos' },
+  { value: 'WELLNESS', label: 'Bienestar' },
+  { value: 'TRANSPORTATION', label: 'Transporte' },
+  { value: 'CONSULTING', label: 'Consultoría' },
+  { value: 'MAINTENANCE', label: 'Mantenimiento' },
 ]
 
-
 const SERVICE_TYPES = [
-  { value: 'SPACE_RENTAL', label: 'Alquiler de Espacios', description: 'Alquiler de oficinas, salas de reuniones' },
-  { value: 'CATERING', label: 'Catering', description: 'Servicios de comida y bebida' },
-  { value: 'EQUIPMENT', label: 'Equipamiento', description: 'Alquiler de equipos y dispositivos' },
-  { value: 'CLEANING', label: 'Limpieza', description: 'Servicios de limpieza y mantenimiento' },
-  { value: 'SECURITY', label: 'Seguridad', description: 'Servicios de seguridad y vigilancia' },
-  { value: 'TECHNICAL_SUPPORT', label: 'Soporte Técnico', description: 'Soporte técnico e IT' },
-  { value: 'CONCIERGE', label: 'Conserjería', description: 'Servicios de conserjería y atención' },
-  { value: 'PRINTING', label: 'Impresión', description: 'Servicios de impresión y copia' },
-  { value: 'MAIL_HANDLING', label: 'Gestión de Correo', description: 'Manejo de correspondencia' },
-  { value: 'PARKING', label: 'Estacionamiento', description: 'Servicios de parqueo' },
-  { value: 'STORAGE', label: 'Almacenamiento', description: 'Servicios de almacenaje' },
-  { value: 'WELLNESS', label: 'Bienestar', description: 'Servicios de salud y bienestar' },
-  { value: 'NETWORKING', label: 'Networking', description: 'Eventos y conexiones profesionales' },
-  { value: 'CONSULTING', label: 'Consultoría', description: 'Servicios de consultoría profesional' },
-  { value: 'TRAINING', label: 'Capacitación', description: 'Cursos y entrenamientos' },
-  { value: 'EVENT_PLANNING', label: 'Organización de Eventos', description: 'Planificación y gestión de eventos' },
-  { value: 'VIRTUAL_OFFICE', label: 'Oficina Virtual', description: 'Servicios de oficina virtual' },
-  { value: 'TELECOMMUNICATIONS', label: 'Telecomunicaciones', description: 'Servicios de telefonía e internet' },
-  { value: 'OTHER', label: 'Otros', description: 'Otros servicios no categorizados' },
+  { value: 'CONSUMABLE', label: 'Consumible', description: 'Artículos físicos que se consumen' },
+  { value: 'SUBSCRIPTION', label: 'Suscripción', description: 'Servicios recurrentes' },
+  { value: 'ON_DEMAND', label: 'Bajo Demanda', description: 'Servicios solicitados según necesidad' },
+  { value: 'APPOINTMENT', label: 'Cita', description: 'Servicios programados' },
 ]
 
 const AVAILABILITY_OPTIONS = [
@@ -132,8 +125,8 @@ export default function EditServiceModal({ service, isOpen, onClose, onServiceUp
       setFormData({
         name: service.name,
         description: service.description || '',
-        category: mapOldCategoryToNew(service.category),
-        serviceType: mapOldServiceTypeToNew(service.serviceType),
+        category: service.category,
+        serviceType: service.serviceType,
         price: service.price.toString(),
         unit: service.unit,
         availability: service.availability,
@@ -184,62 +177,6 @@ export default function EditServiceModal({ service, isOpen, onClose, onServiceUp
     setTags(prev => prev.filter(tag => tag !== tagToRemove))
   }
 
-  // Helper function to map old category values to new schema
-  const mapOldCategoryToNew = (oldCategory: string) => {
-    const categoryMap: Record<string, string> = {
-      'PRINTING': 'ADD_ON_SERVICES',
-      'COFFEE': 'ADD_ON_SERVICES', 
-      'FOOD': 'ADD_ON_SERVICES',
-      'PARKING': 'ADD_ON_SERVICES',
-      'STORAGE': 'ADD_ON_SERVICES',
-      'MAIL': 'ADD_ON_SERVICES',
-      'PHONE': 'ADD_ON_SERVICES',
-      'INTERNET': 'CORE_SERVICES',
-      'CLEANING': 'CORE_SERVICES',
-      'BUSINESS_SUPPORT': 'CORE_SERVICES',
-      'EVENT_SERVICES': 'PREMIUM_SERVICES',
-      'WELLNESS': 'PREMIUM_SERVICES',
-      'TRANSPORTATION': 'ADD_ON_SERVICES',
-      'CONSULTING': 'PREMIUM_SERVICES',
-      'MAINTENANCE': 'CORE_SERVICES',
-    }
-    return categoryMap[oldCategory] || 'ADD_ON_SERVICES'
-  }
-
-  // Helper function to map old service types to new schema
-  const mapOldServiceTypeToNew = (oldServiceType: string) => {
-    const typeMap: Record<string, string> = {
-      'CONSUMABLE': 'EQUIPMENT',
-      'SUBSCRIPTION': 'SPACE_RENTAL', 
-      'ON_DEMAND': 'CONCIERGE',
-      'APPOINTMENT': 'CONSULTING',
-      'MAIL': 'MAIL_HANDLING',
-      'PHONE': 'TELECOMMUNICATIONS',
-      'INTERNET': 'TECHNICAL_SUPPORT',
-    }
-    return typeMap[oldServiceType] || 'OTHER'
-  }
-
-  // Helper function to transform availability string to object
-  const transformAvailability = (availabilityString: string) => {
-    switch (availabilityString) {
-      case 'ALWAYS':
-        return { isAlwaysAvailable: true }
-      case 'BUSINESS_HOURS':
-        return { 
-          isAlwaysAvailable: false,
-          availableDays: [1, 2, 3, 4, 5], // Monday to Friday
-          availableHours: { start: '09:00', end: '18:00' }
-        }
-      case 'SCHEDULED':
-        return { 
-          isAlwaysAvailable: false,
-          advanceBookingRequired: 24
-        }
-      default:
-        return { isAlwaysAvailable: false }
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -260,14 +197,19 @@ export default function EditServiceModal({ service, isOpen, onClose, onServiceUp
         id: service.id,
         name: formData.name,
         description: formData.description || undefined,
-        type: formData.serviceType, // Map serviceType to type field expected by schema
         category: formData.category,
-        pricing: {
-          basePrice: parseFloat(formData.price),
-          currency: 'USD',
-          pricingModel: 'FIXED'
-        },
-        availability: transformAvailability(formData.availability),
+        price: parseFloat(formData.price),
+        unit: formData.unit,
+        isActive: formData.isActive,
+        serviceType: formData.serviceType,
+        availability: formData.availability,
+        maxQuantity: formData.maxQuantity ? parseInt(formData.maxQuantity) : undefined,
+        requiresApproval: formData.requiresApproval,
+        estimatedDeliveryTime: formData.estimatedDeliveryTime || undefined,
+        instructions: formData.instructions || undefined,
+        dynamicPricing: formData.dynamicPricing,
+        minimumOrder: parseInt(formData.minimumOrder),
+        pricingTiers: pricingTiers.length > 0 ? pricingTiers : undefined,
         tags: tags.length > 0 ? tags : undefined,
         metadata: {
           ...service.metadata,
