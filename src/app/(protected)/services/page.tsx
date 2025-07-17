@@ -61,7 +61,7 @@ interface Service {
   name: string
   description?: string
   category: string
-  basePrice: number
+  price: number
   currency: string
   isActive: boolean
   pricing?: any
@@ -116,6 +116,7 @@ export default function ServicesPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [isLoading, setIsLoading] = useState(true)
+  const [isFiltering, setIsFiltering] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [editingService, setEditingService] = useState<Service | null>(null)
   const [detailService, setDetailService] = useState<Service | null>(null)
@@ -124,9 +125,13 @@ export default function ServicesPage() {
   const [deletingServiceId, setDeletingServiceId] = useState<string | null>(null)
   const { toast } = useToast()
 
-  const loadServices = useCallback(async () => {
+  const loadServices = useCallback(async (isInitialLoad = false) => {
     try {
-      setIsLoading(true)
+      if (isInitialLoad) {
+        setIsLoading(true)
+      } else {
+        setIsFiltering(true)
+      }
       
       const params = new URLSearchParams({
         page: '1',
@@ -150,7 +155,7 @@ export default function ServicesPage() {
         const totalServices = services.length || 0
         const activeServices = services.filter((s: any) => s.isActive).length || 0
         const categoriesCount = new Set(services.map((s: any) => s.category)).size
-        const averagePrice = services.reduce((sum: number, s: any) => sum + s.basePrice, 0) / totalServices || 0
+        const averagePrice = services.reduce((sum: number, s: any) => sum + (Number(s.price) || 0), 0) / totalServices || 0
         
         setStats({
           totalServices,
@@ -158,7 +163,7 @@ export default function ServicesPage() {
           categoriesCount,
           averagePrice,
           mostPopularCategory: 'COFFEE',
-          maxPrice: Math.max(...(services.map((s: any) => s.basePrice) || [0]))
+          maxPrice: Math.max(...(services.map((s: any) => Number(s.price) || 0) || [0]))
         })
       } else {
         console.error('Error loading services:', result.error)
@@ -177,6 +182,7 @@ export default function ServicesPage() {
       })
     } finally {
       setIsLoading(false)
+      setIsFiltering(false)
     }
   }, [debouncedSearchTerm, selectedCategory, activeTab, toast])
 
@@ -330,10 +336,17 @@ export default function ServicesPage() {
     return () => clearTimeout(timer)
   }, [searchTerm])
 
+  // Load services initially
+  useEffect(() => {
+    loadServices(true)
+  }, [])
+
   // Load services when filters change
   useEffect(() => {
-    loadServices()
-  }, [loadServices])
+    if (debouncedSearchTerm !== '' || selectedCategory !== 'all' || activeTab !== 'all') {
+      loadServices(false)
+    }
+  }, [debouncedSearchTerm, selectedCategory, activeTab, loadServices])
 
   return (
     <div className="min-h-screen bg-background">
@@ -528,6 +541,7 @@ export default function ServicesPage() {
             <ServicesTable
               services={services}
               isLoading={isLoading}
+              isFiltering={isFiltering}
               onEdit={handleServiceEdit}
               onDelete={handleServiceDeleted}
               onDetail={handleServiceDetail}

@@ -40,14 +40,16 @@ export function ConfirmationDialog({
     setIsLoading(true)
     try {
       await onConfirm()
+      onClose()
+    } catch (error) {
+      console.error('Error in confirmation:', error)
     } finally {
       setIsLoading(false)
-      onClose()
     }
   }
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={onClose}>
+    <AlertDialog open={isOpen} onOpenChange={isLoading ? undefined : onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>

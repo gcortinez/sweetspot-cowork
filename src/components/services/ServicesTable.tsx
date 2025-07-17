@@ -72,6 +72,7 @@ interface ServicesTableProps {
   onDelete: (serviceId: string) => Promise<void>
   onDetail?: (service: Service) => void
   isLoading?: boolean
+  isFiltering?: boolean
   onCreateService?: () => void
   onCreatePredefined?: () => void
   isCreatingPredefined?: boolean
@@ -146,6 +147,7 @@ export default function ServicesTable({
   onDelete, 
   onDetail,
   isLoading = false,
+  isFiltering = false,
   onCreateService,
   onCreatePredefined,
   isCreatingPredefined = false,
@@ -294,7 +296,18 @@ export default function ServicesTable({
               </TableCell>
             </TableRow>
           ) : (
-            services.map((service) => (
+            <>
+              {isFiltering && (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-2 bg-blue-50">
+                    <div className="flex items-center justify-center">
+                      <Package className="h-4 w-4 animate-spin text-blue-600 mr-2" />
+                      <span className="text-blue-600 text-sm">Filtrando servicios...</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+              {services.map((service) => (
             <TableRow 
               key={service.id}
               className={onDetail ? "cursor-pointer hover:bg-gray-50" : ""}
@@ -434,7 +447,9 @@ export default function ServicesTable({
                 </DropdownMenu>
               </TableCell>
             </TableRow>
-          ))
+              ))
+            }
+            </>
           )}
         </TableBody>
       </Table>
