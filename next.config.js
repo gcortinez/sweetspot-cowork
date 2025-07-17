@@ -241,6 +241,7 @@ if (process.env.NODE_ENV === 'production') {
               "font-src 'self' https://fonts.gstatic.com https://*.clerk.accounts.dev",
               "img-src 'self' data: https: blob:",
               "connect-src 'self' https: https://*.clerk.accounts.dev",
+              "worker-src 'self' blob:",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
