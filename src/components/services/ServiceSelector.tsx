@@ -18,7 +18,8 @@ import {
   X,
   Check,
   ShoppingCart,
-  Calculator
+  Calculator,
+  Toggle
 } from "lucide-react"
 // Removed direct server action import to avoid client/server component conflicts
 import { useToast } from "@/hooks/use-toast"
@@ -88,6 +89,10 @@ export default function ServiceSelector({ selectedServices, onSelectionChange, c
   const [selectedServiceForAdd, setSelectedServiceForAdd] = useState<Service | null>(null)
   const [quantity, setQuantity] = useState(1)
   const [customPrice, setCustomPrice] = useState('')
+  const [isCustomMode, setIsCustomMode] = useState(false)
+  const [customServiceName, setCustomServiceName] = useState('')
+  const [customServiceDescription, setCustomServiceDescription] = useState('')
+  const [customServicePrice, setCustomServicePrice] = useState('')
   const { toast } = useToast()
 
   // Load available services
@@ -209,6 +214,49 @@ export default function ServiceSelector({ selectedServices, onSelectionChange, c
     })
   }
 
+  // Add custom service to selection
+  const handleAddCustomService = () => {
+    if (!customServiceName.trim() || !customServicePrice) return
+    
+    const unitPrice = parseFloat(customServicePrice)
+    const total = unitPrice * quantity
+    
+    // Generate a unique ID for the custom service
+    const customServiceId = `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    
+    const newService: SelectedService = {
+      serviceId: customServiceId,
+      serviceName: customServiceName.trim(),
+      description: customServiceDescription.trim() || 'Servicio personalizado',
+      quantity: quantity,
+      unitPrice: unitPrice,
+      total: total,
+      metadata: {
+        originalPrice: unitPrice,
+        unit: 'unidad',
+        category: 'CUSTOM',
+        serviceType: 'CUSTOM',
+        customPriceApplied: true,
+        isCustomService: true,
+      }
+    }
+    
+    onSelectionChange([...selectedServices, newService])
+    
+    // Reset custom service form
+    setCustomServiceName('')
+    setCustomServiceDescription('')
+    setCustomServicePrice('')
+    setQuantity(1)
+    setIsCustomMode(false)
+    
+    toast({
+      title: "Servicio personalizado agregado",
+      description: `${customServiceName} ha sido agregado a la cotización`,
+      duration: 2000,
+    })
+  }
+
   // Remove service from selection
   const handleRemoveService = (serviceId: string) => {
     const updatedServices = selectedServices.filter(service => service.serviceId !== serviceId)
@@ -239,14 +287,134 @@ export default function ServiceSelector({ selectedServices, onSelectionChange, c
 
   return (
     <div className={`space-y-6 ${className}`}>
+      {/* Mode Toggle */}
+      <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+        <div className="flex items-center gap-2">
+          <Button
+            variant={!isCustomMode ? "default" : "outline"}
+            onClick={() => setIsCustomMode(false)}
+            className="flex items-center gap-2"
+          >
+            <ShoppingCart className="h-4 w-4" />
+            Seleccionar del Catálogo
+          </Button>
+          <Button
+            variant={isCustomMode ? "default" : "outline"}
+            onClick={() => setIsCustomMode(true)}
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Crear Servicio Personalizado
+          </Button>
+        </div>
+      </div>
+
+      {/* Custom Service Form */}
+      {isCustomMode && (
+        <Card className="border-green-200 bg-green-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Crear Servicio Personalizado
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="customName">Nombre del Servicio *</Label>
+                <Input
+                  id="customName"
+                  type="text"
+                  value={customServiceName}
+                  onChange={(e) => setCustomServiceName(e.target.value)}
+                  placeholder="Ej: Consultoría especializada"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="customPriceInput">Precio Unitario *</Label>
+                <Input
+                  id="customPriceInput"
+                  type="number"
+                  value={customServicePrice}
+                  onChange={(e) => setCustomServicePrice(e.target.value)}
+                  placeholder="0.00"
+                  min="0"
+                  step="0.01"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="customDescription">Descripción</Label>
+              <Input
+                id="customDescription"
+                type="text"
+                value={customServiceDescription}
+                onChange={(e) => setCustomServiceDescription(e.target.value)}
+                placeholder="Descripción del servicio personalizado (opcional)"
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="customQuantity">Cantidad</Label>
+                <Input
+                  id="customQuantity"
+                  type="number"
+                  value={quantity}
+                  onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                  min="1"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Total</Label>
+                <div className="flex items-center gap-2 h-10 px-3 bg-white border rounded-md">
+                  <Calculator className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-semibold">
+                    ${customServicePrice && !isNaN(parseFloat(customServicePrice)) 
+                      ? (parseFloat(customServicePrice) * quantity).toLocaleString()
+                      : '0'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setIsCustomMode(false)
+                  setCustomServiceName('')
+                  setCustomServiceDescription('')
+                  setCustomServicePrice('')
+                  setQuantity(1)
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleAddCustomService}
+                disabled={!customServiceName.trim() || !customServicePrice || isNaN(parseFloat(customServicePrice))}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Agregar Servicio Personalizado
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Service Browser */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5" />
-            Catálogo de Servicios
-          </CardTitle>
-        </CardHeader>
+      {!isCustomMode && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5" />
+              Catálogo de Servicios
+            </CardTitle>
+          </CardHeader>
         <CardContent className="space-y-4">
           {/* Search and Filter */}
           <div className="flex gap-4">
@@ -328,6 +496,7 @@ export default function ServiceSelector({ selectedServices, onSelectionChange, c
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* Add Service Form */}
       {showAddForm && selectedServiceForAdd && (
@@ -441,11 +610,18 @@ export default function ServiceSelector({ selectedServices, onSelectionChange, c
                         <p className="text-sm text-muted-foreground line-clamp-1">
                           {service.description}
                         </p>
-                        {service.metadata?.customPriceApplied && (
-                          <Badge variant="secondary" className="mt-1 text-xs">
-                            Precio personalizado
-                          </Badge>
-                        )}
+                        <div className="flex gap-2 mt-1">
+                          {service.metadata?.isCustomService && (
+                            <Badge variant="default" className="text-xs bg-green-600">
+                              Servicio Personalizado
+                            </Badge>
+                          )}
+                          {service.metadata?.customPriceApplied && !service.metadata?.isCustomService && (
+                            <Badge variant="secondary" className="text-xs">
+                              Precio personalizado
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                       <Button
                         variant="ghost"
