@@ -146,26 +146,28 @@ export default function QuotationsPage() {
         sortOrder: sortOrder as 'asc' | 'desc',
       })
       
-      if (result.success) {
-        setQuotations(result.data || [])
+      if (result.success && result.data) {
+        const quotations = result.data.quotations || []
+        const pagination = result.data.pagination || { totalPages: 1 }
+        
+        setQuotations(quotations)
         
         // Calculate stats
-        const allQuotations = result.data || []
         const stats = {
-          total: allQuotations.length,
-          draft: allQuotations.filter(q => q.status === 'DRAFT').length,
-          sent: allQuotations.filter(q => q.status === 'SENT').length,
-          accepted: allQuotations.filter(q => q.status === 'ACCEPTED').length,
-          rejected: allQuotations.filter(q => q.status === 'REJECTED').length,
-          expired: allQuotations.filter(q => q.status === 'EXPIRED').length,
-          converted: allQuotations.filter(q => q.status === 'CONVERTED').length,
-          totalValue: allQuotations.reduce((sum, q) => sum + q.total, 0),
-          averageValue: allQuotations.length > 0 ? allQuotations.reduce((sum, q) => sum + q.total, 0) / allQuotations.length : 0,
+          total: quotations.length,
+          draft: quotations.filter(q => q.status === 'DRAFT').length,
+          sent: quotations.filter(q => q.status === 'SENT').length,
+          accepted: quotations.filter(q => q.status === 'ACCEPTED').length,
+          rejected: quotations.filter(q => q.status === 'REJECTED').length,
+          expired: quotations.filter(q => q.status === 'EXPIRED').length,
+          converted: quotations.filter(q => q.status === 'CONVERTED').length,
+          totalValue: quotations.reduce((sum, q) => sum + q.total, 0),
+          averageValue: quotations.length > 0 ? quotations.reduce((sum, q) => sum + q.total, 0) / quotations.length : 0,
         }
         setStats(stats)
         
-        // Set pagination (placeholder for now)
-        setTotalPages(Math.ceil(allQuotations.length / 20))
+        // Set pagination from server response
+        setTotalPages(pagination.totalPages)
       } else {
         toast({
           title: "Error",
