@@ -93,16 +93,27 @@ export async function generateQuotationPDFAction(data: GenerateQuotationPDFReque
       logo: tenant?.settings?.logo,
     }
 
+    // Helper function to safely convert Decimal to number
+    const toNumber = (value: any) => {
+      if (value === null || value === undefined) return 0
+      if (typeof value === 'number') return value
+      if (typeof value === 'string') return parseFloat(value) || 0
+      // Handle Prisma Decimal objects
+      if (value && typeof value.toNumber === 'function') return value.toNumber()
+      if (value && typeof value.toString === 'function') return parseFloat(value.toString()) || 0
+      return Number(value) || 0
+    }
+
     // Transform quotation data for PDF
     const pdfData = {
       id: quotation.id,
       number: quotation.number,
       title: quotation.title,
       description: quotation.description,
-      subtotal: quotation.subtotal,
-      discounts: quotation.discounts,
-      taxes: quotation.taxes,
-      total: quotation.total,
+      subtotal: toNumber(quotation.subtotal),
+      discounts: toNumber(quotation.discounts),
+      taxes: toNumber(quotation.taxes),
+      total: toNumber(quotation.total),
       currency: quotation.currency,
       validUntil: quotation.validUntil.toISOString(),
       status: quotation.status,
@@ -118,10 +129,13 @@ export async function generateQuotationPDFAction(data: GenerateQuotationPDFReque
         id: item.id,
         description: item.description,
         quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        total: item.total,
+        unitPrice: toNumber(item.unitPrice),
+        total: toNumber(item.total),
       })),
-      opportunity: quotation.opportunity,
+      opportunity: quotation.opportunity ? {
+        ...quotation.opportunity,
+        value: quotation.opportunity.value ? toNumber(quotation.opportunity.value) : 0,
+      } : undefined,
       createdBy: createdByUser,
     }
 

@@ -536,10 +536,20 @@ export async function listQuotationsAction(data: ListQuotationsRequest): Promise
     const hasNext = validatedData.page < totalPages
     const hasPrev = validatedData.page > 1
 
+    // Ensure all quotations are properly serialized
+    const serializedQuotations = quotations.map(q => {
+      const serialized = serializeQuotation(q)
+      // Double-check that Decimal values are converted
+      if (serialized.subtotal && typeof serialized.subtotal !== 'number') {
+        console.error('Serialization failed for subtotal:', serialized.subtotal)
+      }
+      return serialized
+    })
+
     return {
       success: true,
       data: {
-        quotations: quotations.map(serializeQuotation),
+        quotations: serializedQuotations,
         pagination: {
           page: validatedData.page,
           limit: validatedData.limit,
