@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs'
-import { listClients } from '@/lib/actions/client'
+import { listClientsAction } from '@/lib/actions/client'
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') || undefined
 
     // Call the server action
-    const result = await listClients({
+    const result = await listClientsAction({
       page,
       limit,
       search,

@@ -132,7 +132,7 @@ export default function ServiceSelector({ selectedServices, onSelectionChange, c
 
   // Calculate price based on quantity and pricing tiers
   const calculatePrice = (service: Service, quantity: number): number => {
-    if (service.pricingTiers && service.pricingTiers.length > 0) {
+    if (service.pricingTiers && Array.isArray(service.pricingTiers) && service.pricingTiers.length > 0) {
       // Find applicable tier
       const applicableTier = service.pricingTiers
         .filter(tier => tier.minQuantity <= quantity)
