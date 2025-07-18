@@ -19,7 +19,9 @@ import {
   Check,
   ShoppingCart,
   Calculator,
-  Toggle
+  Toggle,
+  AlertCircle,
+  Trash2
 } from "lucide-react"
 // Removed direct server action import to avoid client/server component conflicts
 import { useToast } from "@/hooks/use-toast"
