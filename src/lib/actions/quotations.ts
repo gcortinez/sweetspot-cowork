@@ -47,26 +47,37 @@ async function getUserWithTenant() {
 
 // Helper function to serialize quotation data
 function serializeQuotation(quotation: any) {
+  // Helper function to safely convert Decimal to number
+  const toNumber = (value: any) => {
+    if (value === null || value === undefined) return 0
+    if (typeof value === 'number') return value
+    if (typeof value === 'string') return parseFloat(value) || 0
+    // Handle Prisma Decimal objects
+    if (value && typeof value.toNumber === 'function') return value.toNumber()
+    if (value && typeof value.toString === 'function') return parseFloat(value.toString()) || 0
+    return Number(value) || 0
+  }
+
   return {
     ...quotation,
-    subtotal: quotation.subtotal ? Number(quotation.subtotal) : 0,
-    discounts: quotation.discounts ? Number(quotation.discounts) : 0,
-    taxes: quotation.taxes ? Number(quotation.taxes) : 0,
-    total: quotation.total ? Number(quotation.total) : 0,
+    subtotal: toNumber(quotation.subtotal),
+    discounts: toNumber(quotation.discounts),
+    taxes: toNumber(quotation.taxes),
+    total: toNumber(quotation.total),
     validUntil: quotation.validUntil ? quotation.validUntil.toISOString() : null,
     createdAt: quotation.createdAt ? quotation.createdAt.toISOString() : null,
     updatedAt: quotation.updatedAt ? quotation.updatedAt.toISOString() : null,
     approvedAt: quotation.approvedAt ? quotation.approvedAt.toISOString() : null,
     items: quotation.items?.map((item: any) => ({
       ...item,
-      unitPrice: item.unitPrice ? Number(item.unitPrice) : 0,
-      total: item.total ? Number(item.total) : 0,
+      unitPrice: toNumber(item.unitPrice),
+      total: toNumber(item.total),
       createdAt: item.createdAt ? item.createdAt.toISOString() : null,
     })) || [],
     // Handle nested objects with potential Decimal values
     opportunity: quotation.opportunity ? {
       ...quotation.opportunity,
-      value: quotation.opportunity.value ? Number(quotation.opportunity.value) : 0,
+      value: toNumber(quotation.opportunity.value),
     } : null,
     client: quotation.client ? {
       ...quotation.client,

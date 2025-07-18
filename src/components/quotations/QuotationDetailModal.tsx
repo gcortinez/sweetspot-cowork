@@ -173,7 +173,8 @@ export default function QuotationDetailModal({
   onViewVersions
 }: QuotationDetailModalProps) {
   const { toast } = useToast()
-  const { downloadPDF, previewPDF, emailPDF, isGenerating } = useQuotationPDF()
+  const { downloadPDF, previewPDF, emailPDF, isGenerating: hookIsGenerating } = useQuotationPDF()
+  const [isGenerating, setIsGenerating] = useState(false)
   
   if (!quotation) return null
 
@@ -230,6 +231,7 @@ export default function QuotationDetailModal({
   }
 
   const handleDownloadPDF = async () => {
+    setIsGenerating(true)
     try {
       const result = await generateQuotationPDFAction({
         quotationId: quotation.id,
@@ -252,10 +254,13 @@ export default function QuotationDetailModal({
         description: "Error al descargar PDF",
         variant: "destructive",
       })
+    } finally {
+      setIsGenerating(false)
     }
   }
 
   const handlePreviewPDF = async () => {
+    setIsGenerating(true)
     try {
       const result = await generateQuotationPDFAction({
         quotationId: quotation.id,
@@ -278,10 +283,13 @@ export default function QuotationDetailModal({
         description: "Error al previsualizar PDF",
         variant: "destructive",
       })
+    } finally {
+      setIsGenerating(false)
     }
   }
 
   const handleEmailPDF = async () => {
+    setIsGenerating(true)
     try {
       const result = await emailQuotationPDFAction({
         quotationId: quotation.id,
@@ -308,6 +316,8 @@ export default function QuotationDetailModal({
         description: "Error al enviar email",
         variant: "destructive",
       })
+    } finally {
+      setIsGenerating(false)
     }
   }
 
