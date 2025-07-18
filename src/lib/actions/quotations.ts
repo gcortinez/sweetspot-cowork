@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { currentUser } from '@clerk/nextjs/server'
+import { getTenantContext } from '@/lib/auth'
 import { db } from '@/lib/db'
 import type { ActionResult } from '@/types/database'
 import {
@@ -41,24 +41,8 @@ import {
 
 // Helper function to get user with tenant info
 async function getUserWithTenant() {
-  const user = await currentUser()
-  
-  if (!user) {
-    throw new Error('No autorizado - no hay usuario de Clerk')
-  }
-
-  const dbUser = await db.user.findUnique({
-    where: { clerkId: user.id },
-    include: {
-      tenant: true,
-    },
-  })
-
-  if (!dbUser) {
-    throw new Error('Usuario no encontrado en la base de datos')
-  }
-
-  return { user: dbUser, tenantId: dbUser.tenantId }
+  const context = await getTenantContext()
+  return { user: context.user, tenantId: context.tenantId }
 }
 
 // Helper function to serialize quotation data
@@ -69,11 +53,31 @@ function serializeQuotation(quotation: any) {
     discounts: quotation.discounts ? Number(quotation.discounts) : 0,
     taxes: quotation.taxes ? Number(quotation.taxes) : 0,
     total: quotation.total ? Number(quotation.total) : 0,
+    validUntil: quotation.validUntil ? quotation.validUntil.toISOString() : null,
+    createdAt: quotation.createdAt ? quotation.createdAt.toISOString() : null,
+    updatedAt: quotation.updatedAt ? quotation.updatedAt.toISOString() : null,
+    approvedAt: quotation.approvedAt ? quotation.approvedAt.toISOString() : null,
     items: quotation.items?.map((item: any) => ({
       ...item,
       unitPrice: item.unitPrice ? Number(item.unitPrice) : 0,
       total: item.total ? Number(item.total) : 0,
+      createdAt: item.createdAt ? item.createdAt.toISOString() : null,
     })) || [],
+    // Handle nested objects with potential Decimal values
+    opportunity: quotation.opportunity ? {
+      ...quotation.opportunity,
+      value: quotation.opportunity.value ? Number(quotation.opportunity.value) : 0,
+    } : null,
+    client: quotation.client ? {
+      ...quotation.client,
+      createdAt: quotation.client.createdAt ? quotation.client.createdAt.toISOString() : null,
+      updatedAt: quotation.client.updatedAt ? quotation.client.updatedAt.toISOString() : null,
+    } : null,
+    lead: quotation.lead ? {
+      ...quotation.lead,
+      createdAt: quotation.lead.createdAt ? quotation.lead.createdAt.toISOString() : null,
+      updatedAt: quotation.lead.updatedAt ? quotation.lead.updatedAt.toISOString() : null,
+    } : null,
   }
 }
 

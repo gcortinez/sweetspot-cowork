@@ -428,7 +428,11 @@ export default function QuotationDetailModal({
               variant="outline"
               disabled={isGenerating}
             >
-              <Eye className="h-4 w-4 mr-2" />
+              {isGenerating ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Eye className="h-4 w-4 mr-2" />
+              )}
               Vista Previa PDF
             </Button>
 
@@ -437,7 +441,11 @@ export default function QuotationDetailModal({
               variant="outline"
               disabled={isGenerating}
             >
-              <Download className="h-4 w-4 mr-2" />
+              {isGenerating ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4 mr-2" />
+              )}
               Descargar PDF
             </Button>
 
@@ -447,7 +455,11 @@ export default function QuotationDetailModal({
                 variant="outline"
                 disabled={isGenerating}
               >
-                <Mail className="h-4 w-4 mr-2" />
+                {isGenerating ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Mail className="h-4 w-4 mr-2" />
+                )}
                 Enviar por Email
               </Button>
             )}
