@@ -84,14 +84,6 @@ export async function generateQuotationPDFAction(data: GenerateQuotationPDFReque
             phone: true,
             company: true,
           }
-        },
-        createdBy: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-          }
         }
       }
     })
@@ -99,6 +91,17 @@ export async function generateQuotationPDFAction(data: GenerateQuotationPDFReque
     if (!quotation) {
       return { success: false, error: 'Cotización no encontrada' }
     }
+
+    // Get the user who created the quotation
+    const createdByUser = await db.user.findUnique({
+      where: { id: quotation.createdBy },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+      }
+    })
 
     // Get tenant/cowork information for PDF header
     const coworkInfo = {
@@ -139,7 +142,7 @@ export async function generateQuotationPDFAction(data: GenerateQuotationPDFReque
         total: item.total,
       })),
       opportunity: quotation.opportunity,
-      createdBy: quotation.createdBy,
+      createdBy: createdByUser,
     }
 
     // Log PDF generation for audit
