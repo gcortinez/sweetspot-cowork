@@ -25,6 +25,7 @@ import {
 } from "@/lib/actions/opportunities";
 import { STAGE_METADATA } from "@/lib/validations/opportunities";
 import ClientSelector from "@/components/clients/ClientSelector";
+import UserSelector from "@/components/users/UserSelector";
 
 interface Opportunity {
   id: string;
@@ -399,15 +400,13 @@ export default function EditOpportunityModal({
             </div>
             <div className="grid grid-cols-2 gap-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 p-4 rounded-lg border border-blue-200">
               <div className="space-y-2">
-                <Label htmlFor="assignedToId" className="text-sm font-medium text-foreground">
+                <Label className="text-sm font-medium text-foreground">
                   Asignado a
                 </Label>
-                <Input
-                  id="assignedToId"
+                <UserSelector
                   value={formData.assignedToId}
-                  onChange={(e) => handleInputChange('assignedToId', e.target.value)}
-                  placeholder="ID del usuario asignado"
-                  className="h-11"
+                  onValueChange={(userId) => handleInputChange('assignedToId', userId || '')}
+                  placeholder="Seleccionar usuario responsable..."
                 />
               </div>
               <div className="space-y-2">
