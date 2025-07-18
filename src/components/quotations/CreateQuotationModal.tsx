@@ -158,9 +158,9 @@ export default function CreateQuotationModal({
         description: formData.description || undefined,
         items: selectedServices.map(service => ({
           description: service.description,
-          quantity: service.quantity,
-          unitPrice: service.unitPrice,
-          total: service.total,
+          quantity: parseInt(service.quantity.toString()) || 1,
+          unitPrice: parseFloat(service.unitPrice.toString()) || 0,
+          total: parseFloat(service.total.toString()) || 0,
         })),
         discounts: formData.discounts,
         taxes: formData.taxes,

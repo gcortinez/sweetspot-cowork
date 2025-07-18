@@ -289,97 +289,6 @@ export default function ServiceSelector({ selectedServices, onSelectionChange, c
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Servicios Seleccionados - Movido arriba */}
-      <Card className="border-green-200 bg-green-50/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5" />
-            Servicios Seleccionados ({selectedServices.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {selectedServices.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <div className="flex flex-col items-center gap-2">
-                <AlertCircle className="h-8 w-8 text-muted-foreground" />
-                <p>No hay servicios seleccionados</p>
-                <p className="text-sm">Selecciona servicios del catálogo o crea uno personalizado</p>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {selectedServices.map((service) => (
-                <Card key={service.serviceId} className="border-gray-200">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex-1">
-                        <h4 className="font-semibold">{service.serviceName}</h4>
-                        <p className="text-sm text-muted-foreground">{service.description}</p>
-                        {service.metadata?.isCustomService && (
-                          <Badge variant="secondary" className="mt-1 bg-green-100 text-green-700">
-                            Servicio Personalizado
-                          </Badge>
-                        )}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveService(service.serviceId)}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-4 gap-4">
-                      <div className="space-y-1">
-                        <Label className="text-xs">Cantidad</Label>
-                        <Input
-                          type="number"
-                          value={service.quantity}
-                          onChange={(e) => handleUpdateService(service.serviceId, 'quantity', parseInt(e.target.value) || 1)}
-                          min="1"
-                          className="h-8"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Precio Unit.</Label>
-                        <Input
-                          type="number"
-                          value={service.unitPrice}
-                          onChange={(e) => handleUpdateService(service.serviceId, 'unitPrice', parseFloat(e.target.value) || 0)}
-                          min="0"
-                          step="0.01"
-                          className="h-8"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Unidad</Label>
-                        <div className="h-8 flex items-center text-sm text-muted-foreground">
-                          {service.metadata?.unit || 'unit'}
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Total</Label>
-                        <div className="h-8 flex items-center font-semibold">
-                          ${service.total.toLocaleString()}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-              
-              {/* Subtotal */}
-              <Separator />
-              <div className="flex justify-between items-center font-semibold text-lg">
-                <span>Subtotal:</span>
-                <span>${subtotal.toLocaleString()}</span>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Mode Toggle */}
       <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
         <div className="flex items-center gap-2">
@@ -678,6 +587,97 @@ export default function ServiceSelector({ selectedServices, onSelectionChange, c
           </CardContent>
         </Card>
       )}
+
+      {/* Servicios Seleccionados - Movido abajo */}
+      <Card className="border-green-200 bg-green-50/50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ShoppingCart className="h-5 w-5" />
+            Servicios Seleccionados ({selectedServices.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {selectedServices.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <div className="flex flex-col items-center gap-2">
+                <AlertCircle className="h-8 w-8 text-muted-foreground" />
+                <p>No hay servicios seleccionados</p>
+                <p className="text-sm">Selecciona servicios del catálogo o crea uno personalizado</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {selectedServices.map((service) => (
+                <Card key={service.serviceId} className="border-gray-200">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        <h4 className="font-semibold">{service.serviceName}</h4>
+                        <p className="text-sm text-muted-foreground">{service.description}</p>
+                        {service.metadata?.isCustomService && (
+                          <Badge variant="secondary" className="mt-1 bg-green-100 text-green-700">
+                            Servicio Personalizado
+                          </Badge>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveService(service.serviceId)}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-4 gap-4">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Cantidad</Label>
+                        <Input
+                          type="number"
+                          value={service.quantity}
+                          onChange={(e) => handleUpdateService(service.serviceId, 'quantity', parseInt(e.target.value) || 1)}
+                          min="1"
+                          className="h-8"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Precio Unit.</Label>
+                        <Input
+                          type="number"
+                          value={service.unitPrice}
+                          onChange={(e) => handleUpdateService(service.serviceId, 'unitPrice', parseFloat(e.target.value) || 0)}
+                          min="0"
+                          step="0.01"
+                          className="h-8"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Unidad</Label>
+                        <div className="h-8 flex items-center text-sm text-muted-foreground">
+                          {service.metadata?.unit || 'unit'}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Total</Label>
+                        <div className="h-8 flex items-center font-semibold">
+                          ${service.total.toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              
+              {/* Subtotal */}
+              <Separator />
+              <div className="flex justify-between items-center font-semibold text-lg">
+                <span>Subtotal:</span>
+                <span>${subtotal.toLocaleString()}</span>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
     </div>
   )
