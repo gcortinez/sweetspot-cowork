@@ -20,16 +20,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { listUsersAction } from "@/lib/actions/user";
+import { searchUsers, type UserSearchResult } from "@/lib/actions/users";
 
-interface UserOption {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: string;
-  status: string;
-}
+type UserOption = UserSearchResult;
 
 interface UserSelectorProps {
   value?: string;
@@ -80,14 +73,14 @@ export default function UserSelector({
   const searchUsersDebounced = async (query: string) => {
     setIsSearching(true);
     try {
-      const result = await listUsersAction({ 
+      const result = await searchUsers({ 
         search: query || undefined, // Use undefined instead of empty string
         limit: 20,
         page: 1
       });
       
-      if (result.success) {
-        setUsers(result.users);
+      if (result.success && result.data) {
+        setUsers(result.data);
       } else {
         console.error('Error searching users:', result.error);
         toast({

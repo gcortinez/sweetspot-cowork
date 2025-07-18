@@ -11,6 +11,7 @@ export * from './tenant'
 
 // User management actions
 export * from './user'
+export * from './users'
 
 // Client management actions
 export * from './client'
