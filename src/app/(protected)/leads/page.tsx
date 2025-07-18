@@ -54,6 +54,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 import { useToast } from '@/hooks/use-toast'
 import CreateLeadModal from '@/components/leads/CreateLeadModal'
 import LeadDetailModal from '@/components/leads/LeadDetailModal'
@@ -132,6 +133,7 @@ export default function LeadsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [sourceFilter, setSourceFilter] = useState<string>('all')
+  const [showConverted, setShowConverted] = useState<boolean>(false)
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -163,6 +165,7 @@ export default function LeadsPage() {
       
       const data = await response.json()
       console.log('Leads loaded:', data)
+      console.log('Data structure:', JSON.stringify(data, null, 2))
       
       // Handle different response structures
       let leadsArray: Lead[] = []
@@ -174,6 +177,14 @@ export default function LeadsPage() {
         }
       } else if (Array.isArray(data)) {
         leadsArray = data
+      }
+      
+      console.log('Processed leads array:', leadsArray)
+      console.log('Number of leads:', leadsArray.length)
+      
+      // Debug individual leads
+      if (leadsArray.length > 0) {
+        console.log('First lead details:', JSON.stringify(leadsArray[0], null, 2))
       }
       
       setLeads(leadsArray)
@@ -231,8 +242,8 @@ export default function LeadsPage() {
   }
 
   const filteredLeads = leads.filter(lead => {
-    // Hide converted prospects
-    if (lead.status === 'CONVERTED') return false
+    // Hide converted prospects unless explicitly shown
+    if (lead.status === 'CONVERTED' && !showConverted) return false
     
     const matchesSearch = searchTerm === '' || 
       lead.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -245,6 +256,14 @@ export default function LeadsPage() {
 
     return matchesSearch && matchesStatus && matchesSource
   })
+  
+  // Debug filtering
+  console.log('Total leads before filter:', leads.length)
+  console.log('Filtered leads count:', filteredLeads.length)
+  console.log('Current filters:', { searchTerm, statusFilter, sourceFilter })
+  if (leads.length > 0 && filteredLeads.length === 0) {
+    console.log('All leads were filtered out. Sample lead:', JSON.stringify(leads[0], null, 2))
+  }
 
   const getScoreColor = (score?: number) => {
     if (!score) return 'text-gray-500'
@@ -260,8 +279,9 @@ export default function LeadsPage() {
     return AlertCircle
   }
 
+  const activeLeads = leads.filter(l => l.status !== 'CONVERTED')
   const stats = {
-    total: leads.length,
+    total: activeLeads.length,
     new: leads.filter(l => l.status === 'NEW').length,
     qualified: leads.filter(l => l.status === 'QUALIFIED').length,
     converted: leads.filter(l => l.status === 'CONVERTED').length
@@ -317,7 +337,7 @@ export default function LeadsPage() {
               <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
               <p className="text-xs text-purple-600 flex items-center mt-1">
                 <Users className="h-3 w-3 mr-1" />
-                Total prospectos
+                Total activos
               </p>
             </div>
             <div className="h-12 w-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
@@ -421,6 +441,19 @@ export default function LeadsPage() {
               ))}
             </SelectContent>
           </Select>
+          <div className="flex items-center space-x-2 bg-white px-3 py-2 rounded-lg border">
+            <Checkbox
+              id="show-converted"
+              checked={showConverted}
+              onCheckedChange={(checked) => setShowConverted(checked as boolean)}
+            />
+            <label
+              htmlFor="show-converted"
+              className="text-sm text-gray-700 cursor-pointer"
+            >
+              Mostrar convertidos
+            </label>
+          </div>
             </div>
           </div>
         </div>
@@ -441,7 +474,7 @@ export default function LeadsPage() {
                 </div>
               </div>
               <div className="text-sm text-gray-600">
-                {filteredLeads.length} de {leads.length} prospectos
+                {filteredLeads.length} de {showConverted ? leads.length : activeLeads.length} prospectos
               </div>
             </div>
           </div>

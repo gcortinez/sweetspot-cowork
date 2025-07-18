@@ -186,17 +186,15 @@ export default function ClientSelector({
                 )}
                 <div className="flex items-center gap-1 flex-shrink-0">
                   {selectedClient && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-4 w-4 p-0 hover:bg-transparent"
+                    <div
+                      className="h-4 w-4 p-0 hover:bg-gray-100 rounded flex items-center justify-center cursor-pointer"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleClearSelection();
                       }}
                     >
                       <X className="h-3 w-3" />
-                    </Button>
+                    </div>
                   )}
                   <ChevronsUpDown className="h-4 w-4 opacity-50" />
                 </div>

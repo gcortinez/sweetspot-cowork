@@ -89,7 +89,7 @@ export default function ConvertToOpportunityModal({
         description: formData.description || undefined,
         value: parseFloat(formData.value) || 0,
         probability: parseInt(formData.probability),
-        expectedCloseDate: formData.expectedCloseDate && formData.expectedCloseDate.trim() ? new Date(formData.expectedCloseDate + 'T12:00:00.000Z').toISOString() : undefined,
+        expectedCloseDate: formData.expectedCloseDate && formData.expectedCloseDate.trim() !== '' ? new Date(formData.expectedCloseDate + 'T12:00:00.000Z').toISOString() : undefined,
         stage: formData.stage,
       };
       

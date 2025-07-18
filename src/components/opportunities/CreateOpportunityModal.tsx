@@ -107,7 +107,7 @@ export default function CreateOpportunityModal({
         value: parseFloat(formData.value),
         probability: parseInt(formData.probability),
         stage: formData.stage,
-        expectedCloseDate: formData.expectedCloseDate || undefined,
+        expectedCloseDate: formData.expectedCloseDate && formData.expectedCloseDate.trim() !== '' ? new Date(formData.expectedCloseDate + 'T12:00:00.000Z').toISOString() : undefined,
         clientId: formData.clientId || undefined,
         leadId: formData.leadId || undefined,
         assignedToId: formData.assignedToId || undefined,
