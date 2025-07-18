@@ -382,8 +382,6 @@ export async function listClientsAction(query: PaginatedClientsQuery) {
       sortOrder, 
       search, 
       status, 
-      industry, 
-      size, 
       hasActiveUsers, 
       createdAfter, 
       createdBefore 
@@ -406,21 +404,14 @@ export async function listClientsAction(query: PaginatedClientsQuery) {
     if (search) {
       whereClause.OR = [
         { name: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-        { industry: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { company: { contains: search, mode: 'insensitive' } },
+        { contactPerson: { contains: search, mode: 'insensitive' } },
       ]
     }
 
     if (status) {
       whereClause.status = status
-    }
-
-    if (industry) {
-      whereClause.industry = industry
-    }
-
-    if (size) {
-      whereClause.size = size
     }
 
     if (createdAfter || createdBefore) {
@@ -457,20 +448,22 @@ export async function listClientsAction(query: PaginatedClientsQuery) {
         select: {
           id: true,
           name: true,
-          description: true,
-          logo: true,
-          website: true,
-          industry: true,
-          size: true,
+          email: true,
+          phone: true,
+          company: true,
+          address: true,
+          taxId: true,
+          contactPerson: true,
           status: true,
+          notes: true,
           createdAt: true,
           updatedAt: true,
           tenantId: true,
           _count: {
             select: {
               users: true,
-              bookings: true,
-              memberships: true,
+              quotations: true,
+              Membership: true,
             }
           }
         },
