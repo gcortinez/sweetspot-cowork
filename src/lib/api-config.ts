@@ -10,8 +10,13 @@ export const getApiBaseUrl = (): string => {
     return process.env.NEXT_PUBLIC_API_BASE_URL || window.location.origin;
   }
   
-  // For server-side calls, use environment variable or localhost for development
-  return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+  // For server-side calls, use environment variable or a sensible default
+  // In production, this should never fall back to localhost
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.VERCEL_URL 
+    ? `https://${process.env.VERCEL_URL}`
+    : 'http://localhost:3000';
+  
+  return baseUrl;
 };
 
 // Helper function to build full API URLs

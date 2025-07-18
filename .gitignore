@@ -109,3 +109,4 @@ storybook-static
 # Misc
 *.tgz
 *.tar.gz
+.vercel
