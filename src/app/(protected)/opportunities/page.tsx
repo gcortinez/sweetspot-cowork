@@ -297,7 +297,7 @@ export default function OpportunitiesPage() {
           title: "Oportunidad eliminada",
           description: `"${opportunityTitle}" ha sido eliminada exitosamente.`,
         })
-        loadStats() // Only refresh stats
+        loadData() // Refresh opportunities and stats
       } else {
         toast({
           title: "Error",
