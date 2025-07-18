@@ -340,131 +340,142 @@ export default function QuotationsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Cotizaciones</h1>
-          <p className="text-gray-600 mt-1">Gestiona todas las cotizaciones de tu cowork</p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-purple to-purple-700 bg-clip-text text-transparent">
+              Cotizaciones
+            </h1>
+            <p className="text-gray-600 mt-1">Gestiona todas las cotizaciones de tu cowork</p>
+          </div>
+          <Button 
+            onClick={() => setShowCreateModal(true)}
+            className="bg-gradient-to-r from-brand-purple to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Nueva Cotización
+          </Button>
         </div>
-        <Button 
-          onClick={() => setShowCreateModal(true)}
-          className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Nueva Cotización
-        </Button>
-      </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Cotizaciones</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="shadow-lg hover:shadow-xl transition-shadow duration-200 border-0 bg-white/80 backdrop-blur-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Total Cotizaciones</CardTitle>
+              <div className="p-2 bg-gradient-to-r from-brand-purple to-purple-700 rounded-lg">
+                <FileText className="h-4 w-4 text-white" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
+              <p className="text-xs text-gray-500">
+                {stats.draft} borradores, {stats.sent} enviadas
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-lg hover:shadow-xl transition-shadow duration-200 border-0 bg-white/80 backdrop-blur-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Valor Total</CardTitle>
+              <div className="p-2 bg-gradient-to-r from-green-500 to-green-600 rounded-lg">
+                <DollarSign className="h-4 w-4 text-white" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalValue)}</div>
+              <p className="text-xs text-gray-500">
+                Promedio: {formatCurrency(stats.averageValue)}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-lg hover:shadow-xl transition-shadow duration-200 border-0 bg-white/80 backdrop-blur-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Aceptadas</CardTitle>
+              <div className="p-2 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg">
+                <TrendingUp className="h-4 w-4 text-white" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-emerald-600">{stats.accepted}</div>
+              <p className="text-xs text-gray-500">
+                {stats.converted} convertidas
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-lg hover:shadow-xl transition-shadow duration-200 border-0 bg-white/80 backdrop-blur-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Pendientes</CardTitle>
+              <div className="p-2 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg">
+                <Clock className="h-4 w-4 text-white" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-600">{stats.sent}</div>
+              <p className="text-xs text-gray-500">
+                {stats.expired} expiradas
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filters */}
+        <Card className="mb-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold text-gray-900">Filtros</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.draft} borradores, {stats.sent} enviadas
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(stats.totalValue)}</div>
-            <p className="text-xs text-muted-foreground">
-              Promedio: {formatCurrency(stats.averageValue)}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Aceptadas</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.accepted}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.converted} convertidas
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pendientes</CardTitle>
-            <Clock className="h-4 w-4 text-orange-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{stats.sent}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.expired} expiradas
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Filtros</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Buscar</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder="Buscar por número, título o cliente..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Buscar</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="Buscar por número, título o cliente..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 border-gray-200 focus:border-brand-purple focus:ring-brand-purple"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Estado</label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="border-gray-200 focus:border-brand-purple focus:ring-brand-purple">
+                    <SelectValue placeholder="Selecciona estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_FILTERS.map(filter => (
+                      <SelectItem key={filter.value} value={filter.value}>
+                        {filter.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Ordenar por</label>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="border-gray-200 focus:border-brand-purple focus:ring-brand-purple">
+                    <SelectValue placeholder="Selecciona orden" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SORT_OPTIONS.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Estado</label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona estado" />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_FILTERS.map(filter => (
-                    <SelectItem key={filter.value} value={filter.value}>
-                      {filter.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Ordenar por</label>
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona orden" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SORT_OPTIONS.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
       {/* Quotations List */}
       <QuotationsList
@@ -518,6 +529,7 @@ export default function QuotationsPage() {
         onEditVersion={(quotation) => handleVersionAction('edit', quotation)}
         onDuplicateVersion={(quotation) => handleVersionAction('duplicate', quotation)}
       />
+      </div>
     </div>
   )
 }

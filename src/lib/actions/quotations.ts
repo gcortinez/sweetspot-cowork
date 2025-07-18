@@ -48,7 +48,7 @@ async function getUserWithTenant() {
   }
 
   const dbUser = await db.user.findUnique({
-    where: { authId: user.id },
+    where: { clerkId: user.id },
     include: {
       tenant: true,
     },
