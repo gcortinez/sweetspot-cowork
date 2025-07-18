@@ -83,8 +83,10 @@ export default function CreateQuotationModal({
       setIsLoadingClients(true)
       const response = await api.get('/api/clients')
       if (response.ok) {
-        const data = await response.json()
-        setClients(data.clients || [])
+        const result = await response.json()
+        if (result.success) {
+          setClients(result.clients || [])
+        }
       }
     } catch (error) {
       console.error('Error loading clients:', error)

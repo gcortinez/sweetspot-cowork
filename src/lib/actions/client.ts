@@ -19,15 +19,8 @@ import {
   type UpdateClientSettingsRequest,
   type BulkClientOperationRequest,
 } from '../validations'
-import { 
-  requireAuth, 
-  requireAdmin,
-  canManageClients,
-  withTenantContext,
-  getCurrentTenantId,
-  getCurrentUserId,
-  getTenantPrisma,
-} from '../server/tenant-context'
+import { getTenantContext } from '@/lib/auth'
+import { db } from '@/lib/db'
 
 /**
  * Client (Company/Team) Management Server Actions
@@ -380,10 +373,8 @@ export async function listClientsAction(query: PaginatedClientsQuery) {
       }
     }
 
-    // Require authentication
-    const context = await requireAuth()
-    
-    const prisma = await getTenantPrisma()
+    // Get tenant context
+    const context = await getTenantContext()
     const { 
       page, 
       limit, 
@@ -402,7 +393,7 @@ export async function listClientsAction(query: PaginatedClientsQuery) {
     const whereClause: any = {}
 
     // Non-super admins can only see clients in their tenant
-    if (context.role !== 'SUPER_ADMIN') {
+    if (!context.isSuper && context.tenantId) {
       whereClause.tenantId = context.tenantId
     }
 
@@ -461,7 +452,7 @@ export async function listClientsAction(query: PaginatedClientsQuery) {
 
     // Execute queries
     const [clients, totalCount] = await Promise.all([
-      prisma.client.findMany({
+      db.client.findMany({
         where: whereClause,
         select: {
           id: true,
@@ -487,7 +478,7 @@ export async function listClientsAction(query: PaginatedClientsQuery) {
         skip: (page - 1) * limit,
         take: limit,
       }),
-      prisma.client.count({ where: whereClause })
+      db.client.count({ where: whereClause })
     ])
 
     const totalPages = Math.ceil(totalCount / limit)

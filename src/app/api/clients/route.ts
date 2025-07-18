@@ -1,18 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { currentUser } from '@clerk/nextjs'
+import { currentUser } from '@clerk/nextjs/server'
 import { listClientsAction } from '@/lib/actions/client'
 
 export async function GET(request: NextRequest) {
   try {
-    // Check authentication
-    const user = await currentUser()
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
-    }
-
     // Get query parameters
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
@@ -20,7 +11,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || undefined
     const status = searchParams.get('status') || undefined
 
-    // Call the server action
+    // Call the server action (handles authentication internally)
     const result = await listClientsAction({
       page,
       limit,
@@ -35,7 +26,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json(result.data)
+    return NextResponse.json(result)
   } catch (error) {
     console.error('API /clients error:', error)
     return NextResponse.json(

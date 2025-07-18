@@ -1,6 +1,8 @@
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Usa ejecuciones paralelas de procesos de claude code cuando sea posible
+
 
 ## Development Commands
 
