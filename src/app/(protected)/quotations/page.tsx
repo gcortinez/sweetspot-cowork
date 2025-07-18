@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { listQuotationsAction, changeQuotationStatusAction, duplicateQuotationAction, deleteQuotationAction } from '@/lib/actions/quotations'
+import { AppHeader } from '@/components/shared/app-header'
 import QuotationsList from '@/components/quotations/QuotationsList'
 import CreateQuotationModal from '@/components/quotations/CreateQuotationModal'
 import QuotationDetailModal from '@/components/quotations/QuotationDetailModal'
@@ -343,21 +344,30 @@ export default function QuotationsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+      {/* Header */}
+      <AppHeader 
+        currentPage="Cotizaciones"
+        showBreadcrumb={true}
+        breadcrumbItems={[
+          { label: 'Cotizaciones' }
+        ]}
+      />
+      
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
+        {/* Page Title Section */}
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-purple to-purple-700 bg-clip-text text-transparent">
-              Cotizaciones
+              Gestión de Cotizaciones
             </h1>
-            <p className="text-gray-600 mt-1">Gestiona todas las cotizaciones de tu cowork</p>
+            <p className="text-gray-600 mt-1">Administra y da seguimiento a todas las cotizaciones</p>
           </div>
           <Button 
             onClick={() => setShowCreateModal(true)}
             className="bg-gradient-to-r from-brand-purple to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-lg hover:shadow-xl transition-all duration-200"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Nueva Cotización
+            Agregar Cotización
           </Button>
         </div>
 
