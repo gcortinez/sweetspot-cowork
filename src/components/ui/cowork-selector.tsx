@@ -18,6 +18,7 @@ export interface UserCowork {
   id: string;
   name: string;
   slug: string;
+  logo?: string | null;
   role: "SUPER_ADMIN" | "COWORK_ADMIN" | "CLIENT_ADMIN" | "END_USER";
 }
 

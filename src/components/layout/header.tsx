@@ -24,6 +24,7 @@ import {
   ChevronDown,
   Plus,
 } from "lucide-react";
+import Image from "next/image";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -85,6 +86,45 @@ export function Header({
 
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
+  // Component for displaying cowork logo or fallback
+  const CoworkLogo = ({ className }: { className?: string }) => {
+    const activeCowork = coworkContext.activeCowork;
+    
+    if (activeCowork?.logo) {
+      return (
+        <Image
+          src={activeCowork.logo}
+          alt={`${activeCowork.name} logo`}
+          width={32}
+          height={32}
+          className={cn("rounded-lg object-cover", className)}
+          onError={(e) => {
+            // Fallback to icon if image fails to load
+            const target = e.target as HTMLImageElement;
+            target.style.display = 'none';
+          }}
+        />
+      );
+    }
+    
+    // Fallback icon
+    return (
+      <div className={cn(
+        "h-8 w-8 rounded-lg flex items-center justify-center shadow-md transition-all duration-200",
+        isSuperAdmin
+          ? "bg-gradient-to-br from-purple-600 to-purple-700"
+          : "bg-gradient-to-br from-blue-600 to-blue-700",
+        className
+      )}>
+        {isSuperAdmin ? (
+          <Crown className="h-4 w-4 text-white" />
+        ) : (
+          <Building2 className="h-4 w-4 text-white" />
+        )}
+      </div>
+    );
+  };
+
   return (
     <header className={cn(
       "border-b shadow-sm sticky top-0 z-40 transition-colors duration-200",
@@ -121,25 +161,14 @@ export function Header({
             href="/dashboard" 
             className="flex items-center gap-3 lg:hidden group"
           >
-            <div className={cn(
-              "h-8 w-8 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-200",
-              isSuperAdmin
-                ? "bg-gradient-to-br from-purple-600 to-purple-700"
-                : "bg-gradient-to-br from-blue-600 to-blue-700"
-            )}>
-              {isSuperAdmin ? (
-                <Crown className="h-4 w-4 text-white" />
-              ) : (
-                <Building2 className="h-4 w-4 text-white" />
-              )}
-            </div>
+            <CoworkLogo className="group-hover:shadow-lg" />
             <span className={cn(
               "text-lg font-bold transition-colors duration-200",
               isSuperAdmin
                 ? "text-purple-900 group-hover:text-purple-600 dark:text-purple-100 dark:group-hover:text-purple-300"
                 : "text-gray-900 group-hover:text-blue-600 dark:text-gray-100 dark:group-hover:text-blue-400"
             )}>
-              SweetSpot
+              {coworkContext.activeCowork?.name || "SweetSpot"}
             </span>
           </Link>
 
@@ -321,16 +350,19 @@ export function Header({
               <DropdownMenuItem asChild>
                 <Link href="/profile" className="flex items-center gap-2">
                   <User className="h-4 w-4" />
-                  Perfil
+                  Mi Perfil
                 </Link>
               </DropdownMenuItem>
 
-              <DropdownMenuItem asChild>
-                <Link href="/settings" className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  Configuración
-                </Link>
-              </DropdownMenuItem>
+              {/* Show cowork settings only for admins */}
+              {(user?.role === 'SUPER_ADMIN' || user?.role === 'COWORK_ADMIN') && (
+                <DropdownMenuItem asChild>
+                  <Link href="/cowork-settings" className="flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    Configuración del Cowork
+                  </Link>
+                </DropdownMenuItem>
+              )}
 
               <DropdownMenuItem asChild>
                 <Link href="/notifications" className="flex items-center gap-2">

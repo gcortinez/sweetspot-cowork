@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
           id: true,
           name: true,
           slug: true,
+          logo: true,
           status: true,
           _count: {
             select: {
@@ -62,6 +63,7 @@ export async function GET(request: NextRequest) {
         id: tenant.id,
         name: tenant.name,
         slug: tenant.slug,
+        logo: tenant.logo,
         status: tenant.status,
         role: 'SUPER_ADMIN',
         stats: {
@@ -94,6 +96,7 @@ export async function GET(request: NextRequest) {
           id: true,
           name: true,
           slug: true,
+          logo: true,
           status: true
         }
       })
@@ -103,6 +106,7 @@ export async function GET(request: NextRequest) {
           id: tenant.id,
           name: tenant.name,
           slug: tenant.slug,
+          logo: tenant.logo,
           role: effectiveUser.role,
           status: tenant.status
         }
