@@ -259,6 +259,7 @@ export default function EditOpportunityModal({
                   onChange={(e) => handleInputChange('title', e.target.value)}
                   placeholder="Implementación Oficina Privada - Empresa ABC"
                   className="h-11"
+                  disabled={isLoading || isInitializing}
                   required
                 />
               </div>
@@ -273,6 +274,7 @@ export default function EditOpportunityModal({
                   placeholder="Describe los detalles de la oportunidad, requisitos específicos, etc..."
                   rows={3}
                   className="resize-none"
+                  disabled={isLoading || isInitializing}
                 />
               </div>
             </div>
@@ -299,6 +301,7 @@ export default function EditOpportunityModal({
                     placeholder="2500000"
                     className="pl-10 h-11"
                     min="0"
+                    disabled={isLoading || isInitializing}
                     required
                   />
                 </div>
@@ -318,6 +321,7 @@ export default function EditOpportunityModal({
                     className="pl-10 h-11"
                     min="0"
                     max="100"
+                    disabled={isLoading || isInitializing}
                   />
                 </div>
               </div>
@@ -335,7 +339,7 @@ export default function EditOpportunityModal({
                 <Label htmlFor="stage" className="text-sm font-medium text-foreground">
                   Etapa
                 </Label>
-                <Select value={formData.stage} onValueChange={(value) => handleInputChange('stage', value)}>
+                <Select value={formData.stage} onValueChange={(value) => handleInputChange('stage', value)} disabled={isLoading || isInitializing}>
                   <SelectTrigger className="w-full h-11">
                     <SelectValue placeholder="Seleccionar etapa" />
                   </SelectTrigger>
@@ -360,6 +364,7 @@ export default function EditOpportunityModal({
                     value={formData.expectedCloseDate}
                     onChange={(e) => handleInputChange('expectedCloseDate', e.target.value)}
                     className="pl-10 h-11"
+                    disabled={isLoading || isInitializing}
                   />
                 </div>
               </div>
@@ -419,24 +424,58 @@ export default function EditOpportunityModal({
                 <Label className="text-sm font-medium text-foreground">
                   Asignado a
                 </Label>
-                <UserSelector
-                  value={formData.assignedToId}
-                  onValueChange={(userId) => handleInputChange('assignedToId', userId || '')}
-                  placeholder="Seleccionar usuario responsable..."
-                />
+                {isInitializing ? (
+                  <div className="h-11 flex items-center justify-center border rounded-md bg-muted">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    <span className="ml-2 text-sm text-muted-foreground">Cargando usuarios...</span>
+                  </div>
+                ) : (
+                  <UserSelector
+                    value={formData.assignedToId}
+                    onValueChange={(userId) => handleInputChange('assignedToId', userId || '')}
+                    placeholder="Seleccionar usuario responsable..."
+                    disabled={isLoading}
+                  />
+                )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="clientId" className="text-sm font-medium text-foreground">
+                <Label htmlFor="clientId" className="text-sm font-medium text-foreground flex items-center gap-2">
                   Cliente Asociado
+                  {isClientChangeDisabled && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Lock className="h-3 w-3 text-amber-600" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs">
+                            El cliente no se puede cambiar para proteger<br />
+                            la integridad de cotizaciones y documentos asociados.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                 </Label>
-                <ClientSelector
-                  value={formData.clientId}
-                  onValueChange={(clientId) => handleInputChange('clientId', clientId || '')}
-                  placeholder="Seleccionar cliente..."
-                  allowCreate={true}
-                />
+                {isInitializing ? (
+                  <div className="h-11 flex items-center justify-center border rounded-md bg-muted">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    <span className="ml-2 text-sm text-muted-foreground">Cargando clientes...</span>
+                  </div>
+                ) : (
+                  <ClientSelector
+                    value={formData.clientId}
+                    onValueChange={(clientId) => handleInputChange('clientId', clientId || '')}
+                    placeholder="Seleccionar cliente..."
+                    allowCreate={!isClientChangeDisabled}
+                    disabled={isLoading || isClientChangeDisabled}
+                  />
+                )}
                 <p className="text-xs text-muted-foreground">
-                  Selecciona el cliente al que pertenece esta oportunidad
+                  {isClientChangeDisabled 
+                    ? "Cliente ya asignado - no se puede modificar" 
+                    : "Selecciona el cliente al que pertenece esta oportunidad"
+                  }
                 </p>
               </div>
             </div>

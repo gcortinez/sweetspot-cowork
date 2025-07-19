@@ -13,11 +13,13 @@ import {
   changeOpportunityStage,
   deleteOpportunity
 } from '@/lib/actions/opportunities'
-import { listActivities } from '@/lib/actions/activities'
+import { listActivities, updateActivity } from '@/lib/actions/activities'
 import { STAGE_METADATA } from '@/lib/validations/opportunities'
 import { useToast } from '@/hooks/use-toast'
 import EditOpportunityModal from '@/components/opportunities/EditOpportunityModal'
 import CreateActivityModal from '@/components/activities/CreateActivityModal'
+import DraggableActivitiesList from '@/components/activities/DraggableActivitiesList'
+import ActivityDetailModal from '@/components/activities/ActivityDetailModal'
 import { listQuotationsAction, changeQuotationStatusAction, duplicateQuotationAction, deleteQuotationAction } from '@/lib/actions/quotations'
 import QuotationsList from '@/components/quotations/QuotationsList'
 import CreateQuotationModal from '@/components/quotations/CreateQuotationModal'
@@ -100,6 +102,9 @@ interface OpportunityActivity {
   type: string
   title: string
   description?: string
+  sortOrder?: number
+  completedAt?: Date | null
+  dueDate?: Date
   createdAt: Date
   user: {
     id: string
@@ -118,6 +123,7 @@ export default function OpportunityDetailPage() {
   const [loading, setLoading] = useState(true)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isCreateActivityModalOpen, setIsCreateActivityModalOpen] = useState(false)
+  const [selectedActivity, setSelectedActivity] = useState<any>(null)
   
   // Quotations states
   const [quotations, setQuotations] = useState<any[]>([])
@@ -213,6 +219,56 @@ export default function OpportunityDetailPage() {
     } finally {
       setQuotationsLoading(false)
     }
+  }
+
+  // Activity handlers
+  const handleActivitiesReorder = (newActivities: OpportunityActivity[]) => {
+    setActivities(newActivities)
+  }
+
+  const handleActivityDelete = (activityId: string) => {
+    setActivities(prev => prev.filter(activity => activity.id !== activityId))
+    updateOpportunityCounts(undefined, activities.length - 1)
+  }
+
+  const handleActivityToggleComplete = async (activityId: string, completed: boolean) => {
+    try {
+      const result = await updateActivity(activityId, {
+        completedAt: completed ? new Date().toISOString() : null
+      })
+
+      if (result.success) {
+        setActivities(prev => 
+          prev.map(activity => 
+            activity.id === activityId 
+              ? { ...activity, completedAt: completed ? new Date() : null }
+              : activity
+          )
+        )
+        toast({
+          title: completed ? "Actividad completada" : "Actividad marcada como pendiente",
+          description: completed 
+            ? "La actividad ha sido marcada como completada." 
+            : "La actividad ha sido marcada como pendiente.",
+        })
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "No se pudo actualizar la actividad.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Ocurrió un error inesperado al actualizar la actividad.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleActivityClick = (activity: OpportunityActivity) => {
+    setSelectedActivity(activity)
   }
 
   // Quotation handlers
@@ -663,35 +719,13 @@ export default function OpportunityDetailPage() {
                       </Button>
                     </div>
                     
-                    {activities.length > 0 ? (
-                      <div className="space-y-4">
-                        {activities.map((activity) => (
-                          <div key={activity.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                            <div className="flex-shrink-0">
-                              {getActivityIcon(activity.type)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-gray-900">{activity.title}</p>
-                              {activity.description && (
-                                <p className="text-gray-600 text-sm mt-1">{activity.description}</p>
-                              )}
-                              <div className="flex items-center mt-2 text-xs text-gray-500">
-                                <User className="h-3 w-3 mr-1" />
-                                {activity.user.firstName} {activity.user.lastName}
-                                <span className="mx-2">•</span>
-                                <Clock className="h-3 w-3 mr-1" />
-                                {new Date(activity.createdAt).toLocaleDateString()}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-600">No hay actividades registradas para esta oportunidad.</p>
-                      </div>
-                    )}
+                    <DraggableActivitiesList
+                      activities={activities}
+                      onActivitiesReorder={handleActivitiesReorder}
+                      onActivityDelete={handleActivityDelete}
+                      onActivityToggleComplete={handleActivityToggleComplete}
+                      onActivityClick={handleActivityClick}
+                    />
                   </TabsContent>
                   
                   <TabsContent value="quotations" className="space-y-6 mt-6">
@@ -952,6 +986,14 @@ export default function OpportunityDetailPage() {
         isOpen={!!sendingQuotation}
         onClose={() => setSendingQuotation(null)}
         onEmailSent={handleEmailSent}
+      />
+
+      {/* Activity Detail Modal */}
+      <ActivityDetailModal
+        activity={selectedActivity}
+        isOpen={!!selectedActivity}
+        onClose={() => setSelectedActivity(null)}
+        onActivityUpdated={loadOpportunityData}
       />
     </div>
   )

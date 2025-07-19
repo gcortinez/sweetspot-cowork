@@ -46,6 +46,7 @@ model Tenant {
     ServiceConsumption  ServiceConsumption[]
     leads               Lead[]
     opportunities       Opportunity[]
+    opportunityDocuments OpportunityDocument[]
     activities          Activity[]
     tasks               Task[]
     communications      Communication[]
@@ -145,6 +146,7 @@ model User {
     ServiceConsumption      ServiceConsumption[]
     assignedLeads           Lead[]               @relation("LeadAssignedTo")
     assignedOpportunities   Opportunity[]        @relation("OpportunityAssignedTo")
+    uploadedOpportunityDocuments OpportunityDocument[] @relation("OpportunityDocumentUploadedBy")
     activities              Activity[]
     assignedTasks           Task[]               @relation("TaskAssignedTo")
     assignedByTasks         Task[]               @relation("TaskAssignedBy")
@@ -392,19 +394,43 @@ model Opportunity {
     updatedAt         DateTime      @updatedAt
 
     // Relationships
-    tenant         Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-    client         Client?          @relation(fields: [clientId], references: [id])
-    lead           Lead?            @relation(fields: [leadId], references: [id])
-    assignedTo     User?            @relation("OpportunityAssignedTo", fields: [assignedToId], references: [id])
+    tenant         Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    client         Client?             @relation(fields: [clientId], references: [id])
+    lead           Lead?               @relation(fields: [leadId], references: [id])
+    assignedTo     User?               @relation("OpportunityAssignedTo", fields: [assignedToId], references: [id])
     activities     Activity[]
     tasks          Task[]
     quotations     Quotation[]
     conversions    LeadConversion[]
     communications Communication[]
+    documents      OpportunityDocument[]
 
     @@index([tenantId, stage])
     @@index([assignedToId])
     @@map("opportunities")
+}
+
+model OpportunityDocument {
+    id            String   @id @default(cuid())
+    tenantId      String
+    opportunityId String
+    fileName      String
+    fileSize      Int
+    fileType      String
+    fileUrl       String
+    description   String?
+    uploadedById  String
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+
+    // Relationships
+    tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+    uploadedBy  User        @relation("OpportunityDocumentUploadedBy", fields: [uploadedById], references: [id])
+
+    @@index([tenantId, opportunityId])
+    @@index([uploadedById])
+    @@map("opportunity_documents")
 }
 
 enum PipelineStage {
@@ -437,6 +463,7 @@ model Activity {
     outcome       String?
     duration      Int? // in minutes
     location      String?
+    sortOrder     Int?         @default(0) // For drag & drop ordering
     metadata      Json?        @default("{}")
     createdAt     DateTime     @default(now())
     updatedAt     DateTime     @updatedAt

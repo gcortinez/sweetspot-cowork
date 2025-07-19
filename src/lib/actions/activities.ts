@@ -423,8 +423,10 @@ export async function listActivities(input: ListActivitiesInput = {}) {
     }
 
     // Build orderBy clause
-    const orderBy: any = {}
-    orderBy[sortBy] = sortOrder
+    const orderBy: any = [
+      { sortOrder: 'asc' }, // Primary sort by manual order
+      { [sortBy]: sortOrder }, // Secondary sort by the requested field
+    ]
 
     // Calculate pagination
     const skip = (page - 1) * limit
@@ -502,6 +504,129 @@ export async function listActivities(input: ListActivitiesInput = {}) {
     return {
       success: false,
       error: 'Error desconocido al obtener las actividades',
+    }
+  }
+}
+
+// Update activity order for drag & drop
+export async function updateActivityOrder(
+  activities: Array<{ id: string; sortOrder: number }>
+) {
+  try {
+    const user = await getUserWithTenant()
+
+    if (!user.tenantId && user.role !== 'SUPER_ADMIN') {
+      return {
+        success: false,
+        error: 'No autorizado - no hay tenant asociado',
+      }
+    }
+
+    // Update each activity's sort order
+    await db.$transaction(
+      activities.map(({ id, sortOrder }) =>
+        db.activity.update({
+          where: { 
+            id,
+            ...(user.tenantId ? { tenantId: user.tenantId } : {}),
+          },
+          data: { sortOrder },
+        })
+      )
+    )
+
+    revalidatePath('/opportunities')
+    revalidatePath('/activities')
+
+    return {
+      success: true,
+      data: null,
+    }
+  } catch (error) {
+    console.error('Error updating activity order:', error)
+    
+    if (error instanceof Error) {
+      return {
+        success: false,
+        error: error.message,
+      }
+    }
+    
+    return {
+      success: false,
+      error: 'Error desconocido al actualizar el orden de las actividades',
+    }
+  }
+}
+
+// Delete activity
+export async function deleteActivity(activityId: string) {
+  try {
+    const user = await getUserWithTenant()
+
+    if (!user.tenantId && user.role !== 'SUPER_ADMIN') {
+      return {
+        success: false,
+        error: 'No autorizado - no hay tenant asociado',
+      }
+    }
+
+    // Check if activity exists and belongs to user's tenant
+    const activity = await db.activity.findFirst({
+      where: { 
+        id: activityId,
+        ...(user.tenantId ? { tenantId: user.tenantId } : {}),
+      },
+      select: {
+        id: true,
+        leadId: true,
+        clientId: true,
+        opportunityId: true,
+      },
+    })
+
+    if (!activity) {
+      return {
+        success: false,
+        error: 'Actividad no encontrada',
+      }
+    }
+
+    // Delete the activity
+    await db.activity.delete({
+      where: { id: activityId },
+    })
+
+    // Revalidate relevant paths
+    revalidatePath('/activities')
+    revalidatePath('/opportunities')
+    if (activity.leadId) {
+      revalidatePath(`/leads/${activity.leadId}`)
+    }
+    if (activity.clientId) {
+      revalidatePath(`/clients/${activity.clientId}`)
+    }
+    if (activity.opportunityId) {
+      revalidatePath(`/opportunities/${activity.opportunityId}`)
+    }
+
+    return {
+      success: true,
+      data: null,
+    }
+  } catch (error) {
+    console.error('Error deleting activity:', error)
+    
+    if (error instanceof Error) {
+      return {
+        success: false,
+        error: error.message,
+      }
+    }
+    
+    return {
+      success: false,
+      error: 'Error desconocido al eliminar la actividad',
     }
   }
 }
