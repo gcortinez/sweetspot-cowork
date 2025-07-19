@@ -222,6 +222,12 @@ export default function OpportunitiesPage() {
     setSearchTerm(e.target.value)
   }, [])
 
+  // Clear all filters
+  const handleClearFilters = React.useCallback(() => {
+    setSearchTerm('')
+    setStageFilter('all')
+  }, [])
+
   const handleStageChange = async (opportunityId: string, newStage: keyof typeof STAGE_METADATA) => {
     // 1. Perform optimistic update immediately
     updateOpportunityOptimistically(opportunityId, newStage)
@@ -681,7 +687,7 @@ export default function OpportunitiesPage() {
   }
 
   // Draggable opportunity card component
-  const DraggableOpportunityCard = ({ opportunity }: { opportunity: Opportunity }) => {
+  const DraggableOpportunityCard = React.memo(({ opportunity }: { opportunity: Opportunity }) => {
     const {
       attributes,
       listeners,
@@ -887,7 +893,7 @@ export default function OpportunitiesPage() {
         </Card>
       </div>
     )
-  }
+  })
 
   const renderOpportunityCard = (opportunity: Opportunity) => (
     <Card key={opportunity.id} className="mb-3 hover:shadow-md transition-shadow">
@@ -1428,6 +1434,19 @@ export default function OpportunitiesPage() {
                 <Loader2 className="absolute right-8 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
               )}
             </div>
+            
+            {/* Clear filters button */}
+            {(searchTerm || stageFilter !== 'all') && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleClearFilters}
+                className="text-gray-600 hover:text-gray-800"
+              >
+                <X className="h-4 w-4 mr-1" />
+                Limpiar filtros
+              </Button>
+            )}
           </div>
           
           <div className="flex gap-2">
@@ -1524,9 +1543,17 @@ export default function OpportunitiesPage() {
         {/* Main Content */}
         <div className="bg-white rounded-lg shadow-sm border">
           <div className="p-6">
+            {/* Show filtering indicator */}
+            {isFiltering && (
+              <div className="flex items-center justify-center py-4 mb-4 bg-gray-50 rounded-lg">
+                <Loader2 className="h-5 w-5 animate-spin mr-2 text-brand-purple" />
+                <span className="text-sm text-gray-600">Filtrando oportunidades...</span>
+              </div>
+            )}
+            
             {view === 'kanban' ? renderKanbanView() : renderListView()}
             
-            {opportunities.length === 0 && (
+            {opportunities.length === 0 && !isFiltering && !loading && (
               <div className="text-center py-12">
                 <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
