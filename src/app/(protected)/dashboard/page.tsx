@@ -84,7 +84,7 @@ export default function DashboardPage() {
 
   return (
     <ErrorBoundary>
-      <DashboardContent user={user} isSuperAdmin={isSuperAdmin} />
+      <DashboardContent user={user} isSuperAdmin={isSuperAdmin} userRole={userRole} />
     </ErrorBoundary>
   );
 }
@@ -92,10 +92,12 @@ export default function DashboardPage() {
 // Dashboard content component
 function DashboardContent({ 
   user, 
-  isSuperAdmin 
+  isSuperAdmin,
+  userRole
 }: { 
   user: any;
   isSuperAdmin: boolean;
+  userRole: string;
 }) {
   const {
     selectedCowork,
@@ -253,7 +255,7 @@ function DashboardContent({
               {isSuperAdmin && <CoworkSelector />}
               
               {/* Cowork Settings Button for Admins */}
-              {(user.privateMetadata?.role === 'COWORK_ADMIN' || user.privateMetadata?.role === 'SUPER_ADMIN') && (
+              {(userRole === 'COWORK_ADMIN' || userRole === 'SUPER_ADMIN') && (
                 <Link href="/cowork-settings">
                   <Button 
                     size="sm" 
