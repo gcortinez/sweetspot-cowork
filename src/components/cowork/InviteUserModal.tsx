@@ -21,14 +21,8 @@ import {
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { createInvitation } from '@/lib/actions/invitations'
-import { Loader2, Mail, Shield, UserPlus, HelpCircle } from 'lucide-react'
+import { Loader2, Mail, Shield, UserPlus } from 'lucide-react'
 import { getAssignableRoles, ROLE_LABELS, ROLE_DESCRIPTIONS } from '@/lib/utils/permissions'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 
 interface InviteUserModalProps {
   isOpen: boolean
@@ -173,18 +167,9 @@ export default function InviteUserModal({
                 <SelectContent>
                   {availableRoles.map((role) => (
                     <SelectItem key={role} value={role}>
-                      <div className="flex items-center justify-between w-full">
+                      <div className="flex flex-col items-start">
                         <span>{ROLE_LABELS[role]}</span>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <HelpCircle className="h-3 w-3 text-gray-400 ml-2" />
-                            </TooltipTrigger>
-                            <TooltipContent side="left" className="max-w-xs">
-                              <p className="text-sm">{ROLE_DESCRIPTIONS[role]}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        <span className="text-xs text-gray-500">{ROLE_DESCRIPTIONS[role]}</span>
                       </div>
                     </SelectItem>
                   ))}
