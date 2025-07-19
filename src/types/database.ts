@@ -52,7 +52,7 @@ export interface Database {
           lastName: string;
           phone: string | null;
           avatar: string | null;
-          role: "SUPER_ADMIN" | "COWORK_ADMIN" | "CLIENT_ADMIN" | "END_USER";
+          role: "SUPER_ADMIN" | "COWORK_ADMIN" | "COWORK_USER" | "CLIENT_ADMIN" | "END_USER";
           status: "ACTIVE" | "INACTIVE" | "SUSPENDED";
           lastLoginAt: string | null;
           clientId: string | null;
@@ -68,7 +68,7 @@ export interface Database {
           lastName: string;
           phone?: string | null;
           avatar?: string | null;
-          role: "SUPER_ADMIN" | "COWORK_ADMIN" | "CLIENT_ADMIN" | "END_USER";
+          role: "SUPER_ADMIN" | "COWORK_ADMIN" | "COWORK_USER" | "CLIENT_ADMIN" | "END_USER";
           status?: "ACTIVE" | "INACTIVE" | "SUSPENDED";
           lastLoginAt?: string | null;
           clientId?: string | null;
@@ -147,7 +147,7 @@ export interface Database {
     };
     Enums: {
       TenantStatus: "ACTIVE" | "SUSPENDED" | "INACTIVE";
-      UserRole: "SUPER_ADMIN" | "COWORK_ADMIN" | "CLIENT_ADMIN" | "END_USER";
+      UserRole: "SUPER_ADMIN" | "COWORK_ADMIN" | "COWORK_USER" | "CLIENT_ADMIN" | "END_USER";
       UserStatus: "ACTIVE" | "INACTIVE" | "SUSPENDED";
       ClientStatus: "LEAD" | "PROSPECT" | "ACTIVE" | "INACTIVE" | "CHURNED";
     };

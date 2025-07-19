@@ -3,6 +3,7 @@
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import prisma from '@/lib/server/prisma'
 import { revalidatePath } from 'next/cache'
+import { hasPermission, getAssignableRoles } from '@/lib/utils/permissions'
 
 export interface InvitationData {
   id: string
@@ -22,7 +23,7 @@ export interface InvitationData {
  */
 export async function createInvitation(data: {
   emailAddress: string
-  role: 'SUPER_ADMIN' | 'COWORK_ADMIN' | 'CLIENT_ADMIN' | 'END_USER'
+  role: 'SUPER_ADMIN' | 'COWORK_ADMIN' | 'COWORK_USER' | 'CLIENT_ADMIN' | 'END_USER'
   tenantId?: string
 }) {
   try {
@@ -41,24 +42,27 @@ export async function createInvitation(data: {
       return { success: false, error: 'User not found in database' }
     }
 
-    // Check permissions
-    const isAdmin = currentDbUser.role === 'SUPER_ADMIN' || currentDbUser.role === 'COWORK_ADMIN'
-    if (!isAdmin) {
-      return { success: false, error: 'Insufficient permissions' }
+    // Check if user has permission to invite others (at least COWORK_USER level)
+    const hasActiveCowork = !!currentDbUser.tenantId
+    if (!hasPermission(currentDbUser.role, 'COWORK_USER', hasActiveCowork)) {
+      return { success: false, error: 'Insufficient permissions to invite users' }
     }
     
-    // COWORK_ADMIN can only invite to their own cowork
-    if (currentDbUser.role === 'COWORK_ADMIN') {
+    // Get assignable roles for this user
+    const assignableRoles = getAssignableRoles(currentDbUser.role, hasActiveCowork)
+    
+    // Check if the requested role can be assigned by this user
+    if (!assignableRoles.includes(data.role as any)) {
+      return { success: false, error: `Cannot assign role: ${data.role}` }
+    }
+    
+    // For non-SUPER_ADMIN users, enforce tenant scope
+    if (currentDbUser.role !== 'SUPER_ADMIN') {
       if (!currentDbUser.tenantId) {
-        return { success: false, error: 'Cowork admin must have a tenant assigned' }
+        return { success: false, error: 'User must have a tenant assigned' }
       }
       // Override tenantId with their own tenant
       data.tenantId = currentDbUser.tenantId
-      
-      // COWORK_ADMIN can only assign CLIENT_ADMIN or END_USER roles
-      if (data.role === 'SUPER_ADMIN' || data.role === 'COWORK_ADMIN') {
-        return { success: false, error: 'Cannot assign admin roles' }
-      }
     }
 
     // Also get Clerk user for API calls

@@ -21,7 +21,14 @@ import {
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { createInvitation } from '@/lib/actions/invitations'
-import { Loader2, Mail, Shield, UserPlus } from 'lucide-react'
+import { Loader2, Mail, Shield, UserPlus, HelpCircle } from 'lucide-react'
+import { getAssignableRoles, ROLE_LABELS, ROLE_DESCRIPTIONS } from '@/lib/utils/permissions'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface InviteUserModalProps {
   isOpen: boolean
@@ -31,12 +38,9 @@ interface InviteUserModalProps {
   tenantId?: string
 }
 
-const roleLabels = {
-  SUPER_ADMIN: "Super Administrador",
-  COWORK_ADMIN: "Administrador de Cowork",
-  CLIENT_ADMIN: "Administrador de Cliente", 
-  END_USER: "Usuario Final",
-}
+type ValidRole = 'SUPER_ADMIN' | 'COWORK_ADMIN' | 'COWORK_USER' | 'CLIENT_ADMIN' | 'END_USER'
+
+// Remove local roleLabels - using the ones from permissions utils
 
 export default function InviteUserModal({
   isOpen,
@@ -49,20 +53,12 @@ export default function InviteUserModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
-    role: 'END_USER' as 'SUPER_ADMIN' | 'COWORK_ADMIN' | 'CLIENT_ADMIN' | 'END_USER'
+    role: 'END_USER' as ValidRole
   })
 
-  // Determine available roles based on current user's role
-  const getAvailableRoles = () => {
-    if (userRole === 'SUPER_ADMIN') {
-      return ['SUPER_ADMIN', 'COWORK_ADMIN', 'CLIENT_ADMIN', 'END_USER']
-    } else if (userRole === 'COWORK_ADMIN') {
-      return ['CLIENT_ADMIN', 'END_USER']
-    }
-    return []
-  }
-
-  const availableRoles = getAvailableRoles()
+  // Get available roles based on current user's role and cowork context
+  const hasActiveCowork = !!tenantId
+  const availableRoles = getAssignableRoles(userRole, hasActiveCowork)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -177,14 +173,29 @@ export default function InviteUserModal({
                 <SelectContent>
                   {availableRoles.map((role) => (
                     <SelectItem key={role} value={role}>
-                      {roleLabels[role as keyof typeof roleLabels]}
+                      <div className="flex items-center justify-between w-full">
+                        <span>{ROLE_LABELS[role]}</span>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <HelpCircle className="h-3 w-3 text-gray-400 ml-2" />
+                            </TooltipTrigger>
+                            <TooltipContent side="left" className="max-w-xs">
+                              <p className="text-sm">{ROLE_DESCRIPTIONS[role]}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {userRole === 'COWORK_ADMIN' && (
+              {(userRole === 'COWORK_ADMIN' || userRole === 'COWORK_USER') && (
                 <p className="text-sm text-gray-500">
-                  Como administrador de cowork, puedes asignar roles de Cliente Admin o Usuario Final.
+                  {userRole === 'COWORK_ADMIN' 
+                    ? 'Como administrador, puedes asignar empleados del cowork y roles de cliente.'
+                    : 'Como empleado del cowork, puedes invitar administradores y usuarios de clientes.'
+                  }
                 </p>
               )}
             </div>

@@ -37,6 +37,7 @@ import {
 import { listTenantUsersAction, updateUserRoleAction } from '@/lib/actions/users'
 import Image from "next/image"
 import InviteUserModal from '@/components/cowork/InviteUserModal'
+import { hasPermission } from '@/lib/utils/permissions'
 
 interface CoworkInfo {
   id: string
@@ -83,7 +84,13 @@ export default function CoworkSettingsPage() {
   
   // Check permissions - check both privateMetadata and publicMetadata
   const userRole = user?.privateMetadata?.role || user?.publicMetadata?.role || user?.role
-  const isAdmin = userRole === 'SUPER_ADMIN' || userRole === 'COWORK_ADMIN'
+  const hasActiveCowork = !!coworkContext?.activeCowork?.id
+  
+  // Check if user can access this page (COWORK_USER and above)
+  const canAccessPage = hasPermission(userRole, 'COWORK_USER', hasActiveCowork)
+  
+  // Check if user can edit cowork settings (COWORK_ADMIN and above)
+  const canEditCowork = hasPermission(userRole, 'COWORK_ADMIN', hasActiveCowork)
   
   const [coworkInfo, setCoworkInfo] = useState<CoworkInfo | null>(null)
   const [formData, setFormData] = useState({
@@ -210,7 +217,7 @@ export default function CoworkSettingsPage() {
   }
 
   const handleSave = async () => {
-    if (!coworkInfo) return
+    if (!coworkInfo || !canEditCowork) return
     
     setIsSubmitting(true)
     
@@ -342,7 +349,7 @@ export default function CoworkSettingsPage() {
   }
 
   // Check if user has access (after all hooks)
-  if (!isAdmin) {
+  if (!canAccessPage) {
     return (
       <div className="min-h-screen bg-gray-50">
         <AppHeader />
@@ -408,7 +415,7 @@ export default function CoworkSettingsPage() {
                     <Building2 className="h-5 w-5" />
                     Información del Cowork
                   </CardTitle>
-                  {!isEditing && (
+                  {!isEditing && canEditCowork && (
                     <Button 
                       onClick={() => setIsEditing(true)}
                       className="flex items-center gap-2"
@@ -416,6 +423,11 @@ export default function CoworkSettingsPage() {
                       <Edit className="h-4 w-4" />
                       Editar
                     </Button>
+                  )}
+                  {!canEditCowork && (
+                    <div className="text-sm text-gray-500 italic">
+                      Solo lectura - No tienes permisos para editar
+                    </div>
                   )}
                 </div>
               </CardHeader>
@@ -590,13 +602,15 @@ export default function CoworkSettingsPage() {
                     <Users className="h-5 w-5" />
                     Usuarios del Cowork ({users.length})
                   </CardTitle>
-                  <Button 
-                    onClick={() => setIsInviteModalOpen(true)}
-                    className="flex items-center gap-2"
-                  >
-                    <UserPlus className="h-4 w-4" />
-                    Invitar Usuario
-                  </Button>
+                  {hasPermission(userRole, 'COWORK_USER', hasActiveCowork) && (
+                    <Button 
+                      onClick={() => setIsInviteModalOpen(true)}
+                      className="flex items-center gap-2"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      Invitar Usuario
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
