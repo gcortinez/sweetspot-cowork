@@ -23,7 +23,10 @@ import {
   Activity,
   FileText,
   Plus,
-  Loader2
+  Loader2,
+  MessageSquare,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
 import { STAGE_METADATA } from '@/lib/validations/opportunities';
 import Link from 'next/link';
@@ -35,6 +38,8 @@ import QuotationDetailModal from '@/components/quotations/QuotationDetailModal';
 import EditQuotationModal from '@/components/quotations/EditQuotationModal';
 import QuotationVersionsModal from '@/components/quotations/QuotationVersionsModal';
 import SendQuotationModal from '@/components/quotations/SendQuotationModal';
+import { listActivities } from '@/lib/actions/activities';
+import CreateActivityModal from '@/components/activities/CreateActivityModal';
 
 interface Opportunity {
   id: string
@@ -138,6 +143,9 @@ export default function OpportunityDetailModal({
   const [editingQuotation, setEditingQuotation] = useState<Quotation | null>(null)
   const [versionsQuotation, setVersionsQuotation] = useState<Quotation | null>(null)
   const [sendingQuotation, setSendingQuotation] = useState<Quotation | null>(null)
+  const [activities, setActivities] = useState<any[]>([])
+  const [isLoadingActivities, setIsLoadingActivities] = useState(false)
+  const [showCreateActivityModal, setShowCreateActivityModal] = useState(false)
   const { toast } = useToast()
 
   // Load quotations for this opportunity
@@ -171,10 +179,44 @@ export default function OpportunityDetailModal({
     }
   }
 
-  // Load quotations when modal opens
+  // Load activities for this opportunity
+  const loadActivities = async () => {
+    if (!opportunity) return
+    
+    setIsLoadingActivities(true)
+    try {
+      const result = await listActivities({
+        opportunityId: opportunity.id,
+        sortBy: 'dueDate',
+        sortOrder: 'asc'
+      })
+      
+      if (result.success) {
+        setActivities(result.data || [])
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al cargar las actividades",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error('Error loading activities:', error)
+      toast({
+        title: "Error",
+        description: "Error al cargar las actividades",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoadingActivities(false)
+    }
+  }
+
+  // Load data when modal opens
   React.useEffect(() => {
     if (isOpen && opportunity) {
       loadQuotations()
+      loadActivities()
     }
   }, [isOpen, opportunity])
 
@@ -327,6 +369,11 @@ export default function OpportunityDetailModal({
     loadQuotations() // Refresh to update status
   }
 
+  const handleActivityCreated = () => {
+    setShowCreateActivityModal(false)
+    loadActivities() // Refresh activities list
+  }
+
   if (!opportunity) return null;
 
   const formatCurrency = (amount: number) => {
@@ -416,10 +463,14 @@ export default function OpportunityDetailModal({
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="details" className="flex items-center gap-2">
                 <Target className="h-4 w-4" />
                 Detalles
+              </TabsTrigger>
+              <TabsTrigger value="activities" className="flex items-center gap-2">
+                <Activity className="h-4 w-4" />
+                Actividades ({activities.length})
               </TabsTrigger>
               <TabsTrigger value="quotations" className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
@@ -605,6 +656,104 @@ export default function OpportunityDetailModal({
               )}
             </TabsContent>
 
+            {/* Activities Tab */}
+            <TabsContent value="activities" className="space-y-6 mt-6">
+              <div className="flex justify-end mb-4">
+                <Button
+                  onClick={() => setShowCreateActivityModal(true)}
+                  size="sm"
+                  className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Nueva Actividad
+                </Button>
+              </div>
+
+              {isLoadingActivities ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+                </div>
+              ) : activities.length > 0 ? (
+                <div className="space-y-4">
+                  {activities.map((activity) => (
+                    <Card key={activity.id} className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-3 flex-1">
+                            <div className={`p-2 rounded-lg ${
+                              activity.type === 'CALL' ? 'bg-blue-100' :
+                              activity.type === 'EMAIL' ? 'bg-green-100' :
+                              activity.type === 'MEETING' ? 'bg-purple-100' :
+                              'bg-gray-100'
+                            }`}>
+                              {activity.type === 'CALL' ? <Phone className="h-4 w-4 text-blue-600" /> :
+                               activity.type === 'EMAIL' ? <Mail className="h-4 w-4 text-green-600" /> :
+                               activity.type === 'MEETING' ? <MessageSquare className="h-4 w-4 text-purple-600" /> :
+                               <Activity className="h-4 w-4 text-gray-600" />}
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                                {activity.title}
+                                {activity.completedAt && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Completada
+                                  </Badge>
+                                )}
+                              </h4>
+                              {activity.description && (
+                                <p className="text-sm text-gray-600 mt-1">{activity.description}</p>
+                              )}
+                              <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                                <div className="flex items-center gap-1">
+                                  <User className="h-3 w-3" />
+                                  {activity.user.firstName} {activity.user.lastName}
+                                </div>
+                                {activity.dueDate && (
+                                  <div className="flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" />
+                                    {new Date(activity.dueDate).toLocaleDateString('es-ES')}
+                                  </div>
+                                )}
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  {new Date(activity.createdAt).toLocaleDateString('es-ES')}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          {!activity.completedAt && activity.dueDate && new Date(activity.dueDate) < new Date() && (
+                            <Badge variant="destructive" className="ml-2">
+                              <AlertCircle className="h-3 w-3 mr-1" />
+                              Vencida
+                            </Badge>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <Activity className="h-12 w-12 text-gray-400 mb-4" />
+                    <p className="text-gray-600 text-center">
+                      No hay actividades registradas para esta oportunidad
+                    </p>
+                    <Button
+                      onClick={() => setShowCreateActivityModal(true)}
+                      size="sm"
+                      variant="outline"
+                      className="mt-4"
+                    >
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Crear Primera Actividad
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
             {/* Quotations Tab */}
             <TabsContent value="quotations" className="space-y-6 mt-6">
               <QuotationsList
@@ -669,6 +818,14 @@ export default function OpportunityDetailModal({
           isOpen={!!sendingQuotation}
           onClose={() => setSendingQuotation(null)}
           onEmailSent={handleEmailSent}
+        />
+
+        {/* Create Activity Modal */}
+        <CreateActivityModal
+          isOpen={showCreateActivityModal}
+          onClose={() => setShowCreateActivityModal(false)}
+          onActivityCreated={handleActivityCreated}
+          opportunityId={opportunity.id}
         />
       </DialogContent>
     </Dialog>
