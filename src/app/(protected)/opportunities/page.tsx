@@ -139,16 +139,28 @@ export default function OpportunitiesPage() {
     })
   )
 
-  // Load opportunities and stats
+  // Debounced search term to avoid excessive API calls
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm)
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, 500) // 500ms delay
+
+    return () => clearTimeout(timer)
+  }, [searchTerm])
+
+  // Load opportunities and stats when filters change
   useEffect(() => {
     loadData()
-  }, [searchTerm, stageFilter])
+  }, [debouncedSearchTerm, stageFilter])
 
   const loadData = async () => {
     setLoading(true)
     try {
       const filters: any = {}
-      if (searchTerm) filters.search = searchTerm
+      if (debouncedSearchTerm) filters.search = debouncedSearchTerm
       if (stageFilter !== 'all') filters.stage = stageFilter
 
       const [opportunitiesResult, statsResult] = await Promise.all([
@@ -1375,6 +1387,9 @@ export default function OpportunitiesPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
+              {searchTerm !== debouncedSearchTerm && (
+                <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+              )}
             </div>
             <Select value={stageFilter} onValueChange={setStageFilter}>
               <SelectTrigger className="w-[200px]">

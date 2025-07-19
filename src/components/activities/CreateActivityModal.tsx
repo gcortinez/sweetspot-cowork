@@ -151,7 +151,7 @@ export default function CreateActivityModal({
         type: formData.type,
         subject: formData.subject,
         description: formData.description || undefined,
-        dueDate: formData.dueDate || undefined,
+        dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
         duration: formData.duration ? parseInt(formData.duration) : undefined,
         location: formData.location || undefined,
         outcome: formData.outcome || undefined,
