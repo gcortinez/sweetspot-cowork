@@ -300,14 +300,17 @@ export default function CreateQuotationModal({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Descripción</Label>
+                <Label htmlFor="description">Texto libre para la propuesta</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
-                  placeholder="Describe brevemente esta cotización..."
-                  rows={3}
+                  placeholder="Agrega información adicional, términos especiales, o cualquier nota que quieras incluir en la propuesta..."
+                  rows={4}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Este texto aparecerá en el PDF de la cotización que se envía al cliente.
+                </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

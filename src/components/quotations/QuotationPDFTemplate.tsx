@@ -326,23 +326,6 @@ const styles = StyleSheet.create({
   },
   
   
-  // Status badge
-  statusBadge: {
-    backgroundColor: '#e5e7eb',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-    marginBottom: 8,
-  },
-  
-  statusText: {
-    fontSize: 10,
-    color: '#374151',
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-  },
-  
   // Opportunity section
   opportunitySection: {
     marginBottom: 15,
@@ -367,45 +350,6 @@ const styles = StyleSheet.create({
   },
 })
 
-// Status colors mapping
-const getStatusColor = (status: string) => {
-  const colors = {
-    'DRAFT': '#6b7280',
-    'SENT': '#3b82f6',
-    'VIEWED': '#8b5cf6',
-    'ACCEPTED': '#10b981',
-    'REJECTED': '#ef4444',
-    'EXPIRED': '#f97316',
-    'CONVERTED': '#059669',
-  }
-  return colors[status as keyof typeof colors] || '#6b7280'
-}
-
-const getStatusBgColor = (status: string) => {
-  const colors = {
-    'DRAFT': '#f3f4f6',
-    'SENT': '#dbeafe',
-    'VIEWED': '#e0e7ff',
-    'ACCEPTED': '#d1fae5',
-    'REJECTED': '#fee2e2',
-    'EXPIRED': '#fed7aa',
-    'CONVERTED': '#d1fae5',
-  }
-  return colors[status as keyof typeof colors] || '#f3f4f6'
-}
-
-const getStatusLabel = (status: string) => {
-  const labels = {
-    'DRAFT': 'Borrador',
-    'SENT': 'Enviada',
-    'VIEWED': 'Vista',
-    'ACCEPTED': 'Aceptada',
-    'REJECTED': 'Rechazada',
-    'EXPIRED': 'Expirada',
-    'CONVERTED': 'Convertida',
-  }
-  return labels[status as keyof typeof labels] || status
-}
 
 // Main PDF component
 const QuotationPDFTemplate: React.FC<QuotationPDFProps> = ({ quotation, coworkInfo }) => {
@@ -457,11 +401,6 @@ const QuotationPDFTemplate: React.FC<QuotationPDFProps> = ({ quotation, coworkIn
             <Text style={styles.quotationTitle}>COTIZACIÓN</Text>
             <Text style={styles.quotationNumber}>{quotation.number}</Text>
             <Text style={styles.quotationDate}>{formatDate(quotation.createdAt)}</Text>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusBgColor(quotation.status) }]}>
-              <Text style={[styles.statusText, { color: getStatusColor(quotation.status) }]}>
-                {getStatusLabel(quotation.status)}
-              </Text>
-            </View>
           </View>
         </View>
 
