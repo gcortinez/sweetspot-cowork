@@ -185,11 +185,11 @@ export default function CoworkSettingsPage() {
   }
 
   useEffect(() => {
-    if (user && isAdmin) {
+    if (user && canAccessPage) {
       loadCoworkInfo()
       loadUsers()
     }
-  }, [user, isAdmin])
+  }, [user, canAccessPage])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
