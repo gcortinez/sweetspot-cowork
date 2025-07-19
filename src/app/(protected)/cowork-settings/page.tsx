@@ -92,11 +92,19 @@ export default function CoworkSettingsPage() {
   const userRole = user?.privateMetadata?.role || user?.publicMetadata?.role || user?.role
   const hasActiveCowork = !!coworkContext?.activeCowork?.id
   
+  // Check loading states more carefully
+  const isUserLoading = !user
+  const isCoworkLoading = coworkContext === undefined
+  const isLoading = isUserLoading
+  
   // Check if user can access this page (COWORK_USER and above)
-  const canAccessPage = hasPermission(userRole, 'COWORK_USER', hasActiveCowork)
+  const canAccessPage = user && userRole && hasPermission(userRole, 'COWORK_USER', hasActiveCowork)
   
   // Check if user can edit cowork settings (COWORK_ADMIN and above)
-  const canEditCowork = hasPermission(userRole, 'COWORK_ADMIN', hasActiveCowork)
+  const canEditCowork = user && userRole && hasPermission(userRole, 'COWORK_ADMIN', hasActiveCowork)
+  
+  // Don't show permission error if still loading
+  const shouldShowPermissionError = !isLoading && user && userRole && !canAccessPage
   
   const [coworkInfo, setCoworkInfo] = useState<CoworkInfo | null>(null)
   const [formData, setFormData] = useState({
@@ -108,7 +116,7 @@ export default function CoworkSettingsPage() {
     website: '',
   })
   const [users, setUsers] = useState<TenantUser[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isPageLoading, setIsPageLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [logoFile, setLogoFile] = useState<File | null>(null)
@@ -118,7 +126,7 @@ export default function CoworkSettingsPage() {
   // Load cowork information
   const loadCoworkInfo = async () => {
     try {
-      setIsLoading(true)
+      setIsPageLoading(true)
       
       // If super admin, we need to pass the active cowork
       const activeCoworkId = coworkContext?.activeCowork?.id
@@ -158,7 +166,7 @@ export default function CoworkSettingsPage() {
         variant: "destructive",
       })
     } finally {
-      setIsLoading(false)
+      setIsPageLoading(false)
     }
   }
 
@@ -354,10 +362,27 @@ export default function CoworkSettingsPage() {
     }
   }
 
-  // Check if user has access (after all hooks)
-  if (!canAccessPage) {
+  // Show loading while checking authentication and permissions
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <AppHeader />
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="animate-pulse space-y-6">
+              <div className="h-32 bg-gray-200 rounded-2xl"></div>
+              <div className="h-64 bg-gray-200 rounded-2xl"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Check if user has access (only show error when we're sure the user doesn't have permission)
+  if (shouldShowPermissionError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
         <AppHeader />
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
@@ -371,22 +396,6 @@ export default function CoworkSettingsPage() {
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <AppHeader />
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-6xl mx-auto">
-            <div className="animate-pulse space-y-6">
-              <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-              <div className="h-64 bg-gray-200 rounded"></div>
-            </div>
           </div>
         </div>
       </div>
