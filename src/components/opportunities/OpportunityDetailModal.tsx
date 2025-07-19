@@ -38,9 +38,10 @@ import QuotationDetailModal from '@/components/quotations/QuotationDetailModal';
 import EditQuotationModal from '@/components/quotations/EditQuotationModal';
 import QuotationVersionsModal from '@/components/quotations/QuotationVersionsModal';
 import SendQuotationModal from '@/components/quotations/SendQuotationModal';
-import { listActivities } from '@/lib/actions/activities';
+import { listActivities, updateActivity } from '@/lib/actions/activities';
 import CreateActivityModal from '@/components/activities/CreateActivityModal';
 import ActivityDetailModal from '@/components/activities/ActivityDetailModal';
+import DraggableActivitiesList from '@/components/activities/DraggableActivitiesList';
 
 interface Opportunity {
   id: string
@@ -407,6 +408,56 @@ export default function OpportunityDetailModal({
     loadActivities() // Refresh activities list
   }
 
+  // Activity handlers for drag & drop functionality
+  const handleActivitiesReorder = (newActivities: any[]) => {
+    setActivities(newActivities)
+  }
+
+  const handleActivityDelete = (activityId: string) => {
+    setActivities(prev => prev.filter(activity => activity.id !== activityId))
+    updateOpportunityCounts(undefined, activities.length - 1)
+  }
+
+  const handleActivityToggleComplete = async (activityId: string, completed: boolean) => {
+    try {
+      const result = await updateActivity(activityId, {
+        completedAt: completed ? new Date().toISOString() : null
+      })
+
+      if (result.success) {
+        setActivities(prev => 
+          prev.map(activity => 
+            activity.id === activityId 
+              ? { ...activity, completedAt: completed ? new Date() : null }
+              : activity
+          )
+        )
+        toast({
+          title: completed ? "Actividad completada" : "Actividad marcada como pendiente",
+          description: completed 
+            ? "La actividad ha sido marcada como completada." 
+            : "La actividad ha sido marcada como pendiente.",
+        })
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "No se pudo actualizar la actividad.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Ocurrió un error inesperado al actualizar la actividad.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleActivityClick = (activity: any) => {
+    setSelectedActivity(activity)
+  }
+
   if (!opportunity || !localOpportunity) return null;
 
   const formatCurrency = (amount: number) => {
@@ -706,88 +757,14 @@ export default function OpportunityDetailModal({
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
                 </div>
-              ) : activities.length > 0 ? (
-                <div className="space-y-4">
-                  {activities.map((activity) => (
-                    <Card 
-                      key={activity.id} 
-                      className="hover:shadow-md transition-shadow cursor-pointer hover:bg-gray-50"
-                      onClick={() => setSelectedActivity(activity)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start gap-3 flex-1">
-                            <div className={`p-2 rounded-lg ${
-                              activity.type === 'CALL' ? 'bg-blue-100' :
-                              activity.type === 'EMAIL' ? 'bg-green-100' :
-                              activity.type === 'MEETING' ? 'bg-purple-100' :
-                              'bg-gray-100'
-                            }`}>
-                              {activity.type === 'CALL' ? <Phone className="h-4 w-4 text-blue-600" /> :
-                               activity.type === 'EMAIL' ? <Mail className="h-4 w-4 text-green-600" /> :
-                               activity.type === 'MEETING' ? <MessageSquare className="h-4 w-4 text-purple-600" /> :
-                               <Activity className="h-4 w-4 text-gray-600" />}
-                            </div>
-                            <div className="flex-1">
-                              <h4 className="font-medium text-gray-900 flex items-center gap-2">
-                                {activity.title}
-                                {activity.completedAt && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    <CheckCircle className="h-3 w-3 mr-1" />
-                                    Completada
-                                  </Badge>
-                                )}
-                              </h4>
-                              {activity.description && (
-                                <p className="text-sm text-gray-600 mt-1">{activity.description}</p>
-                              )}
-                              <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                                <div className="flex items-center gap-1">
-                                  <User className="h-3 w-3" />
-                                  {activity.user.firstName} {activity.user.lastName}
-                                </div>
-                                {activity.dueDate && (
-                                  <div className="flex items-center gap-1">
-                                    <Calendar className="h-3 w-3" />
-                                    {new Date(activity.dueDate).toLocaleDateString('es-ES')}
-                                  </div>
-                                )}
-                                <div className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  {new Date(activity.createdAt).toLocaleDateString('es-ES')}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          {!activity.completedAt && activity.dueDate && new Date(activity.dueDate) < new Date() && (
-                            <Badge variant="destructive" className="ml-2">
-                              <AlertCircle className="h-3 w-3 mr-1" />
-                              Vencida
-                            </Badge>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
               ) : (
-                <Card>
-                  <CardContent className="flex flex-col items-center justify-center py-12">
-                    <Activity className="h-12 w-12 text-gray-400 mb-4" />
-                    <p className="text-gray-600 text-center">
-                      No hay actividades registradas para esta oportunidad
-                    </p>
-                    <Button
-                      onClick={() => setShowCreateActivityModal(true)}
-                      size="sm"
-                      variant="outline"
-                      className="mt-4"
-                    >
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      Crear Primera Actividad
-                    </Button>
-                  </CardContent>
-                </Card>
+                <DraggableActivitiesList
+                  activities={activities}
+                  onActivitiesReorder={handleActivitiesReorder}
+                  onActivityDelete={handleActivityDelete}
+                  onActivityToggleComplete={handleActivityToggleComplete}
+                  onActivityClick={handleActivityClick}
+                />
               )}
             </TabsContent>
 
