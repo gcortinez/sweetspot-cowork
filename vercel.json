@@ -3,5 +3,13 @@
   "buildCommand": "prisma generate && next build",
   "installCommand": "npm install",
   "devCommand": "next dev",
-  "outputDirectory": ".next"
+  "outputDirectory": ".next",
+  "git": {
+    "deploymentEnabled": {
+      "master": true
+    }
+  },
+  "github": {
+    "autoAlias": false
+  }
 }
