@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   Loader2, 
   Target,
@@ -16,7 +17,9 @@ import {
   Building2,
   MessageSquare,
   Edit,
-  Percent
+  Percent,
+  Lock,
+  Info
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -70,6 +73,7 @@ export default function EditOpportunityModal({
   onOpportunityUpdated
 }: EditOpportunityModalProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const [formData, setFormData] = useState<EditOpportunityForm>({
     title: '',
     description: '',
@@ -88,29 +92,41 @@ export default function EditOpportunityModal({
   // Load opportunity data when modal opens
   useEffect(() => {
     if (isOpen && opportunity) {
-      setFormData({
-        title: opportunity.title,
-        description: opportunity.description || '',
-        value: opportunity.value.toString(),
-        probability: opportunity.probability.toString(),
-        stage: opportunity.stage,
-        expectedCloseDate: opportunity.expectedCloseDate 
-          ? new Date(opportunity.expectedCloseDate).toISOString().split('T')[0] 
-          : '',
-        actualCloseDate: opportunity.actualCloseDate 
-          ? new Date(opportunity.actualCloseDate).toISOString().split('T')[0] 
-          : '',
-        clientId: opportunity.clientId || '',
-        assignedToId: opportunity.assignedToId || '',
-        competitorInfo: opportunity.competitorInfo || '',
-        lostReason: opportunity.lostReason || '',
-      });
+      setIsInitializing(true);
+      // Add a small delay to simulate loading and show proper state
+      const timer = setTimeout(() => {
+        setFormData({
+          title: opportunity.title,
+          description: opportunity.description || '',
+          value: opportunity.value.toString(),
+          probability: opportunity.probability.toString(),
+          stage: opportunity.stage,
+          expectedCloseDate: opportunity.expectedCloseDate 
+            ? new Date(opportunity.expectedCloseDate).toISOString().split('T')[0] 
+            : '',
+          actualCloseDate: opportunity.actualCloseDate 
+            ? new Date(opportunity.actualCloseDate).toISOString().split('T')[0] 
+            : '',
+          clientId: opportunity.clientId || '',
+          assignedToId: opportunity.assignedToId || '',
+          competitorInfo: opportunity.competitorInfo || '',
+          lostReason: opportunity.lostReason || '',
+        });
+        setIsInitializing(false);
+      }, 300);
+
+      return () => clearTimeout(timer);
+    } else if (!isOpen) {
+      setIsInitializing(true);
     }
   }, [isOpen, opportunity]);
 
   const handleInputChange = (field: keyof EditOpportunityForm, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  // Determine if client field should be disabled (protect data integrity)
+  const isClientChangeDisabled = Boolean(opportunity.clientId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
