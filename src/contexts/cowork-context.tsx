@@ -96,13 +96,12 @@ export function CoworkProvider({
 
   // Utility to get auth headers
   const getAuthHeaders = useCallback(async () => {
-    // Get Supabase session token
-    const { createClient } = await import("@/lib/supabase/browser");
-    const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
+    // Get Clerk session token
+    const { getToken } = await import("@clerk/nextjs");
+    const token = await getToken();
     
     return {
-      "Authorization": session?.access_token ? `Bearer ${session.access_token}` : '',
+      "Authorization": token ? `Bearer ${token}` : '',
       "Content-Type": "application/json",
       ...(activeCowork ? { "x-active-cowork": activeCowork.id } : {}),
     };
