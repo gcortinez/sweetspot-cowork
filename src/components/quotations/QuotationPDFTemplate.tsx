@@ -113,56 +113,68 @@ const styles = StyleSheet.create({
     color: '#6b7280',
   },
   
-  // Client section
+  // Client section - compacta
   clientSection: {
-    marginBottom: 30,
+    marginBottom: 20,
   },
   
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#1f2937',
-    marginBottom: 12,
+    marginBottom: 8,
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
   
   clientInfo: {
     backgroundColor: '#f8fafc',
-    padding: 20,
-    borderRadius: 8,
+    padding: 12,
+    borderRadius: 6,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  
+  clientInfoLeft: {
+    flex: 1,
+    marginRight: 10,
+  },
+  
+  clientInfoRight: {
+    flex: 1,
   },
   
   clientName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#1f2937',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   
   clientDetail: {
-    fontSize: 11,
+    fontSize: 10,
     color: '#4b5563',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   
   // Description section
   descriptionSection: {
-    marginBottom: 30,
+    marginBottom: 15,
   },
   
   description: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#374151',
-    lineHeight: 1.5,
+    lineHeight: 1.4,
     backgroundColor: '#f8fafc',
-    padding: 15,
-    borderRadius: 8,
+    padding: 10,
+    borderRadius: 6,
   },
   
   // Items table
   itemsSection: {
-    marginBottom: 30,
+    marginBottom: 20,
   },
   
   table: {
@@ -177,16 +189,16 @@ const styles = StyleSheet.create({
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: '#f3f4f6',
-    paddingVertical: 12,
-    paddingHorizontal: 15,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
   },
   
   tableRow: {
     flexDirection: 'row',
-    paddingVertical: 12,
-    paddingHorizontal: 15,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#f3f4f6',
   },
@@ -229,15 +241,15 @@ const styles = StyleSheet.create({
   
   // Totals section
   totalsSection: {
-    marginTop: 20,
+    marginTop: 15,
     alignItems: 'flex-end',
   },
   
   totalsContainer: {
-    width: 280,
+    width: 260,
     backgroundColor: '#f8fafc',
-    padding: 20,
-    borderRadius: 8,
+    padding: 15,
+    borderRadius: 6,
     borderWidth: 1,
     borderColor: '#e5e7eb',
   },
@@ -281,29 +293,29 @@ const styles = StyleSheet.create({
   
   // Terms section
   termsSection: {
-    marginTop: 40,
-    paddingTop: 20,
+    marginTop: 20,
+    paddingTop: 15,
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
   },
   
   termsTitle: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: 'bold',
     color: '#1f2937',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   
   termsText: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#6b7280',
-    lineHeight: 1.6,
+    lineHeight: 1.4,
   },
   
   // Footer
   footer: {
-    marginTop: 40,
-    paddingTop: 15,
+    marginTop: 20,
+    paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
   },
@@ -334,25 +346,25 @@ const styles = StyleSheet.create({
   
   // Opportunity section
   opportunitySection: {
-    marginBottom: 20,
+    marginBottom: 15,
     backgroundColor: '#fef3c7',
-    padding: 15,
-    borderRadius: 8,
+    padding: 10,
+    borderRadius: 6,
     borderWidth: 1,
     borderColor: '#f59e0b',
   },
   
   opportunityTitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 'bold',
     color: '#92400e',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   
   opportunityDetail: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#a16207',
-    marginBottom: 2,
+    marginBottom: 1,
   },
 })
 
@@ -443,21 +455,25 @@ const QuotationPDFTemplate: React.FC<QuotationPDFProps> = ({ quotation, coworkIn
           </View>
         </View>
 
-        {/* Client Information */}
+        {/* Client Information - Compacta */}
         <View style={styles.clientSection}>
           <Text style={styles.sectionTitle}>Cliente</Text>
           <View style={styles.clientInfo}>
-            <Text style={styles.clientName}>{quotation.client.name}</Text>
-            {quotation.client.company && (
-              <Text style={styles.clientDetail}>Empresa: {quotation.client.company}</Text>
-            )}
-            <Text style={styles.clientDetail}>Email: {quotation.client.email}</Text>
-            {quotation.client.phone && (
-              <Text style={styles.clientDetail}>Teléfono: {quotation.client.phone}</Text>
-            )}
-            {quotation.client.address && (
-              <Text style={styles.clientDetail}>Dirección: {quotation.client.address}</Text>
-            )}
+            <View style={styles.clientInfoLeft}>
+              <Text style={styles.clientName}>{quotation.client.name}</Text>
+              {quotation.client.company && (
+                <Text style={styles.clientDetail}>{quotation.client.company}</Text>
+              )}
+              <Text style={styles.clientDetail}>{quotation.client.email}</Text>
+            </View>
+            <View style={styles.clientInfoRight}>
+              {quotation.client.phone && (
+                <Text style={styles.clientDetail}>Tel: {quotation.client.phone}</Text>
+              )}
+              {quotation.client.address && (
+                <Text style={styles.clientDetail}>{quotation.client.address}</Text>
+              )}
+            </View>
           </View>
         </View>
 
