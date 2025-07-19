@@ -571,9 +571,12 @@ const ContinuationIndicator: React.FC<{ message: string }> = ({ message }) => (
 // Main PDF component
 const QuotationPDFTemplate: React.FC<QuotationPDFProps> = ({ quotation, coworkInfo }) => {
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-CO', {
+    const currency = quotation.currency || 'CLP'
+    const locale = currency === 'CLP' ? 'es-CL' : 'es-CO'
+    
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
-      currency: quotation.currency || 'COP',
+      currency: currency,
       minimumFractionDigits: 0,
     }).format(amount)
   }

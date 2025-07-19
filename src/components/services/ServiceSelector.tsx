@@ -293,6 +293,7 @@ export default function ServiceSelector({ selectedServices, onSelectionChange, c
       <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
         <div className="flex items-center gap-2">
           <Button
+            type="button"
             variant={!isCustomMode ? "default" : "outline"}
             onClick={() => setIsCustomMode(false)}
             className="flex items-center gap-2"
@@ -301,6 +302,7 @@ export default function ServiceSelector({ selectedServices, onSelectionChange, c
             Seleccionar del Catálogo
           </Button>
           <Button
+            type="button"
             variant={isCustomMode ? "default" : "outline"}
             onClick={() => setIsCustomMode(true)}
             className="flex items-center gap-2"
@@ -385,6 +387,7 @@ export default function ServiceSelector({ selectedServices, onSelectionChange, c
 
             <div className="flex justify-end gap-2">
               <Button 
+                type="button"
                 variant="outline" 
                 onClick={() => {
                   setIsCustomMode(false)
@@ -397,6 +400,7 @@ export default function ServiceSelector({ selectedServices, onSelectionChange, c
                 Cancelar
               </Button>
               <Button 
+                type="button"
                 onClick={handleAddCustomService}
                 disabled={!customServiceName.trim() || !customServicePrice || isNaN(parseFloat(customServicePrice))}
               >
@@ -477,6 +481,7 @@ export default function ServiceSelector({ selectedServices, onSelectionChange, c
                           </span>
                         </div>
                         <Button
+                          type="button"
                           size="sm"
                           onClick={() => handleSelectService(service)}
                           className="h-7 px-2"
@@ -510,6 +515,7 @@ export default function ServiceSelector({ selectedServices, onSelectionChange, c
                 Agregar: {selectedServiceForAdd.name}
               </span>
               <Button
+                type="button"
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowAddForm(false)}
@@ -576,10 +582,10 @@ export default function ServiceSelector({ selectedServices, onSelectionChange, c
             )}
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowAddForm(false)}>
+              <Button type="button" variant="outline" onClick={() => setShowAddForm(false)}>
                 Cancelar
               </Button>
-              <Button onClick={handleAddService}>
+              <Button type="button" onClick={handleAddService}>
                 <Plus className="h-4 w-4 mr-2" />
                 Agregar Servicio
               </Button>
@@ -621,6 +627,7 @@ export default function ServiceSelector({ selectedServices, onSelectionChange, c
                         )}
                       </div>
                       <Button
+                        type="button"
                         variant="ghost"
                         size="sm"
                         onClick={() => handleRemoveService(service.serviceId)}

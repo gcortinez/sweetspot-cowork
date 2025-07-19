@@ -101,14 +101,14 @@ export default function EditQuotationModal({
         notes: quotation.notes || '',
       })
 
-      // Convert quotation items to selected services format
+      // Convert quotation items to selected services format with proper number conversion
       const services: SelectedService[] = quotation.items.map((item, index) => ({
         serviceId: item.id ? `existing-${item.id}` : `temp-${quotation.id}-${index}`,
         serviceName: item.description,
         description: item.description,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        total: item.total,
+        quantity: Number(item.quantity),
+        unitPrice: Number(item.unitPrice),
+        total: Number(item.total),
         metadata: {
           originalItemId: item.id,
           isExisting: !!item.id
@@ -118,9 +118,13 @@ export default function EditQuotationModal({
     }
   }, [isOpen, quotation])
 
-  // Calculate totals
-  const subtotal = selectedServices.reduce((sum, service) => sum + service.total, 0)
-  const total = subtotal - formData.discounts + formData.taxes
+  // Calculate totals with proper number conversion
+  const subtotal = selectedServices.reduce((sum, service) => {
+    // Ensure we're working with proper numbers, not Decimal objects
+    const serviceTotal = typeof service.total === 'number' ? service.total : parseFloat(service.total?.toString() || '0')
+    return sum + serviceTotal
+  }, 0)
+  const total = subtotal - (formData.discounts || 0) + (formData.taxes || 0)
 
   const handleInputChange = (field: string, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -220,9 +224,9 @@ export default function EditQuotationModal({
               serviceId: item.id ? `existing-${item.id}` : `temp-${result.data.id}-${index}`,
               serviceName: item.description,
               description: item.description,
-              quantity: item.quantity,
-              unitPrice: item.unitPrice,
-              total: item.total,
+              quantity: Number(item.quantity),
+              unitPrice: Number(item.unitPrice),
+              total: Number(item.total),
               metadata: {
                 originalItemId: item.id,
                 isExisting: !!item.id
