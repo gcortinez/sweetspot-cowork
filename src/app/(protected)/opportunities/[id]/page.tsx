@@ -139,7 +139,13 @@ export default function OpportunityDetailPage() {
       ])
 
       if (opportunityResult.success) {
-        setOpportunity(opportunityResult.data)
+        // Ensure Decimal fields are converted to numbers for client components
+        const serializedOpportunity = {
+          ...opportunityResult.data,
+          value: Number(opportunityResult.data.value || 0),
+          expectedRevenue: Number(opportunityResult.data.expectedRevenue || 0),
+        }
+        setOpportunity(serializedOpportunity)
       } else {
         toast({
           title: "Error",
@@ -871,8 +877,8 @@ export default function OpportunityDetailPage() {
         onClose={() => setShowCreateQuotationModal(false)}
         onQuotationCreated={handleQuotationCreated}
         opportunityId={opportunityId}
-        clientId={opportunity?.clientId}
-        leadId={opportunity?.leadId}
+        clientId={opportunity?.clientId || undefined}
+        leadId={opportunity?.leadId || undefined}
       />
 
       {/* Quotation Detail Modal */}

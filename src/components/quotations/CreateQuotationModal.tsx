@@ -74,6 +74,7 @@ export default function CreateQuotationModal({
   // State for lazy-loaded clients
   const [clients, setClients] = useState<any[]>([])
   const [isLoadingClients, setIsLoadingClients] = useState(false)
+  const [preselectedClient, setPreselectedClient] = useState<any>(null)
 
   // Load clients only when modal is opened
   const loadClients = async () => {
@@ -208,12 +209,35 @@ export default function CreateQuotationModal({
     onClose()
   }
 
-  // Set default client if provided
+  // Set default client if provided and reset form when modal opens
   React.useEffect(() => {
-    if (clientId && formData.clientId !== clientId) {
-      setFormData(prev => ({ ...prev, clientId }))
+    if (isOpen) {
+      if (clientId) {
+        setFormData(prev => ({ ...prev, clientId }))
+        // Load preselected client info
+        loadPreselectedClient()
+      } else {
+        // Reset client selection if no specific client is provided
+        setFormData(prev => ({ ...prev, clientId: '' }))
+        setPreselectedClient(null)
+      }
     }
-  }, [clientId, formData.clientId])
+  }, [isOpen, clientId])
+
+  // Load preselected client information
+  const loadPreselectedClient = async () => {
+    if (!clientId) return
+    
+    try {
+      const response = await api.get(`/api/clients`)
+      const clientData = response.data?.find((client: any) => client.id === clientId)
+      if (clientData) {
+        setPreselectedClient(clientData)
+      }
+    } catch (error) {
+      console.error('Error loading preselected client:', error)
+    }
+  }
 
   // Set default valid until date (30 days from now)
   React.useEffect(() => {
@@ -266,36 +290,55 @@ export default function CreateQuotationModal({
                 
                 <div className="space-y-2">
                   <Label htmlFor="clientId">Cliente <span className="text-red-500">*</span></Label>
-                  <Select 
-                    value={formData.clientId} 
-                    onValueChange={(value) => handleInputChange('clientId', value)}
-                    disabled={!!clientId}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona un cliente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {isLoadingClients ? (
-                        <SelectItem value="loading" disabled>
-                          Cargando clientes...
-                        </SelectItem>
-                      ) : (
-                        clients.map(client => (
-                          <SelectItem key={client.id} value={client.id}>
-                            <div className="flex items-center gap-2">
-                              <Building2 className="h-4 w-4" />
-                              <div>
-                                <div className="font-medium">{client.name}</div>
-                                <div className="text-sm text-muted-foreground">
-                                  {client.company || client.email}
+                  {clientId && preselectedClient ? (
+                    // Show preselected client as disabled input
+                    <div className="relative">
+                      <Input
+                        value={preselectedClient.name}
+                        disabled
+                        className="bg-gray-50 border-gray-200"
+                      />
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <Building2 className="h-4 w-4 text-gray-400" />
+                      </div>
+                    </div>
+                  ) : (
+                    // Show client selector
+                    <Select 
+                      value={formData.clientId} 
+                      onValueChange={(value) => handleInputChange('clientId', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona un cliente" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {isLoadingClients ? (
+                          <SelectItem value="loading" disabled>
+                            Cargando clientes...
+                          </SelectItem>
+                        ) : (
+                          clients.map(client => (
+                            <SelectItem key={client.id} value={client.id}>
+                              <div className="flex items-center gap-2">
+                                <Building2 className="h-4 w-4" />
+                                <div>
+                                  <div className="font-medium">{client.name}</div>
+                                  <div className="text-sm text-muted-foreground">
+                                    {client.company || client.email}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </SelectItem>
-                        ))
+                            </SelectItem>
+                          ))
                       )}
                     </SelectContent>
                   </Select>
+                  )}
+                  {clientId && preselectedClient && (
+                    <p className="text-xs text-muted-foreground">
+                      Cliente preseleccionado de la oportunidad
+                    </p>
+                  )}
                 </div>
               </div>
 
