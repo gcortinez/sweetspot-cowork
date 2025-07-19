@@ -95,13 +95,27 @@ export async function generateQuotationPDFAction(data: GenerateQuotationPDFReque
     // Cast settings to any to access nested properties (Prisma JSON field)
     const settings = tenant?.settings as any
     
+    // Convert relative logo URL to absolute URL for PDF rendering
+    const getAbsoluteLogoUrl = (logoUrl?: string | null) => {
+      if (!logoUrl) return undefined
+      
+      // If already absolute URL, return as is
+      if (logoUrl.startsWith('http://') || logoUrl.startsWith('https://')) {
+        return logoUrl
+      }
+      
+      // Convert relative URL to absolute
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'
+      return `${baseUrl}${logoUrl.startsWith('/') ? logoUrl : `/${logoUrl}`}`
+    }
+
     const coworkInfo = {
       name: tenant?.name || 'SweetSpot Cowork',
       address: settings?.address || 'Dirección no configurada',
       phone: settings?.contactInfo?.phone || 'Teléfono no configurado',
       email: settings?.contactInfo?.email || 'Email no configurado',
       website: settings?.contactInfo?.website,
-      logo: tenant?.logo, // Logo is stored at tenant root level, not in settings
+      logo: getAbsoluteLogoUrl(tenant?.logo), // Convert to absolute URL for PDF rendering
     }
     
     console.log('🔍 PDF Debug - Cowork info:', coworkInfo)

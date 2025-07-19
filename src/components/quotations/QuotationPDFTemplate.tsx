@@ -438,6 +438,9 @@ const QuotationPDFTemplate: React.FC<QuotationPDFProps> = ({ quotation, coworkIn
               <Image
                 src={coworkInfo.logo}
                 style={styles.companyLogo}
+                onError={(error) => {
+                  console.log('🚨 PDF Logo Error:', error, 'Logo URL:', coworkInfo.logo)
+                }}
               />
             )}
             <View style={styles.companyDetails}>
