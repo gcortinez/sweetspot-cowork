@@ -40,6 +40,7 @@ import QuotationVersionsModal from '@/components/quotations/QuotationVersionsMod
 import SendQuotationModal from '@/components/quotations/SendQuotationModal';
 import { listActivities } from '@/lib/actions/activities';
 import CreateActivityModal from '@/components/activities/CreateActivityModal';
+import ActivityDetailModal from '@/components/activities/ActivityDetailModal';
 
 interface Opportunity {
   id: string
@@ -146,6 +147,8 @@ export default function OpportunityDetailModal({
   const [activities, setActivities] = useState<any[]>([])
   const [isLoadingActivities, setIsLoadingActivities] = useState(false)
   const [showCreateActivityModal, setShowCreateActivityModal] = useState(false)
+  const [selectedActivity, setSelectedActivity] = useState<any>(null)
+  const [changingQuotationStatus, setChangingQuotationStatus] = useState<string | null>(null)
   const { toast } = useToast()
 
   // Load quotations for this opportunity
@@ -227,6 +230,7 @@ export default function OpportunityDetailModal({
   }
 
   const handleQuotationStatusChange = async (quotationId: string, newStatus: string) => {
+    setChangingQuotationStatus(quotationId)
     try {
       const result = await changeQuotationStatusAction({
         id: quotationId,
@@ -254,6 +258,8 @@ export default function OpportunityDetailModal({
         description: "Error al actualizar el estado",
         variant: "destructive",
       })
+    } finally {
+      setChangingQuotationStatus(null)
     }
   }
 
@@ -400,17 +406,17 @@ export default function OpportunityDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
         {/* Header */}
-        <div className="bg-gradient-to-r from-brand-purple to-purple-700 text-white p-6">
+        <div className="bg-gradient-to-r from-brand-purple to-purple-700 text-white p-4">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
-                <Target className="h-5 w-5" />
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center">
+                <Target className="h-4 w-4" />
               </div>
               {opportunity.title}
             </DialogTitle>
-            <div className="flex items-center gap-4 mt-4">
+            <div className="flex items-center gap-3 mt-3">
               <Badge className={`${getStageColor(opportunity.stage)} border`}>
                 {STAGE_METADATA[opportunity.stage].label}
               </Badge>
@@ -427,7 +433,7 @@ export default function OpportunityDetailModal({
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-4 space-y-4">
           {/* Quick Actions */}
           <div className="flex gap-3">
             <Button 
@@ -479,9 +485,9 @@ export default function OpportunityDetailModal({
             </TabsList>
 
             {/* Details Tab */}
-            <TabsContent value="details" className="space-y-6 mt-6">
+            <TabsContent value="details" className="space-y-4 mt-4">
               {/* Main Info Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Financial Info */}
                 <Card>
               <CardHeader>
@@ -536,7 +542,7 @@ export default function OpportunityDetailModal({
               </div>
 
               {/* Contact Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Client/Lead Info */}
                 {(opportunity.client || opportunity.lead) && (
                   <Card>
@@ -657,7 +663,7 @@ export default function OpportunityDetailModal({
             </TabsContent>
 
             {/* Activities Tab */}
-            <TabsContent value="activities" className="space-y-6 mt-6">
+            <TabsContent value="activities" className="space-y-4 mt-4">
               <div className="flex justify-end mb-4">
                 <Button
                   onClick={() => setShowCreateActivityModal(true)}
@@ -676,7 +682,11 @@ export default function OpportunityDetailModal({
               ) : activities.length > 0 ? (
                 <div className="space-y-4">
                   {activities.map((activity) => (
-                    <Card key={activity.id} className="hover:shadow-md transition-shadow">
+                    <Card 
+                      key={activity.id} 
+                      className="hover:shadow-md transition-shadow cursor-pointer hover:bg-gray-50"
+                      onClick={() => setSelectedActivity(activity)}
+                    >
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between">
                           <div className="flex items-start gap-3 flex-1">
@@ -755,7 +765,7 @@ export default function OpportunityDetailModal({
             </TabsContent>
 
             {/* Quotations Tab */}
-            <TabsContent value="quotations" className="space-y-6 mt-6">
+            <TabsContent value="quotations" className="space-y-4 mt-4">
               <QuotationsList
                 quotations={quotations}
                 onEdit={handleQuotationEdit}
@@ -826,6 +836,17 @@ export default function OpportunityDetailModal({
           onClose={() => setShowCreateActivityModal(false)}
           onActivityCreated={handleActivityCreated}
           opportunityId={opportunity.id}
+        />
+
+        {/* Activity Detail Modal */}
+        <ActivityDetailModal
+          activity={selectedActivity}
+          isOpen={!!selectedActivity}
+          onClose={() => setSelectedActivity(null)}
+          onActivityUpdated={() => {
+            setSelectedActivity(null)
+            loadActivities()
+          }}
         />
       </DialogContent>
     </Dialog>

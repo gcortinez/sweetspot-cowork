@@ -39,7 +39,8 @@ import {
   FileText,
   Plus,
   Search,
-  Filter
+  Filter,
+  Loader2
 } from 'lucide-react'
 
 interface Quotation {
@@ -153,6 +154,7 @@ export default function QuotationsList({
   isLoading = false
 }: QuotationsListProps) {
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null)
+  const [changingStatus, setChangingStatus] = useState<string | null>(null)
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
@@ -368,9 +370,18 @@ export default function QuotationsList({
                             {NEXT_STATUS_OPTIONS[quotation.status].map(status => (
                               <DropdownMenuItem 
                                 key={status}
-                                onClick={() => onChangeStatus(quotation.id, status)}
+                                onClick={async () => {
+                                  setChangingStatus(quotation.id)
+                                  await onChangeStatus(quotation.id, status)
+                                  setChangingStatus(null)
+                                }}
+                                disabled={changingStatus === quotation.id}
                               >
-                                {getStatusIcon(status)}
+                                {changingStatus === quotation.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  getStatusIcon(status)
+                                )}
                                 <span className="ml-2">{STATUS_LABELS[status as keyof typeof STATUS_LABELS]}</span>
                               </DropdownMenuItem>
                             ))}
