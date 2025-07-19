@@ -18,16 +18,24 @@ import {
   MessageSquare,
   Activity,
   AlertCircle,
-  Loader2
+  Loader2,
+  MapPin,
+  Timer,
+  Target,
+  FileText
 } from 'lucide-react'
 
 interface ActivityDetail {
   id: string
   type: 'CALL' | 'EMAIL' | 'MEETING' | 'NOTE' | 'TASK'
-  title: string
+  title: string // Este será el subject del schema
+  subject?: string // Para compatibilidad
   description?: string
   dueDate?: string
   completedAt?: string
+  outcome?: string // Resultado de la actividad
+  duration?: number // Duración en minutos
+  location?: string // Ubicación
   createdAt: string
   updatedAt: string
   user: {
@@ -150,6 +158,18 @@ export default function ActivityDetailModal({
     })
   }
 
+  const formatDuration = (minutes: number) => {
+    if (minutes < 60) {
+      return `${minutes} minuto${minutes === 1 ? '' : 's'}`
+    }
+    const hours = Math.floor(minutes / 60)
+    const remainingMinutes = minutes % 60
+    if (remainingMinutes === 0) {
+      return `${hours} hora${hours === 1 ? '' : 's'}`
+    }
+    return `${hours}h ${remainingMinutes}m`
+  }
+
   const getTypeIcon = (type: string) => {
     const IconComponent = TYPE_ICONS[type as keyof typeof TYPE_ICONS] || Activity
     return <IconComponent className="h-5 w-5" />
@@ -209,6 +229,19 @@ export default function ActivityDetailModal({
             </Card>
           )}
 
+          {/* Outcome/Result */}
+          {activity.outcome && (
+            <Card>
+              <CardContent className="pt-4">
+                <h4 className="font-medium text-sm text-gray-600 mb-2 flex items-center gap-2">
+                  <Target className="h-4 w-4" />
+                  Resultado
+                </h4>
+                <p className="text-gray-800 whitespace-pre-wrap">{activity.outcome}</p>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Details */}
           <Card>
             <CardContent className="pt-4 space-y-3">
@@ -230,6 +263,30 @@ export default function ActivityDetailModal({
                   </span>
                   <span className={`font-medium ${isOverdue ? 'text-red-600' : ''}`}>
                     {formatShortDate(activity.dueDate)}
+                  </span>
+                </div>
+              )}
+
+              {activity.duration && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600 flex items-center gap-2">
+                    <Timer className="h-4 w-4" />
+                    Duración
+                  </span>
+                  <span className="font-medium">
+                    {formatDuration(activity.duration)}
+                  </span>
+                </div>
+              )}
+
+              {activity.location && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600 flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Ubicación
+                  </span>
+                  <span className="font-medium">
+                    {activity.location}
                   </span>
                 </div>
               )}

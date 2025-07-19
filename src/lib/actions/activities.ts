@@ -54,6 +54,7 @@ function serializeActivity(activity: any) {
 
   return {
     ...activity,
+    title: activity.subject || activity.title, // Map subject to title for compatibility
     createdAt: activity.createdAt ? activity.createdAt.toISOString() : null,
     updatedAt: activity.updatedAt ? activity.updatedAt.toISOString() : null,
     dueDate: activity.dueDate ? activity.dueDate.toISOString() : null,

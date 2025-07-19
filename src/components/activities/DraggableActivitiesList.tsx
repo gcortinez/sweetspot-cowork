@@ -41,11 +41,15 @@ import { updateActivityOrder, deleteActivity, updateActivity } from "@/lib/actio
 interface ActivityData {
   id: string;
   type: string;
-  title: string;
+  subject: string; // Nombre correcto del campo en la base de datos
+  title: string; // Para compatibilidad con el código existente
   description?: string;
   sortOrder?: number;
   completedAt?: Date | null;
   dueDate?: Date;
+  outcome?: string; // Resultado de la actividad
+  duration?: number; // Duración en minutos
+  location?: string; // Ubicación
   createdAt: Date;
   user: {
     id: string;
