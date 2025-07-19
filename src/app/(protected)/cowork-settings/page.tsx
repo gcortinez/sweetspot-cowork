@@ -100,29 +100,6 @@ export default function CoworkSettingsPage() {
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
 
-  // Check if user has access
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <AppHeader />
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-4xl mx-auto">
-            <Card className="border-red-200 bg-red-50">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5 text-red-600" />
-                  <p className="text-red-700">
-                    No tienes permisos para acceder a esta información
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   // Load cowork information
   const loadCoworkInfo = async () => {
     try {
@@ -343,6 +320,29 @@ export default function CoworkSettingsPage() {
         variant: "destructive",
       })
     }
+  }
+
+  // Check if user has access (after all hooks)
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <AppHeader />
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-4xl mx-auto">
+            <Card className="border-red-200 bg-red-50">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5 text-red-600" />
+                  <p className="text-red-700">
+                    No tienes permisos para acceder a esta información
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (isLoading) {
