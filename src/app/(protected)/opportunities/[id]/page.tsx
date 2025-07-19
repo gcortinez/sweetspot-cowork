@@ -89,6 +89,10 @@ interface Opportunity {
     lastName: string
     email: string
   }
+  _count?: {
+    quotations: number
+    activities: number
+  }
 }
 
 interface OpportunityActivity {
@@ -621,11 +625,11 @@ export default function OpportunityDetailPage() {
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="activities" className="flex items-center gap-2">
                       <Activity className="h-4 w-4" />
-                      Actividades
+                      Actividades ({opportunity._count?.activities || activities.length})
                     </TabsTrigger>
                     <TabsTrigger value="quotations" className="flex items-center gap-2">
                       <FileText className="h-4 w-4" />
-                      Cotizaciones
+                      Cotizaciones ({opportunity._count?.quotations || quotations.length})
                     </TabsTrigger>
                   </TabsList>
                   

@@ -76,6 +76,10 @@ interface Opportunity {
     lastName: string
     email: string
   }
+  _count?: {
+    quotations: number
+    activities: number
+  }
 }
 
 interface OpportunityDetailModalProps {
@@ -476,11 +480,11 @@ export default function OpportunityDetailModal({
               </TabsTrigger>
               <TabsTrigger value="activities" className="flex items-center gap-2">
                 <Activity className="h-4 w-4" />
-                Actividades ({activities.length})
+                Actividades ({opportunity._count?.activities || activities.length})
               </TabsTrigger>
               <TabsTrigger value="quotations" className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
-                Cotizaciones ({quotations.length})
+                Cotizaciones ({opportunity._count?.quotations || quotations.length})
               </TabsTrigger>
             </TabsList>
 

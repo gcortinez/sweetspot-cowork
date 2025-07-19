@@ -25,6 +25,7 @@ function serializeOpportunity(opportunity: any) {
     ...opportunity,
     value: opportunity.value ? Number(opportunity.value) : 0,
     expectedRevenue: opportunity.expectedRevenue ? Number(opportunity.expectedRevenue) : 0,
+    _count: opportunity._count || { quotations: 0, activities: 0 },
   }
 }
 
@@ -598,6 +599,12 @@ export async function getOpportunity(id: string) {
             },
           },
         },
+        _count: {
+          select: {
+            quotations: true,
+            activities: true,
+          },
+        },
       },
     })
 
@@ -718,6 +725,12 @@ export async function listOpportunities(input: ListOpportunitiesInput = {}) {
               firstName: true,
               lastName: true,
               email: true,
+            },
+          },
+          _count: {
+            select: {
+              quotations: true,
+              activities: true,
             },
           },
         },
