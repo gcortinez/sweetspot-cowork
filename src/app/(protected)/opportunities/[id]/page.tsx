@@ -231,40 +231,15 @@ export default function OpportunityDetailPage() {
     updateOpportunityCounts(undefined, activities.length - 1)
   }
 
-  const handleActivityToggleComplete = async (activityId: string, completed: boolean) => {
-    try {
-      const result = await updateActivity(activityId, {
-        completedAt: completed ? new Date().toISOString() : null
-      })
-
-      if (result.success) {
-        setActivities(prev => 
-          prev.map(activity => 
-            activity.id === activityId 
-              ? { ...activity, completedAt: completed ? new Date() : null }
-              : activity
-          )
-        )
-        toast({
-          title: completed ? "Actividad completada" : "Actividad marcada como pendiente",
-          description: completed 
-            ? "La actividad ha sido marcada como completada." 
-            : "La actividad ha sido marcada como pendiente.",
-        })
-      } else {
-        toast({
-          title: "Error",
-          description: result.error || "No se pudo actualizar la actividad.",
-          variant: "destructive",
-        })
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Ocurrió un error inesperado al actualizar la actividad.",
-        variant: "destructive",
-      })
-    }
+  const handleActivityToggleComplete = (activityId: string, completed: boolean) => {
+    // Update local state - the DraggableActivitiesList already handles the API call
+    setActivities(prev => 
+      prev.map(activity => 
+        activity.id === activityId 
+          ? { ...activity, completedAt: completed ? new Date() : null }
+          : activity
+      )
+    )
   }
 
   const handleActivityClick = (activity: OpportunityActivity) => {

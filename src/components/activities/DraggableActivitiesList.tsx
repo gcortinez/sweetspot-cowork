@@ -31,11 +31,12 @@ import {
   GripVertical,
   Trash2,
   Check,
-  X
+  X,
+  Loader2
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { updateActivityOrder, deleteActivity } from "@/lib/actions/activities";
+import { updateActivityOrder, deleteActivity, updateActivity } from "@/lib/actions/activities";
 
 interface ActivityData {
   id: string;
@@ -58,9 +59,11 @@ interface SortableActivityItemProps {
   onDelete: (activityId: string) => void;
   onToggleComplete: (activityId: string, completed: boolean) => void;
   onClick: (activity: ActivityData) => void;
+  isToggling?: boolean;
+  isDeleting?: boolean;
 }
 
-function SortableActivityItem({ activity, onDelete, onToggleComplete, onClick }: SortableActivityItemProps) {
+function SortableActivityItem({ activity, onDelete, onToggleComplete, onClick, isToggling = false, isDeleting = false }: SortableActivityItemProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const {
     attributes,
@@ -175,9 +178,14 @@ function SortableActivityItem({ activity, onDelete, onToggleComplete, onClick }:
           size="sm"
           className={`h-8 w-8 p-0 ${isCompleted ? 'text-green-600 hover:text-green-700' : 'text-gray-400 hover:text-green-600'}`}
           onClick={handleToggleComplete}
+          disabled={isToggling}
           title={isCompleted ? 'Marcar como pendiente' : 'Marcar como completada'}
         >
-          <Check className="h-4 w-4" />
+          {isToggling ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Check className="h-4 w-4" />
+          )}
         </Button>
 
         {/* Delete Button */}
@@ -187,9 +195,14 @@ function SortableActivityItem({ activity, onDelete, onToggleComplete, onClick }:
             size="sm"
             className="h-8 w-8 p-0 text-gray-400 hover:text-red-600"
             onClick={handleDeleteClick}
+            disabled={isDeleting}
             title="Eliminar actividad"
           >
-            <Trash2 className="h-4 w-4" />
+            {isDeleting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
           </Button>
         ) : (
           <div className="flex items-center space-x-1">
@@ -198,9 +211,14 @@ function SortableActivityItem({ activity, onDelete, onToggleComplete, onClick }:
               size="sm"
               className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
               onClick={handleConfirmDelete}
+              disabled={isDeleting}
               title="Confirmar eliminación"
             >
-              <Check className="h-3 w-3" />
+              {isDeleting ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Check className="h-3 w-3" />
+              )}
             </Button>
             <Button
               variant="ghost"
@@ -234,6 +252,8 @@ export default function DraggableActivitiesList({
   onActivityClick,
 }: DraggableActivitiesListProps) {
   const [localActivities, setLocalActivities] = useState(activities);
+  const [togglingActivities, setTogglingActivities] = useState<Set<string>>(new Set());
+  const [deletingActivities, setDeletingActivities] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   // Update local state when props change
@@ -308,6 +328,7 @@ export default function DraggableActivitiesList({
   };
 
   const handleDelete = async (activityId: string) => {
+    setDeletingActivities(prev => new Set(prev).add(activityId));
     try {
       const result = await deleteActivity(activityId);
 
@@ -329,6 +350,60 @@ export default function DraggableActivitiesList({
         title: "Error al eliminar",
         description: "Ocurrió un error inesperado al eliminar la actividad.",
         variant: "destructive",
+      });
+    } finally {
+      setDeletingActivities(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(activityId);
+        return newSet;
+      });
+    }
+  };
+
+  const handleToggleComplete = async (activityId: string, completed: boolean) => {
+    setTogglingActivities(prev => new Set(prev).add(activityId));
+    try {
+      const result = await updateActivity(activityId, {
+        completedAt: completed ? new Date().toISOString() : null
+      });
+
+      if (result.success) {
+        // Update local state
+        setLocalActivities(prev => 
+          prev.map(activity => 
+            activity.id === activityId 
+              ? { ...activity, completedAt: completed ? new Date() : null }
+              : activity
+          )
+        );
+        
+        // Call parent handler
+        onActivityToggleComplete(activityId, completed);
+        
+        toast({
+          title: completed ? "Actividad completada" : "Actividad marcada como pendiente",
+          description: completed 
+            ? "La actividad ha sido marcada como completada." 
+            : "La actividad ha sido marcada como pendiente.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "No se pudo actualizar la actividad.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Ocurrió un error inesperado al actualizar la actividad.",
+        variant: "destructive",
+      });
+    } finally {
+      setTogglingActivities(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(activityId);
+        return newSet;
       });
     }
   };
@@ -358,8 +433,10 @@ export default function DraggableActivitiesList({
               key={activity.id}
               activity={activity}
               onDelete={handleDelete}
-              onToggleComplete={onActivityToggleComplete}
+              onToggleComplete={handleToggleComplete}
               onClick={onActivityClick}
+              isToggling={togglingActivities.has(activity.id)}
+              isDeleting={deletingActivities.has(activity.id)}
             />
           ))}
         </div>
