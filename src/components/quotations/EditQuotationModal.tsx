@@ -85,6 +85,7 @@ export default function EditQuotationModal({
   })
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmittingAndClosing, setIsSubmittingAndClosing] = useState(false)
   const { toast } = useToast()
 
   // Load quotation data when modal opens
@@ -101,14 +102,17 @@ export default function EditQuotationModal({
       })
 
       // Convert quotation items to selected services format
-      const services: SelectedService[] = quotation.items.map(item => ({
-        serviceId: `item-${item.id || Math.random()}`,
+      const services: SelectedService[] = quotation.items.map((item, index) => ({
+        serviceId: item.id ? `existing-${item.id}` : `temp-${quotation.id}-${index}`,
         serviceName: item.description,
         description: item.description,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         total: item.total,
-        metadata: {}
+        metadata: {
+          originalItemId: item.id,
+          isExisting: !!item.id
+        }
       }))
       setSelectedServices(services)
     }
@@ -122,9 +126,17 @@ export default function EditQuotationModal({
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+    await performSave(false)
+  }
+
+  const handleSaveAndClose = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await performSave(true)
+  }
+
+  const performSave = async (shouldClose: boolean) => {
     if (!quotation) return
     
     if (!formData.title || !formData.validUntil) {
@@ -156,7 +168,11 @@ export default function EditQuotationModal({
       return
     }
 
-    setIsSubmitting(true)
+    if (shouldClose) {
+      setIsSubmittingAndClosing(true)
+    } else {
+      setIsSubmitting(true)
+    }
     
     try {
       const quotationData = {
@@ -184,8 +200,45 @@ export default function EditQuotationModal({
           description: "La cotización ha sido actualizada exitosamente",
           duration: 3000,
         })
+        
+        // Only update local state if we're not closing the modal
+        if (!shouldClose && result.data) {
+          // Update form data with server response
+          setFormData({
+            title: result.data.title || '',
+            description: result.data.description || '',
+            discounts: result.data.discounts || 0,
+            taxes: result.data.taxes || 0,
+            currency: result.data.currency || 'CLP',
+            validUntil: result.data.validUntil ? result.data.validUntil.split('T')[0] : '',
+            notes: result.data.notes || '',
+          })
+          
+          // Update selected services with fresh data maintaining consistent IDs
+          if (result.data.items) {
+            const updatedServices: SelectedService[] = result.data.items.map((item: any, index: number) => ({
+              serviceId: item.id ? `existing-${item.id}` : `temp-${result.data.id}-${index}`,
+              serviceName: item.description,
+              description: item.description,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              total: item.total,
+              metadata: {
+                originalItemId: item.id,
+                isExisting: !!item.id
+              }
+            }))
+            setSelectedServices(updatedServices)
+          }
+        }
+        
+        // Notify parent to update the list
         onQuotationUpdated()
-        onClose()
+        
+        // Close modal only if requested
+        if (shouldClose) {
+          onClose()
+        }
       } else {
         toast({
           title: "Error al actualizar cotización",
@@ -202,6 +255,7 @@ export default function EditQuotationModal({
       })
     } finally {
       setIsSubmitting(false)
+      setIsSubmittingAndClosing(false)
     }
   }
 
@@ -239,7 +293,7 @@ export default function EditQuotationModal({
             </CardContent>
           </Card>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSave} className="space-y-6">
             {/* Información Básica */}
             <Card>
               <CardHeader>
@@ -434,9 +488,10 @@ export default function EditQuotationModal({
                 Cancelar
               </Button>
               <Button 
-                type="submit" 
-                disabled={isSubmitting || selectedServices.length === 0 || total < 0}
-                className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
+                type="button"
+                onClick={handleSave}
+                disabled={isSubmitting || isSubmittingAndClosing || selectedServices.length === 0 || total < 0}
+                variant="secondary"
               >
                 {isSubmitting ? (
                   <>
@@ -446,7 +501,25 @@ export default function EditQuotationModal({
                 ) : (
                   <>
                     <Save className="h-4 w-4 mr-2" />
-                    Guardar Cambios
+                    Guardar
+                  </>
+                )}
+              </Button>
+              <Button 
+                type="button" 
+                onClick={handleSaveAndClose}
+                disabled={isSubmitting || isSubmittingAndClosing || selectedServices.length === 0 || total < 0}
+                className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
+              >
+                {isSubmittingAndClosing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Guardando y cerrando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Guardar y Cerrar
                   </>
                 )}
               </Button>
