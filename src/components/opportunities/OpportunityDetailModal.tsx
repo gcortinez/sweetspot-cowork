@@ -34,6 +34,7 @@ import CreateQuotationModal from '@/components/quotations/CreateQuotationModal';
 import QuotationDetailModal from '@/components/quotations/QuotationDetailModal';
 import EditQuotationModal from '@/components/quotations/EditQuotationModal';
 import QuotationVersionsModal from '@/components/quotations/QuotationVersionsModal';
+import SendQuotationModal from '@/components/quotations/SendQuotationModal';
 
 interface Opportunity {
   id: string
@@ -136,6 +137,7 @@ export default function OpportunityDetailModal({
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null)
   const [editingQuotation, setEditingQuotation] = useState<Quotation | null>(null)
   const [versionsQuotation, setVersionsQuotation] = useState<Quotation | null>(null)
+  const [sendingQuotation, setSendingQuotation] = useState<Quotation | null>(null)
   const { toast } = useToast()
 
   // Load quotations for this opportunity
@@ -169,12 +171,12 @@ export default function OpportunityDetailModal({
     }
   }
 
-  // Load quotations when modal opens and quotations tab is accessed
+  // Load quotations when modal opens
   React.useEffect(() => {
-    if (isOpen && activeTab === 'quotations') {
+    if (isOpen && opportunity) {
       loadQuotations()
     }
-  }, [isOpen, activeTab, opportunity])
+  }, [isOpen, opportunity])
 
   // Handle quotation actions
   const handleQuotationCreated = () => {
@@ -314,6 +316,15 @@ export default function OpportunityDetailModal({
     if (quotation) {
       setSelectedQuotation(quotation)
     }
+  }
+
+  const handleSendEmail = (quotation: Quotation) => {
+    setSendingQuotation(quotation)
+  }
+
+  const handleEmailSent = () => {
+    setSendingQuotation(null)
+    loadQuotations() // Refresh to update status
   }
 
   if (!opportunity) return null;
@@ -630,6 +641,7 @@ export default function OpportunityDetailModal({
           onDelete={handleQuotationDelete}
           onDuplicate={handleQuotationDuplicate}
           onStatusChange={handleQuotationStatusChange}
+          onSendEmail={handleSendEmail}
           onViewVersions={handleViewVersions}
         />
 
@@ -649,6 +661,14 @@ export default function OpportunityDetailModal({
           onViewVersion={(quotation) => handleVersionAction('view', quotation)}
           onEditVersion={(quotation) => handleVersionAction('edit', quotation)}
           onDuplicateVersion={(quotation) => handleVersionAction('duplicate', quotation)}
+        />
+
+        {/* Send Quotation Email Modal */}
+        <SendQuotationModal
+          quotation={sendingQuotation}
+          isOpen={!!sendingQuotation}
+          onClose={() => setSendingQuotation(null)}
+          onEmailSent={handleEmailSent}
         />
       </DialogContent>
     </Dialog>

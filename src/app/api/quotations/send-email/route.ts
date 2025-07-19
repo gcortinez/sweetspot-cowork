@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getTenantContext } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { Resend } from 'resend'
+import { generateQuotationPDFAction } from '@/lib/actions/pdf'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -56,8 +57,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Generate PDF URL (this would be the endpoint that generates the PDF)
-    const pdfUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/quotations/${quotationId}/pdf`
+    // Generate PDF
+    const pdfResult = await generateQuotationPDFAction({
+      quotationId: quotationId,
+      includeNotes: false,
+    })
+
+    if (!pdfResult.success) {
+      return NextResponse.json(
+        { success: false, error: 'Error al generar el PDF' },
+        { status: 500 }
+      )
+    }
 
     // Prepare email content
     const emailSubject = subject
@@ -70,11 +81,21 @@ Si tiene alguna pregunta, no dude en contactarnos.
 Saludos cordiales,
 ${quotation.tenant.name}`
 
+    // Convert the PDF data to base64 for email attachment
+    const pdfBase64 = Buffer.from(pdfResult.data.pdfBuffer).toString('base64')
+
     // Send email using Resend
     const emailResult = await resend.emails.send({
       from: process.env.FROM_EMAIL || 'noreply@sweetspotcowork.com',
       to: [email],
       subject: emailSubject,
+      attachments: [
+        {
+          filename: `cotizacion-${quotation.number}.pdf`,
+          content: pdfBase64,
+          type: 'application/pdf',
+        },
+      ],
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center;">
@@ -113,17 +134,10 @@ ${quotation.tenant.name}`
               </table>
             </div>
             
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${pdfUrl}" 
-                 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                        color: white; 
-                        padding: 12px 30px; 
-                        text-decoration: none; 
-                        border-radius: 6px; 
-                        font-weight: bold;
-                        display: inline-block;">
-                📄 Descargar Cotización PDF
-              </a>
+            <div style="text-align: center; margin: 30px 0; background: #e8f5e8; padding: 20px; border-radius: 8px;">
+              <p style="margin: 0; color: #28a745; font-weight: bold;">
+                📎 La cotización en PDF se encuentra adjunta a este email
+              </p>
             </div>
             
             ${quotation.tenant.settings && (quotation.tenant.settings as any).contactInfo ? `

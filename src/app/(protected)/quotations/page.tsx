@@ -29,6 +29,7 @@ import CreateQuotationModal from '@/components/quotations/CreateQuotationModal'
 import QuotationDetailModal from '@/components/quotations/QuotationDetailModal'
 import EditQuotationModal from '@/components/quotations/EditQuotationModal'
 import QuotationVersionsModal from '@/components/quotations/QuotationVersionsModal'
+import SendQuotationModal from '@/components/quotations/SendQuotationModal'
 
 interface Quotation {
   id: string
@@ -130,6 +131,7 @@ export default function QuotationsPage() {
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null)
   const [editingQuotation, setEditingQuotation] = useState<Quotation | null>(null)
   const [versionsQuotation, setVersionsQuotation] = useState<Quotation | null>(null)
+  const [sendingQuotation, setSendingQuotation] = useState<Quotation | null>(null)
   
   const { toast } = useToast()
 
@@ -334,6 +336,15 @@ export default function QuotationsPage() {
     }
   }
 
+  const handleSendEmail = (quotation: Quotation) => {
+    setSendingQuotation(quotation)
+  }
+
+  const handleEmailSent = () => {
+    setSendingQuotation(null)
+    loadQuotations() // Refresh to update status
+  }
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -521,6 +532,7 @@ export default function QuotationsPage() {
         onDelete={handleQuotationDelete}
         onDuplicate={handleQuotationDuplicate}
         onStatusChange={handleQuotationStatusChange}
+        onSendEmail={handleSendEmail}
         onViewVersions={handleViewVersions}
       />
 
@@ -540,6 +552,14 @@ export default function QuotationsPage() {
         onViewVersion={(quotation) => handleVersionAction('view', quotation)}
         onEditVersion={(quotation) => handleVersionAction('edit', quotation)}
         onDuplicateVersion={(quotation) => handleVersionAction('duplicate', quotation)}
+      />
+
+      {/* Send Quotation Email Modal */}
+      <SendQuotationModal
+        quotation={sendingQuotation}
+        isOpen={!!sendingQuotation}
+        onClose={() => setSendingQuotation(null)}
+        onEmailSent={handleEmailSent}
       />
       </div>
     </div>

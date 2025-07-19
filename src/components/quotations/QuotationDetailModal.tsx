@@ -116,7 +116,7 @@ interface QuotationDetailModalProps {
   onDelete?: (quotationId: string) => void
   onDuplicate?: (quotation: Quotation) => void
   onStatusChange?: (quotationId: string, status: string) => void
-  onSendEmail?: (quotationId: string) => void
+  onSendEmail?: (quotation: Quotation) => void
   onDownloadPDF?: (quotationId: string) => void
   onViewVersions?: (quotation: Quotation) => void
 }
@@ -407,7 +407,7 @@ export default function QuotationDetailModal({
                   Editar
                 </Button>
                 <Button 
-                  onClick={() => onStatusChange?.(quotation.id, 'SENT')}
+                  onClick={() => onSendEmail?.(quotation)}
                   className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
                 >
                   <Send className="h-4 w-4 mr-2" />
@@ -462,15 +462,10 @@ export default function QuotationDetailModal({
 
             {quotation.status !== 'DRAFT' && (
               <Button 
-                onClick={handleEmailPDF}
+                onClick={() => onSendEmail?.(quotation)}
                 variant="outline"
-                disabled={isGenerating}
               >
-                {isGenerating ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Mail className="h-4 w-4 mr-2" />
-                )}
+                <Mail className="h-4 w-4 mr-2" />
                 Enviar por Email
               </Button>
             )}

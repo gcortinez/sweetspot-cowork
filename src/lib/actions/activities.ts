@@ -39,6 +39,33 @@ async function getUserWithTenant() {
   return dbUser
 }
 
+// Helper function to serialize activity data
+function serializeActivity(activity: any) {
+  // Helper function to safely convert Decimal to number
+  const toNumber = (value: any) => {
+    if (value === null || value === undefined) return 0
+    if (typeof value === 'number') return value
+    if (typeof value === 'string') return parseFloat(value) || 0
+    // Handle Prisma Decimal objects
+    if (value && typeof value.toNumber === 'function') return value.toNumber()
+    if (value && typeof value.toString === 'function') return parseFloat(value.toString()) || 0
+    return Number(value) || 0
+  }
+
+  return {
+    ...activity,
+    createdAt: activity.createdAt ? activity.createdAt.toISOString() : null,
+    updatedAt: activity.updatedAt ? activity.updatedAt.toISOString() : null,
+    dueDate: activity.dueDate ? activity.dueDate.toISOString() : null,
+    completedAt: activity.completedAt ? activity.completedAt.toISOString() : null,
+    // Handle nested objects with potential Decimal values
+    opportunity: activity.opportunity ? {
+      ...activity.opportunity,
+      value: toNumber(activity.opportunity.value),
+    } : null,
+  }
+}
+
 // Create a new activity
 export async function createActivity(input: CreateActivityInput) {
   try {
@@ -95,16 +122,20 @@ export async function createActivity(input: CreateActivityInput) {
     // Revalidate relevant paths
     revalidatePath('/leads')
     revalidatePath('/activities')
+    revalidatePath('/opportunities')
     if (validatedInput.leadId) {
       revalidatePath(`/leads/${validatedInput.leadId}`)
     }
     if (validatedInput.clientId) {
       revalidatePath(`/clients/${validatedInput.clientId}`)
     }
+    if (validatedInput.opportunityId) {
+      revalidatePath(`/opportunities/${validatedInput.opportunityId}`)
+    }
 
     return {
       success: true,
-      data: activity,
+      data: serializeActivity(activity),
     }
   } catch (error) {
     console.error('Error creating activity:', error)
@@ -191,16 +222,20 @@ export async function updateActivity(id: string, input: UpdateActivityInput) {
     // Revalidate relevant paths
     revalidatePath('/leads')
     revalidatePath('/activities')
+    revalidatePath('/opportunities')
     if (activity.leadId) {
       revalidatePath(`/leads/${activity.leadId}`)
     }
     if (activity.clientId) {
       revalidatePath(`/clients/${activity.clientId}`)
     }
+    if (activity.opportunityId) {
+      revalidatePath(`/opportunities/${activity.opportunityId}`)
+    }
 
     return {
       success: true,
-      data: activity,
+      data: serializeActivity(activity),
     }
   } catch (error) {
     console.error('Error updating activity:', error)
@@ -247,11 +282,15 @@ export async function deleteActivity(id: string) {
     // Revalidate relevant paths
     revalidatePath('/leads')
     revalidatePath('/activities')
+    revalidatePath('/opportunities')
     if (existingActivity.leadId) {
       revalidatePath(`/leads/${existingActivity.leadId}`)
     }
     if (existingActivity.clientId) {
       revalidatePath(`/clients/${existingActivity.clientId}`)
+    }
+    if (existingActivity.opportunityId) {
+      revalidatePath(`/opportunities/${existingActivity.opportunityId}`)
     }
 
     return {
@@ -329,7 +368,7 @@ export async function getActivity(id: string) {
 
     return {
       success: true,
-      data: activity,
+      data: serializeActivity(activity),
     }
   } catch (error) {
     console.error('Error getting activity:', error)
@@ -440,7 +479,7 @@ export async function listActivities(input: ListActivitiesInput = {}) {
 
     return {
       success: true,
-      data: activities,
+      data: activities.map(activity => serializeActivity(activity)),
       pagination: {
         page,
         limit,

@@ -902,6 +902,7 @@ export default function OpportunityDetailPage() {
         onDelete={handleQuotationDelete}
         onDuplicate={handleQuotationDuplicate}
         onStatusChange={handleQuotationStatusChange}
+        onSendEmail={handleSendEmail}
         onViewVersions={handleViewVersions}
       />
 

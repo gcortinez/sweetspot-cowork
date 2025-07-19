@@ -185,7 +185,10 @@ export async function getDashboardStats() {
       })
 
       recentLeads = await db.lead.findMany({
-        where: { tenantId: user.tenantId },
+        where: { 
+          tenantId: user.tenantId,
+          status: { not: 'CONVERTED' }
+        },
         orderBy: { createdAt: 'desc' },
         take: 3
       })
