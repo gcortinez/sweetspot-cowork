@@ -252,6 +252,19 @@ function DashboardContent({
               {/* Cowork Selector for Super Admins */}
               {isSuperAdmin && <CoworkSelector />}
               
+              {/* Cowork Settings Button for Admins */}
+              {(user.privateMetadata?.role === 'COWORK_ADMIN' || user.privateMetadata?.role === 'SUPER_ADMIN') && (
+                <Link href="/cowork-settings">
+                  <Button 
+                    size="sm" 
+                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg border-blue-300 flex items-center gap-2"
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span className="hidden sm:inline">Configurar</span>
+                  </Button>
+                </Link>
+              )}
+              
               {/* Enhanced User Role Display */}
               {isSuperAdmin ? (
                 <Badge className="bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 border-purple-300 shadow-purple text-xs font-medium px-3 py-1">
