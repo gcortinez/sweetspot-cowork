@@ -105,6 +105,9 @@ interface OpportunityActivity {
   sortOrder?: number
   completedAt?: Date | null
   dueDate?: Date
+  outcome?: string // Resultado de la actividad
+  duration?: number // Duración en minutos
+  location?: string // Ubicación
   createdAt: Date
   user: {
     id: string
