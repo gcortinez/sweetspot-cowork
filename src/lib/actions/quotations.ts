@@ -249,11 +249,23 @@ export async function updateQuotationAction(data: UpdateQuotationRequest): Promi
       // Debug: Log the validated items
       console.log('🐛 Backend - validatedData.items:', JSON.stringify(validatedData.items, null, 2))
       
+      const discountsValue = validatedData.discounts || existingQuotation.discounts
+      const taxesValue = validatedData.taxes || existingQuotation.taxes
+      
+      console.log('🐛 Backend - before calculateQuotationTotals:', {
+        discountsValue,
+        taxesValue,
+        existingDiscounts: existingQuotation.discounts,
+        existingTaxes: existingQuotation.taxes,
+        validatedDiscounts: validatedData.discounts,
+        validatedTaxes: validatedData.taxes
+      })
+      
       // Calculate new totals
       const { subtotal, total } = calculateQuotationTotals(
         validatedData.items,
-        validatedData.discounts || existingQuotation.discounts,
-        validatedData.taxes || existingQuotation.taxes
+        discountsValue,
+        taxesValue
       )
       
       console.log('🐛 Backend - calculated totals:', { subtotal, total })
