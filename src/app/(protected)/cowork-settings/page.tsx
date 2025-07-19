@@ -23,7 +23,11 @@ import {
   Mail,
   Shield,
   AlertCircle,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Eye,
+  Phone,
+  MapPin,
+  Globe
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -390,298 +394,505 @@ export default function CoworkSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <AppHeader />
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Configuración del Cowork</h1>
-            <p className="text-gray-600">Gestiona la información y usuarios de tu cowork</p>
+      
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 text-white">
+        <div className="container mx-auto px-4 py-12">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-center justify-between">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    <Settings className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h1 className="text-4xl font-bold tracking-tight">Configuración del Cowork</h1>
+                    <p className="text-blue-100 text-lg mt-1">Gestiona la información y usuarios de tu espacio de trabajo</p>
+                  </div>
+                </div>
+                
+                {coworkInfo && (
+                  <div className="flex items-center gap-4 text-blue-100">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4" />
+                      <span className="font-medium">{coworkInfo.name}</span>
+                    </div>
+                    <div className="h-4 w-px bg-blue-300"></div>
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      <span>{users.length} usuarios activos</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {!canEditCowork && (
+                <div className="bg-yellow-500/20 border border-yellow-300/30 rounded-lg px-4 py-2 backdrop-blur-sm">
+                  <div className="flex items-center gap-2 text-yellow-100">
+                    <AlertCircle className="h-4 w-4" />
+                    <span className="text-sm font-medium">Solo lectura</span>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
+      </div>
 
-        <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="general">Información General</TabsTrigger>
-            <TabsTrigger value="users">Gestión de Usuarios</TabsTrigger>
-          </TabsList>
+      <div className="container mx-auto px-4 -mt-6 pb-12">
+        <div className="max-w-6xl mx-auto space-y-8">
+
+        {/* Navigation Tabs */}
+        <div className="bg-white rounded-2xl shadow-xl border border-white/50 backdrop-blur-sm p-2">
+          <Tabs defaultValue="general" className="space-y-8">
+            <TabsList className="grid w-full grid-cols-2 bg-gray-100/60 p-1 rounded-xl">
+              <TabsTrigger 
+                value="general" 
+                className="flex items-center gap-2 rounded-lg px-6 py-3 data-[state=active]:bg-white data-[state=active]:shadow-sm font-medium transition-all"
+              >
+                <Building2 className="h-4 w-4" />
+                Información General
+              </TabsTrigger>
+              <TabsTrigger 
+                value="users" 
+                className="flex items-center gap-2 rounded-lg px-6 py-3 data-[state=active]:bg-white data-[state=active]:shadow-sm font-medium transition-all"
+              >
+                <Users className="h-4 w-4" />
+                Gestión de Usuarios
+              </TabsTrigger>
+            </TabsList>
 
           {/* General Information Tab */}
-          <TabsContent value="general" className="space-y-6">
-            <Card>
-              <CardHeader>
+          <TabsContent value="general" className="space-y-8 mt-8">
+            <div className="bg-gradient-to-r from-white to-blue-50/30 rounded-2xl shadow-lg border border-white/50 backdrop-blur-sm overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-6">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <Building2 className="h-5 w-5" />
-                    Información del Cowork
-                  </CardTitle>
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                      <Building2 className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-white">Información del Cowork</h2>
+                      <p className="text-blue-100 text-sm">Configura los datos principales de tu espacio</p>
+                    </div>
+                  </div>
                   {!isEditing && canEditCowork && (
                     <Button 
                       onClick={() => setIsEditing(true)}
-                      className="flex items-center gap-2"
+                      className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm transition-all duration-200"
+                      variant="outline"
                     >
-                      <Edit className="h-4 w-4" />
-                      Editar
+                      <Edit className="h-4 w-4 mr-2" />
+                      Editar Información
                     </Button>
                   )}
-                  {!canEditCowork && (
-                    <div className="text-sm text-gray-500 italic">
-                      Solo lectura - No tienes permisos para editar
-                    </div>
-                  )}
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
+              </div>
+              
                 {/* Logo Section */}
-                <div className="space-y-4">
-                  <Label>Logo del Cowork</Label>
-                  <div className="flex items-center gap-6">
-                    <div className="relative">
+                <div className="bg-gradient-to-r from-gray-50 to-blue-50/50 rounded-xl p-6 border border-gray-200/50">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                      <ImageIcon className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Logo del Cowork</h3>
+                      <p className="text-sm text-gray-600">Imagen que representa tu espacio de trabajo</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-8">
+                    <div className="relative group">
                       {logoPreview ? (
                         <div 
-                          className="cursor-pointer" 
+                          className="cursor-pointer transform transition-all duration-200 hover:scale-105" 
                           onClick={() => window.open(logoPreview, '_blank')}
                           title="Click para ver imagen completa"
                         >
-                          <Image
-                            src={logoPreview}
-                            alt="Logo del cowork"
-                            width={80}
-                            height={80}
-                            className="rounded-lg object-cover border hover:opacity-90 transition-opacity"
-                            unoptimized={true}
-                          />
+                          <div className="relative">
+                            <Image
+                              src={logoPreview}
+                              alt="Logo del cowork"
+                              width={120}
+                              height={120}
+                              className="rounded-2xl object-cover border-4 border-white shadow-lg"
+                              unoptimized={true}
+                            />
+                            <div className="absolute inset-0 rounded-2xl bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
+                              <Eye className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                          </div>
                         </div>
                       ) : (
-                        <div className="h-20 w-20 rounded-lg bg-gray-100 flex items-center justify-center border">
-                          <ImageIcon className="h-8 w-8 text-gray-400" />
+                        <div className="h-30 w-30 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center border-4 border-white shadow-lg">
+                          <div className="text-center">
+                            <ImageIcon className="h-10 w-10 text-gray-400 mx-auto mb-2" />
+                            <p className="text-xs text-gray-500">Sin logo</p>
+                          </div>
                         </div>
                       )}
                       {isEditing && (
-                        <div className="absolute inset-0 rounded-lg bg-black bg-opacity-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                          <Upload className="h-6 w-6 text-white" />
+                        <div className="absolute inset-0 rounded-2xl bg-black bg-opacity-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
+                          <Upload className="h-8 w-8 text-white" />
                         </div>
                       )}
                     </div>
+                    
                     {isEditing && (
-                      <div className="space-y-2">
-                        <Label htmlFor="logo">Subir nuevo logo</Label>
-                        <Input
-                          id="logo"
-                          type="file"
-                          accept="image/*"
-                          onChange={handleLogoChange}
-                          className="max-w-xs"
-                        />
-                        <p className="text-xs text-gray-500">
-                          Máximo 5MB. Formatos: JPG, PNG, GIF
-                        </p>
+                      <div className="flex-1 space-y-4">
+                        <div className="bg-white rounded-xl p-4 border border-gray-200">
+                          <Label htmlFor="logo" className="text-sm font-medium text-gray-700 mb-2 block">
+                            Subir nuevo logo
+                          </Label>
+                          <Input
+                            id="logo"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleLogoChange}
+                            className="file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                          />
+                          <div className="mt-2 text-xs text-gray-500 space-y-1">
+                            <p>• Máximo 5MB</p>
+                            <p>• Formatos: JPG, PNG, GIF, WebP</p>
+                            <p>• Recomendado: 300x300px o superior</p>
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>
                 </div>
 
-                <Separator />
+                {/* Basic Information */}
+                <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="h-8 w-8 rounded-lg bg-green-100 flex items-center justify-center">
+                      <Building2 className="h-4 w-4 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Información Básica</h3>
+                      <p className="text-sm text-gray-600">Datos principales de identificación</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      <Label htmlFor="name" className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                        Nombre del Cowork
+                        <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => handleInputChange('name', e.target.value)}
+                        disabled={!isEditing}
+                        placeholder="Nombre de tu cowork"
+                        className={`transition-all duration-200 ${isEditing ? 'border-blue-200 focus:border-blue-400' : 'bg-gray-50/50'}`}
+                      />
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <Label htmlFor="slug" className="text-sm font-medium text-gray-700">URL del Cowork</Label>
+                      <div className="relative">
+                        <Input
+                          id="slug"
+                          value={coworkInfo?.slug || ''}
+                          disabled
+                          className="bg-gray-50 text-gray-600 pr-10"
+                        />
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                          <div className="h-4 w-4 rounded-full bg-gray-300 flex items-center justify-center">
+                            <span className="text-xs text-gray-600">🔒</span>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        La URL no se puede modificar
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-3 md:col-span-2">
+                      <Label htmlFor="description" className="text-sm font-medium text-gray-700">Descripción</Label>
+                      <Textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => handleInputChange('description', e.target.value)}
+                        disabled={!isEditing}
+                        placeholder="Describe tu espacio de trabajo, servicios y lo que lo hace especial..."
+                        rows={4}
+                        className={`transition-all duration-200 resize-none ${isEditing ? 'border-blue-200 focus:border-blue-400' : 'bg-gray-50/50'}`}
+                      />
+                    </div>
+                  </div>
+                </div>
 
-                {/* Form Fields */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Nombre del Cowork *</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
-                      disabled={!isEditing}
-                      placeholder="Nombre de tu cowork"
-                    />
+                {/* Contact Information */}
+                <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                      <Phone className="h-4 w-4 text-purple-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Información de Contacto</h3>
+                      <p className="text-sm text-gray-600">Datos para que los clientes puedan contactarte</p>
+                    </div>
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="slug">URL del Cowork</Label>
-                    <Input
-                      id="slug"
-                      value={coworkInfo?.slug || ''}
-                      disabled
-                      className="bg-gray-50"
-                    />
-                    <p className="text-xs text-gray-500">
-                      La URL no se puede cambiar
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="description">Descripción</Label>
-                    <Textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) => handleInputChange('description', e.target.value)}
-                      disabled={!isEditing}
-                      placeholder="Describe tu cowork..."
-                      rows={3}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="address">Dirección</Label>
-                    <Input
-                      id="address"
-                      value={formData.address}
-                      onChange={(e) => handleInputChange('address', e.target.value)}
-                      disabled={!isEditing}
-                      placeholder="Dirección completa"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Teléfono</Label>
-                    <Input
-                      id="phone"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      disabled={!isEditing}
-                      placeholder="+56 9 1234 5678"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Correo Electrónico</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
-                      disabled={!isEditing}
-                      placeholder="contacto@tucowork.com"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="website">Sitio Web</Label>
-                    <Input
-                      id="website"
-                      type="url"
-                      value={formData.website}
-                      onChange={(e) => handleInputChange('website', e.target.value)}
-                      disabled={!isEditing}
-                      placeholder="https://tucowork.com"
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      <Label htmlFor="address" className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                        <MapPin className="h-3 w-3" />
+                        Dirección
+                      </Label>
+                      <Input
+                        id="address"
+                        value={formData.address}
+                        onChange={(e) => handleInputChange('address', e.target.value)}
+                        disabled={!isEditing}
+                        placeholder="Dirección completa del cowork"
+                        className={`transition-all duration-200 ${isEditing ? 'border-blue-200 focus:border-blue-400' : 'bg-gray-50/50'}`}
+                      />
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <Label htmlFor="phone" className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                        <Phone className="h-3 w-3" />
+                        Teléfono
+                      </Label>
+                      <Input
+                        id="phone"
+                        value={formData.phone}
+                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                        disabled={!isEditing}
+                        placeholder="+56 9 1234 5678"
+                        className={`transition-all duration-200 ${isEditing ? 'border-blue-200 focus:border-blue-400' : 'bg-gray-50/50'}`}
+                      />
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <Label htmlFor="email" className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                        <Mail className="h-3 w-3" />
+                        Correo Electrónico
+                      </Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        disabled={!isEditing}
+                        placeholder="contacto@tucowork.com"
+                        className={`transition-all duration-200 ${isEditing ? 'border-blue-200 focus:border-blue-400' : 'bg-gray-50/50'}`}
+                      />
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <Label htmlFor="website" className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                        <Globe className="h-3 w-3" />
+                        Sitio Web
+                      </Label>
+                      <Input
+                        id="website"
+                        type="url"
+                        value={formData.website}
+                        onChange={(e) => handleInputChange('website', e.target.value)}
+                        disabled={!isEditing}
+                        placeholder="https://tucowork.com"
+                        className={`transition-all duration-200 ${isEditing ? 'border-blue-200 focus:border-blue-400' : 'bg-gray-50/50'}`}
+                      />
+                    </div>
                   </div>
                 </div>
 
                 {/* Action Buttons */}
                 {isEditing && (
-                  <div className="flex justify-end gap-3 pt-4">
-                    <Button 
-                      variant="outline" 
-                      onClick={handleCancel}
-                      disabled={isSubmitting}
-                    >
-                      Cancelar
-                    </Button>
-                    <Button 
-                      onClick={handleSave}
-                      disabled={isSubmitting || !formData.name}
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Save className="h-4 w-4 mr-2 animate-spin" />
-                          Guardando...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="h-4 w-4 mr-2" />
-                          Guardar Cambios
-                        </>
-                      )}
-                    </Button>
+                  <div className="bg-gradient-to-r from-gray-50 to-blue-50/50 rounded-xl p-6 border border-gray-200/50">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-gray-600">
+                        <p className="font-medium">¿Listo para guardar los cambios?</p>
+                        <p>Los cambios se aplicarán inmediatamente</p>
+                      </div>
+                      <div className="flex gap-3">
+                        <Button 
+                          variant="outline" 
+                          onClick={handleCancel}
+                          disabled={isSubmitting}
+                          className="px-6 py-2 hover:bg-gray-50"
+                        >
+                          Cancelar
+                        </Button>
+                        <Button 
+                          onClick={handleSave}
+                          disabled={isSubmitting || !formData.name}
+                          className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg transition-all duration-200"
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <Save className="h-4 w-4 mr-2 animate-spin" />
+                              Guardando...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="h-4 w-4 mr-2" />
+                              Guardar Cambios
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+            </div>
           </TabsContent>
 
           {/* Users Management Tab */}
-          <TabsContent value="users" className="space-y-6">
-            <Card>
-              <CardHeader>
+          <TabsContent value="users" className="space-y-8 mt-8">
+            <div className="bg-gradient-to-r from-white to-purple-50/30 rounded-2xl shadow-lg border border-white/50 backdrop-blur-sm overflow-hidden">
+              <div className="bg-gradient-to-r from-purple-600 to-blue-600 px-8 py-6">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    Usuarios del Cowork ({users.length})
-                  </CardTitle>
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                      <Users className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-white">Gestión de Usuarios</h2>
+                      <p className="text-purple-100 text-sm">{users.length} usuarios activos en tu cowork</p>
+                    </div>
+                  </div>
                   {hasPermission(userRole, 'COWORK_USER', hasActiveCowork) && (
                     <Button 
                       onClick={() => setIsInviteModalOpen(true)}
-                      className="flex items-center gap-2"
+                      className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm transition-all duration-200"
+                      variant="outline"
                     >
-                      <UserPlus className="h-4 w-4" />
+                      <UserPlus className="h-4 w-4 mr-2" />
                       Invitar Usuario
                     </Button>
                   )}
                 </div>
-              </CardHeader>
-              <CardContent>
+              </div>
+              
+              <div className="p-8">
                 {users.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <p>No hay usuarios en este cowork</p>
+                  <div className="text-center py-16">
+                    <div className="mx-auto w-24 h-24 bg-gradient-to-br from-purple-100 to-blue-100 rounded-2xl flex items-center justify-center mb-6">
+                      <Users className="h-12 w-12 text-purple-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay usuarios registrados</h3>
+                    <p className="text-gray-600 mb-6">Comienza invitando a tu equipo para gestionar el cowork juntos</p>
+                    {hasPermission(userRole, 'COWORK_USER', hasActiveCowork) && (
+                      <Button 
+                        onClick={() => setIsInviteModalOpen(true)}
+                        className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                      >
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Invitar Primer Usuario
+                      </Button>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {users.map((user) => (
-                      <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center gap-4">
-                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
-                            <span className="text-sm font-semibold text-white">
-                              {user.firstName?.charAt(0)?.toUpperCase() || 'U'}
-                            </span>
-                          </div>
-                          <div>
-                            <h4 className="font-medium">{user.firstName} {user.lastName}</h4>
-                            <p className="text-sm text-gray-600">{user.email}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge 
-                                variant="outline" 
-                                className={cn("text-xs", roleColors[user.role as keyof typeof roleColors])}
-                              >
-                                {roleLabels[user.role as keyof typeof roleLabels] || user.role}
-                              </Badge>
-                              <Badge 
-                                variant={user.status === 'ACTIVE' ? 'default' : 'secondary'} 
-                                className="text-xs"
-                              >
-                                {user.status}
-                              </Badge>
+                    {users.map((user, index) => (
+                      <div key={user.id} className="group bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            {/* Avatar with gradient based on role */}
+                            <div className={`h-12 w-12 rounded-xl flex items-center justify-center text-white font-semibold shadow-lg ${
+                              user.role === 'SUPER_ADMIN' ? 'bg-gradient-to-br from-purple-600 to-purple-700' :
+                              user.role === 'COWORK_ADMIN' ? 'bg-gradient-to-br from-blue-600 to-blue-700' :
+                              user.role === 'COWORK_USER' ? 'bg-gradient-to-br from-cyan-600 to-cyan-700' :
+                              user.role === 'CLIENT_ADMIN' ? 'bg-gradient-to-br from-green-600 to-green-700' :
+                              'bg-gradient-to-br from-gray-600 to-gray-700'
+                            }`}>
+                              {user.firstName?.charAt(0)?.toUpperCase() || user.lastName?.charAt(0)?.toUpperCase() || 'U'}
+                            </div>
+                            
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-1">
+                                <h4 className="font-semibold text-gray-900">{user.firstName} {user.lastName}</h4>
+                                {user.role === 'SUPER_ADMIN' && (
+                                  <div className="h-5 w-5 rounded-full bg-yellow-100 flex items-center justify-center">
+                                    <span className="text-xs">👑</span>
+                                  </div>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-600 mb-2">{user.email}</p>
+                              <div className="flex items-center gap-2">
+                                <Badge 
+                                  variant="outline" 
+                                  className={cn("text-xs font-medium", roleColors[user.role as keyof typeof roleColors])}
+                                >
+                                  {roleLabels[user.role as keyof typeof roleLabels] || user.role}
+                                </Badge>
+                                <Badge 
+                                  variant={user.status === 'ACTIVE' ? 'default' : 'secondary'} 
+                                  className={`text-xs ${
+                                    user.status === 'ACTIVE' 
+                                      ? 'bg-green-100 text-green-800 border-green-200' 
+                                      : 'bg-gray-100 text-gray-800 border-gray-200'
+                                  }`}
+                                >
+                                  {user.status === 'ACTIVE' ? 'Activo' : user.status}
+                                </Badge>
+                                {user.lastLoginAt && (
+                                  <span className="text-xs text-gray-500">
+                                    Último acceso: {new Date(user.lastLoginAt).toLocaleDateString()}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
+                          
+                          {/* Role selector for editable users */}
+                          {user?.role !== 'SUPER_ADMIN' && user.id !== user?.id && (
+                            <div className="ml-4">
+                              <Select
+                                value={user.role}
+                                onValueChange={(newRole) => handleUpdateUserRole(user.id, newRole)}
+                              >
+                                <SelectTrigger className="w-56 bg-gray-50 border-gray-200 hover:bg-gray-100 transition-colors">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="COWORK_ADMIN" className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                      Administrador de Cowork
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="COWORK_USER" className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-2 h-2 rounded-full bg-cyan-500"></div>
+                                      Empleado de Cowork
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="CLIENT_ADMIN" className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                      Administrador de Cliente
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="END_USER" className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-2 h-2 rounded-full bg-gray-500"></div>
+                                      Usuario Final
+                                    </div>
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
                         </div>
-                        
-                        {user?.role !== 'SUPER_ADMIN' && user.id !== user?.id && (
-                          <Select
-                            value={user.role}
-                            onValueChange={(newRole) => handleUpdateUserRole(user.id, newRole)}
-                          >
-                            <SelectTrigger className="w-48">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="COWORK_ADMIN">Administrador de Cowork</SelectItem>
-                              <SelectItem value="COWORK_USER">Empleado de Cowork</SelectItem>
-                              <SelectItem value="CLIENT_ADMIN">Administrador de Cliente</SelectItem>
-                              <SelectItem value="END_USER">Usuario Final</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
                       </div>
                     ))}
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
+        </div>
       </div>
     </div>
     

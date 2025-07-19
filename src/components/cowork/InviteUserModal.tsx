@@ -122,84 +122,125 @@ export default function InviteUserModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <UserPlus className="h-5 w-5" />
-            Invitar Usuario
-          </DialogTitle>
-          <DialogDescription>
-            Envía una invitación por email para que un nuevo usuario se una al cowork.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="email" className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="usuario@ejemplo.com"
-                value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                disabled={isSubmitting}
-                required
-              />
+      <DialogContent className="sm:max-w-[500px] p-0 gap-0 overflow-hidden">
+        {/* Header with gradient */}
+        <div className="bg-gradient-to-r from-purple-600 to-blue-600 px-6 py-8 text-white">
+          <DialogHeader>
+            <div className="flex items-center gap-4 mb-2">
+              <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <UserPlus className="h-6 w-6" />
+              </div>
+              <div>
+                <DialogTitle className="text-2xl font-bold">Invitar Usuario</DialogTitle>
+                <DialogDescription className="text-purple-100 mt-1">
+                  Añade un nuevo miembro a tu equipo de trabajo
+                </DialogDescription>
+              </div>
             </div>
+          </DialogHeader>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Email Section */}
+          <div className="space-y-3">
+            <Label htmlFor="email" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+              <div className="h-5 w-5 rounded bg-blue-100 flex items-center justify-center">
+                <Mail className="h-3 w-3 text-blue-600" />
+              </div>
+              Dirección de correo electrónico
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="ejemplo: maria@empresa.com"
+              value={formData.email}
+              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+              disabled={isSubmitting}
+              required
+              className="h-12 border-gray-200 focus:border-blue-400 focus:ring-blue-100 transition-all"
+            />
+            <p className="text-xs text-gray-500">
+              Se enviará un email de invitación a esta dirección
+            </p>
+          </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="role" className="flex items-center gap-2">
-                <Shield className="h-4 w-4" />
-                Rol
-              </Label>
-              <Select
-                value={formData.role}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, role: value as any }))}
-                disabled={isSubmitting}
-              >
-                <SelectTrigger id="role">
-                  <SelectValue placeholder="Seleccionar rol" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableRoles.map((role) => (
-                    <SelectItem key={role} value={role}>
-                      <div className="flex flex-col items-start">
-                        <span>{ROLE_LABELS[role]}</span>
-                        <span className="text-xs text-gray-500">{ROLE_DESCRIPTIONS[role]}</span>
+          {/* Role Selection */}
+          <div className="space-y-3">
+            <Label htmlFor="role" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+              <div className="h-5 w-5 rounded bg-purple-100 flex items-center justify-center">
+                <Shield className="h-3 w-3 text-purple-600" />
+              </div>
+              Rol y permisos
+            </Label>
+            <Select
+              value={formData.role}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, role: value as any }))}
+              disabled={isSubmitting}
+            >
+              <SelectTrigger id="role" className="h-12 border-gray-200 focus:border-purple-400">
+                <SelectValue placeholder="Selecciona el rol para este usuario" />
+              </SelectTrigger>
+              <SelectContent className="max-w-md">
+                {availableRoles.map((role) => (
+                  <SelectItem key={role} value={role} className="p-4 cursor-pointer">
+                    <div className="flex items-start gap-3">
+                      <div className={`w-3 h-3 rounded-full mt-1 ${
+                        role === 'SUPER_ADMIN' ? 'bg-purple-500' :
+                        role === 'COWORK_ADMIN' ? 'bg-blue-500' :
+                        role === 'COWORK_USER' ? 'bg-cyan-500' :
+                        role === 'CLIENT_ADMIN' ? 'bg-green-500' :
+                        'bg-gray-500'
+                      }`}></div>
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900">{ROLE_LABELS[role]}</div>
+                        <div className="text-xs text-gray-500 mt-1 leading-relaxed">
+                          {ROLE_DESCRIPTIONS[role]}
+                        </div>
                       </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {(userRole === 'COWORK_ADMIN' || userRole === 'COWORK_USER') && (
-                <p className="text-sm text-gray-500">
-                  {userRole === 'COWORK_ADMIN' 
-                    ? 'Como administrador, puedes asignar empleados del cowork y roles de cliente.'
-                    : 'Como empleado del cowork, puedes invitar administradores y usuarios de clientes.'
-                  }
-                </p>
-              )}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {/* Permission info based on current user role */}
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-100">
+              <div className="flex items-start gap-3">
+                <div className="h-5 w-5 rounded-full bg-blue-200 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-xs text-blue-700">ℹ</span>
+                </div>
+                <div className="text-sm text-gray-700">
+                  <p className="font-medium mb-1">Tus permisos de invitación:</p>
+                  <p className="text-gray-600 text-xs leading-relaxed">
+                    {userRole === 'SUPER_ADMIN' && 'Como Super Administrador, puedes asignar cualquier rol.'}
+                    {userRole === 'COWORK_ADMIN' && 'Como Administrador de Cowork, puedes asignar empleados del cowork y roles de cliente.'}
+                    {userRole === 'COWORK_USER' && 'Como Empleado de Cowork, puedes invitar administradores y usuarios de clientes.'}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
-          <DialogFooter>
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-4 border-t border-gray-100">
             <Button
               type="button"
               variant="outline"
               onClick={handleClose}
               disabled={isSubmitting}
+              className="flex-1 h-11 hover:bg-gray-50"
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || !formData.email}
+              className="flex-1 h-11 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg transition-all duration-200"
+            >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Enviando...
+                  Enviando invitación...
                 </>
               ) : (
                 <>
@@ -208,7 +249,7 @@ export default function InviteUserModal({
                 </>
               )}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
