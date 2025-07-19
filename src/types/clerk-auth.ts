@@ -42,8 +42,9 @@ export interface ClerkTenant {
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
   END_USER: 1,
   CLIENT_ADMIN: 2,
-  COWORK_ADMIN: 3,
-  SUPER_ADMIN: 4,
+  COWORK_USER: 3,
+  COWORK_ADMIN: 4,
+  SUPER_ADMIN: 5,
 };
 
 // Helper functions for role checking
@@ -61,6 +62,8 @@ export function getDefaultRedirectForRole(role: UserRole): string {
     case "SUPER_ADMIN":
       return "/dashboard";
     case "COWORK_ADMIN":
+      return "/dashboard";
+    case "COWORK_USER":
       return "/dashboard";
     case "CLIENT_ADMIN":
       return "/dashboard";

@@ -38,8 +38,9 @@ export interface AuthState {
 const ROLE_LEVELS: Record<UserRole, number> = {
   END_USER: 1,
   CLIENT_ADMIN: 2,
-  COWORK_ADMIN: 3,
-  SUPER_ADMIN: 4,
+  COWORK_USER: 3,
+  COWORK_ADMIN: 4,
+  SUPER_ADMIN: 5,
 };
 
 export const useAuthStore = create<AuthState>()(

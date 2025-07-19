@@ -84,14 +84,27 @@ export async function generateQuotationPDFAction(data: GenerateQuotationPDFReque
       }
     })
     
+    // Debug: Log tenant data to understand the structure
+    console.log('🔍 PDF Debug - Tenant data:', {
+      tenantId,
+      name: tenant?.name,
+      settings: tenant?.settings,
+      logo: tenant?.logo
+    })
+    
+    // Cast settings to any to access nested properties (Prisma JSON field)
+    const settings = tenant?.settings as any
+    
     const coworkInfo = {
       name: tenant?.name || 'SweetSpot Cowork',
-      address: tenant?.settings?.address || 'Dirección no configurada',
-      phone: tenant?.settings?.phone || 'Teléfono no configurado',
-      email: tenant?.settings?.email || 'Email no configurado',
-      website: tenant?.settings?.website,
-      logo: tenant?.settings?.logo,
+      address: settings?.address || 'Dirección no configurada',
+      phone: settings?.contactInfo?.phone || 'Teléfono no configurado',
+      email: settings?.contactInfo?.email || 'Email no configurado',
+      website: settings?.contactInfo?.website,
+      logo: tenant?.logo, // Logo is stored at tenant root level, not in settings
     }
+    
+    console.log('🔍 PDF Debug - Cowork info:', coworkInfo)
 
     // Helper function to safely convert Decimal to number
     const toNumber = (value: any) => {

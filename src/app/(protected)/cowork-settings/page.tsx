@@ -66,6 +66,7 @@ interface TenantUser {
 const roleLabels = {
   SUPER_ADMIN: "Super Administrador",
   COWORK_ADMIN: "Administrador de Cowork",
+  COWORK_USER: "Empleado de Cowork",
   CLIENT_ADMIN: "Administrador de Cliente", 
   END_USER: "Usuario Final",
 }
@@ -73,6 +74,7 @@ const roleLabels = {
 const roleColors = {
   SUPER_ADMIN: "bg-purple-100 text-purple-800 border-purple-200",
   COWORK_ADMIN: "bg-blue-100 text-blue-800 border-blue-200",
+  COWORK_USER: "bg-cyan-100 text-cyan-800 border-cyan-200",
   CLIENT_ADMIN: "bg-green-100 text-green-800 border-green-200",
   END_USER: "bg-gray-100 text-gray-800 border-gray-200",
 }
@@ -438,13 +440,20 @@ export default function CoworkSettingsPage() {
                   <div className="flex items-center gap-6">
                     <div className="relative">
                       {logoPreview ? (
-                        <Image
-                          src={logoPreview}
-                          alt="Logo del cowork"
-                          width={80}
-                          height={80}
-                          className="rounded-lg object-cover border"
-                        />
+                        <div 
+                          className="cursor-pointer" 
+                          onClick={() => window.open(logoPreview, '_blank')}
+                          title="Click para ver imagen completa"
+                        >
+                          <Image
+                            src={logoPreview}
+                            alt="Logo del cowork"
+                            width={80}
+                            height={80}
+                            className="rounded-lg object-cover border hover:opacity-90 transition-opacity"
+                            unoptimized={true}
+                          />
+                        </div>
                       ) : (
                         <div className="h-20 w-20 rounded-lg bg-gray-100 flex items-center justify-center border">
                           <ImageIcon className="h-8 w-8 text-gray-400" />
@@ -659,6 +668,7 @@ export default function CoworkSettingsPage() {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="COWORK_ADMIN">Administrador de Cowork</SelectItem>
+                              <SelectItem value="COWORK_USER">Empleado de Cowork</SelectItem>
                               <SelectItem value="CLIENT_ADMIN">Administrador de Cliente</SelectItem>
                               <SelectItem value="END_USER">Usuario Final</SelectItem>
                             </SelectContent>
