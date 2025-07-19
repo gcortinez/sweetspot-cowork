@@ -74,7 +74,11 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const context = await getTenantContext()
+    // Get tenantId from query params (for super admins)
+    const { searchParams } = new URL(request.url)
+    const queryTenantId = searchParams.get('tenantId')
+    
+    const context = await getTenantContext(queryTenantId || undefined)
     
     if (!context.user || !context.tenantId) {
       return Response.json(
@@ -123,8 +127,18 @@ export async function PUT(request: NextRequest) {
       ...settings,
     } : currentSettings
     
+    // Use effective tenant ID for updates
+    const tenantId = context.effectiveTenantId || context.tenantId
+    
+    if (!tenantId) {
+      return Response.json(
+        { success: false, error: 'Tenant ID no especificado' },
+        { status: 400 }
+      )
+    }
+    
     const updatedTenant = await db.tenant.update({
-      where: { id: context.tenantId },
+      where: { id: tenantId },
       data: {
         name: name.trim(),
         description: description?.trim() || null,

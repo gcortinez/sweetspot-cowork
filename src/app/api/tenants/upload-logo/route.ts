@@ -6,7 +6,11 @@ import { existsSync } from 'fs'
 
 export async function POST(request: NextRequest) {
   try {
-    const context = await getTenantContext()
+    // Get tenantId from query params (for super admins)
+    const { searchParams } = new URL(request.url)
+    const queryTenantId = searchParams.get('tenantId')
+    
+    const context = await getTenantContext(queryTenantId || undefined)
     
     if (!context.user || !context.tenantId) {
       return Response.json(
@@ -16,7 +20,8 @@ export async function POST(request: NextRequest) {
     }
     
     // Only admins can upload logos
-    if (!context.isAdmin && !context.isSuper) {
+    const isAdmin = context.user.role === 'COWORK_ADMIN' || context.user.role === 'SUPER_ADMIN'
+    if (!isAdmin) {
       return Response.json(
         { success: false, error: 'No tienes permisos para subir logos' },
         { status: 403 }

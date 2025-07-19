@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/select"
 import { listTenantUsersAction, updateUserRoleAction } from '@/lib/actions/users'
 import Image from "next/image"
+import InviteUserModal from '@/components/cowork/InviteUserModal'
 
 interface CoworkInfo {
   id: string
@@ -99,6 +100,7 @@ export default function CoworkSettingsPage() {
   const [isEditing, setIsEditing] = useState(false)
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
 
   // Load cowork information
   const loadCoworkInfo = async () => {
@@ -219,7 +221,12 @@ export default function CoworkSettingsPage() {
         const logoFormData = new FormData()
         logoFormData.append('logo', logoFile)
         
-        const uploadResponse = await fetch('/api/tenants/upload-logo', {
+        // If super admin, include tenant ID in the URL
+        const uploadUrl = coworkContext?.activeCowork?.id && userRole === 'SUPER_ADMIN' 
+          ? `/api/tenants/upload-logo?tenantId=${coworkContext.activeCowork.id}`
+          : '/api/tenants/upload-logo'
+          
+        const uploadResponse = await fetch(uploadUrl, {
           method: 'POST',
           body: logoFormData,
         })
@@ -247,7 +254,12 @@ export default function CoworkSettingsPage() {
         }
       }
       
-      const response = await fetch('/api/tenants/current', {
+      // If super admin, include tenant ID in the URL
+      const updateUrl = coworkContext?.activeCowork?.id && userRole === 'SUPER_ADMIN' 
+        ? `/api/tenants/current?tenantId=${coworkContext.activeCowork.id}`
+        : '/api/tenants/current'
+        
+      const response = await fetch(updateUrl, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updateData),
@@ -573,10 +585,19 @@ export default function CoworkSettingsPage() {
           <TabsContent value="users" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Usuarios del Cowork ({users.length})
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Usuarios del Cowork ({users.length})
+                  </CardTitle>
+                  <Button 
+                    onClick={() => setIsInviteModalOpen(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    Invitar Usuario
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {users.length === 0 ? (
@@ -639,6 +660,18 @@ export default function CoworkSettingsPage() {
         </Tabs>
       </div>
     </div>
+    
+    {/* Invite User Modal */}
+    <InviteUserModal
+      isOpen={isInviteModalOpen}
+      onClose={() => setIsInviteModalOpen(false)}
+      onSuccess={() => {
+        loadUsers() // Reload users after invitation
+        setIsInviteModalOpen(false)
+      }}
+      userRole={userRole}
+      tenantId={coworkContext?.activeCowork?.id || coworkInfo?.id}
+    />
     </div>
   )
 }
