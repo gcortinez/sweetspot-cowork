@@ -153,7 +153,26 @@ export default function OpportunityDetailModal({
   const [showCreateActivityModal, setShowCreateActivityModal] = useState(false)
   const [selectedActivity, setSelectedActivity] = useState<any>(null)
   const [changingQuotationStatus, setChangingQuotationStatus] = useState<string | null>(null)
+  const [localOpportunity, setLocalOpportunity] = useState<Opportunity | null>(opportunity)
   const { toast } = useToast()
+
+  // Update local opportunity when prop changes
+  React.useEffect(() => {
+    setLocalOpportunity(opportunity)
+  }, [opportunity])
+
+  // Helper function to update counts
+  const updateOpportunityCounts = (quotationsCount?: number, activitiesCount?: number) => {
+    if (!localOpportunity) return
+    
+    setLocalOpportunity(prev => ({
+      ...prev!,
+      _count: {
+        quotations: quotationsCount !== undefined ? quotationsCount : prev!._count?.quotations || 0,
+        activities: activitiesCount !== undefined ? activitiesCount : prev!._count?.activities || 0,
+      }
+    }))
+  }
 
   // Load quotations for this opportunity
   const loadQuotations = async () => {
@@ -166,7 +185,9 @@ export default function OpportunityDetailModal({
       })
       
       if (result.success) {
-        setQuotations(result.data?.quotations || [])
+        const newQuotations = result.data?.quotations || []
+        setQuotations(newQuotations)
+        updateOpportunityCounts(newQuotations.length, undefined)
       } else {
         toast({
           title: "Error",
@@ -199,7 +220,9 @@ export default function OpportunityDetailModal({
       })
       
       if (result.success) {
-        setActivities(result.data || [])
+        const newActivities = result.data || []
+        setActivities(newActivities)
+        updateOpportunityCounts(undefined, newActivities.length)
       } else {
         toast({
           title: "Error",
@@ -384,7 +407,7 @@ export default function OpportunityDetailModal({
     loadActivities() // Refresh activities list
   }
 
-  if (!opportunity) return null;
+  if (!opportunity || !localOpportunity) return null;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
@@ -480,11 +503,11 @@ export default function OpportunityDetailModal({
               </TabsTrigger>
               <TabsTrigger value="activities" className="flex items-center gap-2">
                 <Activity className="h-4 w-4" />
-                Actividades ({opportunity._count?.activities || activities.length})
+                Actividades ({localOpportunity?._count?.activities || activities.length})
               </TabsTrigger>
               <TabsTrigger value="quotations" className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
-                Cotizaciones ({opportunity._count?.quotations || quotations.length})
+                Cotizaciones ({localOpportunity?._count?.quotations || quotations.length})
               </TabsTrigger>
             </TabsList>
 

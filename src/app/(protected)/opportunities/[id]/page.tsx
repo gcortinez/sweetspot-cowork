@@ -130,6 +130,20 @@ export default function OpportunityDetailPage() {
   
   const { toast } = useToast()
 
+  // Helper function to update opportunity counts
+  const updateOpportunityCounts = (quotationsCount?: number, activitiesCount?: number) => {
+    setOpportunity(prev => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        _count: {
+          quotations: quotationsCount !== undefined ? quotationsCount : prev._count?.quotations || 0,
+          activities: activitiesCount !== undefined ? activitiesCount : prev._count?.activities || 0,
+        }
+      }
+    })
+  }
+
   // Load opportunity and activities
   useEffect(() => {
     loadOpportunityData()
@@ -163,7 +177,9 @@ export default function OpportunityDetailPage() {
       }
 
       if (activitiesResult.success) {
-        setActivities(activitiesResult.data)
+        const newActivities = activitiesResult.data
+        setActivities(newActivities)
+        updateOpportunityCounts(undefined, newActivities.length)
       }
     } catch (error) {
       toast({
@@ -188,7 +204,9 @@ export default function OpportunityDetailPage() {
       })
       
       if (result.success) {
-        setQuotations(result.data?.quotations || [])
+        const newQuotations = result.data?.quotations || []
+        setQuotations(newQuotations)
+        updateOpportunityCounts(newQuotations.length, undefined)
       }
     } catch (error) {
       console.error('Error loading quotations:', error)
