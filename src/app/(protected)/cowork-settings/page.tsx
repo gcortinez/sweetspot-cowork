@@ -105,7 +105,13 @@ export default function CoworkSettingsPage() {
     try {
       setIsLoading(true)
       
-      const response = await fetch('/api/tenants/current')
+      // If super admin, we need to pass the active cowork
+      const activeCoworkId = coworkContext?.activeCowork?.id
+      const url = activeCoworkId && userRole === 'SUPER_ADMIN' 
+        ? `/api/tenants/current?tenantId=${activeCoworkId}`
+        : '/api/tenants/current'
+      
+      const response = await fetch(url)
       const result = await response.json()
       
       if (response.ok && result.success) {
@@ -147,6 +153,7 @@ export default function CoworkSettingsPage() {
       const result = await listTenantUsersAction({
         page: 1,
         limit: 50,
+        tenantId: coworkContext?.activeCowork?.id, // Pass active cowork for super admins
       })
       
       if (result.success && result.data) {

@@ -194,12 +194,14 @@ export async function listTenantUsersAction(data: {
   limit?: number
   search?: string
   role?: string
+  tenantId?: string // For super admins to specify which tenant
 }): Promise<ActionResult<any>> {
   try {
-    const context = await getTenantContext()
+    const context = await getTenantContext(data.tenantId)
     
     // Only admins can list users
-    if (!context.isAdmin && !context.isSuper) {
+    const isAdmin = context.user.role === 'COWORK_ADMIN' || context.user.role === 'SUPER_ADMIN'
+    if (!isAdmin) {
       return { success: false, error: 'No tienes permisos para ver la lista de usuarios' }
     }
     
@@ -207,9 +209,13 @@ export async function listTenantUsersAction(data: {
     
     const whereClause: any = {}
     
-    // For non-super admins, limit to their tenant
-    if (!context.isSuper) {
-      whereClause.tenantId = context.tenantId
+    // Get effective tenant ID (for super admins with selected tenant)
+    const tenantId = context.effectiveTenantId || context.tenantId
+    if (tenantId) {
+      whereClause.tenantId = tenantId
+    } else if (!context.isSuper) {
+      // Non-super admins must have a tenantId
+      return { success: false, error: 'No se pudo determinar el tenant' }
     }
     
     // Add search filter

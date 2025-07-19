@@ -4,7 +4,11 @@ import { db } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
   try {
-    const context = await getTenantContext()
+    // Get tenantId from query params (for super admins)
+    const { searchParams } = new URL(request.url)
+    const queryTenantId = searchParams.get('tenantId')
+    
+    const context = await getTenantContext(queryTenantId || undefined)
     
     if (!context.user || !context.tenantId) {
       return Response.json(
@@ -14,15 +18,26 @@ export async function GET(request: NextRequest) {
     }
     
     // Only admins can access tenant information
-    if (!context.isAdmin && !context.isSuper) {
+    const isAdmin = context.user.role === 'COWORK_ADMIN' || context.user.role === 'SUPER_ADMIN'
+    if (!isAdmin) {
       return Response.json(
         { success: false, error: 'No tienes permisos para acceder a esta información' },
         { status: 403 }
       )
     }
     
+    // For super admins, we need to get the tenant from query params or context
+    const tenantId = context.effectiveTenantId || context.tenantId
+    
+    if (!tenantId) {
+      return Response.json(
+        { success: false, error: 'Tenant ID no especificado' },
+        { status: 400 }
+      )
+    }
+    
     const tenant = await db.tenant.findUnique({
-      where: { id: context.tenantId },
+      where: { id: tenantId },
       select: {
         id: true,
         name: true,
@@ -69,7 +84,8 @@ export async function PUT(request: NextRequest) {
     }
     
     // Only admins can update tenant information
-    if (!context.isAdmin && !context.isSuper) {
+    const isAdmin = context.user.role === 'COWORK_ADMIN' || context.user.role === 'SUPER_ADMIN'
+    if (!isAdmin) {
       return Response.json(
         { success: false, error: 'No tienes permisos para actualizar esta información' },
         { status: 403 }
