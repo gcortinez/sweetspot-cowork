@@ -99,6 +99,23 @@ export default function ActivityDetailModal({
   const [isUpdating, setIsUpdating] = useState(false)
   const { toast } = useToast()
   
+  // Debug: Log activity data to see what we're receiving
+  React.useEffect(() => {
+    if (activity && isOpen) {
+      console.log('Activity data in modal:', {
+        id: activity.id,
+        title: activity.title,
+        subject: activity.subject,
+        description: activity.description,
+        duration: activity.duration,
+        location: activity.location,
+        outcome: activity.outcome,
+        dueDate: activity.dueDate,
+        type: activity.type
+      })
+    }
+  }, [activity, isOpen])
+  
   if (!activity) return null
 
   const isOverdue = activity.dueDate && new Date(activity.dueDate) < new Date() && !activity.completedAt
@@ -220,14 +237,16 @@ export default function ActivityDetailModal({
           </div>
 
           {/* Description */}
-          {activity.description && (
-            <Card>
-              <CardContent className="pt-4">
-                <h4 className="font-medium text-sm text-gray-600 mb-2">Descripción</h4>
+          <Card>
+            <CardContent className="pt-4">
+              <h4 className="font-medium text-sm text-gray-600 mb-2">Descripción</h4>
+              {activity.description ? (
                 <p className="text-gray-800 whitespace-pre-wrap">{activity.description}</p>
-              </CardContent>
-            </Card>
-          )}
+              ) : (
+                <p className="text-gray-500 italic">Sin descripción</p>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Outcome/Result */}
           {activity.outcome && (
@@ -241,6 +260,23 @@ export default function ActivityDetailModal({
               </CardContent>
             </Card>
           )}
+
+          {/* Debug Information */}
+          <Card className="bg-yellow-50">
+            <CardContent className="pt-4">
+              <h4 className="font-medium text-sm text-gray-600 mb-2">Debug Info</h4>
+              <div className="text-xs space-y-1">
+                <p><strong>ID:</strong> {activity.id}</p>
+                <p><strong>Type:</strong> {activity.type}</p>
+                <p><strong>Title:</strong> {activity.title}</p>
+                <p><strong>Subject:</strong> {activity.subject || 'N/A'}</p>
+                <p><strong>Description:</strong> {activity.description || 'N/A'}</p>
+                <p><strong>Duration:</strong> {activity.duration || 'N/A'}</p>
+                <p><strong>Location:</strong> {activity.location || 'N/A'}</p>
+                <p><strong>Outcome:</strong> {activity.outcome || 'N/A'}</p>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Details */}
           <Card>
