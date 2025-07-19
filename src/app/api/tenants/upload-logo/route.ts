@@ -3,6 +3,8 @@ import { getTenantContext } from '@/lib/auth'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
+import { db } from '@/lib/db'
+import { convertBufferToBase64, validateImageFormat } from '@/lib/utils/image'
 
 export async function POST(request: NextRequest) {
   try {
@@ -75,10 +77,24 @@ export async function POST(request: NextRequest) {
     // Generate public URL
     const logoUrl = `/uploads/logos/${filename}`
     
+    // Convert to base64 for PDF generation
+    const logoBase64 = convertBufferToBase64(buffer, file.type)
+    
+    // Update tenant with both URL and base64
+    await db.tenant.update({
+      where: { id: context.tenantId },
+      data: {
+        logo: logoUrl,
+        logoBase64: logoBase64,
+        updatedAt: new Date()
+      }
+    })
+    
     return Response.json({
       success: true,
       data: {
         logoUrl,
+        logoBase64: logoBase64.substring(0, 50) + '...', // Truncated for response
         filename,
         size: file.size,
         type: file.type

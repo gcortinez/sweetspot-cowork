@@ -81,6 +81,8 @@ export async function generateQuotationPDFAction(data: GenerateQuotationPDFReque
         id: true,
         name: true,
         settings: true,
+        logo: true,
+        logoBase64: true,
       }
     })
     
@@ -95,18 +97,23 @@ export async function generateQuotationPDFAction(data: GenerateQuotationPDFReque
     // Cast settings to any to access nested properties (Prisma JSON field)
     const settings = tenant?.settings as any
     
-    // Convert relative logo URL to absolute URL for PDF rendering
-    const getAbsoluteLogoUrl = (logoUrl?: string | null) => {
-      if (!logoUrl) return undefined
-      
-      // If already absolute URL, return as is
-      if (logoUrl.startsWith('http://') || logoUrl.startsWith('https://')) {
-        return logoUrl
+    // Use base64 logo for reliable PDF rendering, fallback to URL if needed
+    const getLogoForPDF = (logoBase64?: string | null, logoUrl?: string | null) => {
+      // Prioritize base64 for PDF generation (reliable across environments)
+      if (logoBase64) {
+        return logoBase64
       }
       
-      // Convert relative URL to absolute
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'
-      return `${baseUrl}${logoUrl.startsWith('/') ? logoUrl : `/${logoUrl}`}`
+      // Fallback to absolute URL if base64 not available
+      if (logoUrl) {
+        if (logoUrl.startsWith('http://') || logoUrl.startsWith('https://')) {
+          return logoUrl
+        }
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'
+        return `${baseUrl}${logoUrl.startsWith('/') ? logoUrl : `/${logoUrl}`}`
+      }
+      
+      return undefined
     }
 
     const coworkInfo = {
@@ -115,7 +122,7 @@ export async function generateQuotationPDFAction(data: GenerateQuotationPDFReque
       phone: settings?.contactInfo?.phone || 'Teléfono no configurado',
       email: settings?.contactInfo?.email || 'Email no configurado',
       website: settings?.contactInfo?.website,
-      logo: getAbsoluteLogoUrl(tenant?.logo), // Convert to absolute URL for PDF rendering
+      logo: getLogoForPDF(tenant?.logoBase64, tenant?.logo), // Use base64 first, fallback to URL
     }
     
     console.log('🔍 PDF Debug - Cowork info:', coworkInfo)

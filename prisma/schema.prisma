@@ -21,6 +21,7 @@ model Tenant {
     slug        String       @unique
     domain      String?      @unique
     logo        String?
+    logoBase64  String?      // Base64 encoded logo for PDF generation
     description String?
     settings    Json?        @default("{}")
     status      TenantStatus @default(ACTIVE)
