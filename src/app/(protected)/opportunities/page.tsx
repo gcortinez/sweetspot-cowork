@@ -1,13 +1,13 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, startTransition } from 'react'
 import Link from 'next/link'
 import { AppHeader } from '@/components/shared/app-header'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+// Removed Select import - using native select to prevent navigation issues
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
   listOpportunities, 
@@ -110,6 +110,7 @@ interface Opportunity {
 }
 
 export default function OpportunitiesPage() {
+  const [allOpportunities, setAllOpportunities] = useState<Opportunity[]>([])
   const [opportunities, setOpportunities] = useState<Opportunity[]>([])
   const [stats, setStats] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -139,43 +140,58 @@ export default function OpportunitiesPage() {
     })
   )
 
-  // Debounced search term to avoid excessive API calls
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm)
   const [isFiltering, setIsFiltering] = useState(false)
 
-  // Debounce search term
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm)
-    }, 500) // 500ms delay
+  // Filter opportunities on the client side for instant feedback
+  const filteredOpportunities = React.useMemo(() => {
+    if (allOpportunities.length === 0) return []
 
-    return () => clearTimeout(timer)
-  }, [searchTerm])
+    let filtered = [...allOpportunities]
 
-  // Load opportunities and stats when filters change
-  useEffect(() => {
-    const loadWithFiltering = async () => {
-      setIsFiltering(true)
-      await loadData()
-      setIsFiltering(false)
+    // Apply stage filter
+    if (stageFilter !== 'all') {
+      filtered = filtered.filter(opp => opp.stage === stageFilter)
     }
-    loadWithFiltering()
-  }, [debouncedSearchTerm, stageFilter])
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase()
+      filtered = filtered.filter(opp => 
+        opp.title.toLowerCase().includes(searchLower) ||
+        opp.description?.toLowerCase().includes(searchLower) ||
+        opp.client?.name.toLowerCase().includes(searchLower) ||
+        opp.lead?.firstName.toLowerCase().includes(searchLower) ||
+        opp.lead?.lastName.toLowerCase().includes(searchLower)
+      )
+    }
+
+    return filtered
+  }, [allOpportunities, searchTerm, stageFilter])
+
+  // Update opportunities state when filters change
+  useEffect(() => {
+    startTransition(() => {
+      setOpportunities(filteredOpportunities)
+    })
+  }, [filteredOpportunities])
+
+  // Load all opportunities only once on mount
+  useEffect(() => {
+    loadData()
+  }, [])
 
   const loadData = React.useCallback(async () => {
-    // Don't set loading to true if we're just filtering to avoid flash
-    if (!isFiltering) setLoading(true)
+    setLoading(true)
     try {
-      const filters: any = {}
-      if (debouncedSearchTerm) filters.search = debouncedSearchTerm
-      if (stageFilter !== 'all') filters.stage = stageFilter
-
+      // Load ALL opportunities without filters for client-side filtering
       const [opportunitiesResult, statsResult] = await Promise.all([
-        listOpportunities(filters),
+        listOpportunities({}), // No filters - load everything
         getOpportunityStats()
       ])
 
       if (opportunitiesResult.success) {
+        setAllOpportunities(opportunitiesResult.data)
+        // Initial display (no filters applied yet)
         setOpportunities(opportunitiesResult.data)
       } else {
         toast({
@@ -195,9 +211,9 @@ export default function OpportunitiesPage() {
         variant: "destructive",
       })
     } finally {
-      if (!isFiltering) setLoading(false)
+      setLoading(false)
     }
-  }, [debouncedSearchTerm, stageFilter, isFiltering])
+  }, [])
 
   const loadStats = async () => {
     try {
@@ -210,22 +226,47 @@ export default function OpportunitiesPage() {
     }
   }
 
-  // Handle stage filter change to prevent page reload
+  // Handle stage filter change - instant client-side filtering
   const handleStageFilterChange = React.useCallback((value: string) => {
-    // Prevent any default behavior that might cause page reload
-    setStageFilter(value)
+    // Prevent any navigation or form submission
+    if (typeof window !== 'undefined') {
+      window.event?.preventDefault()
+      window.event?.stopPropagation()
+    }
+    
+    // Set filtering state briefly for UX feedback
+    setIsFiltering(true)
+    
+    // Use startTransition for non-urgent update
+    startTransition(() => {
+      setStageFilter(value)
+      // Remove filtering state after transition
+      setTimeout(() => setIsFiltering(false), 50)
+    })
   }, [])
 
-  // Handle search input change
+  // Handle search input change - instant client-side filtering
   const handleSearchChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault()
-    setSearchTerm(e.target.value)
+    e.stopPropagation()
+    
+    const value = e.target.value
+    
+    // Use startTransition for smooth filtering
+    startTransition(() => {
+      setSearchTerm(value)
+    })
   }, [])
 
-  // Clear all filters
-  const handleClearFilters = React.useCallback(() => {
-    setSearchTerm('')
-    setStageFilter('all')
+  // Clear all filters - instant reset
+  const handleClearFilters = React.useCallback((e?: React.MouseEvent) => {
+    e?.preventDefault()
+    e?.stopPropagation()
+    
+    startTransition(() => {
+      setSearchTerm('')
+      setStageFilter('all')
+    })
   }, [])
 
   const handleStageChange = async (opportunityId: string, newStage: keyof typeof STAGE_METADATA) => {
@@ -1412,24 +1453,25 @@ export default function OpportunitiesPage() {
                 onChange={handleSearchChange}
                 className="pl-10"
               />
-              {searchTerm !== debouncedSearchTerm && (
-                <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-              )}
             </div>
             <div className="relative">
-              <Select value={stageFilter} onValueChange={handleStageFilterChange} disabled={isFiltering}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Filtrar por etapa" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas las etapas</SelectItem>
-                  {Object.entries(STAGE_METADATA).map(([stage, metadata]) => (
-                    <SelectItem key={stage} value={stage}>
-                      {metadata.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <select
+                value={stageFilter}
+                onChange={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  handleStageFilterChange(e.target.value)
+                }}
+                disabled={isFiltering}
+                className="flex h-10 w-[200px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="all">Todas las etapas</option>
+                {Object.entries(STAGE_METADATA).map(([stage, metadata]) => (
+                  <option key={stage} value={stage}>
+                    {metadata.label}
+                  </option>
+                ))}
+              </select>
               {isFiltering && (
                 <Loader2 className="absolute right-8 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
               )}
@@ -1545,9 +1587,21 @@ export default function OpportunitiesPage() {
           <div className="p-6">
             {/* Show filtering indicator */}
             {isFiltering && (
-              <div className="flex items-center justify-center py-4 mb-4 bg-gray-50 rounded-lg">
-                <Loader2 className="h-5 w-5 animate-spin mr-2 text-brand-purple" />
-                <span className="text-sm text-gray-600">Filtrando oportunidades...</span>
+              <div className="flex items-center justify-center py-2 mb-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-100">
+                <Loader2 className="h-4 w-4 animate-spin mr-2 text-brand-purple" />
+                <span className="text-sm text-brand-purple font-medium">Aplicando filtros...</span>
+              </div>
+            )}
+            
+            {/* Results count */}
+            {!loading && opportunities.length > 0 && (
+              <div className="flex items-center justify-between mb-4 text-sm text-gray-600">
+                <span>
+                  Mostrando {opportunities.length} de {allOpportunities.length} oportunidades
+                  {(searchTerm || stageFilter !== 'all') && (
+                    <span className="text-brand-purple"> (filtrado)</span>
+                  )}
+                </span>
               </div>
             )}
             
@@ -1555,14 +1609,32 @@ export default function OpportunitiesPage() {
             
             {opportunities.length === 0 && !isFiltering && !loading && (
               <div className="text-center py-12">
-                <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No hay oportunidades
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  Comienza creando tu primera oportunidad o convirtiendo un prospecto.
-                </p>
-                <CreateOpportunityModal onOpportunityCreated={() => { loadData(); loadStats(); }} />
+                {(searchTerm || stageFilter !== 'all') ? (
+                  <>
+                    <Filter className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      No se encontraron oportunidades
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      Intenta ajustar los filtros o busca con otros términos.
+                    </p>
+                    <Button onClick={handleClearFilters} variant="outline">
+                      <X className="h-4 w-4 mr-2" />
+                      Limpiar filtros
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      No hay oportunidades
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      Comienza creando tu primera oportunidad o convirtiendo un prospecto.
+                    </p>
+                    <CreateOpportunityModal onOpportunityCreated={() => { loadData(); loadStats(); }} />
+                  </>
+                )}
               </div>
             )}
           </div>
