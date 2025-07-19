@@ -185,9 +185,9 @@ export default function EditQuotationModal({
         description: formData.description || undefined,
         items: selectedServices.map(service => ({
           description: service.description,
-          quantity: service.quantity,
-          unitPrice: service.unitPrice,
-          total: service.total,
+          quantity: Number(service.quantity),
+          unitPrice: Number(service.unitPrice),
+          total: Number(service.total),
         })),
         discounts: formData.discounts,
         taxes: formData.taxes,
@@ -195,6 +195,9 @@ export default function EditQuotationModal({
         validUntil: formData.validUntil,
         notes: formData.notes || undefined,
       }
+
+      console.log('🐛 Frontend - Sending quotationData:', JSON.stringify(quotationData, null, 2))
+      console.log('🐛 Frontend - selectedServices before conversion:', selectedServices)
 
       const result = await updateQuotationAction(quotationData)
       

@@ -246,12 +246,17 @@ export async function updateQuotationAction(data: UpdateQuotationRequest): Promi
         return { success: false, error: 'Los totales de los items no son válidos' }
       }
 
+      // Debug: Log the validated items
+      console.log('🐛 Backend - validatedData.items:', JSON.stringify(validatedData.items, null, 2))
+      
       // Calculate new totals
       const { subtotal, total } = calculateQuotationTotals(
         validatedData.items,
         validatedData.discounts || existingQuotation.discounts,
         validatedData.taxes || existingQuotation.taxes
       )
+      
+      console.log('🐛 Backend - calculated totals:', { subtotal, total })
 
       updateData.subtotal = subtotal
       updateData.total = total
