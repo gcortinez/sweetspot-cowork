@@ -247,6 +247,26 @@ export function Header({
               <Plus className="h-4 w-4" />
             </Button>
 
+            {/* Cowork Settings (Admin only) */}
+            {(user?.role === 'SUPER_ADMIN' || user?.role === 'COWORK_ADMIN') && (
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  "hidden sm:flex transition-colors duration-200",
+                  isSuperAdmin
+                    ? "text-purple-500 hover:text-purple-700 hover:bg-purple-100 dark:text-purple-400 dark:hover:text-purple-300 dark:hover:bg-purple-900/40"
+                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800"
+                )}
+                title="Configuración del Cowork"
+              >
+                <Link href="/cowork-settings">
+                  <Settings className="h-4 w-4" />
+                </Link>
+              </Button>
+            )}
+
             {/* Theme Toggle */}
             <QuickThemeToggle />
           </div>
