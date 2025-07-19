@@ -141,6 +141,7 @@ export default function OpportunitiesPage() {
 
   // Debounced search term to avoid excessive API calls
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm)
+  const [isFiltering, setIsFiltering] = useState(false)
 
   // Debounce search term
   useEffect(() => {
@@ -153,11 +154,17 @@ export default function OpportunitiesPage() {
 
   // Load opportunities and stats when filters change
   useEffect(() => {
-    loadData()
+    const loadWithFiltering = async () => {
+      setIsFiltering(true)
+      await loadData()
+      setIsFiltering(false)
+    }
+    loadWithFiltering()
   }, [debouncedSearchTerm, stageFilter])
 
-  const loadData = async () => {
-    setLoading(true)
+  const loadData = React.useCallback(async () => {
+    // Don't set loading to true if we're just filtering to avoid flash
+    if (!isFiltering) setLoading(true)
     try {
       const filters: any = {}
       if (debouncedSearchTerm) filters.search = debouncedSearchTerm
@@ -188,9 +195,9 @@ export default function OpportunitiesPage() {
         variant: "destructive",
       })
     } finally {
-      setLoading(false)
+      if (!isFiltering) setLoading(false)
     }
-  }
+  }, [debouncedSearchTerm, stageFilter, isFiltering])
 
   const loadStats = async () => {
     try {
@@ -202,6 +209,18 @@ export default function OpportunitiesPage() {
       console.error('Error loading stats:', error)
     }
   }
+
+  // Handle stage filter change to prevent page reload
+  const handleStageFilterChange = React.useCallback((value: string) => {
+    // Prevent any default behavior that might cause page reload
+    setStageFilter(value)
+  }, [])
+
+  // Handle search input change
+  const handleSearchChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault()
+    setSearchTerm(e.target.value)
+  }, [])
 
   const handleStageChange = async (opportunityId: string, newStage: keyof typeof STAGE_METADATA) => {
     // 1. Perform optimistic update immediately
@@ -1384,26 +1403,31 @@ export default function OpportunitiesPage() {
               <Input
                 placeholder="Buscar oportunidades..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearchChange}
                 className="pl-10"
               />
               {searchTerm !== debouncedSearchTerm && (
                 <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
               )}
             </div>
-            <Select value={stageFilter} onValueChange={setStageFilter}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filtrar por etapa" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas las etapas</SelectItem>
-                {Object.entries(STAGE_METADATA).map(([stage, metadata]) => (
-                  <SelectItem key={stage} value={stage}>
-                    {metadata.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="relative">
+              <Select value={stageFilter} onValueChange={handleStageFilterChange} disabled={isFiltering}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Filtrar por etapa" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las etapas</SelectItem>
+                  {Object.entries(STAGE_METADATA).map(([stage, metadata]) => (
+                    <SelectItem key={stage} value={stage}>
+                      {metadata.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {isFiltering && (
+                <Loader2 className="absolute right-8 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+              )}
+            </div>
           </div>
           
           <div className="flex gap-2">
