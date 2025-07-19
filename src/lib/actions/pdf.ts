@@ -5,6 +5,9 @@ import { getTenantContext } from '@/lib/auth'
 import { db } from '@/lib/db'
 import type { ActionResult } from '@/types/database'
 import { z } from 'zod'
+import { renderToBuffer } from '@react-pdf/renderer'
+import { createElement } from 'react'
+import QuotationPDFTemplate from '@/components/quotations/QuotationPDFTemplate'
 
 
 // Schema for PDF generation request
@@ -173,13 +176,20 @@ export async function generateQuotationPDFAction(data: GenerateQuotationPDFReque
       createdBy: createdByUser,
     }
 
-    // Note: PDF generation logged in audit trail - metadata field doesn't exist in Quotation model
+    // Generate PDF using React PDF
+    const pdfDocument = createElement(QuotationPDFTemplate, {
+      quotation: pdfData,
+      coworkInfo
+    })
+
+    const pdfBuffer = await renderToBuffer(pdfDocument)
 
     return { 
       success: true, 
       data: {
         quotation: pdfData,
         coworkInfo,
+        pdfBuffer: pdfBuffer,
         generatedAt: new Date().toISOString(),
         generatedBy: {
           id: user.id,
