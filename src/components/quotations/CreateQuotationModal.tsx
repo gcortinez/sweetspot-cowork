@@ -230,9 +230,14 @@ export default function CreateQuotationModal({
     
     try {
       const response = await api.get(`/api/clients`)
-      const clientData = response.data?.find((client: any) => client.id === clientId)
-      if (clientData) {
-        setPreselectedClient(clientData)
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          const clientData = result.clients?.find((client: any) => client.id === clientId)
+          if (clientData) {
+            setPreselectedClient(clientData)
+          }
+        }
       }
     } catch (error) {
       console.error('Error loading preselected client:', error)

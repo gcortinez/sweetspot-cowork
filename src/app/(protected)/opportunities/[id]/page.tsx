@@ -877,8 +877,8 @@ export default function OpportunityDetailPage() {
         onClose={() => setShowCreateQuotationModal(false)}
         onQuotationCreated={handleQuotationCreated}
         opportunityId={opportunityId}
-        clientId={opportunity?.clientId || undefined}
-        leadId={opportunity?.leadId || undefined}
+        clientId={opportunity?.client?.id || undefined}
+        leadId={opportunity?.lead?.id || undefined}
       />
 
       {/* Quotation Detail Modal */}
