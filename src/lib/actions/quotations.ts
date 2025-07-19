@@ -249,8 +249,8 @@ export async function updateQuotationAction(data: UpdateQuotationRequest): Promi
       // Debug: Log the validated items
       console.log('🐛 Backend - validatedData.items:', JSON.stringify(validatedData.items, null, 2))
       
-      const discountsValue = validatedData.discounts || existingQuotation.discounts
-      const taxesValue = validatedData.taxes || existingQuotation.taxes
+      const discountsValue = validatedData.discounts !== undefined ? validatedData.discounts : Number(existingQuotation.discounts)
+      const taxesValue = validatedData.taxes !== undefined ? validatedData.taxes : Number(existingQuotation.taxes)
       
       console.log('🐛 Backend - before calculateQuotationTotals:', {
         discountsValue,
@@ -293,8 +293,8 @@ export async function updateQuotationAction(data: UpdateQuotationRequest): Promi
             unitPrice: Number(item.unitPrice),
             total: Number(item.total),
           })),
-          validatedData.discounts || Number(existingQuotation.discounts),
-          validatedData.taxes || Number(existingQuotation.taxes)
+          validatedData.discounts !== undefined ? validatedData.discounts : Number(existingQuotation.discounts),
+          validatedData.taxes !== undefined ? validatedData.taxes : Number(existingQuotation.taxes)
         )
         updateData.subtotal = subtotal
         updateData.total = total
