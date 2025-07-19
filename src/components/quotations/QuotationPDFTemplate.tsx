@@ -312,20 +312,6 @@ const styles = StyleSheet.create({
     lineHeight: 1.4,
   },
   
-  // Footer
-  footer: {
-    marginTop: 20,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-  },
-  
-  footerText: {
-    fontSize: 9,
-    color: '#9ca3af',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
   
   // Status badge
   statusBadge: {
@@ -584,20 +570,6 @@ const QuotationPDFTemplate: React.FC<QuotationPDFProps> = ({ quotation, coworkIn
           </Text>
         </View>
 
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            Cotización generada el {formatDate(new Date().toISOString())}
-          </Text>
-          {quotation.createdBy && (
-            <Text style={styles.footerText}>
-              Creado por: {quotation.createdBy.firstName} {quotation.createdBy.lastName}
-            </Text>
-          )}
-          <Text style={styles.footerText}>
-            {coworkInfo.name} • {coworkInfo.email}
-          </Text>
-        </View>
       </Page>
     </Document>
   )
