@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { AppHeader } from '@/components/shared/app-header'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -177,24 +178,29 @@ export default function ProfilePage() {
 
   if (!userProfile) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <Card className="border-red-200 bg-red-50">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-red-600" />
-                <p className="text-red-700">No se pudo cargar la información del perfil.</p>
-              </div>
-            </CardContent>
-          </Card>
+      <div className="min-h-screen bg-gray-50">
+        <AppHeader />
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-4xl mx-auto">
+            <Card className="border-red-200 bg-red-50">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5 text-red-600" />
+                  <p className="text-red-700">No se pudo cargar la información del perfil.</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gray-50">
+      <AppHeader />
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -399,6 +405,7 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
       </div>
+    </div>
     </div>
   )
 }

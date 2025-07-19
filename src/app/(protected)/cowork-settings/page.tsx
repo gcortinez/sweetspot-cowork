@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { AppHeader } from '@/components/shared/app-header'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -79,8 +80,9 @@ export default function CoworkSettingsPage() {
   const { toast } = useToast()
   const coworkContext = useCoworkContextOptional()
   
-  // Check permissions
-  const isAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'COWORK_ADMIN'
+  // Check permissions - check both privateMetadata and publicMetadata
+  const userRole = user?.privateMetadata?.role || user?.publicMetadata?.role || user?.role
+  const isAdmin = userRole === 'SUPER_ADMIN' || userRole === 'COWORK_ADMIN'
   
   const [coworkInfo, setCoworkInfo] = useState<CoworkInfo | null>(null)
   const [formData, setFormData] = useState({
@@ -101,19 +103,21 @@ export default function CoworkSettingsPage() {
   // Check if user has access
   if (!isAdmin) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <Card className="border-red-200 bg-red-50">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-red-600" />
-                <p className="text-red-700">
-                  No tienes permisos para acceder a la configuración del cowork.
-                  Solo los administradores pueden ver esta página.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+      <div className="min-h-screen bg-gray-50">
+        <AppHeader />
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-4xl mx-auto">
+            <Card className="border-red-200 bg-red-50">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5 text-red-600" />
+                  <p className="text-red-700">
+                    No tienes permisos para acceder a esta información
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     )
@@ -343,11 +347,14 @@ export default function CoworkSettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-            <div className="h-64 bg-gray-200 rounded"></div>
+      <div className="min-h-screen bg-gray-50">
+        <AppHeader />
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="animate-pulse space-y-6">
+              <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+              <div className="h-64 bg-gray-200 rounded"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -355,8 +362,10 @@ export default function CoworkSettingsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gray-50">
+      <AppHeader />
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -622,6 +631,7 @@ export default function CoworkSettingsPage() {
           </TabsContent>
         </Tabs>
       </div>
+    </div>
     </div>
   )
 }
