@@ -196,8 +196,6 @@ export default function EditQuotationModal({
         notes: formData.notes || undefined,
       }
 
-      console.log('🐛 Frontend - Sending quotationData:', JSON.stringify(quotationData, null, 2))
-      console.log('🐛 Frontend - selectedServices before conversion:', selectedServices)
 
       const result = await updateQuotationAction(quotationData)
       

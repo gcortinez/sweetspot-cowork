@@ -246,20 +246,8 @@ export async function updateQuotationAction(data: UpdateQuotationRequest): Promi
         return { success: false, error: 'Los totales de los items no son válidos' }
       }
 
-      // Debug: Log the validated items
-      console.log('🐛 Backend - validatedData.items:', JSON.stringify(validatedData.items, null, 2))
-      
       const discountsValue = validatedData.discounts !== undefined ? validatedData.discounts : Number(existingQuotation.discounts)
       const taxesValue = validatedData.taxes !== undefined ? validatedData.taxes : Number(existingQuotation.taxes)
-      
-      console.log('🐛 Backend - before calculateQuotationTotals:', {
-        discountsValue,
-        taxesValue,
-        existingDiscounts: existingQuotation.discounts,
-        existingTaxes: existingQuotation.taxes,
-        validatedDiscounts: validatedData.discounts,
-        validatedTaxes: validatedData.taxes
-      })
       
       // Calculate new totals
       const { subtotal, total } = calculateQuotationTotals(
@@ -267,8 +255,6 @@ export async function updateQuotationAction(data: UpdateQuotationRequest): Promi
         discountsValue,
         taxesValue
       )
-      
-      console.log('🐛 Backend - calculated totals:', { subtotal, total })
 
       updateData.subtotal = subtotal
       updateData.total = total

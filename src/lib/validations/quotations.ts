@@ -190,23 +190,8 @@ export type ApplyDiscountToQuotationRequest = z.infer<typeof ApplyDiscountToQuot
 
 // Utility functions for quotation calculations
 export const calculateQuotationTotals = (items: QuotationItem[], discounts: number = 0, taxes: number = 0) => {
-  console.log('🐛 calculateQuotationTotals - Input params:', { 
-    items: items.map(i => ({ desc: i.description, total: i.total })), 
-    discounts, 
-    taxes,
-    discountsType: typeof discounts,
-    taxesType: typeof taxes
-  })
-  
   const subtotal = items.reduce((sum, item) => sum + item.total, 0)
   const total = subtotal - discounts + taxes
-  
-  console.log('🐛 calculateQuotationTotals - Calculation:', {
-    subtotal,
-    discounts,
-    taxes,
-    calculation: `${subtotal} - ${discounts} + ${taxes} = ${total}`
-  })
   
   return {
     subtotal,
