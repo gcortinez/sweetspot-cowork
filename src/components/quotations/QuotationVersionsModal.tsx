@@ -142,7 +142,7 @@ export default function QuotationVersionsModal({
       
       if (result.success) {
         // Filter to only include versions of this quotation
-        const quotationVersions = (result.data || []).filter((q: Quotation) => 
+        const quotationVersions = (result.data?.quotations || []).filter((q: Quotation) => 
           q.number.startsWith(baseNumber)
         )
         setVersions(quotationVersions)

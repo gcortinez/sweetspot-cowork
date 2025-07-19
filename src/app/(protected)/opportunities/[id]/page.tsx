@@ -182,7 +182,7 @@ export default function OpportunityDetailPage() {
       })
       
       if (result.success) {
-        setQuotations(result.data || [])
+        setQuotations(result.data?.quotations || [])
       }
     } catch (error) {
       console.error('Error loading quotations:', error)

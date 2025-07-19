@@ -149,7 +149,7 @@ export default function OpportunityDetailModal({
       })
       
       if (result.success) {
-        setQuotations(result.data || [])
+        setQuotations(result.data?.quotations || [])
       } else {
         toast({
           title: "Error",
