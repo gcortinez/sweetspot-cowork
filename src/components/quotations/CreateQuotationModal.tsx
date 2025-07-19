@@ -75,6 +75,7 @@ export default function CreateQuotationModal({
   const [clients, setClients] = useState<any[]>([])
   const [isLoadingClients, setIsLoadingClients] = useState(false)
   const [preselectedClient, setPreselectedClient] = useState<any>(null)
+  const [isLoadingPreselectedClient, setIsLoadingPreselectedClient] = useState(false)
 
   // Load clients only when modal is opened
   const loadClients = async () => {
@@ -202,6 +203,8 @@ export default function CreateQuotationModal({
   const resetForm = () => {
     setFormData(initialFormData)
     setSelectedServices([])
+    setPreselectedClient(null)
+    setIsLoadingPreselectedClient(false)
   }
 
   const handleClose = () => {
@@ -228,6 +231,7 @@ export default function CreateQuotationModal({
   const loadPreselectedClient = async () => {
     if (!clientId) return
     
+    setIsLoadingPreselectedClient(true)
     try {
       const response = await api.get(`/api/clients`)
       if (response.ok) {
@@ -241,6 +245,8 @@ export default function CreateQuotationModal({
       }
     } catch (error) {
       console.error('Error loading preselected client:', error)
+    } finally {
+      setIsLoadingPreselectedClient(false)
     }
   }
 
@@ -295,7 +301,15 @@ export default function CreateQuotationModal({
                 
                 <div className="space-y-2">
                   <Label htmlFor="clientId">Cliente <span className="text-red-500">*</span></Label>
-                  {clientId && preselectedClient ? (
+                  {clientId && isLoadingPreselectedClient ? (
+                    // Show loading spinner while loading preselected client
+                    <div className="relative">
+                      <div className="flex items-center gap-2 h-10 px-3 bg-gray-50 border rounded-md">
+                        <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                        <span className="text-gray-500">Cargando cliente...</span>
+                      </div>
+                    </div>
+                  ) : clientId && preselectedClient ? (
                     // Show preselected client as disabled input
                     <div className="relative">
                       <Input
@@ -375,16 +389,10 @@ export default function CreateQuotationModal({
                 
                 <div className="space-y-2">
                   <Label htmlFor="currency">Moneda</Label>
-                  <Select value={formData.currency} onValueChange={(value) => handleInputChange('currency', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona moneda" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="CLP">CLP - Peso Chileno</SelectItem>
-                      <SelectItem value="USD">USD - Dólar Americano</SelectItem>
-                      <SelectItem value="EUR">EUR - Euro</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center gap-2 h-10 px-3 bg-gray-50 border rounded-md">
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">CLP - Peso Chileno</span>
+                  </div>
                 </div>
 
                 <div className="space-y-2">

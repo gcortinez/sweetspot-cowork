@@ -24,6 +24,7 @@ import CreateQuotationModal from '@/components/quotations/CreateQuotationModal'
 import QuotationDetailModal from '@/components/quotations/QuotationDetailModal'
 import EditQuotationModal from '@/components/quotations/EditQuotationModal'
 import QuotationVersionsModal from '@/components/quotations/QuotationVersionsModal'
+import SendQuotationModal from '@/components/quotations/SendQuotationModal'
 import {
   Target,
   ArrowLeft,
@@ -121,6 +122,7 @@ export default function OpportunityDetailPage() {
   const [selectedQuotation, setSelectedQuotation] = useState<any>(null)
   const [editingQuotation, setEditingQuotation] = useState<any>(null)
   const [versionsQuotation, setVersionsQuotation] = useState<any>(null)
+  const [sendingQuotation, setSendingQuotation] = useState<any>(null)
   
   const { toast } = useToast()
 
@@ -311,6 +313,15 @@ export default function OpportunityDetailPage() {
         setVersionsQuotation(null)
         break
     }
+  }
+
+  const handleSendEmail = (quotation: any) => {
+    setSendingQuotation(quotation)
+  }
+
+  const handleEmailSent = () => {
+    setSendingQuotation(null)
+    loadQuotations() // Refresh to update status
   }
 
   const handleStageChange = async (newStage: keyof typeof STAGE_METADATA) => {
@@ -682,6 +693,7 @@ export default function OpportunityDetailPage() {
                       onChangeStatus={handleQuotationStatusChange}
                       onCreateNew={() => setShowCreateQuotationModal(true)}
                       onDownloadPDF={handleQuotationView}
+                      onSendEmail={handleSendEmail}
                       isLoading={quotationsLoading}
                     />
                   </TabsContent>
@@ -909,6 +921,14 @@ export default function OpportunityDetailPage() {
         onViewVersion={(quotation) => handleVersionAction('view', quotation)}
         onEditVersion={(quotation) => handleVersionAction('edit', quotation)}
         onDuplicateVersion={(quotation) => handleVersionAction('duplicate', quotation)}
+      />
+
+      {/* Send Quotation Email Modal */}
+      <SendQuotationModal
+        quotation={sendingQuotation}
+        isOpen={!!sendingQuotation}
+        onClose={() => setSendingQuotation(null)}
+        onEmailSent={handleEmailSent}
       />
     </div>
   )

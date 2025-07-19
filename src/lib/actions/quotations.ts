@@ -78,6 +78,7 @@ function serializeQuotation(quotation: any) {
     opportunity: quotation.opportunity ? {
       ...quotation.opportunity,
       value: toNumber(quotation.opportunity.value),
+      expectedRevenue: toNumber(quotation.opportunity.expectedRevenue),
     } : null,
     client: quotation.client ? {
       ...quotation.client,

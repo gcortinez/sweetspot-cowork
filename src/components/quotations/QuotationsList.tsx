@@ -96,6 +96,7 @@ interface QuotationsListProps {
   onChangeStatus: (quotationId: string, status: string) => void
   onCreateNew: () => void
   onDownloadPDF?: (quotationId: string) => void
+  onSendEmail?: (quotation: Quotation) => void
   isLoading?: boolean
 }
 
@@ -148,6 +149,7 @@ export default function QuotationsList({
   onChangeStatus, 
   onCreateNew,
   onDownloadPDF,
+  onSendEmail,
   isLoading = false
 }: QuotationsListProps) {
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null)
@@ -376,6 +378,13 @@ export default function QuotationsList({
                         )}
                         
                         <DropdownMenuSeparator />
+                        
+                        {quotation.status === 'DRAFT' && onSendEmail && (
+                          <DropdownMenuItem onClick={() => onSendEmail(quotation)}>
+                            <Mail className="mr-2 h-4 w-4" />
+                            Enviar por Email
+                          </DropdownMenuItem>
+                        )}
                         
                         {onDownloadPDF && (
                           <DropdownMenuItem onClick={() => onDownloadPDF(quotation.id)}>

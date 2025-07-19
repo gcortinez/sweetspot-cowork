@@ -342,7 +342,7 @@ export default function OpportunityDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto p-0">
         {/* Header */}
         <div className="bg-gradient-to-r from-brand-purple to-purple-700 text-white p-6">
           <DialogHeader>

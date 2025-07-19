@@ -359,16 +359,10 @@ export default function EditQuotationModal({
                   
                   <div className="space-y-2">
                     <Label htmlFor="currency">Moneda</Label>
-                    <Select value={formData.currency} onValueChange={(value) => handleInputChange('currency', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona moneda" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="CLP">CLP - Peso Chileno</SelectItem>
-                        <SelectItem value="USD">USD - Dólar Americano</SelectItem>
-                        <SelectItem value="EUR">EUR - Euro</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center gap-2 h-10 px-3 bg-gray-50 border rounded-md">
+                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">CLP - Peso Chileno</span>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
