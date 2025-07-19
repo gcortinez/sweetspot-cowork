@@ -87,6 +87,7 @@ function serializeQuotation(quotation: any) {
     } : null,
     lead: quotation.lead ? {
       ...quotation.lead,
+      budget: toNumber(quotation.lead.budget),
       createdAt: quotation.lead.createdAt ? quotation.lead.createdAt.toISOString() : null,
       updatedAt: quotation.lead.updatedAt ? quotation.lead.updatedAt.toISOString() : null,
     } : null,
