@@ -34,11 +34,7 @@ interface QuotationPDFData {
     unitPrice: number
     total: number
   }>
-  opportunity?: {
-    title: string
-    stage: string
-    value: number
-  }
+  // opportunity data removed - internal use only, not for client PDFs
   createdBy?: {
     firstName: string
     lastName: string

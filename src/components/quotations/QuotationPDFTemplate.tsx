@@ -32,11 +32,7 @@ interface QuotationPDFProps {
       unitPrice: number
       total: number
     }>
-    opportunity?: {
-      title: string
-      stage: string
-      value: number
-    }
+    // opportunity data removed - internal use only, not for client PDFs
     createdBy?: {
       firstName: string
       lastName: string
@@ -326,28 +322,7 @@ const styles = StyleSheet.create({
   },
   
   
-  // Opportunity section
-  opportunitySection: {
-    marginBottom: 15,
-    backgroundColor: '#fef3c7',
-    padding: 10,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#f59e0b',
-  },
-  
-  opportunityTitle: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: '#92400e',
-    marginBottom: 4,
-  },
-  
-  opportunityDetail: {
-    fontSize: 9,
-    color: '#a16207',
-    marginBottom: 1,
-  },
+  // Opportunity section styles - Removed for cleaner client PDF
 })
 
 
@@ -426,15 +401,7 @@ const QuotationPDFTemplate: React.FC<QuotationPDFProps> = ({ quotation, coworkIn
           </View>
         </View>
 
-        {/* Opportunity Information */}
-        {quotation.opportunity && (
-          <View style={styles.opportunitySection}>
-            <Text style={styles.opportunityTitle}>Oportunidad Relacionada</Text>
-            <Text style={styles.opportunityDetail}>Título: {quotation.opportunity.title}</Text>
-            <Text style={styles.opportunityDetail}>Etapa: {quotation.opportunity.stage}</Text>
-            <Text style={styles.opportunityDetail}>Valor: {formatCurrency(quotation.opportunity.value)}</Text>
-          </View>
-        )}
+        {/* Opportunity Information - Removed for client PDF */}
 
         {/* Description */}
         {quotation.description && (

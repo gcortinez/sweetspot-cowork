@@ -41,14 +41,7 @@ export async function generateQuotationPDFAction(data: GenerateQuotationPDFReque
       include: {
         items: true,
         client: true,
-        opportunity: {
-          select: {
-            id: true,
-            title: true,
-            stage: true,
-            value: true,
-          }
-        },
+        // opportunity removed - internal use only, not for client PDFs
         lead: {
           select: {
             id: true,
@@ -169,10 +162,7 @@ export async function generateQuotationPDFAction(data: GenerateQuotationPDFReque
         unitPrice: toNumber(item.unitPrice),
         total: toNumber(item.total),
       })),
-      opportunity: quotation.opportunity ? {
-        ...quotation.opportunity,
-        value: quotation.opportunity.value ? toNumber(quotation.opportunity.value) : 0,
-      } : undefined,
+      // opportunity information removed - internal use only, not for client PDFs
       createdBy: createdByUser,
     }
 
