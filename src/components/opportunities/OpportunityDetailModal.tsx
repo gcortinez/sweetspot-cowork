@@ -26,7 +26,8 @@ import {
   Loader2,
   MessageSquare,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Paperclip
 } from 'lucide-react';
 import { STAGE_METADATA } from '@/lib/validations/opportunities';
 import Link from 'next/link';
@@ -42,6 +43,8 @@ import { listActivities, updateActivity } from '@/lib/actions/activities';
 import CreateActivityModal from '@/components/activities/CreateActivityModal';
 import ActivityDetailModal from '@/components/activities/ActivityDetailModal';
 import DraggableActivitiesList from '@/components/activities/DraggableActivitiesList';
+import DocumentUpload from '@/components/opportunities/DocumentUpload';
+import DocumentList from '@/components/opportunities/DocumentList';
 
 interface Opportunity {
   id: string
@@ -155,6 +158,7 @@ export default function OpportunityDetailModal({
   const [selectedActivity, setSelectedActivity] = useState<any>(null)
   const [changingQuotationStatus, setChangingQuotationStatus] = useState<string | null>(null)
   const [localOpportunity, setLocalOpportunity] = useState<Opportunity | null>(opportunity)
+  const [documentsRefreshTrigger, setDocumentsRefreshTrigger] = useState<number>(0)
   const { toast } = useToast()
 
   // Update local opportunity when prop changes
@@ -522,7 +526,7 @@ export default function OpportunityDetailModal({
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="details" className="flex items-center gap-2">
                 <Target className="h-4 w-4" />
                 Detalles
@@ -534,6 +538,10 @@ export default function OpportunityDetailModal({
               <TabsTrigger value="quotations" className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
                 Cotizaciones ({localOpportunity?._count?.quotations || quotations.length})
+              </TabsTrigger>
+              <TabsTrigger value="documents" className="flex items-center gap-2">
+                <Paperclip className="h-4 w-4" />
+                Documentos
               </TabsTrigger>
             </TabsList>
 
@@ -755,6 +763,19 @@ export default function OpportunityDetailModal({
                 onCreateNew={() => setShowCreateQuotationModal(true)}
                 onDownloadPDF={handleQuotationDownloadPDF}
                 isLoading={isLoadingQuotations}
+              />
+            </TabsContent>
+
+            {/* Documents Tab */}
+            <TabsContent value="documents" className="space-y-4 mt-4">
+              <DocumentUpload
+                opportunityId={opportunity.id}
+                onUploadComplete={() => setDocumentsRefreshTrigger(Date.now())}
+                className="mb-6"
+              />
+              <DocumentList
+                opportunityId={opportunity.id}
+                refreshTrigger={documentsRefreshTrigger}
               />
             </TabsContent>
           </Tabs>

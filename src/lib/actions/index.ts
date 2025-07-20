@@ -71,5 +71,8 @@ export * from './dashboard'
 // Quotation management actions
 export * from './quotations'
 
+// Document management actions
+export * from './opportunity-documents'
+
 // TODO: Add more action modules as they are created
 // export * from './contract'

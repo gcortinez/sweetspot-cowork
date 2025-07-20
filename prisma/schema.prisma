@@ -414,14 +414,28 @@ model OpportunityDocument {
     id            String   @id @default(cuid())
     tenantId      String
     opportunityId String
-    fileName      String
-    fileSize      Int
-    fileType      String
-    fileUrl       String
+    
+    // File metadata
+    fileName      String   @map("file_name")
+    originalName  String   @map("original_name")
+    fileSize      BigInt   @map("file_size")
+    mimeType      String   @map("mime_type")
+    fileUrl       String   @map("file_url")
+    
+    // Document info
+    documentType  String   @default("general") @map("document_type") // 'contract', 'proposal', 'requirement', 'technical', 'general'
     description   String?
-    uploadedById  String
-    createdAt     DateTime @default(now())
-    updatedAt     DateTime @updatedAt
+    tags          String[] @default([])
+    
+    // Upload info
+    uploadedById  String   @map("uploaded_by_id")
+    uploadedAt    DateTime @default(now()) @map("uploaded_at")
+    
+    // Status
+    isActive      Boolean  @default(true) @map("is_active")
+    
+    createdAt     DateTime @default(now()) @map("created_at")
+    updatedAt     DateTime @updatedAt @map("updated_at")
 
     // Relationships
     tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -430,6 +444,8 @@ model OpportunityDocument {
 
     @@index([tenantId, opportunityId])
     @@index([uploadedById])
+    @@index([documentType])
+    @@index([isActive])
     @@map("opportunity_documents")
 }
 
