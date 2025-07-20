@@ -13,11 +13,12 @@ import {
   type DeleteDocumentInput
 } from '@/lib/validations/documents'
 import { 
-  storageClient, 
   STORAGE_CONFIG, 
   getFilePath, 
   generateUniqueFileName, 
-  getPublicUrl 
+  uploadToBlob,
+  deleteFromBlob,
+  getDownloadUrl
 } from '@/lib/storage'
 
 // Helper function to get user with tenant info
@@ -97,21 +98,16 @@ export async function uploadOpportunityDocument(
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
-    // Upload to Supabase Storage
-    const { error: uploadError } = await storageClient.storage
-      .from(STORAGE_CONFIG.opportunities.bucket)
-      .upload(filePath, buffer, {
-        contentType: file.type,
-        upsert: false
-      })
+    // Upload to Vercel Blob
+    const uploadResult = await uploadToBlob(filePath, buffer, file.type)
 
-    if (uploadError) {
-      console.error('Storage upload error:', uploadError)
-      return { success: false, error: 'Error al subir el archivo' }
+    if (!uploadResult.success) {
+      console.error('Storage upload error:', uploadResult.error)
+      return { success: false, error: uploadResult.error || 'Error al subir el archivo' }
     }
 
-    // Get public URL
-    const fileUrl = getPublicUrl(STORAGE_CONFIG.opportunities.bucket, filePath)
+    // Get the public URL from Vercel Blob
+    const fileUrl = uploadResult.url
 
     // Save metadata to database
     const document = await db.opportunityDocument.create({
@@ -241,14 +237,11 @@ export async function deleteOpportunityDocument(input: DeleteDocumentInput) {
       return { success: false, error: 'Documento no encontrado' }
     }
 
-    // Delete from storage
-    const filePath = getFilePath(user.tenantId, document.opportunityId, document.fileName)
-    const { error: deleteError } = await storageClient.storage
-      .from(STORAGE_CONFIG.opportunities.bucket)
-      .remove([filePath])
+    // Delete from Vercel Blob storage
+    const deleteResult = await deleteFromBlob(document.fileUrl)
 
-    if (deleteError) {
-      console.error('Storage delete error:', deleteError)
+    if (!deleteResult.success) {
+      console.error('Storage delete error:', deleteResult.error)
       // Continue with database deletion even if storage fails
     }
 
@@ -274,7 +267,7 @@ export async function deleteOpportunityDocument(input: DeleteDocumentInput) {
   }
 }
 
-// Download document action (generates signed URL)
+// Download document action (Vercel Blob URLs are already public)
 export async function getDocumentDownloadUrl(documentId: string) {
   try {
     const user = await getUserWithTenant()
@@ -292,23 +285,19 @@ export async function getDocumentDownloadUrl(documentId: string) {
       return { success: false, error: 'Documento no encontrado' }
     }
 
-    // Generate signed URL for download (valid for 5 minutes)
-    const filePath = getFilePath(user.tenantId, document.opportunityId, document.fileName)
-    const { data, error } = await storageClient.storage
-      .from(STORAGE_CONFIG.opportunities.bucket)
-      .createSignedUrl(filePath, 300) // 5 minutes
+    // Verify the file still exists and get URL
+    const downloadResult = await getDownloadUrl(document.fileUrl)
 
-    if (error || !data) {
-      console.error('Error generating signed URL:', error)
-      return { success: false, error: 'Error al generar enlace de descarga' }
+    if (!downloadResult.success) {
+      return { success: false, error: downloadResult.error }
     }
 
     return { 
       success: true, 
       data: {
-        url: data.signedUrl,
+        url: downloadResult.url,
         fileName: document.originalName,
-        expiresIn: 300 // seconds
+        expiresIn: null // Vercel Blob URLs don't expire
       }
     }
   } catch (error) {

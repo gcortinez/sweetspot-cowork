@@ -1,22 +1,8 @@
-'use server'
-
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-// Create a Supabase client with service role key for server-side operations
-export const storageClient = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  }
-})
+import { put, del, head } from '@vercel/blob'
 
 // Storage configuration
 export const STORAGE_CONFIG = {
   opportunities: {
-    bucket: 'opportunities',
     maxFileSize: 10 * 1024 * 1024, // 10MB
     allowedMimeTypes: [
       'application/pdf',
@@ -34,9 +20,9 @@ export const STORAGE_CONFIG = {
   }
 } as const
 
-// Helper to get file path
+// Helper to get file path for Vercel Blob
 export const getFilePath = (tenantId: string, opportunityId: string, fileName: string) => {
-  return `${tenantId}/${opportunityId}/${fileName}`
+  return `opportunities/${tenantId}/${opportunityId}/${fileName}`
 }
 
 // Helper to generate unique filename
@@ -50,38 +36,71 @@ export const generateUniqueFileName = (originalName: string) => {
   return `${timestamp}-${randomString}-${cleanName}.${extension}`
 }
 
-// Helper to get public URL
-export const getPublicUrl = (bucket: string, path: string) => {
-  const { data } = storageClient.storage.from(bucket).getPublicUrl(path)
-  return data.publicUrl
-}
-
-// Create bucket if it doesn't exist (run this once during setup)
-export const ensureBucketExists = async () => {
-  const { data: buckets } = await storageClient.storage.listBuckets()
-  
-  const opportunitiesBucket = buckets?.find(b => b.name === STORAGE_CONFIG.opportunities.bucket)
-  
-  if (!opportunitiesBucket) {
-    const { error } = await storageClient.storage.createBucket(STORAGE_CONFIG.opportunities.bucket, {
-      public: false, // Private bucket
-      fileSizeLimit: STORAGE_CONFIG.opportunities.maxFileSize,
-      allowedMimeTypes: STORAGE_CONFIG.opportunities.allowedMimeTypes,
+// Upload file to Vercel Blob
+export async function uploadToBlob(
+  filePath: string, 
+  file: Buffer | File, 
+  contentType: string
+) {
+  'use server'
+  try {
+    const blob = await put(filePath, file, {
+      access: 'public',
+      contentType,
     })
     
-    if (error) {
-      console.error('Error creating opportunities bucket:', error)
-      return false
-    }
-    
-    // Set bucket policies for authenticated users
-    const { error: policyError } = await storageClient.storage
-      .from(STORAGE_CONFIG.opportunities.bucket)
-      .createSignedUploadUrl('')
-      
-    console.log('Opportunities bucket created successfully')
-    return true
+    return { success: true, url: blob.url }
+  } catch (error) {
+    console.error('Error uploading to Vercel Blob:', error)
+    return { success: false, error: 'Error al subir archivo' }
   }
-  
+}
+
+// Delete file from Vercel Blob
+export async function deleteFromBlob(url: string) {
+  'use server'
+  try {
+    await del(url)
+    return { success: true }
+  } catch (error) {
+    console.error('Error deleting from Vercel Blob:', error)
+    return { success: false, error: 'Error al eliminar archivo' }
+  }
+}
+
+// Check if file exists in Vercel Blob
+export async function checkFileExists(url: string) {
+  'use server'
+  try {
+    const result = await head(url)
+    return !!result // File exists if head() returns without error
+  } catch (error) {
+    console.error('Error checking file existence:', error)
+    return false
+  }
+}
+
+// Generate download URL (Vercel Blob URLs are already public)
+export async function getDownloadUrl(url: string) {
+  'use server'
+  // For Vercel Blob, URLs are already public and don't need signing
+  // But we can add some validation
+  try {
+    const exists = await checkFileExists(url)
+    if (exists) {
+      return { success: true, url }
+    } else {
+      return { success: false, error: 'Archivo no encontrado' }
+    }
+  } catch (error) {
+    return { success: false, error: 'Error al obtener enlace de descarga' }
+  }
+}
+
+// No bucket creation needed for Vercel Blob - it's automatic
+export async function ensureBucketExists() {
+  'use server'
+  // Vercel Blob doesn't require bucket creation
+  console.log('✅ Vercel Blob Storage is ready (no setup required)')
   return true
 }
