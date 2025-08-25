@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Building2, 
   Plus, 
@@ -302,16 +303,40 @@ export function CoworkManagement() {
                           const windowHeight = window.innerHeight;
                           const scrollY = window.scrollY;
                           const distanceFromBottom = windowHeight - rect.bottom;
-                          const menuHeight = 250;
+                          const menuHeight = 200; // Reduced from 250 to be more accurate
+                          const menuWidth = 192; // 192px = width of menu (w-48)
                           
-                          const position = distanceFromBottom < menuHeight ? 'top' : 'bottom';
+                          // Determine if menu should open upward or downward
+                          const shouldOpenUpward = distanceFromBottom < menuHeight;
+                          const position = shouldOpenUpward ? 'top' : 'bottom';
                           setMenuPosition(prev => ({ ...prev, [cowork.id]: position }));
                           
-                          // Set coordinates for fixed positioning
-                          setMenuCoords({
-                            x: rect.right - 192, // 192px = width of menu (w-48)
-                            y: position === 'top' ? rect.top + scrollY - menuHeight : rect.bottom + scrollY
+                          // Debug info (remove in production)
+                          console.log('Menu positioning:', {
+                            distanceFromBottom,
+                            shouldOpenUpward,
+                            windowHeight,
+                            rectBottom: rect.bottom,
+                            coworkId: cowork.id
                           });
+                          
+                          // Calculate coordinates for fixed positioning
+                          let x = rect.right - menuWidth;
+                          let y = shouldOpenUpward 
+                            ? rect.top + scrollY - menuHeight + 20 // Open above with some margin
+                            : rect.bottom + scrollY + 5; // Open below with small margin
+                          
+                          // Ensure menu doesn't go off the left edge of screen
+                          if (x < 10) {
+                            x = 10;
+                          }
+                          
+                          // Ensure menu doesn't go off the top of screen
+                          if (y < scrollY + 10) {
+                            y = scrollY + 10;
+                          }
+                          
+                          setMenuCoords({ x, y });
                           
                           setActionMenuOpen(cowork.id);
                         }}
@@ -320,22 +345,23 @@ export function CoworkManagement() {
                         <MoreVertical className="h-4 w-4" />
                       </button>
                       
-                      {actionMenuOpen === cowork.id && menuCoords && (
-                        <>
-                          <div
-                            className="fixed inset-0 z-[100]"
-                            onClick={() => {
-                              setActionMenuOpen(null);
-                              setMenuCoords(null);
-                            }}
-                          />
-                          <div 
-                            className="fixed w-48 bg-white rounded-md shadow-xl z-[110] border border-gray-200"
-                            style={{
-                              left: `${menuCoords.x}px`,
-                              top: `${menuCoords.y}px`,
-                            }}
-                          >
+                      {actionMenuOpen === cowork.id && menuCoords && typeof window !== 'undefined' && 
+                        createPortal(
+                          <>
+                            <div
+                              className="fixed inset-0 z-[100]"
+                              onClick={() => {
+                                setActionMenuOpen(null);
+                                setMenuCoords(null);
+                              }}
+                            />
+                            <div 
+                              className="fixed w-48 bg-white rounded-md shadow-xl z-[110] border border-gray-200"
+                              style={{
+                                left: `${menuCoords.x}px`,
+                                top: `${menuCoords.y}px`,
+                              }}
+                            >
                             <div className="py-1">
                               <button
                                 onClick={() => {
@@ -405,7 +431,9 @@ export function CoworkManagement() {
                               </button>
                             </div>
                           </div>
-                        </>
+                          </>,
+                          document.body
+                        )
                       )}
                     </div>
                   </td>
