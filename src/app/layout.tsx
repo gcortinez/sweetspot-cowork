@@ -5,11 +5,13 @@ import { ClerkProvider } from '@clerk/nextjs'
 import { Toaster } from "@/components/ui/toaster";
 import QueryProvider from "@/providers/query-provider";
 
-// Optimize font loading
+// Optimize font loading with minimal preload
 const inter = Inter({ 
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-inter'
+  variable: '--font-inter',
+  preload: true,
+  fallback: ['system-ui', 'arial']
 })
 
 export const metadata: Metadata = {
@@ -19,6 +21,15 @@ export const metadata: Metadata = {
   authors: [{ name: "SweetSpot Team" }],
   creator: "SweetSpot",
   publisher: "SweetSpot",
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' }
+    ],
+    shortcut: ['/favicon.svg'],
+    apple: [
+      { url: '/favicon.svg', sizes: '180x180', type: 'image/svg+xml' }
+    ]
+  },
   formatDetection: {
     email: false,
     address: false,

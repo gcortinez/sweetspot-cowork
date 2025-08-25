@@ -4,10 +4,11 @@ import { getBookingAction, updateBookingAction, cancelBookingAction } from '@/li
 // Get booking by ID (GET /api/bookings/[id])
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const result = await getBookingAction(params.id)
+    const { id } = await params
+    const result = await getBookingAction(id)
     
     if (!result.success) {
       const status = result.error === 'Booking not found' ? 404 : 400
@@ -40,9 +41,10 @@ export async function GET(
 // Update booking (PUT /api/bookings/[id])
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json()
     
     // Convert date strings to Date objects
@@ -53,7 +55,7 @@ export async function PUT(
       body.endTime = new Date(body.endTime)
     }
     
-    const result = await updateBookingAction(params.id, body)
+    const result = await updateBookingAction(id, body)
     
     if (!result.success) {
       const status = result.error === 'Booking not found' ? 404 : 400
@@ -88,13 +90,14 @@ export async function PUT(
 // Cancel booking (DELETE /api/bookings/[id])
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const searchParams = request.nextUrl.searchParams
     const reason = searchParams.get('reason') || undefined
     
-    const result = await cancelBookingAction(params.id, reason)
+    const result = await cancelBookingAction(id, reason)
     
     if (!result.success) {
       const status = result.error === 'Booking not found' ? 404 : 400
