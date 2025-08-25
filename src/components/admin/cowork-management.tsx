@@ -15,9 +15,14 @@ import {
   CheckCircle,
   XCircle,
   Pause,
-  AlertTriangle
+  AlertTriangle,
+  X,
+  Calendar,
+  Package,
+  TrendingUp
 } from 'lucide-react';
 import { useCoworkSelection } from '@/contexts/cowork-selection-context';
+import { useRouter } from 'next/navigation';
 
 interface Cowork {
   id: string;
@@ -43,11 +48,14 @@ interface Cowork {
 
 export function CoworkManagement() {
   const { refreshCoworks } = useCoworkSelection();
+  const router = useRouter();
   const [coworks, setCoworks] = useState<Cowork[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedCowork, setSelectedCowork] = useState<Cowork | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null);
@@ -287,14 +295,15 @@ export function CoworkManagement() {
                       {actionMenuOpen === cowork.id && (
                         <>
                           <div
-                            className="fixed inset-0 z-10"
+                            className="fixed inset-0 z-40"
                             onClick={() => setActionMenuOpen(null)}
                           />
-                          <div className="absolute right-0 top-8 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border border-gray-200">
+                          <div className="absolute right-0 top-8 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200">
                             <div className="py-1">
                               <button
                                 onClick={() => {
                                   setSelectedCowork(cowork);
+                                  setShowDetailModal(true);
                                   setActionMenuOpen(null);
                                 }}
                                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
@@ -304,7 +313,8 @@ export function CoworkManagement() {
                               </button>
                               <button
                                 onClick={() => {
-                                  // Open edit modal
+                                  setSelectedCowork(cowork);
+                                  setShowEditModal(true);
                                   setActionMenuOpen(null);
                                 }}
                                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
@@ -417,6 +427,228 @@ export function CoworkManagement() {
         </div>
       )}
 
+      {/* Detail Modal */}
+      {showDetailModal && selectedCowork && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-gray-900">Detalles del Cowork</h3>
+              <button
+                onClick={() => {
+                  setShowDetailModal(false);
+                  setSelectedCowork(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-6">
+              {/* Basic Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Nombre</label>
+                  <p className="mt-1 text-gray-900">{selectedCowork.name}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Slug</label>
+                  <p className="mt-1 text-gray-900">{selectedCowork.slug}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Estado</label>
+                  <div className="mt-1 flex items-center space-x-2">
+                    {getStatusIcon(selectedCowork.status)}
+                    <span>{getStatusText(selectedCowork.status)}</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Dominio</label>
+                  <p className="mt-1 text-gray-900">{selectedCowork.domain || 'No configurado'}</p>
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 mb-3">Estadísticas</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="flex items-center space-x-2">
+                      <Users className="h-4 w-4 text-gray-400" />
+                      <span className="text-sm text-gray-600">Usuarios</span>
+                    </div>
+                    <p className="mt-1 text-xl font-semibold">{selectedCowork.stats.users}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="flex items-center space-x-2">
+                      <Building2 className="h-4 w-4 text-gray-400" />
+                      <span className="text-sm text-gray-600">Espacios</span>
+                    </div>
+                    <p className="mt-1 text-xl font-semibold">{selectedCowork.stats.spaces}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="flex items-center space-x-2">
+                      <Package className="h-4 w-4 text-gray-400" />
+                      <span className="text-sm text-gray-600">Clientes</span>
+                    </div>
+                    <p className="mt-1 text-xl font-semibold">{selectedCowork.stats.clients}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="h-4 w-4 text-gray-400" />
+                      <span className="text-sm text-gray-600">Reservas</span>
+                    </div>
+                    <p className="mt-1 text-xl font-semibold">{selectedCowork.stats.bookings}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dates */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Creado</label>
+                  <p className="mt-1 text-gray-900">
+                    {new Date(selectedCowork.createdAt).toLocaleDateString('es-ES', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Última actualización</label>
+                  <p className="mt-1 text-gray-900">
+                    {new Date(selectedCowork.updatedAt).toLocaleDateString('es-ES', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </p>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end space-x-3 pt-4 border-t">
+                <button
+                  onClick={() => {
+                    setShowDetailModal(false);
+                    setShowEditModal(true);
+                  }}
+                  className="px-4 py-2 text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50"
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => {
+                    // Navigate to cowork dashboard
+                    router.push(`/cowork/${selectedCowork.slug}/dashboard`);
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Ver Dashboard
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && selectedCowork && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-gray-900">Editar Cowork</h3>
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setSelectedCowork(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <form className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nombre
+                </label>
+                <input
+                  type="text"
+                  defaultValue={selectedCowork.name}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Slug
+                </label>
+                <input
+                  type="text"
+                  defaultValue={selectedCowork.slug}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Dominio
+                </label>
+                <input
+                  type="text"
+                  defaultValue={selectedCowork.domain || ''}
+                  placeholder="ejemplo.com"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Estado
+                </label>
+                <select
+                  defaultValue={selectedCowork.status}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="ACTIVE">Activo</option>
+                  <option value="INACTIVE">Inactivo</option>
+                  <option value="SUSPENDED">Suspendido</option>
+                </select>
+              </div>
+              
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setSelectedCowork(null);
+                  }}
+                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    // TODO: Implement save functionality
+                    console.log('Saving cowork changes...');
+                    setShowEditModal(false);
+                    setSelectedCowork(null);
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Guardar cambios
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Summary */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-center justify-between">
@@ -440,4 +672,5 @@ export function CoworkManagement() {
   );
 }
 
+export { CoworkManagement };
 export default CoworkManagement;
