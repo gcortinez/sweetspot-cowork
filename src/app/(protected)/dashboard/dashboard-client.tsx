@@ -8,12 +8,6 @@ import {
   Users, 
   Target,
   DollarSign,
-  UserCheck,
-  Star,
-  ArrowRight,
-  PlusCircle,
-  Zap,
-  FileText,
   Settings,
   Calendar,
   BarChart3,
@@ -27,15 +21,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
-
 // Lazy load heavy components
-const CreateLeadModal = dynamic(
-  () => import('@/components/leads/CreateLeadModal'),
-  { 
-    loading: () => <div className="animate-pulse">Cargando...</div>,
-    ssr: false 
-  }
-)
 
 const QuickViewModal = dynamic(
   () => import('@/components/dashboard/QuickViewModal'),
@@ -65,7 +51,6 @@ export default function DashboardClient({
   error 
 }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState('crm')
-  const [showCreateLeadModal, setShowCreateLeadModal] = useState(false)
   const [quickViewData, setQuickViewData] = useState<any>(null)
   const [quickViewType, setQuickViewType] = useState<'prospect' | 'client' | 'opportunity' | null>(null)
   const [showQuickView, setShowQuickView] = useState(false)
@@ -84,13 +69,6 @@ export default function DashboardClient({
     setQuickViewType(null)
   }, [])
 
-  const handleLeadCreated = useCallback(() => {
-    toast({
-      title: "¡Prospecto creado!",
-      description: "El nuevo prospecto ha sido creado exitosamente.",
-    })
-    setShowCreateLeadModal(false)
-  }, [toast])
 
   // Show error state if data loading failed
   if (error && !initialStats) {
@@ -139,49 +117,6 @@ export default function DashboardClient({
 
   return (
     <>
-      {/* CRM Navigation Menu */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-3 lg:py-4">
-            <nav className="flex items-center min-w-0 flex-1">
-              <div className="flex items-center space-x-1 overflow-x-auto scrollbar-hide lg:space-x-2">
-                <Button variant="ghost" size="sm" className="text-purple-700 bg-purple-50 hover:bg-purple-100">
-                  <Building2 className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Dashboard</span>
-                </Button>
-                <Link href="/leads" prefetch={true}>
-                  <Button variant="ghost" size="sm" className="text-gray-600 hover:text-purple-700 hover:bg-purple-50">
-                    <UserCheck className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Prospectos</span>
-                  </Button>
-                </Link>
-                <Link href="/opportunities" prefetch={true}>
-                  <Button variant="ghost" size="sm" className="text-gray-600 hover:text-purple-700 hover:bg-purple-50">
-                    <Target className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Oportunidades</span>
-                  </Button>
-                </Link>
-                <Link href="/clients" prefetch={true}>
-                  <Button variant="ghost" size="sm" className="text-gray-600 hover:text-purple-700 hover:bg-purple-50">
-                    <Building2 className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Clientes</span>
-                  </Button>
-                </Link>
-              </div>
-            </nav>
-
-            <Button 
-              size="sm" 
-              className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white"
-              onClick={() => setShowCreateLeadModal(true)}
-            >
-              <PlusCircle className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Nuevo Prospecto</span>
-            </Button>
-          </div>
-        </div>
-      </div>
-
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Dashboard Header */}
@@ -257,14 +192,6 @@ export default function DashboardClient({
       </main>
 
       {/* Lazy loaded modals */}
-      {showCreateLeadModal && (
-        <CreateLeadModal 
-          isOpen={showCreateLeadModal}
-          onClose={() => setShowCreateLeadModal(false)}
-          onLeadCreated={handleLeadCreated}
-        />
-      )}
-
       {showQuickView && quickViewType && (
         <QuickViewModal 
           isOpen={showQuickView}
