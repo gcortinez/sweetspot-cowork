@@ -2,6 +2,9 @@ import { Metadata } from 'next'
 import { Suspense } from 'react'
 import InvitationAcceptClient from './client'
 
+// Force dynamic rendering since this page uses Clerk authentication
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Aceptar Invitación - SweetSpot Cowork',
   description: 'Acepta tu invitación y únete a nuestro coworking',
