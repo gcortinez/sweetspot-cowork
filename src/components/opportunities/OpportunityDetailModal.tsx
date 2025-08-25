@@ -28,7 +28,7 @@ import {
   CheckCircle,
   AlertCircle,
   Paperclip
-} from 'lucide-react';
+} from '@/lib/icons';
 import { STAGE_METADATA } from '@/lib/validations/opportunities';
 import Link from 'next/link';
 import { useToast } from "@/hooks/use-toast";

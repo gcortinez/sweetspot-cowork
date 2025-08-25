@@ -12,7 +12,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select'
-import { Upload, Loader2, X, FileText } from 'lucide-react'
+import { Upload, Loader2, X, FileText } from '@/lib/icons'
 import { uploadOpportunityDocument } from '@/lib/actions/opportunity-documents'
 import { useToast } from '@/hooks/use-toast'
 import { DOCUMENT_TYPES, FILE_CONFIG } from '@/lib/validations/documents'

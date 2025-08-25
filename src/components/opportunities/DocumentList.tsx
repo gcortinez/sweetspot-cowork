@@ -32,7 +32,7 @@ import {
   FileSpreadsheet,
   FileType,
   FileArchive
-} from 'lucide-react'
+} from '@/lib/icons'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 

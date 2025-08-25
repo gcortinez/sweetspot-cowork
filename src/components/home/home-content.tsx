@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 // Simplified without auth dependencies for now
-// Import all icons synchronously - simpler and more reliable
+// Import icons from centralized export to avoid HMR issues
 import {
   Building2,
   ArrowRight,
@@ -19,7 +19,7 @@ import {
   Clock,
   Globe,
   Smartphone,
-} from "lucide-react";
+} from "@/lib/icons";
 
 export function HomeContent() {
   const router = useRouter();

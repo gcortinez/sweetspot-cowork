@@ -39,6 +39,7 @@ interface NavigationItem {
   description?: string
 }
 
+// Solo items del CRM - Analytics está en otro menú principal
 const navigationItems: NavigationItem[] = [
   {
     href: '/dashboard',
@@ -75,12 +76,6 @@ const navigationItems: NavigationItem[] = [
     label: 'Servicios',
     icon: Zap,
     description: 'Catálogo de servicios'
-  },
-  {
-    href: '/analytics',
-    label: 'Analytics',
-    icon: BarChart3,
-    description: 'Reportes y análisis'
   }
 ]
 
@@ -95,8 +90,8 @@ export default function CRMNavigation({ onCreateLead, onCreateQuotation }: CRMNa
   }
 
   // Split navigation items for mobile
-  const primaryItems = navigationItems.slice(0, 4) // Show first 4 items always
-  const secondaryItems = navigationItems.slice(4) // Rest in dropdown
+  const primaryItems = navigationItems.slice(0, 5) // Show first 5 items always  
+  const secondaryItems = navigationItems.slice(5) // Rest in dropdown (only Services)
 
   return (
     <div className="bg-white border-b border-gray-200 shadow-sm">

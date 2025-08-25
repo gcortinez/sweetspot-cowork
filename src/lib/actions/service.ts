@@ -1,3 +1,5 @@
+'use server'
+
 // import { revalidatePath } from 'next/cache' // Removed to avoid client component issues
 import { prisma } from '@/lib/prisma'
 import { auth } from '@clerk/nextjs/server'

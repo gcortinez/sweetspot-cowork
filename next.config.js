@@ -4,11 +4,14 @@ const nextConfig = {
   // React strict mode
   reactStrictMode: true,
   
+  // Transpile packages for better HMR compatibility
+  transpilePackages: ['lucide-react'],
+  
   // Experimental features  
   experimental: {
     // Enable server actions (object format for Next.js 15)
     serverActions: {
-      allowedOrigins: ['localhost:3000', 'sweetspotcowork.com', 'sweetspot-cowork.vercel.app'],
+      allowedOrigins: ['localhost:3000', 'localhost:3001', 'sweetspotcowork.com', 'sweetspot-cowork.vercel.app'],
       bodySizeLimit: '2mb',
     },
     // Next.js 15 Caching optimizations
@@ -16,19 +19,6 @@ const nextConfig = {
       dynamic: 30,    // 30 seconds for dynamic routes
       static: 180,    // 3 minutes for static routes
     },
-  },
-
-  // Turbopack configuration (stable in Next.js 15)
-  turbopack: {
-    rules: {
-      '*.svg': {
-        loaders: ['@svgr/webpack'],
-        as: '*.js',
-      },
-    },
-  },
-
-  experimental: {
     // Optimize compilation
     optimizePackageImports: [
       'lucide-react',
@@ -48,6 +38,16 @@ const nextConfig = {
     memoryBasedWorkersCount: true,
     // Enable faster refresh
     webVitalsAttribution: ['CLS', 'LCP'],
+  },
+
+  // Turbopack configuration (stable in Next.js 15)
+  turbopack: {
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
+      },
+    },
   },
 
   // Environment variables
