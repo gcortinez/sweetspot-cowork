@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, startTransition } from 'react'
 import Link from 'next/link'
-import { AppHeader } from '@/components/shared/app-header'
+// import { AppHeader } from '@/components/shared/app-header' // Removed - handled by ProtectedLayoutWrapper
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -1267,33 +1267,19 @@ export default function OpportunitiesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <AppHeader 
-          currentPage="Oportunidades"
-          showBreadcrumb={true}
-          breadcrumbItems={[{ label: 'Oportunidades' }]}
-        />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-purple mx-auto"></div>
-              <p className="mt-2 text-muted-foreground">Cargando oportunidades...</p>
-            </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-purple mx-auto"></div>
+            <p className="mt-2 text-muted-foreground">Cargando oportunidades...</p>
           </div>
-        </main>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <AppHeader 
-        currentPage="Oportunidades"
-        showBreadcrumb={true}
-        breadcrumbItems={[{ label: 'Oportunidades' }]}
-      />
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Pipeline Health Alerts */}
         {opportunities.some(needsAttention) && (
           <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg p-4 mb-6">
@@ -1750,7 +1736,6 @@ export default function OpportunitiesPage() {
             )}
           </div>
         </div>
-      </main>
 
       {/* Edit Opportunity Modal */}
       {editingOpportunity && (

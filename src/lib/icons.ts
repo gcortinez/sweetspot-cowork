@@ -212,6 +212,15 @@ export {
   RotateCw,
   RotateCcw,
   
+  // Communication
+  Mail,
+  MessageSquare,
+  MessageCircle,
+  Phone,
+  PhoneCall,
+  Bell,
+  BellOff,
+  
   // Additional icons
   Paperclip,
 } from 'lucide-react';
