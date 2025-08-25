@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Building2, 
   Plus, 
@@ -60,6 +60,7 @@ export function CoworkManagement() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState<{[key: string]: 'top' | 'bottom'}>({});
+  const [menuCoords, setMenuCoords] = useState<{x: number, y: number} | null>(null);
 
   // Load coworks
   const loadCoworks = async () => {
@@ -167,7 +168,7 @@ export function CoworkManagement() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
       {/* Header */}
       <div className="bg-white rounded-lg shadow-sm border p-6">
         <div className="flex items-center justify-between mb-6">
@@ -211,7 +212,7 @@ export function CoworkManagement() {
 
       {/* Coworks Table */}
       <div className="bg-white rounded-lg shadow-sm border">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-visible">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -288,37 +289,60 @@ export function CoworkManagement() {
                     <div className="relative">
                       <button
                         onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          
+                          if (actionMenuOpen === cowork.id) {
+                            setActionMenuOpen(null);
+                            setMenuCoords(null);
+                            return;
+                          }
+                          
                           const rect = e.currentTarget.getBoundingClientRect();
                           const windowHeight = window.innerHeight;
+                          const scrollY = window.scrollY;
                           const distanceFromBottom = windowHeight - rect.bottom;
-                          const menuHeight = 200; // Approximate menu height
+                          const menuHeight = 250;
                           
                           const position = distanceFromBottom < menuHeight ? 'top' : 'bottom';
                           setMenuPosition(prev => ({ ...prev, [cowork.id]: position }));
-                          setActionMenuOpen(actionMenuOpen === cowork.id ? null : cowork.id);
+                          
+                          // Set coordinates for fixed positioning
+                          setMenuCoords({
+                            x: rect.right - 192, // 192px = width of menu (w-48)
+                            y: position === 'top' ? rect.top + scrollY - menuHeight : rect.bottom + scrollY
+                          });
+                          
+                          setActionMenuOpen(cowork.id);
                         }}
                         className="text-gray-400 hover:text-gray-600 p-1"
                       >
                         <MoreVertical className="h-4 w-4" />
                       </button>
                       
-                      {actionMenuOpen === cowork.id && (
+                      {actionMenuOpen === cowork.id && menuCoords && (
                         <>
                           <div
-                            className="fixed inset-0 z-40"
-                            onClick={() => setActionMenuOpen(null)}
+                            className="fixed inset-0 z-[100]"
+                            onClick={() => {
+                              setActionMenuOpen(null);
+                              setMenuCoords(null);
+                            }}
                           />
-                          <div className={`absolute right-0 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200 ${
-                            menuPosition[cowork.id] === 'top' 
-                              ? 'bottom-8 mb-2' 
-                              : 'top-8 mt-2'
-                          }`}>
+                          <div 
+                            className="fixed w-48 bg-white rounded-md shadow-xl z-[110] border border-gray-200"
+                            style={{
+                              left: `${menuCoords.x}px`,
+                              top: `${menuCoords.y}px`,
+                            }}
+                          >
                             <div className="py-1">
                               <button
                                 onClick={() => {
                                   setSelectedCowork(cowork);
                                   setShowDetailModal(true);
                                   setActionMenuOpen(null);
+                                  setMenuCoords(null);
                                 }}
                                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                               >
@@ -330,6 +354,7 @@ export function CoworkManagement() {
                                   setSelectedCowork(cowork);
                                   setShowEditModal(true);
                                   setActionMenuOpen(null);
+                                  setMenuCoords(null);
                                 }}
                                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                               >
@@ -343,6 +368,7 @@ export function CoworkManagement() {
                                   onClick={() => {
                                     handleStatusChange(cowork.id, 'SUSPENDED');
                                     setActionMenuOpen(null);
+                                    setMenuCoords(null);
                                   }}
                                   className="w-full text-left px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50 flex items-center"
                                 >
@@ -356,6 +382,7 @@ export function CoworkManagement() {
                                   onClick={() => {
                                     handleStatusChange(cowork.id, 'ACTIVE');
                                     setActionMenuOpen(null);
+                                    setMenuCoords(null);
                                   }}
                                   className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center"
                                 >
@@ -369,6 +396,7 @@ export function CoworkManagement() {
                                 onClick={() => {
                                   setShowDeleteConfirm(cowork.id);
                                   setActionMenuOpen(null);
+                                  setMenuCoords(null);
                                 }}
                                 className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center"
                               >
