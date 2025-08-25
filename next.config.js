@@ -4,13 +4,50 @@ const nextConfig = {
   // React strict mode
   reactStrictMode: true,
   
-  // Experimental features
+  // Experimental features  
   experimental: {
     // Enable server actions (object format for Next.js 15)
     serverActions: {
       allowedOrigins: ['localhost:3000', 'sweetspotcowork.com', 'sweetspot-cowork.vercel.app'],
       bodySizeLimit: '2mb',
     },
+    // Next.js 15 Caching optimizations
+    staleTimes: {
+      dynamic: 30,    // 30 seconds for dynamic routes
+      static: 180,    // 3 minutes for static routes
+    },
+  },
+
+  // Turbopack configuration (stable in Next.js 15)
+  turbopack: {
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
+      },
+    },
+  },
+
+  experimental: {
+    // Optimize compilation
+    optimizePackageImports: [
+      'lucide-react',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu', 
+      '@radix-ui/react-select',
+      '@radix-ui/react-tabs',
+      '@tanstack/react-query',
+      '@clerk/nextjs',
+      'date-fns',
+      'recharts',
+      'zod'
+    ],
+    // Enable optimized loading
+    optimizeServerReact: true,
+    // Enable memory usage optimization
+    memoryBasedWorkersCount: true,
+    // Enable faster refresh
+    webVitalsAttribution: ['CLS', 'LCP'],
   },
 
   // Environment variables
@@ -136,8 +173,8 @@ const nextConfig = {
 
   // Webpack configuration
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
-    // Optimize bundle size
-    if (!dev && !isServer) {
+    // Optimize bundle size and cache
+    if (!dev) {
       // Bundle analyzer in production builds
       if (process.env.ANALYZE === 'true') {
         const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
@@ -149,11 +186,45 @@ const nextConfig = {
         )
       }
 
-      // Optimize imports
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        '@': require('path').resolve(__dirname, 'src'),
+      // Optimize cache for better performance
+      config.cache = {
+        type: 'filesystem',
+        maxMemoryGenerations: 1,
+        cacheDirectory: require('path').resolve(__dirname, '.next/cache/webpack'),
+        compression: 'gzip'
       }
+
+      // Split chunks for better caching
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          ...config.optimization.splitChunks,
+          cacheGroups: {
+            default: false,
+            vendors: false,
+            vendor: {
+              name: 'vendor',
+              chunks: 'all',
+              test: /node_modules/,
+              priority: 20,
+            },
+            common: {
+              name: 'common',
+              minChunks: 2,
+              chunks: 'all',
+              priority: 10,
+              reuseExistingChunk: true,
+              enforce: true,
+            },
+          },
+        },
+      }
+    }
+
+    // Optimize imports
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': require('path').resolve(__dirname, 'src'),
     }
 
     // Handle SVG imports
@@ -162,10 +233,11 @@ const nextConfig = {
       use: ['@svgr/webpack'],
     })
 
-    // Ignore specific warnings
+    // Ignore specific warnings and add cache warnings
     config.ignoreWarnings = [
       { module: /node_modules\/punycode/ },
       { module: /node_modules\/encoding/ },
+      /webpack\.cache\.PackFileCacheStrategy/,
     ]
 
     return config
@@ -204,16 +276,37 @@ const nextConfig = {
 
   // Production optimizations
   ...(process.env.NODE_ENV === 'production' && {
-    // Reduce bundle size
+    // Reduce bundle size with modular imports
     modularizeImports: {
+      'lucide-react': {
+        transform: 'lucide-react/dist/esm/icons/{{kebabCase member}}',
+      },
+      '@radix-ui/react-dialog': {
+        transform: '@radix-ui/react-dialog/dist/{{member}}',
+      },
+      '@radix-ui/react-dropdown-menu': {
+        transform: '@radix-ui/react-dropdown-menu/dist/{{member}}',
+      },
+      '@radix-ui/react-select': {
+        transform: '@radix-ui/react-select/dist/{{member}}',
+      },
+      '@radix-ui/react-tabs': {
+        transform: '@radix-ui/react-tabs/dist/{{member}}',
+      },
+      'date-fns': {
+        transform: 'date-fns/{{member}}',
+      },
+      'recharts': {
+        transform: 'recharts/es6/{{member}}',
+      },
       lodash: {
         transform: 'lodash/{{member}}',
       },
-      '@mui/material': {
-        transform: '@mui/material/{{member}}',
-      },
-      '@mui/icons-material': {
-        transform: '@mui/icons-material/{{member}}',
+    },
+    // Optimize CSS
+    compiler: {
+      removeConsole: {
+        exclude: ['error', 'warn'],
       },
     },
   }),

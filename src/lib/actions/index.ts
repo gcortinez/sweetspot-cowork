@@ -67,6 +67,7 @@ export * from './clients'
 
 // Dashboard stats actions
 export * from './dashboard'
+export * from './dashboard-optimized'
 
 // Quotation management actions
 export * from './quotations'

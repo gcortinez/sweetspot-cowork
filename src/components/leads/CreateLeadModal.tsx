@@ -7,8 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { 
   Plus, 
@@ -23,13 +21,8 @@ import {
   DollarSign,
   MessageSquare,
   Sparkles,
-  Check,
-  ChevronsUpDown,
-  Search,
-  UserPlus
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useApi } from "@/hooks/use-api";
 import { useCreateLead } from "@/hooks/use-clients";
 
 interface CreateLeadModalProps {
@@ -51,15 +44,8 @@ interface CreateLeadForm {
   interests: string;
   qualificationNotes: string;
   assignedToId: string;
-  clientId: string;
 }
 
-interface Client {
-  id: string;
-  name: string;
-  email: string;
-  status: string;
-}
 
 const initialFormData: CreateLeadForm = {
   firstName: '',
@@ -74,7 +60,6 @@ const initialFormData: CreateLeadForm = {
   interests: '',
   qualificationNotes: '',
   assignedToId: '',
-  clientId: '',
 };
 
 const sourceOptions = [
@@ -91,61 +76,19 @@ const sourceOptions = [
 export default function CreateLeadModal({ onLeadCreated, isOpen: externalIsOpen, onClose }: CreateLeadModalProps) {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [formData, setFormData] = useState<CreateLeadForm>(initialFormData);
-  const [showClientSearch, setShowClientSearch] = useState(false);
-  const [createNewClient, setCreateNewClient] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const { toast } = useToast();
-  const api = useApi();
-  
-  // State for lazy-loaded clients
-  const [clients, setClients] = useState<Client[]>([]);
-  const [isLoadingClients, setIsLoadingClients] = useState(false);
   const createLeadMutation = useCreateLead();
 
   // Use external state if provided, otherwise use internal state
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
   const setIsOpen = onClose ? onClose : setInternalIsOpen;
 
-  // Load clients only when needed (when client search is opened)
-  const loadClients = async () => {
-    if (clients.length > 0) return; // Already loaded
-    
-    try {
-      setIsLoadingClients(true);
-      const response = await api.get('/api/clients');
-      if (response.ok) {
-        const data = await response.json();
-        setClients(data.data || []);
-      }
-    } catch (error) {
-      console.error('Error loading clients:', error);
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los clientes",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoadingClients(false);
-    }
-  };
 
 
   const handleInputChange = (field: keyof CreateLeadForm, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleClientSelect = (client: Client) => {
-    setSelectedClient(client);
-    setFormData(prev => ({ ...prev, clientId: client.id }));
-    setShowClientSearch(false);
-  };
-
-  const handleCreateNewClient = () => {
-    setCreateNewClient(true);
-    setSelectedClient(null);
-    setFormData(prev => ({ ...prev, clientId: '' }));
-    setShowClientSearch(false);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -164,8 +107,6 @@ export default function CreateLeadModal({ onLeadCreated, isOpen: externalIsOpen,
       interests: formData.interests ? formData.interests.split(',').map(s => s.trim()) : undefined,
       qualificationNotes: formData.qualificationNotes || undefined,
       assignedToId: formData.assignedToId || undefined,
-      clientId: formData.clientId || undefined,
-      createNewClient: createNewClient,
     };
 
     createLeadMutation.mutate(leadData, {
@@ -201,9 +142,6 @@ export default function CreateLeadModal({ onLeadCreated, isOpen: externalIsOpen,
 
   const resetForm = () => {
     setFormData(initialFormData);
-    setSelectedClient(null);
-    setCreateNewClient(false);
-    setShowClientSearch(false);
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -363,132 +301,6 @@ export default function CreateLeadModal({ onLeadCreated, isOpen: externalIsOpen,
             </div>
           </div>
 
-          {/* Cliente Information */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-              <Building2 className="h-4 w-4 text-brand-green" />
-              <span>Información del Cliente</span>
-              <Badge variant="secondary" className="text-xs">Opcional</Badge>
-            </div>
-            <div className="bg-gradient-to-r from-green-50/50 to-emerald-50/50 p-4 rounded-lg border border-green-200">
-              <div className="space-y-4">
-                {/* Client Selection */}
-                <div className="flex gap-2">
-                  <Popover open={showClientSearch} onOpenChange={(open) => {
-                    setShowClientSearch(open);
-                    if (open) loadClients();
-                  }}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={showClientSearch}
-                        className="flex-1 justify-between"
-                      >
-                        {selectedClient ? (
-                          <div className="flex items-center">
-                            <Building2 className="h-4 w-4 mr-2 text-green-600" />
-                            {selectedClient.name}
-                          </div>
-                        ) : (
-                          <div className="flex items-center text-muted-foreground">
-                            <Search className="h-4 w-4 mr-2" />
-                            Buscar cliente existente...
-                          </div>
-                        )}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[400px] p-0">
-                      <Command>
-                        <CommandInput placeholder="Buscar cliente..." />
-                        <CommandList>
-                          <CommandEmpty>No se encontraron clientes.</CommandEmpty>
-                          <CommandGroup>
-                            {clients.map((client) => (
-                              <CommandItem
-                                key={client.id}
-                                value={client.name}
-                                onSelect={() => handleClientSelect(client)}
-                              >
-                                <Check
-                                  className={`mr-2 h-4 w-4 ${
-                                    selectedClient?.id === client.id ? "opacity-100" : "opacity-0"
-                                  }`}
-                                />
-                                <div className="flex items-center justify-between w-full">
-                                  <div>
-                                    <div className="font-medium">{client.name}</div>
-                                    <div className="text-sm text-muted-foreground">{client.email}</div>
-                                  </div>
-                                  <Badge variant="secondary" className="text-xs">
-                                    {client.status}
-                                  </Badge>
-                                </div>
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleCreateNewClient}
-                    className="shrink-0"
-                  >
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Crear Nuevo
-                  </Button>
-                </div>
-
-                {/* Show client info if selected */}
-                {selectedClient && (
-                  <div className="p-3 bg-white rounded-lg border border-green-200">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-green-800">{selectedClient.name}</p>
-                        <p className="text-sm text-green-600">{selectedClient.email}</p>
-                      </div>
-                      <Badge variant="secondary" className="bg-green-100 text-green-800">
-                        {selectedClient.status}
-                      </Badge>
-                    </div>
-                  </div>
-                )}
-
-                {/* Show create new client option */}
-                {createNewClient && (
-                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="flex items-center text-blue-700">
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      <span className="text-sm font-medium">
-                        Se creará un nuevo cliente con la información de contacto proporcionada
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Reset button */}
-                {(selectedClient || createNewClient) && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedClient(null);
-                      setCreateNewClient(false);
-                      setFormData(prev => ({ ...prev, clientId: '' }));
-                    }}
-                    className="text-xs"
-                  >
-                    Limpiar selección
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
 
           {/* Origen y Canal */}
           <div className="space-y-4">

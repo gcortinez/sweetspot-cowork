@@ -4,21 +4,34 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 // Simplified without auth dependencies for now
+// Import only essential icons synchronously
 import {
   Building2,
-  Users,
-  Shield,
-  BarChart3,
-  Calendar,
-  Zap,
-  CheckCircle,
   ArrowRight,
-  Star,
-  Clock,
-  Globe,
-  Smartphone,
   Play,
 } from "lucide-react";
+
+// Dynamic import for heavy icon sets
+import { Suspense, lazy } from "react";
+
+// Lazy load icon components to reduce initial bundle
+const LazyIcons = {
+  Users: lazy(() => import("lucide-react").then(mod => ({ default: mod.Users }))),
+  Shield: lazy(() => import("lucide-react").then(mod => ({ default: mod.Shield }))),
+  BarChart3: lazy(() => import("lucide-react").then(mod => ({ default: mod.BarChart3 }))),
+  Calendar: lazy(() => import("lucide-react").then(mod => ({ default: mod.Calendar }))),
+  Zap: lazy(() => import("lucide-react").then(mod => ({ default: mod.Zap }))),
+  CheckCircle: lazy(() => import("lucide-react").then(mod => ({ default: mod.CheckCircle }))),
+  Star: lazy(() => import("lucide-react").then(mod => ({ default: mod.Star }))),
+  Clock: lazy(() => import("lucide-react").then(mod => ({ default: mod.Clock }))),
+  Globe: lazy(() => import("lucide-react").then(mod => ({ default: mod.Globe }))),
+  Smartphone: lazy(() => import("lucide-react").then(mod => ({ default: mod.Smartphone }))),
+};
+
+// Icon fallback component
+const IconFallback = ({ className }: { className?: string }) => (
+  <div className={`${className} bg-gray-200 animate-pulse rounded`} />
+);
 
 export function HomeContent() {
   const router = useRouter();
@@ -89,7 +102,9 @@ export function HomeContent() {
                 onClick={() => router.push("/auth/register")}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg shadow-lg hover:shadow-xl"
               >
-                <Zap className="h-5 w-5 mr-2" />
+                <Suspense fallback={<IconFallback className="h-5 w-5 mr-2" />}>
+                  <LazyIcons.Zap className="h-5 w-5 mr-2" />
+                </Suspense>
                 <span>Prueba Gratis</span>
               </Button>
               <Button
@@ -108,10 +123,9 @@ export function HomeContent() {
             <div className="flex items-center justify-center space-x-2 text-gray-500">
               <div className="flex items-center space-x-1">
                 {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className="h-5 w-5 fill-yellow-400 text-yellow-400"
-                  />
+                  <Suspense key={i} fallback={<IconFallback className="h-5 w-5 fill-yellow-400 text-yellow-400" />}>
+                    <LazyIcons.Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                  </Suspense>
                 ))}
               </div>
               <span className="text-sm font-medium">
@@ -152,7 +166,9 @@ export function HomeContent() {
 
             <div className="bg-white p-8 rounded-xl border border-gray-200 text-center hover:shadow-lg transition-shadow duration-300">
               <div className="h-16 w-16 rounded-2xl bg-green-100 flex items-center justify-center mx-auto mb-6">
-                <Shield className="h-8 w-8 text-green-600" />
+                <Suspense fallback={<IconFallback className="h-8 w-8 text-green-600" />}>
+                  <LazyIcons.Shield className="h-8 w-8 text-green-600" />
+                </Suspense>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">
                 Acceso Basado en Roles
@@ -165,7 +181,9 @@ export function HomeContent() {
 
             <div className="bg-white p-8 rounded-xl border border-gray-200 text-center hover:shadow-lg transition-shadow duration-300">
               <div className="h-16 w-16 rounded-2xl bg-yellow-100 flex items-center justify-center mx-auto mb-6">
-                <Zap className="h-8 w-8 text-yellow-600" />
+                <Suspense fallback={<IconFallback className="h-8 w-8 text-yellow-600" />}>
+                  <LazyIcons.Zap className="h-8 w-8 text-yellow-600" />
+                </Suspense>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">
                 Actualizaciones en Tiempo Real
@@ -178,7 +196,9 @@ export function HomeContent() {
 
             <div className="bg-white p-8 rounded-xl border border-gray-200 text-center hover:shadow-lg transition-shadow duration-300">
               <div className="h-16 w-16 rounded-2xl bg-purple-100 flex items-center justify-center mx-auto mb-6">
-                <BarChart3 className="h-8 w-8 text-purple-600" />
+                <Suspense fallback={<IconFallback className="h-8 w-8 text-purple-600" />}>
+                  <LazyIcons.BarChart3 className="h-8 w-8 text-purple-600" />
+                </Suspense>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">
                 Análisis e Informes
@@ -215,7 +235,9 @@ export function HomeContent() {
                   "Soporte al cliente 24/7",
                 ].map((benefit, index) => (
                   <div key={index} className="flex items-center space-x-3">
-                    <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
+                    <Suspense fallback={<IconFallback className="h-6 w-6 text-green-600 flex-shrink-0" />}>
+                      <LazyIcons.CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
+                    </Suspense>
                     <span className="text-lg text-gray-700">{benefit}</span>
                   </div>
                 ))}
@@ -236,7 +258,9 @@ export function HomeContent() {
                 <div className="space-y-6">
                   <div className="flex items-center space-x-4">
                     <div className="h-12 w-12 rounded-xl bg-blue-100 flex items-center justify-center">
-                      <Calendar className="h-6 w-6 text-blue-600" />
+                      <Suspense fallback={<IconFallback className="h-6 w-6 text-blue-600" />}>
+                        <LazyIcons.Calendar className="h-6 w-6 text-blue-600" />
+                      </Suspense>
                     </div>
                     <div>
                       <h4 className="text-lg font-semibold text-gray-900">
@@ -296,10 +320,14 @@ export function HomeContent() {
 
               {/* Floating elements */}
               <div className="absolute -top-4 -right-4 bg-blue-600 text-white p-3 rounded-xl shadow-lg">
-                <Users className="h-6 w-6" />
+                <Suspense fallback={<IconFallback className="h-6 w-6" />}>
+                  <LazyIcons.Users className="h-6 w-6" />
+                </Suspense>
               </div>
               <div className="absolute -bottom-4 -left-4 bg-green-600 text-white p-3 rounded-xl shadow-lg">
-                <Clock className="h-6 w-6" />
+                <Suspense fallback={<IconFallback className="h-6 w-6" />}>
+                  <LazyIcons.Clock className="h-6 w-6" />
+                </Suspense>
               </div>
             </div>
           </div>
@@ -348,7 +376,9 @@ export function HomeContent() {
               onClick={() => router.push("/auth/register")}
               className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg shadow-lg hover:shadow-xl"
             >
-              <Zap className="h-5 w-5 mr-2" />
+              <Suspense fallback={<IconFallback className="h-5 w-5 mr-2" />}>
+                <LazyIcons.Zap className="h-5 w-5 mr-2" />
+              </Suspense>
               <span>Prueba Gratis</span>
             </Button>
             <Button
@@ -377,9 +407,15 @@ export function HomeContent() {
               <span className="text-lg font-bold text-gray-900">SweetSpot</span>
             </a>
             <div className="flex items-center space-x-6 text-gray-600">
-              <Globe className="h-5 w-5" />
-              <Smartphone className="h-5 w-5" />
-              <Shield className="h-5 w-5" />
+              <Suspense fallback={<IconFallback className="h-5 w-5" />}>
+                <LazyIcons.Globe className="h-5 w-5" />
+              </Suspense>
+              <Suspense fallback={<IconFallback className="h-5 w-5" />}>
+                <LazyIcons.Smartphone className="h-5 w-5" />
+              </Suspense>
+              <Suspense fallback={<IconFallback className="h-5 w-5" />}>
+                <LazyIcons.Shield className="h-5 w-5" />
+              </Suspense>
             </div>
             <p className="text-gray-600 mt-4 md:mt-0">
               © 2024 SweetSpot. Todos los derechos reservados.

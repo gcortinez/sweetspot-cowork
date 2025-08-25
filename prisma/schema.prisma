@@ -342,9 +342,9 @@ model Lead {
     conversions    LeadConversion[]
     quotations     Quotation[]
 
-    @@unique([tenantId, email])
     @@index([tenantId, status])
     @@index([assignedToId])
+    @@index([tenantId, email])
     @@map("leads")
 }
 

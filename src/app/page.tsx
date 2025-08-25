@@ -3,7 +3,23 @@
 import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { HomeContent } from "@/components/home/home-content";
+import dynamic from "next/dynamic";
+
+// Lazy load the heavy home content component
+const HomeContent = dynamic(
+  () => import("@/components/home/home-content").then(mod => ({ default: mod.HomeContent })),
+  { 
+    loading: () => (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando página de inicio...</p>
+        </div>
+      </div>
+    ),
+    ssr: false // Only load on client to reduce initial bundle
+  }
+);
 
 export default function HomePage() {
   const { isSignedIn, isLoaded } = useAuth();

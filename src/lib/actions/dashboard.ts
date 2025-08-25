@@ -1,10 +1,12 @@
 'use server'
 
 import { currentUser } from '@clerk/nextjs/server'
+import { cache } from 'react'
+import { unstable_cache } from 'next/cache'
 import { db } from '@/lib/db'
 
-// Helper function to get user with tenant info
-async function getUserWithTenant() {
+// Cache the user lookup per request (deduplicates within same render)
+const getUserWithTenant = cache(async () => {
   const user = await currentUser()
   
   if (!user) {
@@ -28,7 +30,7 @@ async function getUserWithTenant() {
   }
 
   return dbUser
-}
+})
 
 // Get dashboard stats for cowork dashboard
 export async function getDashboardStats() {

@@ -2,7 +2,7 @@
 
 import { db } from '@/lib/db'
 import { revalidatePath } from 'next/cache'
-import { getCurrentUser } from '@/lib/auth'
+import { getTenantContext } from '@/lib/auth'
 import { 
   uploadDocumentSchema, 
   documentFilterSchema, 
@@ -23,29 +23,23 @@ import {
 
 // Helper function to get user with tenant info
 async function getUserWithTenant() {
-  const user = await getCurrentUser()
+  const context = await getTenantContext()
   
-  if (!user) {
-    throw new Error('No autorizado')
+  // For regular users, use their tenant; for super admins, ensure they have a target tenant
+  if (!context.user.tenantId && !context.isSuper) {
+    throw new Error('Usuario no tiene un tenant asignado')
   }
 
-  const dbUser = await db.user.findUnique({
-    where: { clerkId: user.id },
-    select: { 
-      id: true, 
-      tenantId: true, 
-      role: true,
-      firstName: true,
-      lastName: true,
-      email: true
-    }
-  })
-
-  if (!dbUser || !dbUser.tenantId) {
-    throw new Error('Usuario no encontrado o sin tenant asignado')
+  // Super admins need to specify a target tenant for tenant-specific operations
+  if (context.isSuper && !context.effectiveTenantId) {
+    throw new Error('Super admin debe especificar un tenant para esta operación')
   }
 
-  return dbUser
+  // Return user with effective tenant ID
+  return {
+    ...context.user,
+    tenantId: context.effectiveTenantId || context.user.tenantId
+  }
 }
 
 // Upload document action
