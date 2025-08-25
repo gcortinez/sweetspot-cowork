@@ -212,8 +212,7 @@ export {
   RotateCw,
   RotateCcw,
   
-  // Communication
-  Mail,
+  // Communication (Mail already exported above)
   MessageSquare,
   MessageCircle,
   Phone,
