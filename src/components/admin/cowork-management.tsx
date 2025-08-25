@@ -59,6 +59,7 @@ export function CoworkManagement() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{[key: string]: 'top' | 'bottom'}>({});
 
   // Load coworks
   const loadCoworks = async () => {
@@ -209,7 +210,7 @@ export function CoworkManagement() {
       </div>
 
       {/* Coworks Table */}
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm border">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -286,7 +287,16 @@ export function CoworkManagement() {
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="relative">
                       <button
-                        onClick={() => setActionMenuOpen(actionMenuOpen === cowork.id ? null : cowork.id)}
+                        onClick={(e) => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const windowHeight = window.innerHeight;
+                          const distanceFromBottom = windowHeight - rect.bottom;
+                          const menuHeight = 200; // Approximate menu height
+                          
+                          const position = distanceFromBottom < menuHeight ? 'top' : 'bottom';
+                          setMenuPosition(prev => ({ ...prev, [cowork.id]: position }));
+                          setActionMenuOpen(actionMenuOpen === cowork.id ? null : cowork.id);
+                        }}
                         className="text-gray-400 hover:text-gray-600 p-1"
                       >
                         <MoreVertical className="h-4 w-4" />
@@ -298,7 +308,11 @@ export function CoworkManagement() {
                             className="fixed inset-0 z-40"
                             onClick={() => setActionMenuOpen(null)}
                           />
-                          <div className="absolute right-0 top-8 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200">
+                          <div className={`absolute right-0 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200 ${
+                            menuPosition[cowork.id] === 'top' 
+                              ? 'bottom-8 mb-2' 
+                              : 'top-8 mt-2'
+                          }`}>
                             <div className="py-1">
                               <button
                                 onClick={() => {
