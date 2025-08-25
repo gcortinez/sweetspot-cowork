@@ -1,5 +1,8 @@
 import { Metadata } from 'next'
 
+// Force dynamic rendering since this page uses client-side redirect
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Aceptar Invitación - SweetSpot Cowork',
   description: 'Acepta tu invitación y únete a nuestro coworking',
