@@ -212,13 +212,7 @@ export {
   RotateCw,
   RotateCcw,
   
-  // Communication (Mail already exported above)
-  MessageSquare,
-  MessageCircle,
-  Phone,
-  PhoneCall,
-  Bell,
-  BellOff,
+  // Communication icons already exported above
   
   // Additional icons
   Paperclip,
