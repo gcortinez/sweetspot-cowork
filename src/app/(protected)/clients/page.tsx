@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { AppHeader } from '@/components/shared/app-header'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -231,16 +230,8 @@ export default function ClientsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AppHeader 
-        currentPage="Clientes"
-        showBreadcrumb={true}
-        breadcrumbItems={[
-          { label: 'Clientes' }
-        ]}
-      />
-      
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="space-y-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
@@ -438,7 +429,7 @@ export default function ClientsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      </main>
+      </div>
     </div>
   )
 }

@@ -29,7 +29,6 @@ import {
 } from 'lucide-react'
 import { useUser } from '@clerk/nextjs'
 import { SignOutButton } from '@clerk/nextjs'
-import { AppHeader } from '@/components/shared/app-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -288,18 +287,9 @@ export default function LeadsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <AppHeader 
-        currentPage="Prospectos"
-        showBreadcrumb={true}
-        breadcrumbItems={[
-          { label: 'Prospectos' }
-        ]}
-      />
-
+    <div>
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
@@ -703,7 +693,7 @@ export default function LeadsPage() {
             />
           </>
         )}
-      </main>
+      </div>
     </div>
   )
 }

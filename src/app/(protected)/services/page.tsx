@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { AppHeader } from '@/components/shared/app-header'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 // Removed direct server action imports to avoid client/server component conflicts
 // Using API routes instead
@@ -387,11 +386,8 @@ export default function ServicesPage() {
   }, [debouncedSearchTerm, selectedCategory, activeTab, loadServices, hasInitialLoad])
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* App Header */}
-      <AppHeader />
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="bg-background">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
         {/* Breadcrumb */}
         <div className="mb-6">
@@ -612,7 +608,7 @@ export default function ServicesPage() {
             />
           </div>
         </div>
-      </main>
+      </div>
 
       {/* Create Service Modal */}
       <CreateServiceModal

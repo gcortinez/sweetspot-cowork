@@ -23,7 +23,6 @@ import {
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { listQuotationsAction, changeQuotationStatusAction, duplicateQuotationAction, deleteQuotationAction } from '@/lib/actions/quotations'
-import { AppHeader } from '@/components/shared/app-header'
 import QuotationsList from '@/components/quotations/QuotationsList'
 import CreateQuotationModal from '@/components/quotations/CreateQuotationModal'
 import QuotationDetailModal from '@/components/quotations/QuotationDetailModal'
@@ -354,16 +353,7 @@ export default function QuotationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
-      {/* Header */}
-      <AppHeader 
-        currentPage="Cotizaciones"
-        showBreadcrumb={true}
-        breadcrumbItems={[
-          { label: 'Cotizaciones' }
-        ]}
-      />
-      
+    <div className="bg-gradient-to-br from-gray-50 to-white">
       <div className="container mx-auto px-4 py-8">
         {/* Page Title Section */}
         <div className="flex justify-between items-center mb-8">
