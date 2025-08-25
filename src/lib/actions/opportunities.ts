@@ -237,9 +237,15 @@ export async function updateOpportunity(id: string, input: UpdateOpportunityInpu
 
 // Change opportunity stage
 export async function changeOpportunityStage(id: string, input: ChangeStageInput) {
+  const startTime = Date.now()
+  
   try {
+    console.log('changeOpportunityStage called:', { id, input, timestamp: new Date().toISOString() })
+    
     const validatedInput = changeStageSchema.parse(input)
     const user = await getUserWithTenant()
+
+    console.log('User context:', { userId: user.id, tenantId: user.tenantId })
 
     // Check if opportunity exists and belongs to user's tenant
     const existingOpportunity = await db.opportunity.findFirst({
@@ -247,12 +253,40 @@ export async function changeOpportunityStage(id: string, input: ChangeStageInput
         id,
         tenantId: user.tenantId,
       },
+      select: {
+        id: true,
+        title: true,
+        stage: true,
+        value: true,
+        probability: true,
+        tenantId: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     })
 
     if (!existingOpportunity) {
+      console.error('Opportunity not found or access denied:', { id, tenantId: user.tenantId })
       return {
         success: false,
-        error: 'Oportunidad no encontrada',
+        error: 'Oportunidad no encontrada o sin permisos de acceso',
+      }
+    }
+
+    console.log('Existing opportunity found:', {
+      id: existingOpportunity.id,
+      title: existingOpportunity.title,
+      currentStage: existingOpportunity.stage,
+      newStage: validatedInput.stage,
+    })
+
+    // Prevent unnecessary updates
+    if (existingOpportunity.stage === validatedInput.stage) {
+      console.log('Stage unchanged, skipping update:', { id, stage: validatedInput.stage })
+      return {
+        success: true,
+        data: serializeOpportunity(existingOpportunity),
+        message: 'La oportunidad ya se encuentra en la etapa solicitada',
       }
     }
 
@@ -279,34 +313,62 @@ export async function changeOpportunityStage(id: string, input: ChangeStageInput
     // Recalculate expected revenue
     updateData.expectedRevenue = (Number(existingOpportunity.value) * probability) / 100
 
-    const opportunity = await db.opportunity.update({
-      where: { id },
-      data: updateData,
-      include: {
-        client: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+    console.log('Updating opportunity with data:', updateData)
+
+    // Use transaction for safety
+    const opportunity = await db.$transaction(async (tx) => {
+      // Verify opportunity still exists and hasn't been modified
+      const currentOpportunity = await tx.opportunity.findFirst({
+        where: { 
+          id, 
+          tenantId: user.tenantId,
+          updatedAt: existingOpportunity.updatedAt // Optimistic locking check
+        },
+      })
+
+      if (!currentOpportunity) {
+        throw new Error('Oportunidad modificada por otro usuario o eliminada')
+      }
+
+      // Perform the update
+      return await tx.opportunity.update({
+        where: { id },
+        data: updateData,
+        include: {
+          client: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          lead: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
+          },
+          assignedTo: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
           },
         },
-        lead: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
-        },
-        assignedTo: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
-        },
-      },
+      })
+    })
+
+    const endTime = Date.now()
+    console.log('Opportunity stage changed successfully:', {
+      id: opportunity.id,
+      title: opportunity.title,
+      fromStage: existingOpportunity.stage,
+      toStage: opportunity.stage,
+      duration: `${endTime - startTime}ms`,
     })
 
     // Revalidate relevant paths
@@ -318,7 +380,14 @@ export async function changeOpportunityStage(id: string, input: ChangeStageInput
       data: serializeOpportunity(opportunity),
     }
   } catch (error) {
-    console.error('Error changing opportunity stage:', error)
+    const endTime = Date.now()
+    console.error('Error changing opportunity stage:', {
+      error,
+      id,
+      input,
+      duration: `${endTime - startTime}ms`,
+      timestamp: new Date().toISOString(),
+    })
     
     if (error instanceof Error) {
       return {
@@ -329,7 +398,7 @@ export async function changeOpportunityStage(id: string, input: ChangeStageInput
     
     return {
       success: false,
-      error: 'Error desconocido al cambiar la etapa',
+      error: 'Error desconocido al cambiar la etapa. Por favor, intenta nuevamente.',
     }
   }
 }
@@ -402,18 +471,44 @@ export async function convertLeadToOpportunity(input: ConvertLeadToOpportunityIn
 
     // Create client, opportunity and update lead status in a transaction
     const result = await db.$transaction(async (tx) => {
-      // Create client from lead data
-      const client = await tx.client.create({
-        data: {
-          name: lead.company || `${lead.firstName} ${lead.lastName}`,
-          email: lead.email,
-          phone: lead.phone,
-          contactPerson: `${lead.firstName} ${lead.lastName}`,
-          status: 'PROSPECT',
-          notes: `Cliente creado automáticamente a partir del prospecto: ${lead.firstName} ${lead.lastName}`,
-          tenantId: user.tenantId,
-        },
-      })
+      let client;
+
+      if (validatedInput.clientId) {
+        // If clientId is provided, validate that it exists and belongs to this tenant
+        client = await tx.client.findFirst({
+          where: {
+            id: validatedInput.clientId,
+            tenantId: user.tenantId,
+          },
+        })
+
+        if (!client) {
+          throw new Error('El cliente seleccionado no existe o no pertenece a este cowork')
+        }
+      } else {
+        // If no clientId provided, check if client already exists with this email and tenantId
+        client = await tx.client.findFirst({
+          where: {
+            email: lead.email,
+            tenantId: user.tenantId,
+          },
+        })
+
+        // If client doesn't exist, create it
+        if (!client) {
+          client = await tx.client.create({
+            data: {
+              name: lead.company || `${lead.firstName} ${lead.lastName}`,
+              email: lead.email,
+              phone: lead.phone,
+              contactPerson: `${lead.firstName} ${lead.lastName}`,
+              status: 'PROSPECT',
+              notes: `Cliente creado automáticamente a partir del prospecto: ${lead.firstName} ${lead.lastName}`,
+              tenantId: user.tenantId,
+            },
+          })
+        }
+      }
 
       // Create opportunity with linked client
       const opportunity = await tx.opportunity.create({

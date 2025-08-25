@@ -23,7 +23,8 @@ import {
   Star,
   Loader2,
   X
-} from "lucide-react";
+} from "@/lib/icons";
+import ClientSelector from "@/components/clients/ClientSelector";
 
 interface Lead {
   id: string;
@@ -60,6 +61,7 @@ export default function ConvertToOpportunityModal({
     probability: '25',
     expectedCloseDate: '',
     stage: 'INITIAL_CONTACT' as PipelineStage,
+    clientId: '',
   });
   const { toast } = useToast();
 
@@ -73,6 +75,7 @@ export default function ConvertToOpportunityModal({
         probability: '25',
         expectedCloseDate: '',
         stage: 'INITIAL_CONTACT',
+        clientId: '',
       });
     }
   }, [lead]);
@@ -91,6 +94,7 @@ export default function ConvertToOpportunityModal({
         probability: parseInt(formData.probability),
         expectedCloseDate: formData.expectedCloseDate && formData.expectedCloseDate.trim() !== '' ? new Date(formData.expectedCloseDate + 'T12:00:00.000Z').toISOString() : undefined,
         stage: formData.stage,
+        clientId: formData.clientId || undefined,
       };
       
       console.log('Converting lead with data:', submitData);
@@ -248,6 +252,25 @@ export default function ConvertToOpportunityModal({
                 disabled={isLoading}
                 className="mt-1"
               />
+            </div>
+
+            <div>
+              <Label htmlFor="clientId" className="text-sm font-medium flex items-center gap-2">
+                <Building2 className="h-4 w-4" />
+                Cliente Asociado
+              </Label>
+              <div className="mt-1">
+                <ClientSelector
+                  value={formData.clientId}
+                  onValueChange={(clientId) => setFormData(prev => ({ ...prev, clientId: clientId || '' }))}
+                  placeholder="Seleccionar cliente existente o crear nuevo..."
+                  allowCreate={true}
+                  disabled={isLoading}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Si no seleccionas un cliente, se creará automáticamente uno basado en los datos del prospecto
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

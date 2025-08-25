@@ -14,7 +14,7 @@ import {
   getOpportunityStats,
   changeOpportunityStage,
   deleteOpportunity 
-} from '@/lib/actions/opportunities'
+} from '@/lib/actions'
 import { STAGE_METADATA } from '@/lib/validations/opportunities'
 import { useToast } from '@/hooks/use-toast'
 import CreateOpportunityModal from '@/components/opportunities/CreateOpportunityModal'
@@ -48,7 +48,7 @@ import {
   Loader2,
   Activity,
   MessageSquare
-} from 'lucide-react'
+} from '@/lib/icons'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -270,6 +270,29 @@ export default function OpportunitiesPage() {
   }, [])
 
   const handleStageChange = async (opportunityId: string, newStage: keyof typeof STAGE_METADATA) => {
+    // Find the opportunity to validate it exists
+    const opportunity = allOpportunities.find(opp => opp.id === opportunityId)
+    if (!opportunity) {
+      console.error('Opportunity not found:', opportunityId)
+      toast({
+        title: "Error crítico",
+        description: "Oportunidad no encontrada. Recargando datos...",
+        variant: "destructive",
+      })
+      loadData() // Force reload
+      return
+    }
+
+    // Store original stage for safety
+    const originalStage = opportunity.stage
+    
+    console.log('Changing opportunity stage:', {
+      id: opportunityId,
+      title: opportunity.title,
+      from: originalStage,
+      to: newStage
+    })
+
     // 1. Perform optimistic update immediately
     updateOpportunityOptimistically(opportunityId, newStage)
     
@@ -278,21 +301,24 @@ export default function OpportunitiesPage() {
       const result = await changeOpportunityStage(opportunityId, { stage: newStage })
       
       if (result.success) {
-        // 3. Confirm the update
-        confirmOpportunityUpdate(opportunityId)
+        // 3. Confirm the update and sync with server data
+        confirmOpportunityUpdate(opportunityId, result.data)
+        
+        console.log('Opportunity stage changed successfully:', result.data)
         
         // Show subtle success feedback
         toast({
           title: "Etapa actualizada",
           description: `Oportunidad movida a ${STAGE_METADATA[newStage].label}`,
-          duration: 2000, // Shorter duration for less interruption
+          duration: 2000,
         })
         
         // Refresh stats without reloading opportunities
         loadStats()
       } else {
         // 4. Rollback on failure
-        rollbackOpportunityUpdate(opportunityId)
+        console.error('Stage change failed:', result.error)
+        rollbackOpportunityUpdate(opportunityId, originalStage)
         
         toast({
           title: "Error al actualizar",
@@ -302,11 +328,12 @@ export default function OpportunitiesPage() {
       }
     } catch (error) {
       // 5. Rollback on error
-      rollbackOpportunityUpdate(opportunityId)
+      console.error('Stage change error:', error)
+      rollbackOpportunityUpdate(opportunityId, originalStage)
       
       toast({
         title: "Error de conexión",
-        description: "No se pudo conectar con el servidor. Intenta nuevamente.",
+        description: "No se pudo conectar con el servidor. La oportunidad se mantiene en su etapa original.",
         variant: "destructive",
       })
     }
@@ -324,16 +351,40 @@ export default function OpportunitiesPage() {
     const { active, over } = event
     setActiveId(null)
     
-    if (!over) return
+    if (!over) {
+      console.log('Drag ended without valid drop target')
+      return
+    }
     
     const opportunityId = active.id as string
     const newStage = over.id as keyof typeof STAGE_METADATA
     
-    // Find the opportunity being dragged
-    const opportunity = opportunities.find(opp => opp.id === opportunityId)
-    if (!opportunity || opportunity.stage === newStage) return
+    // Find the opportunity being dragged from master source
+    const opportunity = allOpportunities.find(opp => opp.id === opportunityId)
+    if (!opportunity) {
+      console.error('Dragged opportunity not found:', opportunityId)
+      toast({
+        title: "Error",
+        description: "Oportunidad no encontrada. Recargando datos...",
+        variant: "destructive",
+      })
+      loadData()
+      return
+    }
+
+    if (opportunity.stage === newStage) {
+      console.log('Opportunity already in target stage:', { opportunityId, stage: newStage })
+      return
+    }
+
+    console.log('Drag & Drop stage change:', {
+      opportunityId,
+      title: opportunity.title,
+      fromStage: opportunity.stage,
+      toStage: newStage
+    })
     
-    // Update stage via server action
+    // Update stage via server action with enhanced error handling
     await handleStageChange(opportunityId, newStage)
   }
 
@@ -417,34 +468,72 @@ export default function OpportunitiesPage() {
   const bulkStageChange = async (newStage: keyof typeof STAGE_METADATA) => {
     if (selectedOpportunities.length === 0) return
 
+    console.log('Bulk stage change started:', {
+      count: selectedOpportunities.length,
+      newStage,
+      opportunityIds: selectedOpportunities
+    })
+
+    // Track which opportunities we're updating
+    const bulkUpdatingSet = new Set(selectedOpportunities)
+    setUpdatingOpportunities(prev => new Set([...prev, ...selectedOpportunities]))
+
     try {
-      const promises = selectedOpportunities.map(id => 
-        changeOpportunityStage(id, { stage: newStage })
-      )
+      const promises = selectedOpportunities.map(async (id) => {
+        const opportunity = allOpportunities.find(opp => opp.id === id)
+        if (!opportunity) {
+          console.error('Bulk update: Opportunity not found:', id)
+          return { success: false, error: 'Oportunidad no encontrada', id }
+        }
+        
+        const result = await changeOpportunityStage(id, { stage: newStage })
+        return { ...result, id }
+      })
       
       const results = await Promise.all(promises)
-      const failedCount = results.filter(result => !result.success).length
+      const successfulIds = results.filter(result => result.success).map(r => r.id)
+      const failedResults = results.filter(result => !result.success)
       
-      if (failedCount === 0) {
+      console.log('Bulk stage change completed:', {
+        successful: successfulIds.length,
+        failed: failedResults.length,
+        failedResults
+      })
+
+      if (failedResults.length === 0) {
         toast({
           title: "Etapas actualizadas",
           description: `${selectedOpportunities.length} oportunidades movidas a ${STAGE_METADATA[newStage].label}`,
         })
       } else {
+        console.error('Some bulk updates failed:', failedResults)
         toast({
           title: "Parcialmente completado",
-          description: `${results.length - failedCount}/${results.length} oportunidades actualizadas`,
+          description: `${successfulIds.length}/${results.length} oportunidades actualizadas. Las fallidas permanecen en su etapa original.`,
           variant: "destructive",
         })
       }
       
       setSelectedOpportunities([])
+      
+      // Force reload to ensure consistency
       loadData()
     } catch (error) {
+      console.error('Bulk stage change error:', error)
       toast({
-        title: "Error",
-        description: "Error al actualizar las etapas",
+        title: "Error crítico",
+        description: "Error al actualizar las etapas. Recargando datos para asegurar consistencia.",
         variant: "destructive",
+      })
+      
+      // Force reload on error
+      loadData()
+    } finally {
+      // Clean up updating state for all opportunities in the bulk operation
+      setUpdatingOpportunities(prev => {
+        const newSet = new Set(prev)
+        bulkUpdatingSet.forEach(id => newSet.delete(id))
+        return newSet
       })
     }
   }
@@ -493,39 +582,48 @@ export default function OpportunitiesPage() {
     }).format(amount)
   }
 
-  // Optimistic update helpers
+  // Optimistic update helpers - IMPROVED WITH SAFETY CHECKS
   const updateOpportunityOptimistically = (opportunityId: string, newStage: keyof typeof STAGE_METADATA) => {
-    const opportunity = opportunities.find(opp => opp.id === opportunityId)
-    if (!opportunity) return
+    // Find in allOpportunities (master source)
+    const opportunityInAll = allOpportunities.find(opp => opp.id === opportunityId)
+    if (!opportunityInAll) {
+      console.error('Cannot update non-existent opportunity:', opportunityId)
+      return
+    }
 
-    const originalStage = opportunity.stage
+    const originalStage = opportunityInAll.stage
+    
+    console.log('Optimistic update:', { opportunityId, originalStage, newStage })
     
     // Store the original stage for potential rollback
     setOptimisticUpdates(prev => new Map(prev).set(opportunityId, { originalStage, newStage }))
     
-    // Update opportunities state immediately
-    setOpportunities(prev => prev.map(opp => 
+    // Update BOTH allOpportunities and opportunities state immediately
+    const updateFn = (opp: Opportunity) => 
       opp.id === opportunityId 
         ? { ...opp, stage: newStage }
         : opp
-    ))
+
+    setAllOpportunities(prev => prev.map(updateFn))
+    setOpportunities(prev => prev.map(updateFn))
 
     // Add to updating set
     setUpdatingOpportunities(prev => new Set(prev).add(opportunityId))
   }
 
-  const rollbackOpportunityUpdate = (opportunityId: string) => {
-    const update = optimisticUpdates.get(opportunityId)
-    if (!update) return
-
-    // Rollback to original stage
-    setOpportunities(prev => prev.map(opp => 
+  const rollbackOpportunityUpdate = (opportunityId: string, originalStage: keyof typeof STAGE_METADATA) => {
+    console.log('Rolling back opportunity update:', { opportunityId, originalStage })
+    
+    // Rollback to original stage in BOTH states
+    const rollbackFn = (opp: Opportunity) => 
       opp.id === opportunityId 
-        ? { ...opp, stage: update.originalStage }
+        ? { ...opp, stage: originalStage }
         : opp
-    ))
 
-    // Clean up
+    setAllOpportunities(prev => prev.map(rollbackFn))
+    setOpportunities(prev => prev.map(rollbackFn))
+
+    // Clean up tracking states
     setOptimisticUpdates(prev => {
       const newMap = new Map(prev)
       newMap.delete(opportunityId)
@@ -539,8 +637,21 @@ export default function OpportunitiesPage() {
     })
   }
 
-  const confirmOpportunityUpdate = (opportunityId: string) => {
-    // Clean up optimistic update state
+  const confirmOpportunityUpdate = (opportunityId: string, serverData?: any) => {
+    console.log('Confirming opportunity update:', { opportunityId, serverData })
+    
+    // If we have server data, update with the authoritative version
+    if (serverData) {
+      const updateFn = (opp: Opportunity) => 
+        opp.id === opportunityId 
+          ? { ...opp, ...serverData }
+          : opp
+
+      setAllOpportunities(prev => prev.map(updateFn))
+      setOpportunities(prev => prev.map(updateFn))
+    }
+    
+    // Clean up tracking states
     setOptimisticUpdates(prev => {
       const newMap = new Map(prev)
       newMap.delete(opportunityId)

@@ -125,8 +125,8 @@ export default function EditOpportunityModal({
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // Determine if client field should be disabled (protect data integrity)
-  const isClientChangeDisabled = Boolean(opportunity.clientId);
+  // Allow client changes - removed restriction for better UX flexibility
+  const isClientChangeDisabled = false;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

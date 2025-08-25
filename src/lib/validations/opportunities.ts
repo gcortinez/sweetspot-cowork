@@ -60,6 +60,7 @@ export const convertLeadToOpportunitySchema = z.object({
   expectedCloseDate: z.string().datetime().optional(),
   stage: pipelineStageEnum.default('INITIAL_CONTACT'),
   assignedToId: z.string().optional(),
+  clientId: z.string().optional(),
 })
 
 // List opportunities schema

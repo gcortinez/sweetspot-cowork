@@ -200,9 +200,9 @@ export default function ClientSelector({
                 </div>
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-full p-0 z-[60]" align="start">
-              <div className="p-3">
-                <div className="relative mb-3">
+            <PopoverContent className="w-[400px] p-0 z-[60] max-h-[400px] overflow-hidden" align="start">
+              <div className="p-3 flex flex-col max-h-[400px]">
+                <div className="relative mb-3 flex-shrink-0">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Buscar cliente..."
@@ -212,7 +212,7 @@ export default function ClientSelector({
                   />
                 </div>
                 
-                <div className="max-h-64 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto max-h-80 min-h-0">
                   {isSearching ? (
                     <div className="flex items-center gap-2 py-4 justify-center">
                       <Search className="h-4 w-4 animate-spin" />
