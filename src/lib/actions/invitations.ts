@@ -92,7 +92,22 @@ export async function createInvitation(data: {
     }
 
     // Create invitation via Clerk
-    const redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL}/accept-invitation`
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://cowork.thesweetspot.cloud'
+    const redirectUrl = `${appUrl}/accept-invitation`
+    
+    console.log('🔧 Environment variables check:', {
+      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+      fallbackUsed: !process.env.NEXT_PUBLIC_APP_URL,
+      finalAppUrl: appUrl,
+      constructedRedirectUrl: redirectUrl,
+      isValidUrl: /^https?:\/\//.test(redirectUrl)
+    })
+    
+    // Validate redirect URL before sending to Clerk
+    if (!redirectUrl || !redirectUrl.match(/^https?:\/\/[^\s/$.?#].[^\s]*$/)) {
+      console.error('❌ Invalid redirect URL:', redirectUrl)
+      return { success: false, error: 'Invalid redirect URL configuration' }
+    }
     
     console.log('🔧 Creating Clerk invitation with data:', {
       emailAddress: data.emailAddress,
