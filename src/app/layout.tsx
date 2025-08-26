@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from 'next/font/google'
 import "./globals.css";
 import { ClerkProvider } from '@clerk/nextjs'
+import { esES } from '@clerk/localizations'
 import { Toaster } from "@/components/ui/toaster";
 import QueryProvider from "@/providers/query-provider";
 
@@ -63,8 +64,62 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Personalización de textos para español chileno/latinoamericano
+  const spanishLocalization = {
+    ...esES,
+    signIn: {
+      ...esES.signIn,
+      start: {
+        ...esES.signIn?.start,
+        title: 'Inicia sesión en {{applicationName}}',
+        subtitle: '¡Bienvenido de vuelta! Por favor inicia sesión para continuar',
+        actionText: '¿No tienes una cuenta?'
+      }
+    },
+    signUp: {
+      ...esES.signUp,
+      start: {
+        ...esES.signUp?.start,
+        title: 'Únete a {{applicationName}}',
+        subtitle: 'Te damos la bienvenida! Por favor completa los datos para comenzar',
+        actionText: '¿Ya tienes una cuenta?'
+      },
+      emailCode: {
+        ...esES.signUp?.emailCode,
+        title: 'Verifica tu correo electrónico',
+        subtitle: 'Ingresa el código de verificación enviado a tu correo',
+        formTitle: 'Código de verificación'
+      },
+      phoneCode: {
+        ...esES.signUp?.phoneCode,
+        title: 'Verifica tu número de teléfono',
+        subtitle: 'Ingresa el código de verificación enviado a tu teléfono'
+      }
+    },
+    userProfile: {
+      ...esES.userProfile,
+      navbar: {
+        ...esES.userProfile?.navbar,
+        title: 'Cuenta',
+        description: 'Administra la información de tu cuenta',
+        account: 'Perfil',
+        security: 'Seguridad'
+      }
+    },
+    organizationSwitcher: {
+      ...esES.organizationSwitcher,
+      action__createOrganization: 'Crear cowork',
+      action__manageOrganization: 'Administrar'
+    },
+    formButtonPrimary: 'Continuar',
+    formFieldLabel__emailAddress: 'Correo electrónico',
+    formFieldLabel__password: 'Contraseña',
+    formFieldLabel__firstName: 'Nombre',
+    formFieldLabel__lastName: 'Apellido'
+  }
+
   return (
-    <ClerkProvider>
+    <ClerkProvider localization={spanishLocalization}>
       <html lang="es" className={inter.variable}>
         <body className={`${inter.className} antialiased`}>
           <QueryProvider>

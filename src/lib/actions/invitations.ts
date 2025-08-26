@@ -145,7 +145,7 @@ export async function createInvitation(data: {
       publicMetadata: {
         role: data.role,
         tenantId: data.tenantId || null,
-        tenantName: tenantInfo?.name || 'Plataforma',
+        tenantName: tenantInfo?.name || 'SweetSpot Cowork',
         invitedBy: currentDbUser.id,
         invitationDate: new Date().toISOString()
       },
@@ -183,7 +183,7 @@ export async function createInvitation(data: {
         status: 'pending' as const,
         role: data.role,
         tenantId: data.tenantId,
-        tenantName: tenantInfo?.name || 'Plataforma',
+        tenantName: tenantInfo?.name || 'SweetSpot Cowork',
         createdAt: invitation.createdAt.toISOString(),
         invitedBy: currentDbUser.id
       }
@@ -278,7 +278,7 @@ export async function getInvitations(status?: 'pending' | 'accepted' | 'revoked'
       status: inv.status.toLowerCase() as 'pending' | 'accepted' | 'revoked',
       role: inv.role,
       tenantId: inv.tenantId,
-      tenantName: inv.tenant?.name || 'Plataforma',
+      tenantName: inv.tenant?.name || 'SweetSpot Cowork',
       createdAt: inv.createdAt.toISOString(),
       updatedAt: inv.updatedAt.toISOString(),
       invitedBy: `${inv.inviter?.firstName} ${inv.inviter?.lastName}` || inv.invitedBy,
@@ -345,7 +345,7 @@ export async function resendInvitation(invitationId: string) {
       publicMetadata: {
         role: invitation.role,
         tenantId: invitation.tenantId,
-        tenantName: invitation.tenant?.name || 'Plataforma',
+        tenantName: invitation.tenant?.name || 'SweetSpot Cowork',
         invitedBy: currentDbUser.id,
         invitationDate: new Date().toISOString(),
         resent: true
