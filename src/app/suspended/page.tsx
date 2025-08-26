@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useClerk } from '@clerk/nextjs'
 import { useSearchParams } from 'next/navigation'
 import { XCircle, LogOut, Building2 } from 'lucide-react'
 
-export default function SuspendedPage() {
+function SuspendedContent() {
   const { signOut } = useClerk()
   const searchParams = useSearchParams()
   const [suspensionInfo, setSuspensionInfo] = useState({
@@ -82,5 +82,29 @@ export default function SuspendedPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SuspendedPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-red-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="flex justify-center">
+            <div className="bg-red-100 p-3 rounded-full">
+              <XCircle className="h-8 w-8 text-red-600" />
+            </div>
+          </div>
+          <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
+            Cuenta Suspendida
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Cargando información de suspensión...
+          </p>
+        </div>
+      </div>
+    }>
+      <SuspendedContent />
+    </Suspense>
   )
 }
