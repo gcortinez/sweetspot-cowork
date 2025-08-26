@@ -362,79 +362,79 @@ export function CoworkManagement() {
                                 top: `${menuCoords.y}px`,
                               }}
                             >
-                            <div className="py-1">
-                              <button
-                                onClick={() => {
-                                  setSelectedCowork(cowork);
-                                  setShowDetailModal(true);
-                                  setActionMenuOpen(null);
-                                  setMenuCoords(null);
-                                }}
-                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                              >
-                                <Eye className="h-4 w-4 mr-2" />
-                                Ver detalles
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setSelectedCowork(cowork);
-                                  setShowEditModal(true);
-                                  setActionMenuOpen(null);
-                                  setMenuCoords(null);
-                                }}
-                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                              >
-                                <Edit className="h-4 w-4 mr-2" />
-                                Editar
-                              </button>
-                              
-                              {/* Status change options */}
-                              {cowork.status === 'ACTIVE' && (
+                              <div className="py-1">
                                 <button
                                   onClick={() => {
-                                    handleStatusChange(cowork.id, 'SUSPENDED');
+                                    setSelectedCowork(cowork);
+                                    setShowDetailModal(true);
                                     setActionMenuOpen(null);
                                     setMenuCoords(null);
                                   }}
-                                  className="w-full text-left px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50 flex items-center"
+                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                                 >
-                                  <Pause className="h-4 w-4 mr-2" />
-                                  Suspender
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  Ver detalles
                                 </button>
-                              )}
-                              
-                              {cowork.status === 'SUSPENDED' && (
                                 <button
                                   onClick={() => {
-                                    handleStatusChange(cowork.id, 'ACTIVE');
+                                    setSelectedCowork(cowork);
+                                    setShowEditModal(true);
                                     setActionMenuOpen(null);
                                     setMenuCoords(null);
                                   }}
-                                  className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center"
+                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                                 >
-                                  <CheckCircle className="h-4 w-4 mr-2" />
-                                  Activar
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Editar
                                 </button>
-                              )}
-                              
-                              <hr className="my-1" />
-                              <button
-                                onClick={() => {
-                                  setShowDeleteConfirm(cowork.id);
-                                  setActionMenuOpen(null);
-                                  setMenuCoords(null);
-                                }}
-                                className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Eliminar
-                              </button>
+                                
+                                {/* Status change options */}
+                                {cowork.status === 'ACTIVE' && (
+                                  <button
+                                    onClick={() => {
+                                      handleStatusChange(cowork.id, 'SUSPENDED');
+                                      setActionMenuOpen(null);
+                                      setMenuCoords(null);
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50 flex items-center"
+                                  >
+                                    <Pause className="h-4 w-4 mr-2" />
+                                    Suspender
+                                  </button>
+                                )}
+                                
+                                {cowork.status === 'SUSPENDED' && (
+                                  <button
+                                    onClick={() => {
+                                      handleStatusChange(cowork.id, 'ACTIVE');
+                                      setActionMenuOpen(null);
+                                      setMenuCoords(null);
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center"
+                                  >
+                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                    Activar
+                                  </button>
+                                )}
+                                
+                                <hr className="my-1" />
+                                <button
+                                  onClick={() => {
+                                    setShowDeleteConfirm(cowork.id);
+                                    setActionMenuOpen(null);
+                                    setMenuCoords(null);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Eliminar
+                                </button>
+                              </div>
                             </div>
-                          </div>
                           </>,
                           document.body
                         )
-                      )}
+                      }
                     </div>
                   </td>
                 </tr>
