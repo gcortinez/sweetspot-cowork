@@ -338,3 +338,79 @@ export async function updateUserRoleAction(data: {
     }
   }
 }
+
+/**
+ * Delete user - removes from both database and Clerk
+ */
+export async function deleteUser(userId: string): Promise<ActionResult<null>> {
+  try {
+    const context = await getTenantContext()
+    
+    // Only super admins can delete users
+    if (!context.isSuper) {
+      return { 
+        success: false, 
+        error: 'Solo los super administradores pueden eliminar usuarios' 
+      }
+    }
+    
+    // Get user details before deletion
+    const userToDelete = await db.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        clerkId: true,
+        firstName: true,
+        lastName: true
+      }
+    })
+    
+    if (!userToDelete) {
+      return { 
+        success: false, 
+        error: 'Usuario no encontrado' 
+      }
+    }
+    
+    console.log('🗑️ Deleting user:', {
+      id: userToDelete.id,
+      email: userToDelete.email,
+      clerkId: userToDelete.clerkId
+    })
+    
+    // Delete from Clerk first (if clerkId exists)
+    if (userToDelete.clerkId) {
+      try {
+        const { clerkClient } = await import('@clerk/nextjs/server')
+        await clerkClient.users.deleteUser(userToDelete.clerkId)
+        console.log('✅ User deleted from Clerk:', userToDelete.clerkId)
+      } catch (clerkError) {
+        console.warn('⚠️ Could not delete user from Clerk (may not exist):', clerkError)
+        // Continue with database deletion even if Clerk deletion fails
+      }
+    }
+    
+    // Delete from database
+    await db.user.delete({
+      where: { id: userId }
+    })
+    
+    console.log('✅ User deleted from database:', userToDelete.email)
+    
+    revalidatePath('/dashboard/admin/users')
+    
+    return {
+      success: true,
+      data: null,
+      message: `Usuario ${userToDelete.firstName} ${userToDelete.lastName} eliminado exitosamente`
+    }
+    
+  } catch (error) {
+    console.error('Error deleting user:', error)
+    return {
+      success: false,
+      error: 'Error al eliminar el usuario'
+    }
+  }
+}

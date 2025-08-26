@@ -109,10 +109,20 @@ export default function InvitationAcceptClient() {
       setState('processing')
       setErrors([])
 
+      console.log('🎫 Creating user with invitation ticket:', { ticket: ticket?.substring(0, 20) + '...' })
+      
       const result = await signUp.create({
         strategy: 'ticket',
         ticket,
         password: formData.password,
+      })
+
+      console.log('📊 SignUp result:', { 
+        status: result.status, 
+        createdUserId: result.createdUserId,
+        createdSessionId: result.createdSessionId,
+        hasUser: !!result.createdUser,
+        userEmail: result.createdUser?.emailAddresses?.[0]?.emailAddress
       })
 
       if (result.status === 'complete') {
@@ -169,10 +179,14 @@ export default function InvitationAcceptClient() {
         } as ClerkAPIError])
       }
     } catch (error) {
+      console.error('❌ Error during signup/signin with invitation:', error)
+      
       setState('error')
       if (isClerkAPIResponseError(error)) {
+        console.error('🔴 Clerk API Error:', error.errors)
         setErrors(error.errors)
       } else {
+        console.error('🔴 Unknown Error:', error)
         setErrors([{
           code: 'unknown_error',
           message: 'Error inesperado',
@@ -238,10 +252,14 @@ export default function InvitationAcceptClient() {
         } as ClerkAPIError])
       }
     } catch (error) {
+      console.error('❌ Error during signup/signin with invitation:', error)
+      
       setState('error')
       if (isClerkAPIResponseError(error)) {
+        console.error('🔴 Clerk API Error:', error.errors)
         setErrors(error.errors)
       } else {
+        console.error('🔴 Unknown Error:', error)
         setErrors([{
           code: 'unknown_error',
           message: 'Error inesperado',

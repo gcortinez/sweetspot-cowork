@@ -92,6 +92,7 @@ export function UserManagement() {
   const [activeTab, setActiveTab] = useState<'users' | 'invitations'>('users');
   const [totalInvitations, setTotalInvitations] = useState(0);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
 
   // Set mounted state for portal
   useEffect(() => {
@@ -321,6 +322,39 @@ export function UserManagement() {
       alert('Error al actualizar el usuario');
     } finally {
       setIsUpdatingUser(false);
+    }
+  };
+
+  // Handle delete user
+  const handleDeleteUser = async (user: User) => {
+    if (!window.confirm(`¿Estás seguro de que quieres eliminar a ${user.firstName} ${user.lastName}?\n\nEsta acción no se puede deshacer y eliminará al usuario tanto de la base de datos como de Clerk.`)) {
+      return;
+    }
+
+    try {
+      setIsDeletingUser(true);
+      
+      const response = await fetch(`/api/platform/users/${user.id}/delete`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Refresh the users list
+        loadData();
+        alert(data.message || 'Usuario eliminado exitosamente');
+      } else {
+        alert(data.error || 'Error al eliminar usuario');
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      alert('Error al eliminar usuario');
+    } finally {
+      setIsDeletingUser(false);
     }
   };
 
@@ -758,6 +792,29 @@ export function UserManagement() {
                   }
                   
                   return null;
+                })()}
+                
+                {/* Delete user action */}
+                {(() => {
+                  const user = filteredUsers.find(u => u.id === actionMenuOpen);
+                  if (!user) return null;
+                  
+                  return (
+                    <div className="border-t border-gray-100">
+                      <button
+                        onClick={() => {
+                          handleDeleteUser(user);
+                          setActionMenuOpen(null);
+                          setMenuPosition(null);
+                        }}
+                        disabled={isDeletingUser}
+                        className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        {isDeletingUser ? 'Eliminando...' : 'Eliminar usuario'}
+                      </button>
+                    </div>
+                  );
                 })()}
               </div>
             </div>

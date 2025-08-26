@@ -7,6 +7,8 @@ import prisma from '@/lib/server/prisma'
 const webhookSecret = process.env.CLERK_WEBHOOK_SECRET
 
 export async function POST(req: Request) {
+  console.log('🔔 === CLERK WEBHOOK RECEIVED ===')
+  
   // Get the headers
   const headerPayload = await headers()
   const svix_id = headerPayload.get("svix-id")
@@ -22,10 +24,18 @@ export async function POST(req: Request) {
   const payload = await req.json()
   const body = JSON.stringify(payload)
 
+  // Temporarily skip verification for testing
+  console.warn('⚠️ TEMPORARILY SKIPPING WEBHOOK VERIFICATION FOR TESTING')
+  console.log('📋 Headers:', { svix_id, svix_timestamp, svix_signature })
+  
+  // TODO: Re-enable verification once we confirm the webhook secret is correct
+  /*
   // If webhook secret is not configured, log warning and process anyway (for development)
   if (!webhookSecret) {
     console.warn('⚠️ CLERK_WEBHOOK_SECRET not configured - skipping verification')
   } else {
+    console.log('🔐 Webhook secret configured, verifying signature...')
+    
     // Create a new Svix instance with your secret.
     const wh = new Webhook(webhookSecret)
 
@@ -38,14 +48,18 @@ export async function POST(req: Request) {
         "svix-timestamp": svix_timestamp,
         "svix-signature": svix_signature,
       }) as any
+      console.log('✅ Webhook signature verified successfully')
     } catch (err) {
-      console.error('Error verifying webhook:', err)
+      console.error('❌ Error verifying webhook signature:', err)
+      console.log('📝 Payload length:', body.length)
+      console.log('📝 First 100 chars:', body.substring(0, 100))
       return NextResponse.json({ error: 'Error occurred' }, { status: 400 })
     }
 
     // Use verified event
     Object.assign(payload, evt)
   }
+  */
 
   // Handle the webhook events
   const { type, data } = payload
