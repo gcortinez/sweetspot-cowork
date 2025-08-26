@@ -90,6 +90,7 @@ export function UserManagement() {
   const [isSubmittingInvite, setIsSubmittingInvite] = useState(false);
   const [inviteMessage, setInviteMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
   const [activeTab, setActiveTab] = useState<'users' | 'invitations'>('users');
+  const [totalInvitations, setTotalInvitations] = useState(0);
 
   // Set mounted state for portal
   useEffect(() => {
@@ -101,14 +102,16 @@ export function UserManagement() {
     try {
       setIsLoading(true);
       
-      // Fetch users and coworks in parallel
-      const [usersResponse, coworksResponse] = await Promise.all([
+      // Fetch users, coworks, and invitations in parallel
+      const [usersResponse, coworksResponse, invitationsResponse] = await Promise.all([
         fetch('/api/platform/users'),
-        fetch('/api/platform/coworks')
+        fetch('/api/platform/coworks'),
+        fetch('/api/platform/invitations')
       ]);
       
       const usersData = await usersResponse.json();
       const coworksData = await coworksResponse.json();
+      const invitationsData = await invitationsResponse.json();
       
       if (usersData.success) {
         // Transform API response to match User interface
@@ -145,6 +148,13 @@ export function UserManagement() {
         setAvailableTenants(formattedCoworks);
       } else {
         console.error('Failed to fetch coworks:', coworksData.error);
+      }
+      
+      if (invitationsData.success) {
+        // Set total invitations count
+        setTotalInvitations(invitationsData.invitations.length);
+      } else {
+        console.error('Failed to fetch invitations:', invitationsData.error);
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -354,7 +364,7 @@ export function UserManagement() {
           setInviteMessage(null);
         }, 2000);
         
-        // Refresh users list
+        // Refresh users list and update invitation count
         loadData();
       } else {
         setInviteMessage({ type: 'error', text: `❌ ${data.error}` });
@@ -497,7 +507,7 @@ export function UserManagement() {
             >
               <div className="flex items-center space-x-2">
                 <Users className="h-4 w-4" />
-                <span>Usuarios Activos</span>
+                <span>Usuarios Activos ({users.length})</span>
               </div>
             </button>
             <button
@@ -510,7 +520,7 @@ export function UserManagement() {
             >
               <div className="flex items-center space-x-2">
                 <Mail className="h-4 w-4" />
-                <span>Invitaciones</span>
+                <span>Invitaciones ({totalInvitations})</span>
               </div>
             </button>
           </nav>
