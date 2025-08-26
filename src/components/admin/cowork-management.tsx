@@ -742,5 +742,4 @@ export function CoworkManagement() {
   );
 }
 
-export { CoworkManagement };
 export default CoworkManagement;
