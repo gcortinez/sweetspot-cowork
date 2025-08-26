@@ -78,6 +78,28 @@ export async function createInvitation(data: {
       return { success: false, error: 'User already exists in the system' }
     }
 
+    // Check for existing invitation with same email and tenant
+    const existingInvitation = await prisma.invitation.findFirst({
+      where: {
+        email: data.emailAddress,
+        tenantId: data.tenantId
+      }
+    })
+
+    // If there's an existing invitation, handle it based on its status
+    if (existingInvitation) {
+      if (existingInvitation.status === 'PENDING') {
+        return { success: false, error: 'An active invitation for this email and cowork already exists' }
+      } else if (existingInvitation.status === 'REVOKED') {
+        // Delete the revoked invitation to avoid unique constraint conflict
+        console.log('🗑️ Removing revoked invitation to allow new one:', existingInvitation.id)
+        await prisma.invitation.delete({
+          where: { id: existingInvitation.id }
+        })
+      }
+      // For ACCEPTED status, we already checked for existing user above
+    }
+
     // Get tenant info if specified
     let tenantInfo = null
     if (data.tenantId) {

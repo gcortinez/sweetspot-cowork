@@ -25,6 +25,7 @@ export default function InvitationAcceptClient() {
   })
   const [showPassword, setShowPassword] = useState(false)
   const [validationErrors, setValidationErrors] = useState<string[]>([])
+  const [invitationEmail, setInvitationEmail] = useState<string | null>(null)
 
   const ticket = searchParams.get('__clerk_ticket')
   const status = searchParams.get('__clerk_status')
@@ -40,6 +41,20 @@ export default function InvitationAcceptClient() {
     if (!ticket.includes('.') || ticket.split('.').length !== 3) {
       router.push('/sign-in?error=malformed_invitation')
       return
+    }
+
+    // Try to decode the ticket to get the email (JWT format)
+    try {
+      const ticketParts = ticket.split('.')
+      if (ticketParts.length >= 2) {
+        const payload = JSON.parse(atob(ticketParts[1]))
+        if (payload.email) {
+          setInvitationEmail(payload.email)
+          console.log('📧 Invitation email extracted:', payload.email)
+        }
+      }
+    } catch (error) {
+      console.log('Could not extract email from ticket')
     }
 
     // Wait for Clerk to load
@@ -117,6 +132,21 @@ export default function InvitationAcceptClient() {
           }
         }
         
+        // Update invitation status in database
+        try {
+          const emailAddress = result.createdUser?.emailAddresses?.[0]?.emailAddress || invitationEmail
+          if (emailAddress) {
+            await fetch('/api/invitations/accept', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: emailAddress })
+            })
+            console.log('✅ Invitation status updated for:', emailAddress)
+          }
+        } catch (error) {
+          console.error('Failed to update invitation status:', error)
+        }
+        
         setState('success')
         
         setTimeout(() => {
@@ -162,6 +192,22 @@ export default function InvitationAcceptClient() {
         if (setActiveSignIn) {
           await setActiveSignIn({ session: result.createdSessionId })
         }
+        
+        // Update invitation status in database
+        try {
+          // For sign-in, use the email from the invitation
+          if (invitationEmail) {
+            await fetch('/api/invitations/accept', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: invitationEmail })
+            })
+            console.log('✅ Invitation status updated for:', invitationEmail)
+          }
+        } catch (error) {
+          console.error('Failed to update invitation status:', error)
+        }
+        
         setState('success')
         
         setTimeout(() => {
