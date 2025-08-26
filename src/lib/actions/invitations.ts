@@ -92,9 +92,19 @@ export async function createInvitation(data: {
     }
 
     // Create invitation via Clerk
+    const redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL}/accept-invitation`
+    
+    console.log('🔧 Creating Clerk invitation with data:', {
+      emailAddress: data.emailAddress,
+      redirectUrl,
+      role: data.role,
+      tenantId: data.tenantId,
+      tenantName: tenantInfo?.name || 'Plataforma'
+    })
+    
     const clerkInvitation = await client.invitations.createInvitation({
       emailAddress: data.emailAddress,
-      redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}/accept-invitation`,
+      redirectUrl,
       publicMetadata: {
         role: data.role,
         tenantId: data.tenantId || null,
@@ -145,6 +155,11 @@ export async function createInvitation(data: {
   } catch (error: any) {
     console.error('❌ Error creating invitation:', error)
     
+    // Log detailed Clerk error information
+    if (error.errors) {
+      console.error('🔧 Clerk error details:', JSON.stringify(error.errors, null, 2))
+    }
+    
     // Handle specific Clerk errors
     if (error.errors?.[0]?.code === 'duplicate_record') {
       return { success: false, error: 'An invitation for this email already exists' }
@@ -154,7 +169,16 @@ export async function createInvitation(data: {
       return { success: false, error: 'Invalid email address' }
     }
     
-    return { success: false, error: 'Failed to create invitation' }
+    if (error.errors?.[0]?.code === 'invalid_url') {
+      return { success: false, error: 'Invalid redirect URL configuration' }
+    }
+    
+    // Return more specific error if available
+    const clerkErrorMessage = error.errors?.[0]?.message || error.message
+    return { 
+      success: false, 
+      error: `Failed to create invitation: ${clerkErrorMessage}` 
+    }
   }
 }
 
