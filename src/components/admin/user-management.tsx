@@ -91,6 +91,7 @@ export function UserManagement() {
   const [inviteMessage, setInviteMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
   const [activeTab, setActiveTab] = useState<'users' | 'invitations'>('users');
   const [totalInvitations, setTotalInvitations] = useState(0);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Set mounted state for portal
   useEffect(() => {
@@ -155,6 +156,7 @@ export function UserManagement() {
         setTotalInvitations(invitationsData.invitations.length);
       } else {
         console.error('Failed to fetch invitations:', invitationsData.error);
+        setTotalInvitations(0);
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -166,6 +168,7 @@ export function UserManagement() {
   useEffect(() => {
     loadData();
   }, []);
+
 
   // Filter users
   const filteredUsers = users.filter(user => {
@@ -366,6 +369,9 @@ export function UserManagement() {
         
         // Refresh users list and update invitation count
         loadData();
+        
+        // Trigger refresh for invitations dashboard
+        setRefreshTrigger(prev => prev + 1);
       } else {
         setInviteMessage({ type: 'error', text: `❌ ${data.error}` });
       }
@@ -804,7 +810,7 @@ export function UserManagement() {
 
       {/* Invitations Tab */}
       {activeTab === 'invitations' && (
-        <InvitationsDashboard />
+        <InvitationsDashboard key={refreshTrigger} />
       )}
 
       {/* Invite User Modal */}
