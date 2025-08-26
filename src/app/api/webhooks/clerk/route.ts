@@ -55,51 +55,62 @@ export async function POST(req: Request) {
   switch (type) {
     case 'user.created':
       // When a user is created, check if it's from an invitation
-      if (data.public_metadata?.role) {
-        console.log('👤 User created from invitation:', data.email_addresses[0]?.email_address)
+      console.log('👤 User created webhook received for:', data.email_addresses[0]?.email_address)
+      
+      try {
+        const email = data.email_addresses[0]?.email_address
         
-        try {
-          // Create user record in our database
-          const email = data.email_addresses[0]?.email_address
+        if (email) {
+          // Check if user already exists in our database
+          const existingUser = await prisma.user.findFirst({
+            where: { clerkId: data.id }
+          })
           
-          if (email) {
-            // Find the invitation
-            const invitation = await prisma.invitation.findFirst({
-              where: {
+          if (existingUser) {
+            console.log('👤 User already exists in database:', existingUser.id)
+            return NextResponse.json({ received: true })
+          }
+          
+          // Find the invitation
+          const invitation = await prisma.invitation.findFirst({
+            where: {
+              email,
+              status: 'PENDING'
+            }
+          })
+          
+          if (invitation) {
+            console.log('📧 Found pending invitation, creating user')
+            
+            // Create the user
+            const user = await prisma.user.create({
+              data: {
+                clerkId: data.id,
                 email,
-                status: 'PENDING'
+                firstName: data.first_name || '',
+                lastName: data.last_name || '',
+                role: invitation.role as any,
+                tenantId: invitation.tenantId,
+                status: 'ACTIVE'
               }
             })
             
-            if (invitation) {
-              // Create the user
-              await prisma.user.create({
-                data: {
-                  clerkId: data.id,
-                  email,
-                  firstName: data.first_name || '',
-                  lastName: data.last_name || '',
-                  role: invitation.role as any,
-                  tenantId: invitation.tenantId,
-                  status: 'ACTIVE'
-                }
-              })
-              
-              // Update invitation status
-              await prisma.invitation.update({
-                where: { id: invitation.id },
-                data: {
-                  status: 'ACCEPTED',
-                  acceptedAt: new Date()
-                }
-              })
-              
-              console.log('✅ User created and invitation accepted:', email)
-            }
+            // Update invitation status
+            await prisma.invitation.update({
+              where: { id: invitation.id },
+              data: {
+                status: 'ACCEPTED',
+                acceptedAt: new Date()
+              }
+            })
+            
+            console.log('✅ User created and invitation accepted:', email, 'User ID:', user.id)
+          } else {
+            console.log('⚠️ No pending invitation found for email:', email)
           }
-        } catch (error) {
-          console.error('❌ Error processing user.created webhook:', error)
         }
+      } catch (error) {
+        console.error('❌ Error processing user.created webhook:', error)
       }
       break
 

@@ -136,15 +136,23 @@ export default function InvitationAcceptClient() {
         try {
           const emailAddress = result.createdUser?.emailAddresses?.[0]?.emailAddress || invitationEmail
           if (emailAddress) {
-            await fetch('/api/invitations/accept', {
+            console.log('📝 Updating invitation status for:', emailAddress)
+            const response = await fetch('/api/invitations/accept', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ email: emailAddress })
             })
-            console.log('✅ Invitation status updated for:', emailAddress)
+            
+            const data = await response.json()
+            if (data.success) {
+              console.log('✅ Invitation status updated successfully:', data.message)
+            } else {
+              console.error('❌ Failed to update invitation status:', data.error)
+            }
           }
         } catch (error) {
-          console.error('Failed to update invitation status:', error)
+          console.error('❌ Network error updating invitation status:', error)
+          // Don't fail the entire process if invitation status update fails
         }
         
         setState('success')
@@ -197,15 +205,23 @@ export default function InvitationAcceptClient() {
         try {
           // For sign-in, use the email from the invitation
           if (invitationEmail) {
-            await fetch('/api/invitations/accept', {
+            console.log('📝 Updating invitation status for existing user:', invitationEmail)
+            const response = await fetch('/api/invitations/accept', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ email: invitationEmail })
             })
-            console.log('✅ Invitation status updated for:', invitationEmail)
+            
+            const data = await response.json()
+            if (data.success) {
+              console.log('✅ Invitation status updated successfully:', data.message)
+            } else {
+              console.error('❌ Failed to update invitation status:', data.error)
+            }
           }
         } catch (error) {
-          console.error('Failed to update invitation status:', error)
+          console.error('❌ Network error updating invitation status:', error)
+          // Don't fail the entire process if invitation status update fails
         }
         
         setState('success')

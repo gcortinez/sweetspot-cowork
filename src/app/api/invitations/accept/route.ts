@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    console.log('📝 Updating invitation status for:', email)
+    console.log('📝 Processing invitation acceptance for:', email, 'clerkId:', userId)
     
     // Find all pending invitations for this email
     const invitations = await prisma.invitation.findMany({
@@ -39,6 +39,44 @@ export async function POST(request: NextRequest) {
       )
     }
     
+    console.log('🔍 Found', invitations.length, 'pending invitations')
+    
+    // Check if user already exists in our database
+    let user = await prisma.user.findFirst({
+      where: { clerkId: userId }
+    })
+    
+    // If user doesn't exist, create them based on the invitation
+    if (!user) {
+      console.log('👤 User not found in database, creating from invitation data')
+      
+      // Use the first invitation to create the user (they should all have the same basic info)
+      const primaryInvitation = invitations[0]
+      
+      try {
+        user = await prisma.user.create({
+          data: {
+            clerkId: userId,
+            email: email,
+            firstName: '', // Will be updated from Clerk if available
+            lastName: '', // Will be updated from Clerk if available
+            role: primaryInvitation.role as any,
+            tenantId: primaryInvitation.tenantId,
+            status: 'ACTIVE'
+          }
+        })
+        console.log('✅ User created in database:', user.id)
+      } catch (createError) {
+        console.error('❌ Failed to create user:', createError)
+        return NextResponse.json(
+          { success: false, error: 'Failed to create user record' },
+          { status: 500 }
+        )
+      }
+    } else {
+      console.log('👤 User already exists in database:', user.id)
+    }
+    
     // Update all pending invitations to accepted
     const updated = await prisma.invitation.updateMany({
       where: {
@@ -52,25 +90,13 @@ export async function POST(request: NextRequest) {
       }
     })
     
-    console.log('✅ Updated invitations:', updated.count)
-    
-    // Find the user record created from this invitation
-    const user = await prisma.user.findFirst({
-      where: { clerkId: userId }
-    })
-    
-    if (user) {
-      // If we have multiple invitations, log which tenant the user joined
-      const invitation = invitations.find(inv => inv.tenantId === user.tenantId)
-      if (invitation) {
-        console.log('✅ User joined tenant:', invitation.tenantId)
-      }
-    }
+    console.log('✅ Updated', updated.count, 'invitations to ACCEPTED status')
     
     return NextResponse.json({
       success: true,
       message: `Invitation accepted successfully`,
-      updatedCount: updated.count
+      updatedCount: updated.count,
+      userId: user.id
     })
     
   } catch (error) {
