@@ -146,3 +146,95 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     );
   }
 }
+
+/**
+ * Delete User API
+ * Removes user from both database and Clerk
+ */
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { id } = await params
+    console.log('🗑️ Delete User API called for ID:', id);
+    
+    // Get the current user from Clerk
+    const clerkUser = await currentUser()
+    
+    if (!clerkUser) {
+      console.log('👤 No authenticated user');
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // Check if user is Super Admin
+    const privateMetadata = clerkUser.privateMetadata as any;
+    const publicMetadata = clerkUser.publicMetadata as any;
+    const userRole = privateMetadata?.role || publicMetadata?.role || 'END_USER';
+    
+    console.log('👤 User role:', userRole);
+    
+    if (userRole !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { success: false, error: 'Solo los super administradores pueden eliminar usuarios' },
+        { status: 403 }
+      )
+    }
+
+    // Get user details before deletion
+    const userToDelete = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        clerkId: true,
+        firstName: true,
+        lastName: true
+      }
+    })
+    
+    if (!userToDelete) {
+      return NextResponse.json(
+        { success: false, error: 'Usuario no encontrado' },
+        { status: 404 }
+      )
+    }
+    
+    console.log('🗑️ Deleting user:', {
+      id: userToDelete.id,
+      email: userToDelete.email,
+      clerkId: userToDelete.clerkId
+    })
+    
+    // Delete from Clerk first (if clerkId exists)
+    if (userToDelete.clerkId) {
+      try {
+        const { clerkClient } = await import('@clerk/nextjs/server')
+        await clerkClient.users.deleteUser(userToDelete.clerkId)
+        console.log('✅ User deleted from Clerk:', userToDelete.clerkId)
+      } catch (clerkError) {
+        console.warn('⚠️ Could not delete user from Clerk (may not exist):', clerkError)
+        // Continue with database deletion even if Clerk deletion fails
+      }
+    }
+    
+    // Delete from database
+    await prisma.user.delete({
+      where: { id }
+    })
+    
+    console.log('✅ User deleted from database:', userToDelete.email)
+
+    return NextResponse.json({
+      success: true,
+      message: `Usuario ${userToDelete.firstName} ${userToDelete.lastName} eliminado exitosamente`
+    });
+
+  } catch (error) {
+    console.error('Delete user API error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Error al eliminar el usuario' },
+      { status: 500 }
+    );
+  }
+}

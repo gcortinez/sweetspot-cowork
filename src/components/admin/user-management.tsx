@@ -334,7 +334,7 @@ export function UserManagement() {
     try {
       setIsDeletingUser(true);
       
-      const response = await fetch(`/api/platform/users/${user.id}/delete`, {
+      const response = await fetch(`/api/platform/users/${user.id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json'
