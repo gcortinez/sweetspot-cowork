@@ -152,8 +152,12 @@ export function UserManagement() {
       }
       
       if (invitationsData.success) {
-        // Set total invitations count
-        setTotalInvitations(invitationsData.invitations.length);
+        // Count only PENDING invitations (check both possible status formats)
+        const pendingCount = invitationsData.invitations.filter(inv => 
+          inv.status === 'PENDING' || inv.status === 'pending'
+        ).length;
+        
+        setTotalInvitations(pendingCount);
       } else {
         console.error('Failed to fetch invitations:', invitationsData.error);
         setTotalInvitations(0);
@@ -367,10 +371,8 @@ export function UserManagement() {
           setInviteMessage(null);
         }, 2000);
         
-        // Refresh users list and update invitation count
+        // Refresh data and trigger dashboard refresh
         loadData();
-        
-        // Trigger refresh for invitations dashboard
         setRefreshTrigger(prev => prev + 1);
       } else {
         setInviteMessage({ type: 'error', text: `❌ ${data.error}` });
