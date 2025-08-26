@@ -1,29 +1,51 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useClerk } from '@clerk/nextjs'
-import { XCircle, LogOut } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
+import { XCircle, LogOut, Building2 } from 'lucide-react'
 
 export default function SuspendedPage() {
   const { signOut } = useClerk()
+  const searchParams = useSearchParams()
+  const [suspensionInfo, setSuspensionInfo] = useState({
+    reason: '',
+    tenantStatus: ''
+  })
+
+  useEffect(() => {
+    setSuspensionInfo({
+      reason: searchParams.get('reason') ? decodeURIComponent(searchParams.get('reason')!) : '',
+      tenantStatus: searchParams.get('tenantStatus') || ''
+    })
+  }, [searchParams])
 
   const handleSignOut = async () => {
     await signOut({ redirectUrl: '/' })
   }
+
+  const isCoworkSuspended = suspensionInfo.tenantStatus === 'SUSPENDED' || suspensionInfo.tenantStatus === 'INACTIVE'
 
   return (
     <div className="min-h-screen bg-red-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
           <div className="bg-red-100 p-3 rounded-full">
-            <XCircle className="h-8 w-8 text-red-600" />
+            {isCoworkSuspended ? (
+              <Building2 className="h-8 w-8 text-red-600" />
+            ) : (
+              <XCircle className="h-8 w-8 text-red-600" />
+            )}
           </div>
         </div>
         <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-          Cuenta Suspendida
+          {isCoworkSuspended ? 'Cowork Suspendido' : 'Cuenta Suspendida'}
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Tu cuenta ha sido suspendida temporalmente
+          {isCoworkSuspended 
+            ? 'Tu espacio de coworking ha sido suspendido temporalmente'
+            : 'Tu cuenta ha sido suspendida temporalmente'
+          }
         </p>
       </div>
 
@@ -32,14 +54,20 @@ export default function SuspendedPage() {
           <div className="text-center space-y-6">
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-sm text-red-800">
-                Tu cuenta ha sido suspendida por un administrador. 
-                No puedes acceder al sistema en este momento.
+                {suspensionInfo.reason || (isCoworkSuspended 
+                  ? 'Tu espacio de coworking ha sido suspendido por un administrador.'
+                  : 'Tu cuenta ha sido suspendida por un administrador.'
+                )}
+                {' '}No puedes acceder al sistema en este momento.
               </p>
             </div>
             
             <div className="space-y-4">
               <p className="text-sm text-gray-600">
-                Si crees que esto es un error, por favor contacta con el administrador del sistema.
+                {isCoworkSuspended 
+                  ? 'Si crees que esto es un error, por favor contacta con el administrador de tu cowork o con el soporte de SweetSpot.'
+                  : 'Si crees que esto es un error, por favor contacta con el administrador del sistema.'
+                }
               </p>
               
               <button

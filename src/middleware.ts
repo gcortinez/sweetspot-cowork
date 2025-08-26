@@ -70,7 +70,14 @@ export default clerkMiddleware(async (auth, req) => {
 
           if (data.success && data.user && data.user.status === 'SUSPENDED' && !isSuspendedAllowedRoute(req)) {
             console.log('🚫 User is suspended, redirecting to suspended page')
-            return Response.redirect(new URL('/suspended', req.url))
+            const suspendedUrl = new URL('/suspended', req.url)
+            if (data.user.suspensionReason) {
+              suspendedUrl.searchParams.set('reason', encodeURIComponent(data.user.suspensionReason))
+            }
+            if (data.user.tenantStatus) {
+              suspendedUrl.searchParams.set('tenantStatus', data.user.tenantStatus)
+            }
+            return Response.redirect(suspendedUrl)
           }
 
           if (data.success) {

@@ -247,6 +247,7 @@ export async function updateTenantAction(tenantId: string, data: UpdateTenantReq
         domain: validData.domain,
         description: validData.description,
         logo: validData.logo,
+        status: validData.status, // Add status update
         settings: validData.settings ? {
           ...validData.settings,
           address: validData.address,

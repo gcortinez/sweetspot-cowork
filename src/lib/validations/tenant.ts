@@ -88,7 +88,9 @@ export const createTenantSchema = z.object({
 export type CreateTenantRequest = z.infer<typeof createTenantSchema>
 
 // Tenant update schema
-export const updateTenantSchema = createTenantSchema.partial().omit({ slug: true })
+export const updateTenantSchema = createTenantSchema.partial().omit({ slug: true }).extend({
+  status: z.enum(['ACTIVE', 'INACTIVE', 'SUSPENDED']).optional()
+})
 
 export type UpdateTenantRequest = z.infer<typeof updateTenantSchema>
 

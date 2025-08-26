@@ -37,7 +37,9 @@ export async function GET(request: NextRequest) {
     if (effectiveUser.role === 'SUPER_ADMIN' && effectiveUser.tenantId === null) {
       const allCoworks = await prisma.tenant.findMany({
         where: {
-          status: 'ACTIVE'
+          status: {
+            in: ['ACTIVE', 'SUSPENDED']  // Don't show INACTIVE (deleted) coworks
+          }
         },
         select: {
           id: true,
@@ -45,6 +47,8 @@ export async function GET(request: NextRequest) {
           slug: true,
           logo: true,
           status: true,
+          createdAt: true,
+          updatedAt: true,
           _count: {
             select: {
               users: true,
@@ -65,6 +69,8 @@ export async function GET(request: NextRequest) {
         slug: tenant.slug,
         logo: tenant.logo,
         status: tenant.status,
+        createdAt: tenant.createdAt,
+        updatedAt: tenant.updatedAt,
         role: 'SUPER_ADMIN',
         stats: {
           users: tenant._count.users,

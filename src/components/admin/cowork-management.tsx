@@ -25,6 +25,42 @@ import {
 import { useCoworkSelection } from '@/contexts/cowork-selection-context';
 import { useRouter } from 'next/navigation';
 
+// Helper function to format dates safely
+const formatDate = (dateString: string | Date) => {
+  if (!dateString) return 'Sin fecha';
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return 'Fecha inválida';
+    }
+    return date.toLocaleDateString('es-ES');
+  } catch (error) {
+    console.error('Error formatting date:', error, dateString);
+    return 'Error en fecha';
+  }
+};
+
+// Helper function for detailed date formatting
+const formatDetailedDate = (dateString: string | Date) => {
+  if (!dateString) return 'Sin fecha';
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return 'Fecha inválida';
+    }
+    return date.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  } catch (error) {
+    console.error('Error formatting detailed date:', error, dateString);
+    return 'Error en fecha';
+  }
+};
+
 interface Cowork {
   id: string;
   name: string;
@@ -60,8 +96,32 @@ export function CoworkManagement() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null);
-  const [menuPosition, setMenuPosition] = useState<{[key: string]: 'top' | 'bottom'}>({});
-  const [menuCoords, setMenuCoords] = useState<{x: number, y: number} | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{top: number, left: number} | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    slug: '',
+    domain: '',
+    status: 'ACTIVE' as 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
+  });
+
+  // Set mounted state
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  // Load selected cowork data into edit form
+  useEffect(() => {
+    if (selectedCowork && showEditModal) {
+      setEditFormData({
+        name: selectedCowork.name,
+        slug: selectedCowork.slug,
+        domain: selectedCowork.domain || '',
+        status: selectedCowork.status
+      });
+    }
+  }, [selectedCowork, showEditModal]);
 
   // Load coworks
   const loadCoworks = async () => {
@@ -95,8 +155,25 @@ export function CoworkManagement() {
   // Handle status change
   const handleStatusChange = async (coworkId: string, newStatus: string) => {
     try {
-      // In a real implementation, this would call your API
       console.log(`Changing status of ${coworkId} to ${newStatus}`);
+      
+      const response = await fetch(`/api/tenants/${coworkId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          status: newStatus
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || `Error ${response.status}: ${response.statusText}`);
+      }
+      
+      console.log('Cowork status updated successfully:', data.message);
       
       // Update local state
       setCoworks(prev => prev.map(c => 
@@ -107,14 +184,29 @@ export function CoworkManagement() {
       await refreshCoworks();
     } catch (error) {
       console.error('Error updating cowork status:', error);
+      alert(`Error al cambiar el estado del cowork: ${error.message || 'Error desconocido'}`);
     }
   };
 
   // Handle delete
   const handleDelete = async (coworkId: string) => {
     try {
-      // In a real implementation, this would call your API
       console.log(`Deleting cowork ${coworkId}`);
+      
+      const response = await fetch(`/api/tenants/${coworkId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || `Error ${response.status}: ${response.statusText}`);
+      }
+      
+      console.log('Cowork deleted successfully:', data.message);
       
       // Update local state
       setCoworks(prev => prev.filter(c => c.id !== coworkId));
@@ -122,8 +214,51 @@ export function CoworkManagement() {
       
       // Refresh the cowork selection context
       await refreshCoworks();
+      
     } catch (error) {
       console.error('Error deleting cowork:', error);
+      alert(`Error al eliminar el cowork: ${error.message || 'Error desconocido'}`);
+    }
+  };
+
+  // Handle edit/update cowork
+  const handleUpdateCowork = async () => {
+    if (!selectedCowork) return;
+    
+    try {
+      console.log(`Updating cowork ${selectedCowork.id}:`, editFormData);
+      
+      const response = await fetch(`/api/tenants/${selectedCowork.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(editFormData)
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || `Error ${response.status}: ${response.statusText}`);
+      }
+      
+      console.log('Cowork updated successfully:', data.message);
+      
+      // Update local state
+      setCoworks(prev => prev.map(c => 
+        c.id === selectedCowork.id ? { ...c, ...editFormData } : c
+      ));
+      
+      // Close modal and clear selection
+      setShowEditModal(false);
+      setSelectedCowork(null);
+      
+      // Refresh the cowork selection context
+      await refreshCoworks();
+      
+    } catch (error) {
+      console.error('Error updating cowork:', error);
+      alert(`Error al actualizar el cowork: ${error.message || 'Error desconocido'}`);
     }
   };
 
@@ -284,157 +419,42 @@ export function CoworkManagement() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(cowork.createdAt).toLocaleDateString('es-ES')}
+                    {formatDate(cowork.createdAt)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="relative">
                       <button
                         onClick={(e) => {
-                          e.preventDefault();
                           e.stopPropagation();
                           
-                          if (actionMenuOpen === cowork.id) {
-                            setActionMenuOpen(null);
-                            setMenuCoords(null);
-                            return;
-                          }
-                          
                           const rect = e.currentTarget.getBoundingClientRect();
-                          const windowHeight = window.innerHeight;
-                          const scrollY = window.scrollY;
-                          const distanceFromBottom = windowHeight - rect.bottom;
-                          const menuHeight = 200; // Reduced from 250 to be more accurate
-                          const menuWidth = 192; // 192px = width of menu (w-48)
+                          const viewportWidth = window.innerWidth;
+                          const menuWidth = 192; // 192px = w-48
                           
-                          // Determine if menu should open upward or downward
-                          const shouldOpenUpward = distanceFromBottom < menuHeight;
-                          const position = shouldOpenUpward ? 'top' : 'bottom';
-                          setMenuPosition(prev => ({ ...prev, [cowork.id]: position }));
+                          // Calculate left position
+                          let left = rect.right - menuWidth;
                           
-                          // Debug info (remove in production)
-                          console.log('Menu positioning:', {
-                            distanceFromBottom,
-                            shouldOpenUpward,
-                            windowHeight,
-                            rectBottom: rect.bottom,
-                            coworkId: cowork.id
+                          // Adjust if menu would go off the left edge
+                          if (left < 10) {
+                            left = 10;
+                          }
+                          
+                          // Adjust if menu would go off the right edge  
+                          if (left + menuWidth > viewportWidth - 10) {
+                            left = viewportWidth - menuWidth - 10;
+                          }
+                          
+                          setMenuPosition({
+                            top: rect.bottom + 5,
+                            left: left
                           });
-                          
-                          // Calculate coordinates for fixed positioning
-                          let x = rect.right - menuWidth;
-                          let y = shouldOpenUpward 
-                            ? rect.top + scrollY - menuHeight + 20 // Open above with some margin
-                            : rect.bottom + scrollY + 5; // Open below with small margin
-                          
-                          // Ensure menu doesn't go off the left edge of screen
-                          if (x < 10) {
-                            x = 10;
-                          }
-                          
-                          // Ensure menu doesn't go off the top of screen
-                          if (y < scrollY + 10) {
-                            y = scrollY + 10;
-                          }
-                          
-                          setMenuCoords({ x, y });
-                          
-                          setActionMenuOpen(cowork.id);
+                          setActionMenuOpen(actionMenuOpen === cowork.id ? null : cowork.id);
                         }}
                         className="text-gray-400 hover:text-gray-600 p-1"
+                        id={`action-button-${cowork.id}`}
                       >
                         <MoreVertical className="h-4 w-4" />
                       </button>
-                      
-                      {actionMenuOpen === cowork.id && menuCoords && typeof window !== 'undefined' && 
-                        createPortal(
-                          <>
-                            <div
-                              className="fixed inset-0 z-[100]"
-                              onClick={() => {
-                                setActionMenuOpen(null);
-                                setMenuCoords(null);
-                              }}
-                            />
-                            <div 
-                              className="fixed w-48 bg-white rounded-md shadow-xl z-[110] border border-gray-200"
-                              style={{
-                                left: `${menuCoords.x}px`,
-                                top: `${menuCoords.y}px`,
-                              }}
-                            >
-                              <div className="py-1">
-                                <button
-                                  onClick={() => {
-                                    setSelectedCowork(cowork);
-                                    setShowDetailModal(true);
-                                    setActionMenuOpen(null);
-                                    setMenuCoords(null);
-                                  }}
-                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                                >
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  Ver detalles
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setSelectedCowork(cowork);
-                                    setShowEditModal(true);
-                                    setActionMenuOpen(null);
-                                    setMenuCoords(null);
-                                  }}
-                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                                >
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Editar
-                                </button>
-                                
-                                {/* Status change options */}
-                                {cowork.status === 'ACTIVE' && (
-                                  <button
-                                    onClick={() => {
-                                      handleStatusChange(cowork.id, 'SUSPENDED');
-                                      setActionMenuOpen(null);
-                                      setMenuCoords(null);
-                                    }}
-                                    className="w-full text-left px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50 flex items-center"
-                                  >
-                                    <Pause className="h-4 w-4 mr-2" />
-                                    Suspender
-                                  </button>
-                                )}
-                                
-                                {cowork.status === 'SUSPENDED' && (
-                                  <button
-                                    onClick={() => {
-                                      handleStatusChange(cowork.id, 'ACTIVE');
-                                      setActionMenuOpen(null);
-                                      setMenuCoords(null);
-                                    }}
-                                    className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center"
-                                  >
-                                    <CheckCircle className="h-4 w-4 mr-2" />
-                                    Activar
-                                  </button>
-                                )}
-                                
-                                <hr className="my-1" />
-                                <button
-                                  onClick={() => {
-                                    setShowDeleteConfirm(cowork.id);
-                                    setActionMenuOpen(null);
-                                    setMenuCoords(null);
-                                  }}
-                                  className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Eliminar
-                                </button>
-                              </div>
-                            </div>
-                          </>,
-                          document.body
-                        )
-                      }
                     </div>
                   </td>
                 </tr>
@@ -467,6 +487,113 @@ export function CoworkManagement() {
           </div>
         )}
       </div>
+
+      {/* Action Menu Portal - Rendered directly to body to avoid any container clipping */}
+      {mounted && actionMenuOpen && menuPosition && createPortal(
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => {
+              setActionMenuOpen(null);
+              setMenuPosition(null);
+            }}
+          />
+          <div 
+            className="fixed w-48 bg-white rounded-md shadow-xl z-50 border border-gray-200"
+            style={{
+              left: `${menuPosition.left}px`,
+              top: `${menuPosition.top}px`,
+            }}
+          >
+            <div className="py-1">
+              <button
+                onClick={() => {
+                  const cowork = filteredCoworks.find(c => c.id === actionMenuOpen);
+                  if (cowork) {
+                    setSelectedCowork(cowork);
+                    setShowDetailModal(true);
+                  }
+                  setActionMenuOpen(null);
+                  setMenuPosition(null);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                Ver detalles
+              </button>
+              <button
+                onClick={() => {
+                  const cowork = filteredCoworks.find(c => c.id === actionMenuOpen);
+                  if (cowork) {
+                    setSelectedCowork(cowork);
+                    setShowEditModal(true);
+                  }
+                  setActionMenuOpen(null);
+                  setMenuPosition(null);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Editar
+              </button>
+              
+              {/* Status actions */}
+              {(() => {
+                const cowork = filteredCoworks.find(c => c.id === actionMenuOpen);
+                if (!cowork) return null;
+                
+                if (cowork.status === 'ACTIVE') {
+                  return (
+                    <button
+                      onClick={() => {
+                        handleStatusChange(cowork.id, 'SUSPENDED');
+                        setActionMenuOpen(null);
+                        setMenuPosition(null);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50 flex items-center"
+                    >
+                      <Pause className="h-4 w-4 mr-2" />
+                      Suspender
+                    </button>
+                  );
+                }
+                
+                if (cowork.status === 'SUSPENDED') {
+                  return (
+                    <button
+                      onClick={() => {
+                        handleStatusChange(cowork.id, 'ACTIVE');
+                        setActionMenuOpen(null);
+                        setMenuPosition(null);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Activar
+                    </button>
+                  );
+                }
+                
+                return null;
+              })()}
+              
+              <hr className="my-1" />
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(actionMenuOpen);
+                  setActionMenuOpen(null);
+                  setMenuPosition(null);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
@@ -578,21 +705,13 @@ export function CoworkManagement() {
                 <div>
                   <label className="text-sm font-medium text-gray-500">Creado</label>
                   <p className="mt-1 text-gray-900">
-                    {new Date(selectedCowork.createdAt).toLocaleDateString('es-ES', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
+                    {formatDetailedDate(selectedCowork.createdAt)}
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Última actualización</label>
                   <p className="mt-1 text-gray-900">
-                    {new Date(selectedCowork.updatedAt).toLocaleDateString('es-ES', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
+                    {formatDetailedDate(selectedCowork.updatedAt)}
                   </p>
                 </div>
               </div>
@@ -647,7 +766,8 @@ export function CoworkManagement() {
                 </label>
                 <input
                   type="text"
-                  defaultValue={selectedCowork.name}
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -658,7 +778,8 @@ export function CoworkManagement() {
                 </label>
                 <input
                   type="text"
-                  defaultValue={selectedCowork.slug}
+                  value={editFormData.slug}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, slug: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -669,7 +790,8 @@ export function CoworkManagement() {
                 </label>
                 <input
                   type="text"
-                  defaultValue={selectedCowork.domain || ''}
+                  value={editFormData.domain}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, domain: e.target.value }))}
                   placeholder="ejemplo.com"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
@@ -680,7 +802,8 @@ export function CoworkManagement() {
                   Estado
                 </label>
                 <select
-                  defaultValue={selectedCowork.status}
+                  value={editFormData.status}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, status: e.target.value as any }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="ACTIVE">Activo</option>
@@ -704,10 +827,7 @@ export function CoworkManagement() {
                   type="submit"
                   onClick={(e) => {
                     e.preventDefault();
-                    // TODO: Implement save functionality
-                    console.log('Saving cowork changes...');
-                    setShowEditModal(false);
-                    setSelectedCowork(null);
+                    handleUpdateCowork();
                   }}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >

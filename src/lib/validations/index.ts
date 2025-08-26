@@ -14,11 +14,15 @@ export {
   createTenantSchema,
   updateTenantSchema,
   tenantFiltersSchema,
+  paginatedTenantsSchema,
+  updateTenantSettingsSchema,
   createTenantSpaceSchema,
   updateTenantSpaceSchema,
   type CreateTenantRequest,
   type UpdateTenantRequest,
   type TenantFilters,
+  type PaginatedTenantsQuery,
+  type UpdateTenantSettingsRequest,
   type CreateTenantSpaceRequest,
   type UpdateTenantSpaceRequest
 } from './tenant'
