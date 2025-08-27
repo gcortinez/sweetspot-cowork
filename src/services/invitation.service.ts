@@ -80,11 +80,7 @@ export class InvitationService {
       const appUrl = this.getAppUrl()
       const finalRedirectUrl = redirectUrl || `${appUrl}/accept-invitation`
       
-      logger.debug('Creating Clerk invitation', { redirectUrl: finalRedirectUrl, emailAddress })
-      
-      // In Next.js 15, clerkClient needs to be awaited
-      const clerk = await clerkClient()
-      const clerkInvitation = await clerk.invitations.createInvitation({
+      const invitationParams = {
         emailAddress,
         redirectUrl: finalRedirectUrl,
         publicMetadata: {
@@ -96,8 +92,17 @@ export class InvitationService {
           ...publicMetadata
         },
         notify: true,
-        ignoreExisting: false
+        ignoreExisting: true
+      }
+
+      logger.debug('Creating Clerk invitation', { 
+        ...invitationParams,
+        invitedBy: invitedBy.substring(0, 8) + '...' // Don't log full ID for security
       })
+      
+      // In Next.js 15, clerkClient needs to be awaited
+      const clerk = await clerkClient()
+      const clerkInvitation = await clerk.invitations.createInvitation(invitationParams)
 
       logger.debug('Clerk invitation created', { clerkInvitationId: clerkInvitation.id, emailAddress })
 
@@ -156,6 +161,18 @@ export class InvitationService {
       // Handle specific Clerk errors
       if (error.errors?.[0]?.code === 'duplicate_record') {
         throw new Error('Ya existe una invitación pendiente para este email')
+      }
+      
+      if (error.status === 422 || error.message?.includes('Unprocessable Entity')) {
+        logger.error('Clerk unprocessable entity error details', { 
+          errors: error.errors,
+          status: error.status,
+          clerkTraceId: error.clerkTraceId,
+          emailAddress,
+          role,
+          tenantId
+        })
+        throw new Error('Error creating invitation: Email may have been recently deleted or has invalid data')
       }
       
       if (error.errors?.[0]?.code === 'invalid_email_address') {
