@@ -23,6 +23,7 @@ import {
   getTenantPrisma,
 } from '../server/tenant-context'
 import { AuthService } from '../server/auth'
+import { clerkClient } from '@clerk/nextjs/server'
 
 /**
  * User Management Server Actions
@@ -599,6 +600,7 @@ export async function deleteUserAction(userId: string) {
         tenantId: true,
         role: true,
         status: true,
+        clerkId: true,
       }
     })
 
@@ -625,18 +627,38 @@ export async function deleteUserAction(userId: string) {
       }
     }
 
-    // Soft delete by changing status to INACTIVE
-    await prisma.user.update({
-      where: { id: userId },
-      data: { 
-        status: UserStatus.INACTIVE,
-        updatedAt: new Date(),
+    try {
+      // Delete user from Clerk if clerkId exists
+      if (user.clerkId) {
+        try {
+          const clerk = await clerkClient()
+          await clerk.users.deleteUser(user.clerkId)
+          console.log(`Deleted user from Clerk: ${user.clerkId}`)
+        } catch (clerkError: any) {
+          // Log clerk error but don't fail the operation if user doesn't exist in Clerk
+          console.warn(`Failed to delete user from Clerk (${user.clerkId}):`, clerkError.message)
+        }
       }
-    })
 
-    return {
-      success: true,
-      message: `User "${user.firstName} ${user.lastName}" has been deactivated`,
+      // Soft delete by changing status to INACTIVE
+      await prisma.user.update({
+        where: { id: userId },
+        data: { 
+          status: UserStatus.INACTIVE,
+          updatedAt: new Date(),
+        }
+      })
+
+      return {
+        success: true,
+        message: `User "${user.firstName} ${user.lastName}" has been deactivated and removed from authentication`,
+      }
+    } catch (error) {
+      console.error('Error during user deletion process:', error)
+      return {
+        success: false,
+        error: 'Failed to completely delete user from all systems',
+      }
     }
 
   } catch (error) {
@@ -684,6 +706,7 @@ export async function bulkUserOperationAction(data: BulkUserOperationRequest) {
         tenantId: true,
         role: true,
         status: true,
+        clerkId: true,
       }
     })
 
@@ -724,6 +747,24 @@ export async function bulkUserOperationAction(data: BulkUserOperationRequest) {
         }
     }
 
+    // If operation is delete, also delete users from Clerk
+    if (operation === 'delete') {
+      const clerk = await clerkClient()
+      const deletionPromises = users.map(async (user) => {
+        if (user.clerkId) {
+          try {
+            await clerk.users.deleteUser(user.clerkId)
+            console.log(`Bulk delete: Removed user from Clerk: ${user.clerkId}`)
+          } catch (clerkError: any) {
+            console.warn(`Bulk delete: Failed to remove user from Clerk (${user.clerkId}):`, clerkError.message)
+          }
+        }
+      })
+
+      // Execute all Clerk deletions in parallel
+      await Promise.all(deletionPromises)
+    }
+
     // Perform bulk update
     const result = await prisma.user.updateMany({
       where: { id: { in: userIds } },
@@ -733,10 +774,14 @@ export async function bulkUserOperationAction(data: BulkUserOperationRequest) {
       }
     })
 
+    const actionMessage = operation === 'delete' 
+      ? `Successfully ${operation}d ${result.count} user(s) from database and authentication system`
+      : `Successfully ${operation}d ${result.count} user(s)`
+
     return {
       success: true,
       affectedCount: result.count,
-      message: `Successfully ${operation}d ${result.count} user(s)`,
+      message: actionMessage,
     }
 
   } catch (error) {
