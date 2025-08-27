@@ -102,6 +102,28 @@ export class InvitationService {
       
       // In Next.js 15, clerkClient needs to be awaited
       const clerk = await clerkClient()
+      
+      // For recently deleted users, try to clean up any pending invitations first
+      try {
+        const existingInvitations = await clerk.invitations.getInvitationList()
+        const pendingInvitation = existingInvitations.data?.find(
+          inv => inv.emailAddress === emailAddress && inv.status === 'pending'
+        )
+        
+        if (pendingInvitation) {
+          logger.info('Found pending invitation, revoking before creating new one', {
+            emailAddress,
+            existingInvitationId: pendingInvitation.id
+          })
+          await clerk.invitations.revokeInvitation(pendingInvitation.id)
+          // Wait a moment for Clerk to process the revocation
+          await new Promise(resolve => setTimeout(resolve, 1000))
+        }
+      } catch (cleanupError: any) {
+        logger.warn('Could not cleanup existing invitations', cleanupError, { emailAddress })
+        // Continue with creation anyway
+      }
+      
       const clerkInvitation = await clerk.invitations.createInvitation(invitationParams)
 
       logger.debug('Clerk invitation created', { clerkInvitationId: clerkInvitation.id, emailAddress })
@@ -172,7 +194,45 @@ export class InvitationService {
           role,
           tenantId
         })
-        throw new Error('Error creating invitation: Email may have been recently deleted or has invalid data')
+        
+        // Try alternative approach: wait longer and retry once
+        logger.info('Attempting retry after extended wait for Clerk state cleanup', { emailAddress })
+        try {
+          await new Promise(resolve => setTimeout(resolve, 3000)) // Wait 3 seconds
+          const clerk = await clerkClient()
+          const retryInvitation = await clerk.invitations.createInvitation({
+            ...invitationParams,
+            ignoreExisting: true
+          })
+          
+          logger.info('Retry invitation creation succeeded', { 
+            emailAddress,
+            clerkInvitationId: retryInvitation.id 
+          })
+          
+          // Continue with successful retry - store invitation in database
+          const retryInvitation_db = await prisma.invitation.create({
+            data: {
+              email: emailAddress,
+              role,
+              status: 'PENDING',
+              clerkInvitationId: retryInvitation.id,
+              tenantId,
+              invitedBy
+            }
+          })
+          
+          return {
+            success: true,
+            invitation: retryInvitation_db,
+            clerkInvitation: retryInvitation,
+            message: 'Invitation created successfully after retry'
+          }
+        } catch (retryError) {
+          logger.error('Retry also failed', retryError, { emailAddress })
+        }
+        
+        throw new Error('No se puede crear la invitación para este email en este momento. El usuario fue eliminado recientemente y Clerk necesita tiempo para procesar el cambio. Intenta de nuevo en unos minutos.')
       }
       
       if (error.errors?.[0]?.code === 'invalid_email_address') {
