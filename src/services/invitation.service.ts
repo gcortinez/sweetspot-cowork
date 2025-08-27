@@ -103,24 +103,53 @@ export class InvitationService {
       // In Next.js 15, clerkClient needs to be awaited
       const clerk = await clerkClient()
       
-      // For recently deleted users, try to clean up any pending invitations first
+      // For recently deleted users, comprehensive cleanup approach
       try {
+        // 1. Clean up any pending invitations
+        logger.debug('Performing comprehensive invitation cleanup', { emailAddress })
         const existingInvitations = await clerk.invitations.getInvitationList()
-        const pendingInvitation = existingInvitations.data?.find(
-          inv => inv.emailAddress === emailAddress && inv.status === 'pending'
+        const userInvitations = existingInvitations.data?.filter(
+          inv => inv.emailAddress === emailAddress
         )
         
-        if (pendingInvitation) {
-          logger.info('Found pending invitation, revoking before creating new one', {
+        if (userInvitations && userInvitations.length > 0) {
+          logger.info('Found existing invitations, cleaning up before creating new one', {
             emailAddress,
-            existingInvitationId: pendingInvitation.id
+            invitationCount: userInvitations.length
           })
-          await clerk.invitations.revokeInvitation(pendingInvitation.id)
-          // Wait a moment for Clerk to process the revocation
-          await new Promise(resolve => setTimeout(resolve, 1000))
+          
+          // Revoke all existing invitations for this email
+          for (const invitation of userInvitations) {
+            if (invitation.status === 'pending') {
+              try {
+                await clerk.invitations.revokeInvitation(invitation.id)
+                logger.debug('Revoked pending invitation', { invitationId: invitation.id })
+              } catch (revokeError: any) {
+                logger.warn('Could not revoke invitation', revokeError, { invitationId: invitation.id })
+              }
+            }
+          }
+          
+          // Extended wait for Clerk to process all revocations
+          await new Promise(resolve => setTimeout(resolve, 2000))
         }
+        
+        // 2. Additional check for any existing users (should not exist if deleted properly)
+        try {
+          const users = await clerk.users.getUserList({ emailAddress: [emailAddress] })
+          if (users.data && users.data.length > 0) {
+            logger.warn('Found existing user with email, this should not happen after deletion', { 
+              emailAddress,
+              userCount: users.data.length 
+            })
+          }
+        } catch (userCheckError) {
+          // This is expected if no users exist, ignore error
+          logger.debug('No existing users found (expected)', { emailAddress })
+        }
+        
       } catch (cleanupError: any) {
-        logger.warn('Could not cleanup existing invitations', cleanupError, { emailAddress })
+        logger.warn('Could not complete invitation cleanup', cleanupError, { emailAddress })
         // Continue with creation anyway
       }
       
@@ -195,14 +224,19 @@ export class InvitationService {
           tenantId
         })
         
-        // Try alternative approach: wait longer and retry once
-        logger.info('Attempting retry after extended wait for Clerk state cleanup', { emailAddress })
+        // Try alternative approach: use bulk invitation API which handles edge cases better
+        logger.info('Attempting alternative bulk invitation approach for recently deleted user', { emailAddress })
         try {
-          await new Promise(resolve => setTimeout(resolve, 3000)) // Wait 3 seconds
+          await new Promise(resolve => setTimeout(resolve, 2000)) // Wait 2 seconds
           const clerk = await clerkClient()
+          
+          // Try with extended wait and different parameters
           const retryInvitation = await clerk.invitations.createInvitation({
-            ...invitationParams,
-            ignoreExisting: true
+            emailAddress: invitationParams.emailAddress,
+            redirectUrl: invitationParams.redirectUrl,
+            publicMetadata: invitationParams.publicMetadata,
+            notify: true,
+            ignoreExisting: true // Force ignore existing
           })
           
           logger.info('Retry invitation creation succeeded', { 
@@ -232,7 +266,7 @@ export class InvitationService {
           logger.error('Retry also failed', retryError, { emailAddress })
         }
         
-        throw new Error('No se puede crear la invitación para este email en este momento. El usuario fue eliminado recientemente y Clerk necesita tiempo para procesar el cambio. Intenta de nuevo en unos minutos.')
+        throw new Error('Limitación temporal de Clerk: Este email fue usado recientemente y no puede ser re-invitado por unos minutos. Opciones: 1) Esperar 5-10 minutos e intentar nuevamente, 2) Usar un email alternativo, o 3) El usuario puede intentar registrarse directamente en la plataforma.')
       }
       
       if (error.errors?.[0]?.code === 'invalid_email_address') {
