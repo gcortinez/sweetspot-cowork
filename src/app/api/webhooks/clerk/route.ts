@@ -1,13 +1,14 @@
 import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { Webhook } from 'svix'
-import prisma from '@/lib/server/prisma'
+import { InvitationService } from '@/services/invitation.service'
+import { logger } from '@/lib/logger'
 
 // Clerk webhook secret - you need to add this to your environment variables
 const webhookSecret = process.env.CLERK_WEBHOOK_SECRET
 
 export async function POST(req: Request) {
-  console.log('🔔 === CLERK WEBHOOK RECEIVED ===')
+  logger.info('Clerk webhook received', { operation: 'webhook_start' })
   
   // Get the headers
   const headerPayload = await headers()
@@ -17,147 +18,154 @@ export async function POST(req: Request) {
 
   // If there are no headers, error out
   if (!svix_id || !svix_timestamp || !svix_signature) {
-    return NextResponse.json({ error: 'Error occurred -- no svix headers' }, { status: 400 })
+    logger.error('Missing svix headers', undefined, { operation: 'webhook_validation' })
+    return NextResponse.json({ error: 'Missing webhook headers' }, { status: 400 })
   }
 
   // Get the body
   const payload = await req.json()
   const body = JSON.stringify(payload)
 
-  // Temporarily skip verification for testing
-  console.warn('⚠️ TEMPORARILY SKIPPING WEBHOOK VERIFICATION FOR TESTING')
-  console.log('📋 Headers:', { svix_id, svix_timestamp, svix_signature })
-  
-  // TODO: Re-enable verification once we confirm the webhook secret is correct
-  /*
-  // If webhook secret is not configured, log warning and process anyway (for development)
-  if (!webhookSecret) {
-    console.warn('⚠️ CLERK_WEBHOOK_SECRET not configured - skipping verification')
-  } else {
-    console.log('🔐 Webhook secret configured, verifying signature...')
+  // Verify webhook signature if secret is configured
+  if (webhookSecret) {
+    logger.debug('Verifying webhook signature')
     
-    // Create a new Svix instance with your secret.
-    const wh = new Webhook(webhookSecret)
-
-    let evt: any
-
-    // Verify the payload with the headers
     try {
-      evt = wh.verify(body, {
+      const wh = new Webhook(webhookSecret)
+      const evt = wh.verify(body, {
         "svix-id": svix_id,
         "svix-timestamp": svix_timestamp,
         "svix-signature": svix_signature,
       }) as any
-      console.log('✅ Webhook signature verified successfully')
+      
+      logger.debug('Webhook signature verified successfully')
+      Object.assign(payload, evt)
     } catch (err) {
-      console.error('❌ Error verifying webhook signature:', err)
-      console.log('📝 Payload length:', body.length)
-      console.log('📝 First 100 chars:', body.substring(0, 100))
-      return NextResponse.json({ error: 'Error occurred' }, { status: 400 })
+      logger.error('Error verifying webhook signature', err)
+      return NextResponse.json({ error: 'Invalid webhook signature' }, { status: 400 })
     }
-
-    // Use verified event
-    Object.assign(payload, evt)
+  } else {
+    logger.warn('CLERK_WEBHOOK_SECRET not configured - skipping verification (development only)')
   }
-  */
 
   // Handle the webhook events
   const { type, data } = payload
+  const invitationService = InvitationService.getInstance()
 
-  console.log('🔔 Clerk webhook received:', type)
+  logger.logWebhookReceived(type, data.id || data.user_id, data.email_addresses?.[0]?.email_address)
 
-  switch (type) {
-    case 'user.created':
-      // When a user is created, check if it's from an invitation
-      console.log('👤 User created webhook received for:', data.email_addresses[0]?.email_address)
-      
-      try {
-        const email = data.email_addresses[0]?.email_address
-        
-        if (email) {
-          // Check if user already exists in our database
-          const existingUser = await prisma.user.findFirst({
-            where: { clerkId: data.id }
-          })
-          
-          if (existingUser) {
-            console.log('👤 User already exists in database:', existingUser.id)
-            return NextResponse.json({ received: true })
-          }
-          
-          // Find the invitation
-          const invitation = await prisma.invitation.findFirst({
-            where: {
-              email,
-              status: 'PENDING'
-            }
-          })
-          
-          if (invitation) {
-            console.log('📧 Found pending invitation, creating user')
-            
-            // Create the user
-            const user = await prisma.user.create({
-              data: {
-                clerkId: data.id,
-                email,
-                firstName: data.first_name || '',
-                lastName: data.last_name || '',
-                role: invitation.role as any,
-                tenantId: invitation.tenantId,
-                status: 'ACTIVE'
-              }
-            })
-            
-            // Update invitation status
-            await prisma.invitation.update({
-              where: { id: invitation.id },
-              data: {
-                status: 'ACCEPTED',
-                acceptedAt: new Date()
-              }
-            })
-            
-            console.log('✅ User created and invitation accepted:', email, 'User ID:', user.id)
-          } else {
-            console.log('⚠️ No pending invitation found for email:', email)
-          }
-        }
-      } catch (error) {
-        console.error('❌ Error processing user.created webhook:', error)
-      }
-      break
+  try {
+    switch (type) {
+      case 'user.created':
+        await handleUserCreated(data, invitationService)
+        break
 
-    case 'session.created':
-      // When a session is created, check if there are pending invitations to accept
-      if (data.user_id) {
-        try {
-          const user = await prisma.user.findUnique({
-            where: { clerkId: data.user_id }
-          })
-          
-          if (user) {
-            // Update any pending invitations for this user
-            await prisma.invitation.updateMany({
-              where: {
-                email: user.email,
-                status: 'PENDING'
-              },
-              data: {
-                status: 'ACCEPTED',
-                acceptedAt: new Date()
-              }
-            })
-          }
-        } catch (error) {
-          console.error('❌ Error processing session.created webhook:', error)
-        }
-      }
-      break
+      case 'session.created':
+        await handleSessionCreated(data, invitationService)
+        break
 
-    default:
-      console.log(`🔔 Unhandled webhook type: ${type}`)
+      case 'user.updated':
+        logger.info('User updated webhook - no action needed', { webhookType: type })
+        break
+
+      case 'user.deleted':
+        logger.info('User deleted webhook - cleaning up database', { webhookType: type })
+        // TODO: Implement user cleanup if needed
+        break
+
+      default:
+        logger.warn('Unhandled webhook event', { webhookType: type })
+    }
+
+    logger.logWebhookProcessed(type, true, data.id || data.user_id)
+    return NextResponse.json({ received: true, processed: true })
+    
+  } catch (error) {
+    logger.logWebhookProcessed(type, false, data.id || data.user_id)
+    logger.error('Webhook processing failed', error, { webhookType: type, eventData: JSON.stringify(data, null, 2) })
+    
+    // Return 200 to avoid retries for unrecoverable errors
+    // Clerk will retry 500 errors but not 200s
+    return NextResponse.json({ 
+      received: true, 
+      processed: false, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    }, { status: 200 })
+  }
+}
+
+/**
+ * Handle user.created webhook event
+ */
+async function handleUserCreated(data: any, invitationService: InvitationService) {
+  const email = data.email_addresses?.[0]?.email_address
+  const clerkUserId = data.id
+  
+  if (!email || !clerkUserId) {
+    logger.warn('Missing email or user ID in user.created webhook', { clerkUserId, email })
+    return
   }
 
-  return NextResponse.json({ received: true })
+  logger.info('Processing user.created webhook', { email, clerkUserId })
+  
+  try {
+    // Use the centralized service to accept the invitation
+    const result = await invitationService.acceptInvitation(email, clerkUserId, {
+      firstName: data.first_name || '',
+      lastName: data.last_name || '',
+      email: email,
+      clerkId: clerkUserId
+    })
+    
+    if (result.success) {
+      logger.info('Invitation processed via webhook', { email, message: result.message })
+    } else {
+      logger.warn('Invitation processing returned non-success', { email, result })
+    }
+  } catch (error) {
+    logger.error('Failed to process user.created webhook', error, { email, clerkUserId })
+    throw error
+  }
+}
+
+/**
+ * Handle session.created webhook event
+ */
+async function handleSessionCreated(data: any, invitationService: InvitationService) {
+  const clerkUserId = data.user_id
+  
+  if (!clerkUserId) {
+    logger.warn('Missing user ID in session.created webhook', { clerkUserId })
+    return
+  }
+
+  logger.info('Processing session.created webhook', { clerkUserId })
+  
+  // This is a fallback for cases where user.created webhook might have failed
+  // We'll check if there are any pending invitations that need processing
+  try {
+    // Get user info from Clerk to find their email
+    const { clerkClient } = await import('@clerk/nextjs/server')
+    const clerk = await clerkClient()
+    const clerkUser = await clerk.users.getUser(clerkUserId)
+    const email = clerkUser.emailAddresses.find(e => e.id === clerkUser.primaryEmailAddressId)?.emailAddress
+    
+    if (email) {
+      const result = await invitationService.acceptInvitation(email, clerkUserId, {
+        firstName: clerkUser.firstName || '',
+        lastName: clerkUser.lastName || '',
+        email: email,
+        clerkId: clerkUserId
+      })
+      
+      if (result.success && result.updatedCount > 0) {
+        logger.info('Processed pending invitations via session webhook', { email, message: result.message })
+      } else {
+        logger.info('No pending invitations found for session webhook', { email })
+      }
+    }
+  } catch (error) {
+    logger.error('Failed to process session.created webhook', error, { clerkUserId })
+    // Don't throw here as session creation is not critical for invitation flow
+  }
 }

@@ -57,7 +57,7 @@ export function InvitationsDashboard({ className = "" }: InvitationsDashboardPro
     try {
       setIsLoading(true);
       
-      const response = await fetch('/api/platform/invitations');
+      const response = await fetch('/api/invitations');
       const data = await response.json();
       
       if (data.success) {
@@ -89,7 +89,7 @@ export function InvitationsDashboard({ className = "" }: InvitationsDashboardPro
     try {
       setProcessingInvitations(prev => new Set(prev).add(invitationId));
       
-      const response = await fetch(`/api/platform/invitations/${invitationId}/resend`, {
+      const response = await fetch(`/api/invitations/${invitationId}/resend`, {
         method: 'POST'
       });
       const data = await response.json();
@@ -126,8 +126,8 @@ export function InvitationsDashboard({ className = "" }: InvitationsDashboardPro
     try {
       setProcessingInvitations(prev => new Set(prev).add(invitationId));
       
-      const response = await fetch(`/api/platform/invitations/${invitationId}/revoke`, {
-        method: 'POST'
+      const response = await fetch(`/api/invitations/${invitationId}`, {
+        method: 'DELETE'
       });
       const data = await response.json();
       

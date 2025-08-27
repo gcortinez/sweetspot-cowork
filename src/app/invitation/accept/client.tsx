@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useSignUp, useSignIn } from '@clerk/nextjs'
+import { useSignUp, useSignIn, useUser, useClerk } from '@clerk/nextjs'
 import { isClerkAPIResponseError } from '@clerk/nextjs/errors'
 import { ClerkAPIError } from '@clerk/types'
 import { Loader2, Users, CheckCircle, XCircle, UserPlus, LogIn, RefreshCw, ArrowLeft, Eye, EyeOff } from 'lucide-react'
@@ -14,6 +14,8 @@ export default function InvitationAcceptClient() {
   const router = useRouter()
   const { signUp, setActive: setActiveSignUp, isLoaded: signUpLoaded } = useSignUp()
   const { signIn, setActive: setActiveSignIn, isLoaded: signInLoaded } = useSignIn()
+  const { user, isLoaded: userLoaded } = useUser()
+  const { signOut } = useClerk()
 
   const [state, setState] = useState<InvitationState>('loading')
   const [errors, setErrors] = useState<ClerkAPIError[]>([])
@@ -34,12 +36,12 @@ export default function InvitationAcceptClient() {
   useEffect(() => {
     // Basic validation
     if (!ticket) {
-      router.push('/sign-in?error=invalid_invitation')
+      router.push('/auth/login?error=invalid_invitation')
       return
     }
 
     if (!ticket.includes('.') || ticket.split('.').length !== 3) {
-      router.push('/sign-in?error=malformed_invitation')
+      router.push('/auth/login?error=malformed_invitation')
       return
     }
 
@@ -58,7 +60,19 @@ export default function InvitationAcceptClient() {
     }
 
     // Wait for Clerk to load
-    if (!signUpLoaded || !signInLoaded) return
+    if (!signUpLoaded || !signInLoaded || !userLoaded) return
+
+    // Check if user is already signed in
+    if (user) {
+      console.log('⚠️ User is already signed in. Need to sign out first.')
+      setState('error')
+      setErrors([{
+        code: 'session_exists',
+        message: 'Session already exists',
+        longMessage: 'You\'re already signed in. Please sign out first to accept this invitation.'
+      } as ClerkAPIError])
+      return
+    }
 
     // Determine the flow
     if (status === 'sign_in') {
@@ -66,7 +80,7 @@ export default function InvitationAcceptClient() {
     } else {
       setState('new_user_form')
     }
-  }, [ticket, status, signUpLoaded, signInLoaded, router])
+  }, [ticket, status, signUpLoaded, signInLoaded, userLoaded, user, router])
 
   const validateForm = () => {
     const errors: string[] = []
@@ -450,6 +464,8 @@ export default function InvitationAcceptClient() {
         )
 
       case 'error':
+        const hasSessionError = errors.some(e => e.code === 'session_exists')
+        
         return (
           <div className="text-center">
             <XCircle className="h-8 w-8 text-red-600 mx-auto mb-4" />
@@ -460,31 +476,59 @@ export default function InvitationAcceptClient() {
               {errors.map((error, index) => (
                 <div key={index}>
                   <p className="text-sm font-medium text-red-800">
-                    {error.message}
+                    {error.code === 'session_exists' ? 'Ya tienes una sesión activa' : error.message}
                   </p>
                   {error.longMessage && (
                     <p className="text-xs text-red-800 opacity-80 mt-1">
-                      {error.longMessage}
+                      {error.code === 'session_exists' 
+                        ? 'Debes cerrar sesión primero para poder aceptar esta invitación.'
+                        : error.longMessage}
                     </p>
                   )}
                 </div>
               ))}
             </div>
             <div className="space-y-3">
-              <button
-                onClick={() => setState(isNewUser ? 'new_user_form' : 'existing_user_form')}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors flex items-center justify-center"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Intentar nuevamente
-              </button>
-              <button
-                onClick={() => router.push('/sign-in')}
-                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-md transition-colors flex items-center justify-center"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Ir al Login
-              </button>
+              {hasSessionError ? (
+                <>
+                  <button
+                    onClick={async () => {
+                      setState('processing')
+                      await signOut()
+                      // Reload the page to restart the invitation process
+                      window.location.reload()
+                    }}
+                    className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition-colors flex items-center justify-center"
+                  >
+                    <LogIn className="h-4 w-4 mr-2" />
+                    Cerrar sesión y continuar
+                  </button>
+                  <button
+                    onClick={() => router.push('/dashboard')}
+                    className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-md transition-colors flex items-center justify-center"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Ir al Dashboard
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setState(isNewUser ? 'new_user_form' : 'existing_user_form')}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors flex items-center justify-center"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Intentar nuevamente
+                  </button>
+                  <button
+                    onClick={() => router.push('/auth/login')}
+                    className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-md transition-colors flex items-center justify-center"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Ir al Login
+                  </button>
+                </>
+              )}
             </div>
           </div>
         )

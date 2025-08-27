@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import prisma from '@/lib/server/prisma'
-import { auth } from '@clerk/nextjs/server'
+import { auth, clerkClient } from '@clerk/nextjs/server'
+import { InvitationService } from '@/services/invitation.service'
 
+/**
+ * Unified Accept Invitation API
+ * Uses the centralized InvitationService for accepting invitations
+ */
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth()
@@ -22,87 +26,43 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    console.log('📝 Processing invitation acceptance for:', email, 'clerkId:', userId)
+    console.log('📝 Unified invitation accept API called for:', email, 'clerkId:', userId)
     
-    // Find all pending invitations for this email
-    const invitations = await prisma.invitation.findMany({
-      where: {
-        email,
-        status: 'PENDING'
+    // Get user data from Clerk to pass to the service
+    let userData = {}
+    try {
+      const clerkUser = await clerkClient.users.getUser(userId)
+      userData = {
+        firstName: clerkUser.firstName || '',
+        lastName: clerkUser.lastName || '',
+        email: email,
+        clerkId: userId
       }
-    })
-    
-    if (invitations.length === 0) {
-      console.log('⚠️ No pending invitations found for:', email)
-      return NextResponse.json(
-        { success: true, message: 'No pending invitations to update' }
-      )
+    } catch (clerkError) {
+      console.warn('⚠️ Could not fetch user data from Clerk:', clerkError)
+      userData = {
+        firstName: '',
+        lastName: '',
+        email: email,
+        clerkId: userId
+      }
     }
     
-    console.log('🔍 Found', invitations.length, 'pending invitations')
-    
-    // Check if user already exists in our database
-    let user = await prisma.user.findFirst({
-      where: { clerkId: userId }
-    })
-    
-    // If user doesn't exist, create them based on the invitation
-    if (!user) {
-      console.log('👤 User not found in database, creating from invitation data')
-      
-      // Use the first invitation to create the user (they should all have the same basic info)
-      const primaryInvitation = invitations[0]
-      
-      try {
-        user = await prisma.user.create({
-          data: {
-            clerkId: userId,
-            email: email,
-            firstName: '', // Will be updated from Clerk if available
-            lastName: '', // Will be updated from Clerk if available
-            role: primaryInvitation.role as any,
-            tenantId: primaryInvitation.tenantId,
-            status: 'ACTIVE'
-          }
-        })
-        console.log('✅ User created in database:', user.id)
-      } catch (createError) {
-        console.error('❌ Failed to create user:', createError)
-        return NextResponse.json(
-          { success: false, error: 'Failed to create user record' },
-          { status: 500 }
-        )
-      }
-    } else {
-      console.log('👤 User already exists in database:', user.id)
-    }
-    
-    // Update all pending invitations to accepted
-    const updated = await prisma.invitation.updateMany({
-      where: {
-        email,
-        status: 'PENDING'
-      },
-      data: {
-        status: 'ACCEPTED',
-        acceptedAt: new Date(),
-        updatedAt: new Date()
-      }
-    })
-    
-    console.log('✅ Updated', updated.count, 'invitations to ACCEPTED status')
+    // Use the centralized InvitationService
+    const invitationService = InvitationService.getInstance()
+    const result = await invitationService.acceptInvitation(email, userId, userData)
     
     return NextResponse.json({
-      success: true,
-      message: `Invitation accepted successfully`,
-      updatedCount: updated.count,
-      userId: user.id
+      success: result.success,
+      message: result.message,
+      updatedCount: result.updatedCount,
+      userId: result.userId
     })
     
-  } catch (error) {
-    console.error('❌ Error accepting invitation:', error)
+  } catch (error: any) {
+    console.error('❌ Unified invitation accept API error:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to update invitation status' },
+      { success: false, error: error.message || 'Failed to accept invitation' },
       { status: 500 }
     )
   }

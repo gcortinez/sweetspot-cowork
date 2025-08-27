@@ -22,7 +22,9 @@ import {
   AlertCircle,
   Crown,
   UserCheck,
-  UserX
+  UserX,
+  RefreshCw,
+  RotateCcw
 } from 'lucide-react';
 
 interface User {
@@ -93,6 +95,8 @@ export function UserManagement() {
   const [totalInvitations, setTotalInvitations] = useState(0);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isDeletingUser, setIsDeletingUser] = useState(false);
+  const [isCleaningInvitations, setIsCleaningInvitations] = useState(false);
+  const [isSyncingInvitations, setIsSyncingInvitations] = useState(false);
 
   // Set mounted state for portal
   useEffect(() => {
@@ -104,16 +108,17 @@ export function UserManagement() {
     try {
       setIsLoading(true);
       
-      // Fetch users, coworks, and invitations in parallel
+      // Fetch users, coworks, and invitations in parallel with error handling
       const [usersResponse, coworksResponse, invitationsResponse] = await Promise.all([
-        fetch('/api/platform/users'),
-        fetch('/api/platform/coworks'),
-        fetch('/api/platform/invitations')
+        fetch('/api/platform/users').catch(err => ({ ok: false, error: err.message })),
+        fetch('/api/platform/coworks').catch(err => ({ ok: false, error: err.message })),
+        fetch('/api/invitations').catch(err => ({ ok: false, error: err.message }))
       ]);
       
-      const usersData = await usersResponse.json();
-      const coworksData = await coworksResponse.json();
-      const invitationsData = await invitationsResponse.json();
+      // Parse responses with error handling
+      const usersData = usersResponse.ok ? await usersResponse.json().catch(() => ({ success: false, error: 'Failed to parse users data' })) : { success: false, error: 'Failed to fetch users' };
+      const coworksData = coworksResponse.ok ? await coworksResponse.json().catch(() => ({ success: false, error: 'Failed to parse coworks data' })) : { success: false, error: 'Failed to fetch coworks' };
+      const invitationsData = invitationsResponse.ok ? await invitationsResponse.json().catch(() => ({ success: false, error: 'Failed to parse invitations data' })) : { success: false, error: 'Failed to fetch invitations' };
       
       if (usersData.success) {
         // Transform API response to match User interface
@@ -152,7 +157,8 @@ export function UserManagement() {
         console.error('Failed to fetch coworks:', coworksData.error);
       }
       
-      if (invitationsData.success) {
+      // Handle invitations data (non-blocking)
+      if (invitationsData.success && invitationsData.invitations) {
         // Count only PENDING invitations (check both possible status formats)
         const pendingCount = invitationsData.invitations.filter(inv => 
           inv.status === 'PENDING' || inv.status === 'pending'
@@ -160,7 +166,7 @@ export function UserManagement() {
         
         setTotalInvitations(pendingCount);
       } else {
-        console.error('Failed to fetch invitations:', invitationsData.error);
+        console.warn('Could not load invitations (non-critical):', invitationsData.error);
         setTotalInvitations(0);
       }
     } catch (error) {
@@ -358,6 +364,76 @@ export function UserManagement() {
     }
   };
 
+  // Handle cleanup duplicate invitations
+  const handleCleanupInvitations = async () => {
+    if (!window.confirm('¿Estás seguro de que quieres limpiar las invitaciones duplicadas?\n\nEsto eliminará invitaciones pendientes en Clerk para usuarios que ya existen en el sistema.')) {
+      return;
+    }
+
+    try {
+      setIsCleaningInvitations(true);
+      
+      const response = await fetch('/api/invitations/cleanup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Trigger refresh for invitations dashboard
+        setRefreshTrigger(prev => prev + 1);
+        // Reload data to update counters
+        loadData();
+        alert(`Limpieza completada. Se limpiaron ${data.cleanedCount} invitaciones duplicadas.`);
+      } else {
+        alert(data.error || 'Error al limpiar invitaciones');
+      }
+    } catch (error) {
+      console.error('Error cleaning up invitations:', error);
+      alert('Error al limpiar invitaciones duplicadas');
+    } finally {
+      setIsCleaningInvitations(false);
+    }
+  };
+
+  // Handle sync invitations
+  const handleSyncInvitations = async () => {
+    if (!window.confirm('¿Estás seguro de que quieres sincronizar las invitaciones?\n\nEsto verificará el estado de las invitaciones en Clerk y actualizará la base de datos.')) {
+      return;
+    }
+
+    try {
+      setIsSyncingInvitations(true);
+      
+      const response = await fetch('/api/invitations/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Trigger refresh for invitations dashboard
+        setRefreshTrigger(prev => prev + 1);
+        // Reload data to update counters
+        loadData();
+        alert(`Sincronización completada. Se sincronizaron ${data.syncedCount} invitaciones.`);
+      } else {
+        alert(data.error || 'Error al sincronizar invitaciones');
+      }
+    } catch (error) {
+      console.error('Error syncing invitations:', error);
+      alert('Error al sincronizar invitaciones');
+    } finally {
+      setIsSyncingInvitations(false);
+    }
+  };
+
   // Handle send invitation
   const handleSendInvitation = async () => {
     if (!inviteEmail.trim()) {
@@ -374,7 +450,7 @@ export function UserManagement() {
       setIsSubmittingInvite(true);
       setInviteMessage(null);
 
-      const response = await fetch('/api/platform/invitations/create', {
+      const response = await fetch('/api/invitations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -473,6 +549,22 @@ export function UserManagement() {
             <p className="text-gray-600">Administra todos los usuarios de la plataforma</p>
           </div>
           <div className="flex items-center space-x-3">
+            <button 
+              onClick={handleSyncInvitations}
+              disabled={isSyncingInvitations}
+              className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-md text-sm flex items-center space-x-2 transition-colors"
+            >
+              <RotateCcw className={`h-4 w-4 ${isSyncingInvitations ? 'animate-spin' : ''}`} />
+              <span>{isSyncingInvitations ? 'Sincronizando...' : 'Sincronizar Invitaciones'}</span>
+            </button>
+            <button 
+              onClick={handleCleanupInvitations}
+              disabled={isCleaningInvitations}
+              className="bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-md text-sm flex items-center space-x-2 transition-colors"
+            >
+              <RefreshCw className={`h-4 w-4 ${isCleaningInvitations ? 'animate-spin' : ''}`} />
+              <span>{isCleaningInvitations ? 'Limpiando...' : 'Limpiar Invitaciones'}</span>
+            </button>
             <button 
               onClick={() => {
                 // Close any open action menu

@@ -96,8 +96,13 @@ export async function createInvitation(data: {
         await prisma.invitation.delete({
           where: { id: existingInvitation.id }
         })
+      } else if (existingInvitation.status === 'ACCEPTED') {
+        // Delete the accepted invitation to allow new one
+        console.log('🗑️ Removing accepted invitation to allow new one:', existingInvitation.id)
+        await prisma.invitation.delete({
+          where: { id: existingInvitation.id }
+        })
       }
-      // For ACCEPTED status, we already checked for existing user above
     }
 
     // Get tenant info if specified
@@ -158,17 +163,36 @@ export async function createInvitation(data: {
     })
 
     // Store invitation in our database for tracking
-    const invitation = await prisma.invitation.create({
-      data: {
-        id: clerkInvitation.id,
-        email: data.emailAddress,
-        role: data.role,
-        tenantId: data.tenantId,
-        status: 'PENDING',
-        invitedBy: currentDbUser.id,
-        clerkInvitationId: clerkInvitation.id
+    let invitation
+    try {
+      invitation = await prisma.invitation.create({
+        data: {
+          id: clerkInvitation.id,
+          email: data.emailAddress,
+          role: data.role,
+          tenantId: data.tenantId,
+          status: 'PENDING',
+          invitedBy: currentDbUser.id,
+          clerkInvitationId: clerkInvitation.id
+        }
+      })
+    } catch (dbError: any) {
+      // If database creation fails, revoke the Clerk invitation to avoid inconsistency
+      console.error('❌ Database invitation creation failed, revoking Clerk invitation:', dbError)
+      try {
+        await client.invitations.revokeInvitation(clerkInvitation.id)
+        console.log('✅ Clerk invitation revoked due to database error')
+      } catch (revokeError) {
+        console.error('❌ Failed to revoke Clerk invitation:', revokeError)
       }
-    })
+      
+      // Check if it's a unique constraint error
+      if (dbError.code === 'P2002') {
+        return { success: false, error: 'Ya existe una invitación para este email y cowork. Por favor, usa el botón "Limpiar Invitaciones" primero.' }
+      }
+      
+      throw dbError // Re-throw other database errors
+    }
 
     console.log('✅ Invitation created:', {
       id: invitation.id,
@@ -203,6 +227,50 @@ export async function createInvitation(data: {
     
     // Handle specific Clerk errors
     if (error.errors?.[0]?.code === 'duplicate_record') {
+      console.log('🔄 Duplicate invitation detected, checking if user already exists...')
+      
+      try {
+        // Check if user already exists in our database
+        const existingUser = await prisma.user.findUnique({
+          where: { email: data.emailAddress }
+        })
+        
+        if (existingUser) {
+          console.log('👤 User already exists in database, cleaning up Clerk invitation...')
+          
+          // Get and revoke the pending invitation in Clerk
+          const clerkInvitations = await client.invitations.getInvitationList()
+          const pendingInvitation = clerkInvitations.find(
+            inv => inv.emailAddress === data.emailAddress && inv.status === 'pending'
+          )
+          
+          if (pendingInvitation) {
+            await client.invitations.revokeInvitation(pendingInvitation.id)
+            console.log('✅ Revoked duplicate invitation in Clerk')
+          }
+          
+          // Also update our database invitation status if exists
+          await prisma.invitation.updateMany({
+            where: { 
+              email: data.emailAddress,
+              status: 'PENDING' 
+            },
+            data: { 
+              status: 'ACCEPTED',
+              acceptedAt: new Date()
+            }
+          })
+          
+          console.log('✅ Cleaned up duplicate invitation state')
+          return { 
+            success: false, 
+            error: 'El usuario ya existe en el sistema. Se ha limpiado la invitación duplicada automáticamente.' 
+          }
+        }
+      } catch (cleanupError) {
+        console.error('❌ Error cleaning up duplicate invitation:', cleanupError)
+      }
+      
       return { success: false, error: 'An invitation for this email already exists' }
     }
     
