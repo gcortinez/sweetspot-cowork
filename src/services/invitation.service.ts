@@ -48,6 +48,9 @@ export class InvitationService {
     }
     return InvitationService.instance
   }
+  
+  // Force cache invalidation - production deployment issue fix
+  private readonly deploymentVersion = '2025-08-27-v2'
 
   /**
    * Create a new invitation with comprehensive validation and error handling
@@ -60,7 +63,10 @@ export class InvitationService {
       email: emailAddress,
       role,
       tenantId,
-      invitedBy: invitedBy.substring(0, 8) + '...'
+      invitedBy: invitedBy.substring(0, 8) + '...',
+      deploymentVersion: this.deploymentVersion,
+      nodeEnv: process.env.NODE_ENV,
+      environment: process.env.VERCEL_ENV || 'unknown'
     })
 
     try {
@@ -103,54 +109,91 @@ export class InvitationService {
       // In Next.js 15, clerkClient needs to be awaited
       const clerk = await clerkClient()
       
-      // For recently deleted users, comprehensive cleanup approach
+      // Enhanced debugging and comprehensive cleanup approach
       try {
-        // 1. Clean up any pending invitations
-        logger.debug('Performing comprehensive invitation cleanup', { emailAddress })
+        // 1. First get comprehensive Clerk state information
+        logger.info('=== DEBUGGING CLERK STATE ===', { emailAddress })
+        
+        // Check for existing invitations
         const existingInvitations = await clerk.invitations.getInvitationList()
         const userInvitations = existingInvitations.data?.filter(
           inv => inv.emailAddress === emailAddress
         )
         
+        logger.info('Clerk invitation state', {
+          emailAddress,
+          totalInvitations: existingInvitations.data?.length || 0,
+          userSpecificInvitations: userInvitations?.length || 0,
+          userInvitationStatuses: userInvitations?.map(inv => ({ id: inv.id, status: inv.status })) || []
+        })
+        
+        // Check for existing users
+        try {
+          const users = await clerk.users.getUserList({ emailAddress: [emailAddress] })
+          logger.info('Clerk user state', {
+            emailAddress,
+            userCount: users.data?.length || 0,
+            userIds: users.data?.map(u => u.id) || []
+          })
+          
+          if (users.data && users.data.length > 0) {
+            logger.error('FOUND EXISTING USER - THIS IS THE PROBLEM', {
+              emailAddress,
+              users: users.data.map(u => ({ id: u.id, createdAt: u.createdAt, lastName: u.lastName }))
+            })
+            throw new Error(`El usuario ${emailAddress} ya existe en Clerk. Necesita ser eliminado completamente antes de crear una nueva invitación.`)
+          }
+        } catch (userCheckError: any) {
+          if (userCheckError.message?.includes('ya existe en Clerk')) {
+            throw userCheckError
+          }
+          logger.debug('No existing users found (expected)', { emailAddress, error: userCheckError.message })
+        }
+        
+        // 2. Clean up any pending invitations found
         if (userInvitations && userInvitations.length > 0) {
-          logger.info('Found existing invitations, cleaning up before creating new one', {
+          logger.info('Cleaning up existing invitations before creating new one', {
             emailAddress,
             invitationCount: userInvitations.length
           })
           
-          // Revoke all existing invitations for this email
           for (const invitation of userInvitations) {
             if (invitation.status === 'pending') {
               try {
                 await clerk.invitations.revokeInvitation(invitation.id)
-                logger.debug('Revoked pending invitation', { invitationId: invitation.id })
+                logger.info('Revoked pending invitation', { 
+                  invitationId: invitation.id,
+                  emailAddress,
+                  originalStatus: invitation.status
+                })
               } catch (revokeError: any) {
-                logger.warn('Could not revoke invitation', revokeError, { invitationId: invitation.id })
+                logger.error('Could not revoke invitation', revokeError, { 
+                  invitationId: invitation.id,
+                  emailAddress
+                })
               }
+            } else {
+              logger.info('Non-pending invitation found', {
+                invitationId: invitation.id,
+                status: invitation.status,
+                emailAddress
+              })
             }
           }
           
-          // Extended wait for Clerk to process all revocations
-          await new Promise(resolve => setTimeout(resolve, 2000))
+          // Extended wait for Clerk to process all changes
+          logger.debug('Waiting for Clerk state synchronization...', { emailAddress })
+          await new Promise(resolve => setTimeout(resolve, 3000))
         }
         
-        // 2. Additional check for any existing users (should not exist if deleted properly)
-        try {
-          const users = await clerk.users.getUserList({ emailAddress: [emailAddress] })
-          if (users.data && users.data.length > 0) {
-            logger.warn('Found existing user with email, this should not happen after deletion', { 
-              emailAddress,
-              userCount: users.data.length 
-            })
-          }
-        } catch (userCheckError) {
-          // This is expected if no users exist, ignore error
-          logger.debug('No existing users found (expected)', { emailAddress })
-        }
+        logger.info('=== END CLERK STATE DEBUG ===', { emailAddress })
         
       } catch (cleanupError: any) {
-        logger.warn('Could not complete invitation cleanup', cleanupError, { emailAddress })
-        // Continue with creation anyway
+        if (cleanupError.message?.includes('ya existe en Clerk')) {
+          throw cleanupError
+        }
+        logger.error('Could not complete invitation state verification', cleanupError, { emailAddress })
+        // Continue with creation anyway for other errors
       }
       
       const clerkInvitation = await clerk.invitations.createInvitation(invitationParams)
@@ -215,28 +258,45 @@ export class InvitationService {
       }
       
       if (error.status === 422 || error.message?.includes('Unprocessable Entity')) {
+        // Log comprehensive error information
         logger.error('Clerk unprocessable entity error details', { 
-          errors: error.errors,
-          status: error.status,
+          errorMessage: error.message,
+          errorStatus: error.status,
+          errorErrors: error.errors,
+          errorCode: error.code,
+          errorType: error.type,
           clerkTraceId: error.clerkTraceId,
           emailAddress,
           role,
-          tenantId
+          tenantId,
+          fullErrorObject: JSON.stringify(error, null, 2)
         })
         
-        // Try alternative approach: use bulk invitation API which handles edge cases better
-        logger.info('Attempting alternative bulk invitation approach for recently deleted user', { emailAddress })
+        // Try alternative approach: use different parameters and extended wait
+        logger.info('Attempting retry with different approach', { emailAddress, errorDetails: error })
         try {
-          await new Promise(resolve => setTimeout(resolve, 2000)) // Wait 2 seconds
-          const clerk = await clerkClient()
+          await new Promise(resolve => setTimeout(resolve, 3000)) // Wait 3 seconds
+          const retryClerk = await clerkClient()
           
-          // Try with extended wait and different parameters
-          const retryInvitation = await clerk.invitations.createInvitation({
-            emailAddress: invitationParams.emailAddress,
-            redirectUrl: invitationParams.redirectUrl,
-            publicMetadata: invitationParams.publicMetadata,
+          // Get fresh tenant info for retry
+          const retryTenantInfo = tenantId ? await this.getTenantInfo(tenantId) : null
+          const retryAppUrl = this.getAppUrl()
+          const retryRedirectUrl = redirectUrl || `${retryAppUrl}/accept-invitation`
+          
+          // Try with minimal parameters and fresh clerk client
+          const retryInvitation = await retryClerk.invitations.createInvitation({
+            emailAddress,
+            redirectUrl: retryRedirectUrl,
+            publicMetadata: {
+              role,
+              tenantId: tenantId || null,
+              tenantName: retryTenantInfo?.name || 'SweetSpot Cowork',
+              invitedBy,
+              invitationDate: new Date().toISOString(),
+              retryAttempt: true
+            },
             notify: true,
-            ignoreExisting: true // Force ignore existing
+            ignoreExisting: true
           })
           
           logger.info('Retry invitation creation succeeded', { 
@@ -244,9 +304,10 @@ export class InvitationService {
             clerkInvitationId: retryInvitation.id 
           })
           
-          // Continue with successful retry - store invitation in database
-          const retryInvitation_db = await prisma.invitation.create({
+          // Store retry invitation in database
+          const retryInvitationDb = await prisma.invitation.create({
             data: {
+              id: retryInvitation.id,
               email: emailAddress,
               role,
               status: 'PENDING',
@@ -256,14 +317,28 @@ export class InvitationService {
             }
           })
           
+          logger.logInvitationCreated(emailAddress, role, tenantId, retryInvitationDb.id)
+          
           return {
             success: true,
-            invitation: retryInvitation_db,
-            clerkInvitation: retryInvitation,
+            invitation: {
+              id: retryInvitationDb.id,
+              emailAddress,
+              status: 'pending' as const,
+              role,
+              tenantId,
+              tenantName: retryTenantInfo?.name || 'SweetSpot Cowork',
+              createdAt: retryInvitationDb.createdAt.toISOString(),
+              invitedBy
+            },
             message: 'Invitation created successfully after retry'
           }
-        } catch (retryError) {
-          logger.error('Retry also failed', retryError, { emailAddress })
+        } catch (retryError: any) {
+          logger.error('Retry also failed', retryError, { 
+            emailAddress, 
+            originalError: error.message,
+            retryError: retryError.message
+          })
         }
         
         throw new Error('Limitación temporal de Clerk: Este email fue usado recientemente y no puede ser re-invitado por unos minutos. Opciones: 1) Esperar 5-10 minutos e intentar nuevamente, 2) Usar un email alternativo, o 3) El usuario puede intentar registrarse directamente en la plataforma.')
