@@ -243,9 +243,10 @@ export function ClerkAuthProvider({ children }: AuthProviderProps) {
   // Role hierarchy for comparison
   const ROLE_HIERARCHY: Record<UserRole, number> = {
     END_USER: 1,
-    CLIENT_ADMIN: 2,
-    COWORK_ADMIN: 3,
-    SUPER_ADMIN: 4,
+    COWORK_USER: 2,    // Usuario de cowork - acceso básico al cowork
+    CLIENT_ADMIN: 3,   // Admin de cliente - gestiona sus propios clientes
+    COWORK_ADMIN: 4,   // Admin de cowork - gestiona el cowork completo
+    SUPER_ADMIN: 5,    // Super admin - acceso a toda la plataforma
   };
 
   // Role checking functions
