@@ -14,10 +14,10 @@ export async function DELETE(
 ) {
   try {
     const { id } = params
-    logger.logAPICall(`/api/invitations/${id}`, 'DELETE', clerkUser?.id)
     
-    // Check authentication
+    // Check authentication first
     const clerkUser = await currentUser()
+    logger.logAPICall(`/api/invitations/${id}`, 'DELETE', clerkUser?.id)
     
     if (!clerkUser) {
       return NextResponse.json(
@@ -101,8 +101,9 @@ export async function DELETE(
       message: 'Invitation revoked successfully'
     })
 
-  } catch (error) {
-    logger.error('Unified invitation DELETE API error', error, { invitationId: id })
+  } catch (error: any) {
+    const { id: invitationId } = params
+    logger.error('Unified invitation DELETE API error', error, { invitationId })
     return NextResponse.json(
       { success: false, error: 'Failed to revoke invitation' },
       { status: 500 }
