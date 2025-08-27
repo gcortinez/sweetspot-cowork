@@ -56,7 +56,8 @@ export async function DELETE(
     // First try with stored clerkInvitationId
     if (invitation.clerkInvitationId) {
       try {
-        await clerkClient.invitations.revokeInvitation(invitation.clerkInvitationId)
+        const clerk = await clerkClient()
+        await clerk.invitations.revokeInvitation(invitation.clerkInvitationId)
         logger.info('Invitation revoked in Clerk by ID', { clerkInvitationId: invitation.clerkInvitationId, email: invitation.email })
         clerkRevoked = true
       } catch (clerkError: any) {
@@ -70,13 +71,14 @@ export async function DELETE(
     if (!clerkRevoked) {
       try {
         logger.debug('Searching for invitation by email', { email: invitation.email })
-        const clerkInvitations = await clerkClient.invitations.getInvitationList()
+        const clerk = await clerkClient()
+        const clerkInvitations = await clerk.invitations.getInvitationList()
         const pendingInvitation = clerkInvitations.find(
           inv => inv.emailAddress === invitation.email && inv.status === 'pending'
         )
         
         if (pendingInvitation) {
-          await clerkClient.invitations.revokeInvitation(pendingInvitation.id)
+          await clerk.invitations.revokeInvitation(pendingInvitation.id)
           logger.info('Invitation revoked in Clerk by email search', { clerkInvitationId: pendingInvitation.id, email: invitation.email })
           clerkRevoked = true
         } else {

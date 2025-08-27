@@ -60,7 +60,8 @@ export async function POST(
     // Check if Clerk invitation still exists
     let clerkInvitation = null
     try {
-      clerkInvitation = await clerkClient.invitations.getInvitation(invitation.clerkInvitationId)
+      const clerk = await clerkClient()
+      clerkInvitation = await clerk.invitations.getInvitation(invitation.clerkInvitationId)
     } catch (error: any) {
       if (error.status === 404) {
         return NextResponse.json(
@@ -80,11 +81,12 @@ export async function POST(
 
     // Resend the invitation through Clerk (this doesn't have a direct API, so we'll create a new one)
     // Since Clerk doesn't have a direct resend API, we need to revoke and recreate
-    await clerkClient.invitations.revokeInvitation(invitation.clerkInvitationId)
+    const clerk2 = await clerkClient()
+    await clerk2.invitations.revokeInvitation(invitation.clerkInvitationId)
 
     // Create new invitation
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    const newClerkInvitation = await clerkClient.invitations.createInvitation({
+    const newClerkInvitation = await clerk2.invitations.createInvitation({
       emailAddress: invitation.email,
       redirectUrl: `${appUrl}/accept-invitation`,
       publicMetadata: {

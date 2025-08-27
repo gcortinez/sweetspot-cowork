@@ -160,11 +160,14 @@ export default function InvitationAcceptClient() {
         try {
           const emailAddress = result.createdUser?.emailAddresses?.[0]?.emailAddress || invitationEmail
           if (emailAddress) {
-            console.log('📝 Updating invitation status for:', emailAddress)
+            console.log('📝 Updating invitation status for:', emailAddress, 'clerkUserId:', result.createdUserId)
             const response = await fetch('/api/invitations/accept', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email: emailAddress })
+              body: JSON.stringify({ 
+                email: emailAddress,
+                clerkUserId: result.createdUserId 
+              })
             })
             
             const data = await response.json()
@@ -233,11 +236,14 @@ export default function InvitationAcceptClient() {
         try {
           // For sign-in, use the email from the invitation
           if (invitationEmail) {
-            console.log('📝 Updating invitation status for existing user:', invitationEmail)
+            console.log('📝 Updating invitation status for existing user:', invitationEmail, 'sessionUserId:', result.createdUserId)
             const response = await fetch('/api/invitations/accept', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email: invitationEmail })
+              body: JSON.stringify({ 
+                email: invitationEmail,
+                clerkUserId: result.createdUserId 
+              })
             })
             
             const data = await response.json()

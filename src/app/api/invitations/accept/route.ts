@@ -8,20 +8,28 @@ import { InvitationService } from '@/services/invitation.service'
  */
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth()
-    
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'Authentication required' },
-        { status: 401 }
-      )
-    }
-    
-    const { email } = await request.json()
+    const { email, clerkUserId } = await request.json()
     
     if (!email) {
       return NextResponse.json(
         { success: false, error: 'Email is required' },
+        { status: 400 }
+      )
+    }
+    
+    // Try to get userId from auth first, then fallback to provided clerkUserId
+    let userId: string | null = null
+    try {
+      const authResult = await auth()
+      userId = authResult.userId
+    } catch (authError) {
+      // Auth might fail if session is very new, use provided clerkUserId
+      userId = clerkUserId
+    }
+    
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: 'User ID is required (either authenticated or provided)' },
         { status: 400 }
       )
     }
@@ -31,7 +39,8 @@ export async function POST(request: NextRequest) {
     // Get user data from Clerk to pass to the service
     let userData = {}
     try {
-      const clerkUser = await clerkClient.users.getUser(userId)
+      const clerk = await clerkClient()
+      const clerkUser = await clerk.users.getUser(userId)
       userData = {
         firstName: clerkUser.firstName || '',
         lastName: clerkUser.lastName || '',
