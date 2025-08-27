@@ -49,47 +49,37 @@ export function ClerkAuthProvider({ children }: AuthProviderProps) {
     if (!clerkUser) return null;
 
     try {
-      // Get user metadata from Clerk (check both private and public for backward compatibility)
-      const privateMetadata = clerkUser.privateMetadata as ClerkUserMetadata;
-      const publicMetadata = clerkUser.publicMetadata as ClerkUserMetadata;
+      // SECURITY: Get role from database instead of Clerk metadata
+      // Clerk metadata is not secure in client-side components
+      let role = 'END_USER' as UserRole;
+      let tenantId = null;
+      let isOnboarded = false;
       
-      // Auto-assign SUPER_ADMIN to specific email or first user
-      let role = privateMetadata?.role || publicMetadata?.role || 'END_USER';
-      
-      // Check if this is the admin email or Gustavo
-      const adminEmail = clerkUser.emailAddresses[0]?.emailAddress;
-      const isGustavo = clerkUser.firstName === 'Gustavo' || adminEmail?.includes('gustavo');
-      
-      if ((adminEmail === 'gcortinez@getsweetspot.io' || isGustavo) && !privateMetadata?.role && !publicMetadata?.role) {
-        console.log('🔧 Auto-assigning SUPER_ADMIN role to:', adminEmail || clerkUser.firstName);
-        role = 'SUPER_ADMIN';
+      try {
+        // Fetch user data from secure server endpoint
+        const response = await fetch('/api/auth/current-user', {
+          method: 'GET',
+          credentials: 'include'
+        });
         
-        // Update metadata in Clerk via API route (use private metadata for security)
-        try {
-          const response = await fetch('/api/auth/update-metadata', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: clerkUser.id,
-              metadata: {
-                role: 'SUPER_ADMIN',
-                tenantId: null,
-                isOnboarded: true,
-              },
-              type: 'private'
-            })
-          });
-          
-          if (response.ok) {
-            console.log('✅ Updated Clerk metadata for SUPER_ADMIN');
-          } else {
-            const errorData = await response.json();
-            console.warn('⚠️ Could not update metadata via API:', errorData.error);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.user) {
+            role = data.user.role;
+            tenantId = data.user.tenantId;
+            isOnboarded = data.user.isOnboarded;
+            console.log('🔒 Secure role loaded from database:', role);
           }
-        } catch (updateError) {
-          console.warn('⚠️ Metadata update skipped, using local state. This is expected on first load:', updateError);
         }
+      } catch (error) {
+        console.warn('Failed to fetch secure user data, using fallback:', error);
+        // Fallback to metadata for backward compatibility (insecure)
+        const privateMetadata = clerkUser.privateMetadata as ClerkUserMetadata;
+        const publicMetadata = clerkUser.publicMetadata as ClerkUserMetadata;
+        role = privateMetadata?.role || publicMetadata?.role || 'END_USER';
       }
+      
+      console.log('🔒 Role resolved from database:', { role, tenantId, isOnboarded });
 
       // Sync Clerk ID with database
       try {
@@ -116,14 +106,14 @@ export function ClerkAuthProvider({ children }: AuthProviderProps) {
         firstName: clerkUser.firstName,
         lastName: clerkUser.lastName,
         role: role as UserRole,
-        tenantId: privateMetadata?.tenantId || publicMetadata?.tenantId || null,
-        clientId: privateMetadata?.clientId || publicMetadata?.clientId,
-        isOnboarded: privateMetadata?.isOnboarded || publicMetadata?.isOnboarded || (role === 'SUPER_ADMIN'),
+        tenantId: tenantId,
+        clientId: null, // Will be set from database if needed
+        isOnboarded: isOnboarded,
         clerkUser: clerkUser,
         metadata: {
-          ...privateMetadata,
-          ...publicMetadata,
           role: role as UserRole,
+          tenantId: tenantId,
+          isOnboarded: isOnboarded,
         },
       };
 
