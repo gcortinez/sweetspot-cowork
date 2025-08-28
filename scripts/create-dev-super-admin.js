@@ -21,7 +21,7 @@ async function createSuperAdmin() {
       const updatedUser = await prisma.user.update({
         where: { id: existingUser.id },
         data: {
-          firstName: 'Gonzalo',
+          firstName: 'Gustavo',
           lastName: 'Cortinez',
           role: 'SUPER_ADMIN',
           status: 'ACTIVE',
@@ -35,7 +35,7 @@ async function createSuperAdmin() {
       const superAdmin = await prisma.user.create({
         data: {
           email: email,
-          firstName: 'Gonzalo',
+          firstName: 'Gustavo',
           lastName: 'Cortinez',
           role: 'SUPER_ADMIN',
           status: 'ACTIVE',
