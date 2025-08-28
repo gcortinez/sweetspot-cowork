@@ -113,6 +113,29 @@ export function CoworkManagement() {
     status: 'ACTIVE' as 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
   });
 
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+
+  // Generate unique slug
+  const generateUniqueSlug = (name: string): string => {
+    let baseSlug = name
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '');
+    
+    // Check if slug exists in current coworks list
+    const existingSlugs = coworks.map(c => c.slug);
+    let uniqueSlug = baseSlug;
+    let counter = 1;
+    
+    while (existingSlugs.includes(uniqueSlug)) {
+      uniqueSlug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+    
+    return uniqueSlug;
+  };
+
   // Set mounted state
   useEffect(() => {
     setMounted(true);
@@ -273,6 +296,9 @@ export function CoworkManagement() {
   // Handle create new cowork
   const handleCreateCowork = async () => {
     try {
+      setIsCreating(true);
+      setCreateError(null);
+      
       console.log('Creating new cowork:', createFormData);
       
       const response = await fetch('/api/coworks', {
@@ -286,7 +312,8 @@ export function CoworkManagement() {
       const data = await response.json();
       
       if (!response.ok || !data.success) {
-        throw new Error(data.error || `Error ${response.status}: ${response.statusText}`);
+        setCreateError(data.error || `Error ${response.status}: ${response.statusText}`);
+        return;
       }
       
       console.log('Cowork created successfully:', data.message);
@@ -299,6 +326,7 @@ export function CoworkManagement() {
         description: '',
         status: 'ACTIVE'
       });
+      setCreateError(null);
       setShowCreateModal(false);
       
       // Refresh coworks list
@@ -307,7 +335,9 @@ export function CoworkManagement() {
       
     } catch (error: any) {
       console.error('Error creating cowork:', error);
-      alert(`Error al crear el cowork: ${error.message || 'Error desconocido'}`);
+      setCreateError(error.message || 'Error desconocido al crear el cowork');
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -904,12 +934,20 @@ export function CoworkManagement() {
                     description: '',
                     status: 'ACTIVE'
                   });
+                  setCreateError(null);
                 }}
                 className="text-gray-400 hover:text-gray-600"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
+            
+            {/* Error message */}
+            {createError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-700">{createError}</p>
+              </div>
+            )}
             
             <form className="space-y-4">
               <div>
@@ -920,14 +958,16 @@ export function CoworkManagement() {
                   type="text"
                   value={createFormData.name}
                   onChange={(e) => {
-                    setCreateFormData(prev => ({ ...prev, name: e.target.value }));
-                    // Auto-generate slug if empty
-                    if (!createFormData.slug) {
-                      const slug = e.target.value
-                        .toLowerCase()
-                        .replace(/\s+/g, '-')
-                        .replace(/[^a-z0-9-]/g, '');
-                      setCreateFormData(prev => ({ ...prev, slug }));
+                    const newName = e.target.value;
+                    setCreateFormData(prev => ({ ...prev, name: newName }));
+                    // Auto-generate unique slug if current slug matches the old name pattern
+                    if (!createFormData.slug || createFormData.slug === generateUniqueSlug(createFormData.name)) {
+                      const uniqueSlug = generateUniqueSlug(newName);
+                      setCreateFormData(prev => ({ ...prev, slug: uniqueSlug }));
+                    }
+                    // Clear any previous errors
+                    if (createError) {
+                      setCreateError(null);
                     }
                   }}
                   placeholder="Nombre del cowork"
@@ -943,7 +983,13 @@ export function CoworkManagement() {
                 <input
                   type="text"
                   value={createFormData.slug}
-                  onChange={(e) => setCreateFormData(prev => ({ ...prev, slug: e.target.value }))}
+                  onChange={(e) => {
+                    setCreateFormData(prev => ({ ...prev, slug: e.target.value }));
+                    // Clear any previous errors
+                    if (createError) {
+                      setCreateError(null);
+                    }
+                  }}
                   placeholder="slug-del-cowork"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
@@ -1005,8 +1051,10 @@ export function CoworkManagement() {
                       description: '',
                       status: 'ACTIVE'
                     });
+                    setCreateError(null);
                   }}
-                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
+                  disabled={isCreating}
+                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
                 >
                   Cancelar
                 </button>
@@ -1015,14 +1063,21 @@ export function CoworkManagement() {
                   onClick={(e) => {
                     e.preventDefault();
                     if (!createFormData.name.trim() || !createFormData.slug.trim()) {
-                      alert('El nombre y slug son requeridos');
+                      setCreateError('El nombre y slug son requeridos');
                       return;
                     }
                     handleCreateCowork();
                   }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  disabled={isCreating}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                 >
-                  Crear Cowork
+                  {isCreating && (
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  )}
+                  <span>{isCreating ? 'Creando...' : 'Crear Cowork'}</span>
                 </button>
               </div>
             </form>
