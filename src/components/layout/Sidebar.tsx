@@ -17,11 +17,16 @@ import {
   Wrench,
   TrendingUp,
   Shield,
-  Database
-} from '@/lib/icons'
-import { useUser } from '@clerk/nextjs'
+  Database,
+  UserCog,
+  Folder
+} from 'lucide-react'
+import { useAuth } from '@/contexts/clerk-auth-context'
 import { useCoworkSelection } from '@/contexts/cowork-selection-context'
+import { useNavigationPermissions } from '@/hooks/use-permissions'
 import { Button } from '@/components/ui/button'
+import { CanAccess } from '@/components/guards/CanAccess'
+import { Resource } from '@/lib/auth/permissions'
 
 interface SidebarProps {
   className?: string
@@ -30,71 +35,140 @@ interface SidebarProps {
 
 export function Sidebar({ className = '', onCreateLead }: SidebarProps) {
   const [isMounted, setIsMounted] = React.useState(false)
-  const { user } = useUser()
+  const { user } = useAuth()
   const pathname = usePathname()
-  const { selectedCowork, isPlatformView, isSuperAdmin } = useCoworkSelection()
+  const { selectedCowork, isPlatformView } = useCoworkSelection()
+  const navPermissions = useNavigationPermissions()
 
   React.useEffect(() => {
     setIsMounted(true)
   }, [])
 
-  // Get user role for footer display
-  const privateMetadata = user?.privateMetadata as any
-  const publicMetadata = user?.publicMetadata as any
-  const userRole = privateMetadata?.role || publicMetadata?.role || 'END_USER'
+  // Build navigation items based on permissions
+  const getNavigationItems = () => {
+    const items: Array<{
+      label: string
+      href: string
+      icon: any
+      active: boolean
+      permission?: Resource
+      separator?: boolean
+    }> = []
 
-  // Platform view navigation items (Super Admin only)
-  const platformNavigationItems = [
-    {
-      label: 'Vista General de la Plataforma',
-      href: '/dashboard',
-      icon: Database,
-      active: pathname === '/dashboard'
+    // Platform view for Super Admin
+    if (isPlatformView) {
+      items.push({
+        label: 'Vista General de la Plataforma',
+        href: '/dashboard',
+        icon: Database,
+        active: pathname === '/dashboard'
+      })
+      return items
     }
-  ]
 
-  // Cowork-specific navigation items
-  const coworkNavigationItems = [
-    {
-      label: 'Dashboard',
-      href: '/dashboard',
-      icon: Home,
-      active: pathname === '/dashboard'
-    },
-    {
-      label: 'Prospectos',
-      href: '/leads',
-      icon: Users,
-      active: pathname.startsWith('/leads')
-    },
-    {
-      label: 'Oportunidades',
-      href: '/opportunities',
-      icon: TrendingUp,
-      active: pathname.startsWith('/opportunities')
-    },
-    {
-      label: 'Clientes',
-      href: '/clients',
-      icon: UserCheck,
-      active: pathname.startsWith('/clients')
-    },
-    {
-      label: 'Cotizaciones',
-      href: '/quotations',
-      icon: FileText,
-      active: pathname.startsWith('/quotations')
-    },
-    {
-      label: 'Servicios',
-      href: '/services',
-      icon: Wrench,
-      active: pathname.startsWith('/services')
+    // Dashboard (always visible)
+    if (navPermissions.showDashboard) {
+      items.push({
+        label: 'Dashboard',
+        href: '/dashboard',
+        icon: Home,
+        active: pathname === '/dashboard'
+      })
     }
-  ]
 
-  // Select navigation items based on current view
-  const navigationItems = isPlatformView ? platformNavigationItems : coworkNavigationItems
+    // CRM Section
+    if (navPermissions.showLeads) {
+      items.push({
+        label: 'Prospectos',
+        href: '/leads',
+        icon: Users,
+        active: pathname.startsWith('/leads'),
+        permission: Resource.PROSPECT_VIEW
+      })
+    }
+
+    if (navPermissions.showOpportunities) {
+      items.push({
+        label: 'Oportunidades',
+        href: '/opportunities',
+        icon: TrendingUp,
+        active: pathname.startsWith('/opportunities'),
+        permission: Resource.OPPORTUNITY_VIEW
+      })
+    }
+
+    if (navPermissions.showClients) {
+      items.push({
+        label: 'Clientes',
+        href: '/clients',
+        icon: UserCheck,
+        active: pathname.startsWith('/clients'),
+        permission: Resource.CLIENT_VIEW
+      })
+    }
+
+    if (navPermissions.showQuotations) {
+      items.push({
+        label: 'Cotizaciones',
+        href: '/quotations',
+        icon: FileText,
+        active: pathname.startsWith('/quotations'),
+        permission: Resource.QUOTATION_VIEW
+      })
+    }
+
+    // Services
+    if (navPermissions.showServices) {
+      items.push({
+        label: 'Servicios',
+        href: '/services',
+        icon: Wrench,
+        active: pathname.startsWith('/services'),
+        permission: Resource.SERVICE_VIEW
+      })
+    }
+
+    // Spaces
+    if (navPermissions.showSpaces) {
+      items.push({
+        label: 'Espacios',
+        href: '/spaces',
+        icon: Folder,
+        active: pathname.startsWith('/spaces'),
+        permission: Resource.SPACE_VIEW
+      })
+    }
+
+    // Admin Section Separator
+    if (navPermissions.showUsers || navPermissions.showReports) {
+      items.push({ separator: true } as any)
+    }
+
+    // User Management
+    if (navPermissions.showUsers) {
+      items.push({
+        label: 'Gestión de Usuarios',
+        href: '/users',
+        icon: UserCog,
+        active: pathname.startsWith('/users'),
+        permission: Resource.USER_EDIT
+      })
+    }
+
+    // Reports
+    if (navPermissions.showReports) {
+      items.push({
+        label: 'Reportes',
+        href: '/reports',
+        icon: BarChart3,
+        active: pathname.startsWith('/reports')
+      })
+    }
+
+    return items
+  }
+
+  const navigationItems = getNavigationItems()
 
   return (
     <div className={`flex flex-col h-full bg-white border-r border-gray-200 ${className}`}>
@@ -121,15 +195,17 @@ export function Sidebar({ className = '', onCreateLead }: SidebarProps) {
 
       {/* Quick Actions */}
       {onCreateLead && !isPlatformView && (
-        <div className="p-4 border-b border-gray-200">
-          <Button
-            onClick={onCreateLead}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-            size="sm"
-          >
-            + Nuevo Prospecto
-          </Button>
-        </div>
+        <CanAccess permission={Resource.PROSPECT_CREATE}>
+          <div className="p-4 border-b border-gray-200">
+            <Button
+              onClick={onCreateLead}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+              size="sm"
+            >
+              + Nuevo Prospecto
+            </Button>
+          </div>
+        </CanAccess>
       )}
 
       {/* Navigation */}
@@ -166,19 +242,23 @@ export function Sidebar({ className = '', onCreateLead }: SidebarProps) {
       {/* Footer Info */}
       <div className="p-4 border-t border-gray-200">
         <div className="text-xs text-gray-500 text-center">
-          {isMounted && (
+          {isMounted && user && (
             <>
-              {isSuperAdmin ? (
+              {user.role === 'SUPER_ADMIN' ? (
                 <span className="bg-purple-100 text-purple-700 text-xs font-medium px-2 py-1 rounded mb-2 inline-block">
                   SUPER_ADMIN
                 </span>
-              ) : userRole === 'COWORK_ADMIN' ? (
+              ) : user.role === 'COWORK_ADMIN' ? (
                 <span className="bg-blue-100 text-blue-700 text-xs font-medium px-2 py-1 rounded mb-2 inline-block">
                   COWORK_ADMIN
                 </span>
+              ) : user.role === 'COWORK_USER' ? (
+                <span className="bg-green-100 text-green-700 text-xs font-medium px-2 py-1 rounded mb-2 inline-block">
+                  COWORK_USER
+                </span>
               ) : (
                 <span className="bg-gray-100 text-gray-700 text-xs font-medium px-2 py-1 rounded mb-2 inline-block">
-                  {userRole}
+                  {user.role}
                 </span>
               )}
               <br />

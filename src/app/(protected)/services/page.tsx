@@ -9,9 +9,11 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
-// Removed direct server action imports to avoid client/server component conflicts
-// Using API routes instead
 import { useToast } from '@/hooks/use-toast'
+import { useServicePermissions } from '@/hooks/use-permissions'
+import { PermissionGuard } from '@/components/guards/PermissionGuard'
+import { CanAccess } from '@/components/guards/CanAccess'
+import { Resource } from '@/lib/auth/permissions'
 import ServicesTable from '@/components/services/ServicesTable'
 import CreateServiceModal from '@/components/services/CreateServiceModal'
 import EditServiceModal from '@/components/services/EditServiceModal'
@@ -129,6 +131,7 @@ const CATEGORY_ICONS = {
 }
 
 export default function ServicesPage() {
+  const servicePermissions = useServicePermissions()
   const [services, setServices] = useState<Service[]>([])
   const [stats, setStats] = useState<ServiceStats | null>(null)
   const [activeTab, setActiveTab] = useState('all')
@@ -386,8 +389,24 @@ export default function ServicesPage() {
   }, [debouncedSearchTerm, selectedCategory, activeTab, loadServices, hasInitialLoad])
 
   return (
-    <div className="bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <PermissionGuard 
+      require={Resource.SERVICE_VIEW}
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <Wrench className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              Acceso Restringido
+            </h2>
+            <p className="text-gray-600">
+              No tienes permisos para ver los servicios.
+            </p>
+          </div>
+        </div>
+      }
+    >
+      <div className="bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
         {/* Breadcrumb */}
         <div className="mb-6">
@@ -419,39 +438,45 @@ export default function ServicesPage() {
               <p className="text-gray-600 mt-2">Gestiona el catálogo de servicios de tu coworking</p>
             </div>
             <div className="flex items-center gap-3">
-              <Button 
-                onClick={() => setShowDeleteAllConfirm(true)}
-                variant="outline"
-                className="border-red-300 text-red-700 hover:bg-red-50"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Eliminar Todos
-              </Button>
-              <Button 
-                onClick={handleCreatePredefinedServices}
-                variant="outline"
-                disabled={isCreatingPredefined}
-                className="border-purple-300 text-purple-700 hover:bg-purple-50"
-              >
-                {isCreatingPredefined ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Creando...
-                  </>
-                ) : (
-                  <>
-                    <Package className="h-4 w-4 mr-2" />
-                    Servicios Predefinidos
-                  </>
-                )}
-              </Button>
-              <Button 
-                onClick={() => setShowCreateModal(true)}
-                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-purple"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Nuevo Servicio
-              </Button>
+              <CanAccess permission={Resource.SERVICE_DELETE}>
+                <Button 
+                  onClick={() => setShowDeleteAllConfirm(true)}
+                  variant="outline"
+                  className="border-red-300 text-red-700 hover:bg-red-50"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Eliminar Todos
+                </Button>
+              </CanAccess>
+              <CanAccess permission={Resource.SERVICE_CREATE}>
+                <Button 
+                  onClick={handleCreatePredefinedServices}
+                  variant="outline"
+                  disabled={isCreatingPredefined}
+                  className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                >
+                  {isCreatingPredefined ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Creando...
+                    </>
+                  ) : (
+                    <>
+                      <Package className="h-4 w-4 mr-2" />
+                      Servicios Predefinidos
+                    </>
+                  )}
+                </Button>
+              </CanAccess>
+              <CanAccess permission={Resource.SERVICE_CREATE}>
+                <Button 
+                  onClick={() => setShowCreateModal(true)}
+                  className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-purple"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nuevo Servicio
+                </Button>
+              </CanAccess>
             </div>
           </div>
         </div>
@@ -598,13 +623,16 @@ export default function ServicesPage() {
               services={services}
               isLoading={isLoading}
               isFiltering={isFiltering}
-              onEdit={handleServiceEdit}
-              onDelete={handleServiceDeleted}
+              onEdit={servicePermissions.canEdit ? handleServiceEdit : undefined}
+              onDelete={servicePermissions.canDelete ? handleServiceDeleted : undefined}
               onDetail={handleServiceDetail}
-              onCreateService={() => setShowCreateModal(true)}
-              onCreatePredefined={handleCreatePredefinedServices}
+              onCreateService={servicePermissions.canCreate ? () => setShowCreateModal(true) : undefined}
+              onCreatePredefined={servicePermissions.canCreate ? handleCreatePredefinedServices : undefined}
               isCreatingPredefined={isCreatingPredefined}
               deletingServiceId={deletingServiceId}
+              canEdit={servicePermissions.canEdit}
+              canDelete={servicePermissions.canDelete}
+              isReadOnly={servicePermissions.isReadOnly}
             />
           </div>
         </div>
@@ -648,5 +676,6 @@ export default function ServicesPage() {
         variant="destructive"
       />
     </div>
+  </PermissionGuard>
   )
 }
