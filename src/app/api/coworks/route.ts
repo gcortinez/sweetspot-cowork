@@ -139,3 +139,121 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+export async function POST(request: NextRequest) {
+  try {
+    // Get the current user from Clerk
+    const clerkUser = await currentUser()
+    
+    if (!clerkUser) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // Get user role from Clerk metadata
+    const privateMetadata = clerkUser.privateMetadata as any;
+    const publicMetadata = clerkUser.publicMetadata as any;
+    const userRole = privateMetadata?.role || publicMetadata?.role || 'END_USER';
+    
+    // Only SUPER_ADMIN can create coworks
+    if (userRole !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { success: false, error: 'Insufficient permissions. Only Super Admins can create coworks.' },
+        { status: 403 }
+      )
+    }
+
+    // Parse request body
+    const body = await request.json()
+    const { name, slug, domain, description, status } = body
+
+    // Validate required fields
+    if (!name?.trim() || !slug?.trim()) {
+      return NextResponse.json(
+        { success: false, error: 'Name and slug are required' },
+        { status: 400 }
+      )
+    }
+
+    // Validate slug format
+    const slugRegex = /^[a-z0-9-]+$/
+    if (!slugRegex.test(slug)) {
+      return NextResponse.json(
+        { success: false, error: 'Slug must contain only lowercase letters, numbers, and hyphens' },
+        { status: 400 }
+      )
+    }
+
+    // Check if slug already exists
+    const existingSlug = await prisma.tenant.findUnique({
+      where: { slug },
+      select: { id: true }
+    })
+
+    if (existingSlug) {
+      return NextResponse.json(
+        { success: false, error: 'A cowork with this slug already exists' },
+        { status: 409 }
+      )
+    }
+
+    // Check if domain already exists (if provided)
+    if (domain?.trim()) {
+      const existingDomain = await prisma.tenant.findUnique({
+        where: { domain: domain.trim() },
+        select: { id: true }
+      })
+
+      if (existingDomain) {
+        return NextResponse.json(
+          { success: false, error: 'A cowork with this domain already exists' },
+          { status: 409 }
+        )
+      }
+    }
+
+    // Create the new cowork
+    const newCowork = await prisma.tenant.create({
+      data: {
+        name: name.trim(),
+        slug: slug.trim(),
+        domain: domain?.trim() || null,
+        description: description?.trim() || null,
+        status: status || 'ACTIVE',
+        settings: {
+          features: {
+            bookings: true,
+            invoices: true,
+            visitors: true,
+            services: true
+          }
+        }
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        domain: true,
+        description: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Cowork created successfully',
+      data: newCowork
+    })
+
+  } catch (error) {
+    console.error('Error creating cowork:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to create cowork' },
+      { status: 500 }
+    )
+  }
+}

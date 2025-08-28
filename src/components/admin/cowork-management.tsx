@@ -105,6 +105,14 @@ export function CoworkManagement() {
     status: 'ACTIVE' as 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
   });
 
+  const [createFormData, setCreateFormData] = useState({
+    name: '',
+    slug: '',
+    domain: '',
+    description: '',
+    status: 'ACTIVE' as 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
+  });
+
   // Set mounted state
   useEffect(() => {
     setMounted(true);
@@ -259,6 +267,47 @@ export function CoworkManagement() {
     } catch (error) {
       console.error('Error updating cowork:', error);
       alert(`Error al actualizar el cowork: ${error.message || 'Error desconocido'}`);
+    }
+  };
+
+  // Handle create new cowork
+  const handleCreateCowork = async () => {
+    try {
+      console.log('Creating new cowork:', createFormData);
+      
+      const response = await fetch('/api/coworks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(createFormData)
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || `Error ${response.status}: ${response.statusText}`);
+      }
+      
+      console.log('Cowork created successfully:', data.message);
+      
+      // Clear form and close modal
+      setCreateFormData({
+        name: '',
+        slug: '',
+        domain: '',
+        description: '',
+        status: 'ACTIVE'
+      });
+      setShowCreateModal(false);
+      
+      // Refresh coworks list
+      await loadCoworks();
+      await refreshCoworks();
+      
+    } catch (error: any) {
+      console.error('Error creating cowork:', error);
+      alert(`Error al crear el cowork: ${error.message || 'Error desconocido'}`);
     }
   };
 
@@ -832,6 +881,148 @@ export function CoworkManagement() {
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
                   Guardar cambios
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Create Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-gray-900">Crear Nuevo Cowork</h3>
+              <button
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setCreateFormData({
+                    name: '',
+                    slug: '',
+                    domain: '',
+                    description: '',
+                    status: 'ACTIVE'
+                  });
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <form className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nombre <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={createFormData.name}
+                  onChange={(e) => {
+                    setCreateFormData(prev => ({ ...prev, name: e.target.value }));
+                    // Auto-generate slug if empty
+                    if (!createFormData.slug) {
+                      const slug = e.target.value
+                        .toLowerCase()
+                        .replace(/\s+/g, '-')
+                        .replace(/[^a-z0-9-]/g, '');
+                      setCreateFormData(prev => ({ ...prev, slug }));
+                    }
+                  }}
+                  placeholder="Nombre del cowork"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Slug <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={createFormData.slug}
+                  onChange={(e) => setCreateFormData(prev => ({ ...prev, slug: e.target.value }))}
+                  placeholder="slug-del-cowork"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  URL amigable para el cowork (solo letras minúsculas, números y guiones)
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Descripción
+                </label>
+                <textarea
+                  value={createFormData.description}
+                  onChange={(e) => setCreateFormData(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Descripción del cowork"
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Dominio personalizado
+                </label>
+                <input
+                  type="text"
+                  value={createFormData.domain}
+                  onChange={(e) => setCreateFormData(prev => ({ ...prev, domain: e.target.value }))}
+                  placeholder="micowork.com (opcional)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Estado inicial
+                </label>
+                <select
+                  value={createFormData.status}
+                  onChange={(e) => setCreateFormData(prev => ({ ...prev, status: e.target.value as any }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="ACTIVE">Activo</option>
+                  <option value="INACTIVE">Inactivo</option>
+                </select>
+              </div>
+              
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setCreateFormData({
+                      name: '',
+                      slug: '',
+                      domain: '',
+                      description: '',
+                      status: 'ACTIVE'
+                    });
+                  }}
+                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (!createFormData.name.trim() || !createFormData.slug.trim()) {
+                      alert('El nombre y slug son requeridos');
+                      return;
+                    }
+                    handleCreateCowork();
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Crear Cowork
                 </button>
               </div>
             </form>
