@@ -383,7 +383,7 @@ export function CoworkManagement() {
   }
 
   return (
-    <div className="space-y-6 relative">
+    <div className="space-y-6 relative w-full max-w-full overflow-hidden min-w-0">
       {/* Header */}
       <div className="bg-white rounded-lg shadow-sm border p-6">
         <div className="flex items-center justify-between mb-6">
@@ -426,24 +426,24 @@ export function CoworkManagement() {
       </div>
 
       {/* Coworks Table */}
-      <div className="bg-white rounded-lg shadow-sm border">
-        <div className="overflow-x-auto overflow-y-visible">
-          <table className="min-w-full divide-y divide-gray-200">
+      <div className="bg-white rounded-lg shadow-sm border w-full max-w-full overflow-hidden min-w-0">
+        <div className="overflow-x-auto overflow-y-visible w-full max-w-full min-w-0">
+          <table className="w-full divide-y divide-gray-200 table-fixed min-w-0">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="w-2/5 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Cowork
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Estado
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Estadísticas
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Creado
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="w-16 px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
@@ -451,8 +451,8 @@ export function CoworkManagement() {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredCoworks.map((cowork) => (
                 <tr key={cowork.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
+                  <td className="px-6 py-4 min-w-0 max-w-0 overflow-hidden">
+                    <div className="flex items-center min-w-0">
                       <div className="flex-shrink-0 h-10 w-10">
                         {cowork.logo ? (
                           <img className="h-10 w-10 rounded-lg object-cover" src={cowork.logo} alt="" />
@@ -462,45 +462,45 @@ export function CoworkManagement() {
                           </div>
                         )}
                       </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{cowork.name}</div>
-                        <div className="text-sm text-gray-500 flex items-center space-x-2">
-                          <span>{cowork.slug}</span>
+                      <div className="ml-4 min-w-0 flex-1">
+                        <div className="text-sm font-medium text-gray-900 truncate">{cowork.name}</div>
+                        <div className="text-sm text-gray-500 flex items-center space-x-1 min-w-0">
+                          <span className="truncate">{cowork.slug}</span>
                           {cowork.domain && (
                             <>
                               <span>•</span>
-                              <Globe className="h-3 w-3" />
-                              <span>{cowork.domain}</span>
+                              <Globe className="h-3 w-3 flex-shrink-0" />
+                              <span className="truncate max-w-20">{cowork.domain}</span>
                             </>
                           )}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
+                  <td className="px-6 py-4 min-w-0 overflow-hidden">
+                    <div className="flex items-center space-x-2 min-w-0">
                       {getStatusIcon(cowork.status)}
-                      <span className="text-sm text-gray-900">{getStatusText(cowork.status)}</span>
+                      <span className="text-sm text-gray-900 truncate">{getStatusText(cowork.status)}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      <div className="flex items-center space-x-4">
-                        <span className="flex items-center">
+                  <td className="px-6 py-4 min-w-0 overflow-hidden">
+                    <div className="text-sm text-gray-900 min-w-0">
+                      <div className="flex items-center space-x-2 min-w-0">
+                        <span className="flex items-center flex-shrink-0">
                           <Users className="h-3 w-3 mr-1 text-gray-400" />
-                          {cowork.stats.users}
+                          <span className="w-6 text-center">{cowork.stats.users}</span>
                         </span>
-                        <span className="flex items-center">
+                        <span className="flex items-center flex-shrink-0">
                           <Building2 className="h-3 w-3 mr-1 text-gray-400" />
-                          {cowork.stats.spaces}
+                          <span className="w-6 text-center">{cowork.stats.spaces}</span>
                         </span>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(cowork.createdAt)}
+                  <td className="px-6 py-4 min-w-0 overflow-hidden">
+                    <span className="text-sm text-gray-500 truncate block">{formatDate(cowork.createdAt)}</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <td className="px-6 py-4 text-right text-sm font-medium w-16 min-w-0">
                     <div className="relative">
                       <button
                         onClick={(e) => {
@@ -808,8 +808,8 @@ export function CoworkManagement() {
                 </button>
                 <button
                   onClick={() => {
-                    // Navigate to cowork dashboard
-                    router.push(`/cowork/${selectedCowork.slug}/dashboard`);
+                    // Navigate to main dashboard
+                    router.push('/dashboard');
                   }}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >

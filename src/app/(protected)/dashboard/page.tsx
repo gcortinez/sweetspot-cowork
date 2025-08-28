@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { currentUser } from '@clerk/nextjs/server'
 import { getDashboardStats, getRecentActivities } from '@/lib/actions/dashboard-optimized'
 import DashboardClient from './dashboard-client'
+import DashboardWrapper from './dashboard-wrapper'
 import { DashboardSkeleton, StatsSkeleton, ActivitiesSkeleton } from '@/components/skeletons/dashboard-skeleton'
 
 // Configure page caching
@@ -50,13 +51,13 @@ export default async function DashboardPage() {
 // Static header component
 function DashboardHeader({ user }: { user: any }) {
   return (
-    <header className="bg-gradient-to-r from-white via-purple-50/50 to-indigo-50/50 shadow-lg border-b border-purple-100/50 backdrop-blur-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center space-x-3">
-            <h1 className="text-xl font-bold text-gray-900">SweetSpot Dashboard</h1>
+    <header className="bg-gradient-to-r from-white via-purple-50/50 to-indigo-50/50 shadow-lg border-b border-purple-100/50 backdrop-blur-sm w-full overflow-hidden">
+      <div className="w-full max-w-full mx-auto px-4 sm:px-6 lg:px-8 overflow-hidden">
+        <div className="flex items-center justify-between h-16 min-w-0">
+          <div className="flex items-center space-x-3 min-w-0 flex-1">
+            <h1 className="text-xl font-bold text-gray-900 truncate">SweetSpot Dashboard</h1>
           </div>
-          <div className="text-sm text-gray-700 font-medium">
+          <div className="text-sm text-gray-700 font-medium flex-shrink-0 truncate max-w-xs">
             Bienvenido, {user.firstName || user.email.split('@')[0]}
           </div>
         </div>
@@ -73,17 +74,10 @@ async function DashboardContent({ userData }: { userData: any }) {
     getRecentActivities()
   ])
 
-  // Handle super admin case
-  if (userData.isSuperAdmin) {
-    // Import dynamically to reduce initial bundle
-    const SuperAdminDashboard = (await import('./super-admin-dashboard')).SuperAdminDashboard
-    return <SuperAdminDashboard user={userData} />
-  }
-
-  // Pass data to client component for interactivity
+  // Use the wrapper to handle context-aware rendering
   return (
-    <DashboardClient 
-      user={userData}
+    <DashboardWrapper 
+      userData={userData}
       initialStats={statsResult.success ? statsResult.data : null}
       initialActivities={activitiesResult.success ? activitiesResult.data : []}
       error={!statsResult.success ? statsResult.error : null}

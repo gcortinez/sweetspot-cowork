@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useAuth, useUser } from '@clerk/nextjs';
 // Removed createInvitation import - using API instead
 import InvitationsDashboard from './invitations-dashboard';
 import { 
@@ -15,7 +16,6 @@ import {
   Shield,
   Building2,
   Mail,
-  Phone,
   Calendar,
   CheckCircle,
   XCircle,
@@ -62,6 +62,8 @@ const ROLE_COLORS = {
 };
 
 export function UserManagement() {
+  const { isLoaded, isSignedIn, signOut } = useAuth();
+  const { user: clerkUser } = useUser();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -97,6 +99,7 @@ export function UserManagement() {
   const [isDeletingUser, setIsDeletingUser] = useState(false);
   const [isCleaningInvitations, setIsCleaningInvitations] = useState(false);
   const [isSyncingInvitations, setIsSyncingInvitations] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // Set mounted state for portal
   useEffect(() => {
@@ -110,15 +113,118 @@ export function UserManagement() {
       
       // Fetch users, coworks, and invitations in parallel with error handling
       const [usersResponse, coworksResponse, invitationsResponse] = await Promise.all([
-        fetch('/api/platform/users').catch(err => ({ ok: false, error: err.message })),
-        fetch('/api/platform/coworks').catch(err => ({ ok: false, error: err.message })),
-        fetch('/api/invitations').catch(err => ({ ok: false, error: err.message }))
+        fetch('/api/platform/users').catch(err => {
+          console.error('Error fetching users:', err);
+          return new Response(JSON.stringify({ success: false, error: err.message }), { 
+            status: 500, 
+            headers: { 'Content-Type': 'application/json' } 
+          });
+        }),
+        fetch('/api/platform/coworks').catch(err => {
+          console.error('Error fetching coworks:', err);
+          return new Response(JSON.stringify({ success: false, error: err.message }), { 
+            status: 500, 
+            headers: { 'Content-Type': 'application/json' } 
+          });
+        }),
+        fetch('/api/invitations').catch(err => {
+          console.error('Error fetching invitations:', err);
+          return new Response(JSON.stringify({ success: false, error: err.message }), { 
+            status: 500, 
+            headers: { 'Content-Type': 'application/json' } 
+          });
+        })
       ]);
       
       // Parse responses with error handling
-      const usersData = usersResponse.ok ? await usersResponse.json().catch(() => ({ success: false, error: 'Failed to parse users data' })) : { success: false, error: 'Failed to fetch users' };
-      const coworksData = coworksResponse.ok ? await coworksResponse.json().catch(() => ({ success: false, error: 'Failed to parse coworks data' })) : { success: false, error: 'Failed to fetch coworks' };
-      const invitationsData = invitationsResponse.ok ? await invitationsResponse.json().catch(() => ({ success: false, error: 'Failed to parse invitations data' })) : { success: false, error: 'Failed to fetch invitations' };
+      const parseJsonSafely = async (response: Response, context: string) => {
+        try {
+          // Get response text first to avoid consuming the stream multiple times
+          let text = '';
+          try {
+            text = await response.text();
+          } catch (textError) {
+            console.error(`Failed to read response text for ${context}:`, textError);
+            return { success: false, error: `Failed to read response for ${context}` };
+          }
+
+          console.log(`${context} response:`, {
+            status: response.status,
+            statusText: response.statusText,
+            ok: response.ok,
+            contentType: response.headers.get('content-type'),
+            textPreview: text.substring(0, 100)
+          });
+          
+          // Check if response is empty
+          if (!text || text.trim() === '') {
+            console.warn(`Empty response for ${context}`);
+            return { success: false, error: `Empty response for ${context}` };
+          }
+          
+          // Check if response is HTML (authentication redirect or error page)
+          const trimmedText = text.trim();
+          if (trimmedText.startsWith('<!DOCTYPE') || 
+              trimmedText.startsWith('<html') || 
+              trimmedText.includes('<title>404') ||
+              trimmedText.includes('This page could not be found') ||
+              trimmedText.includes('</html>') ||
+              trimmedText.includes('<head>') ||
+              trimmedText.includes('<body>') ||
+              trimmedText.startsWith('<')) {
+            console.warn(`HTML response detected for ${context}:`, trimmedText.substring(0, 200));
+            return { success: false, error: 'Authentication required. Please sign in again.' };
+          }
+          
+          // Check if response is not ok (4xx, 5xx status codes)
+          if (!response.ok) {
+            console.log(`${context} response not ok:`, response.status, response.statusText);
+            
+            // Check for Clerk authentication headers
+            const clerkAuthStatus = response.headers.get('x-clerk-auth-status');
+            const clerkAuthReason = response.headers.get('x-clerk-auth-reason');
+            
+            if (clerkAuthStatus === 'signed-out' || clerkAuthReason?.includes('protect-rewrite')) {
+              console.log(`${context} - Clerk authentication required:`, { clerkAuthStatus, clerkAuthReason });
+              return { success: false, error: 'Authentication required. Please sign in again.' };
+            }
+            
+            // Handle authentication errors specifically
+            if (response.status === 401 || response.status === 403) {
+              return { success: false, error: 'Authentication required. Please sign in again.' };
+            }
+            
+            // Handle 404 errors
+            if (response.status === 404) {
+              return { success: false, error: `${context} endpoint not found` };
+            }
+            
+            return { success: false, error: `Failed to fetch ${context}: ${response.status} ${response.statusText}` };
+          }
+          
+          // Try to parse JSON
+          let parsed;
+          try {
+            parsed = JSON.parse(text);
+          } catch (jsonParseError: any) {
+            console.error(`JSON parse failed for ${context}:`, jsonParseError?.message || 'Unknown JSON parse error');
+            console.error(`Response text was:`, text.substring(0, 300));
+            return { success: false, error: `Invalid JSON response for ${context}. Please sign in again.` };
+          }
+          
+          return parsed;
+          
+        } catch (parseError) {
+          console.error(`Failed to parse ${context} response:`, parseError);
+          return { success: false, error: `Failed to parse ${context} data. Please try again.` };
+        }
+      };
+
+      const [usersData, coworksData, invitationsData] = await Promise.all([
+        parseJsonSafely(usersResponse, 'users'),
+        parseJsonSafely(coworksResponse, 'coworks'), 
+        parseJsonSafely(invitationsResponse, 'invitations')
+      ]);
       
       if (usersData.success) {
         // Transform API response to match User interface
@@ -160,7 +266,7 @@ export function UserManagement() {
       // Handle invitations data (non-blocking)
       if (invitationsData.success && invitationsData.invitations) {
         // Count only PENDING invitations (check both possible status formats)
-        const pendingCount = invitationsData.invitations.filter(inv => 
+        const pendingCount = invitationsData.invitations.filter((inv: any) => 
           inv.status === 'PENDING' || inv.status === 'pending'
         ).length;
         
@@ -169,6 +275,20 @@ export function UserManagement() {
         console.warn('Could not load invitations (non-critical):', invitationsData.error);
         setTotalInvitations(0);
       }
+
+      // Check if any critical API failed due to authentication
+      const authErrors = [usersData, coworksData].filter(data => 
+        !data.success && data.error?.includes('Authentication required')
+      );
+      
+      if (authErrors.length > 0) {
+        console.error('Authentication error detected');
+        setAuthError('Se requiere autenticación. Por favor, inicia sesión nuevamente.');
+        return;
+      } else {
+        setAuthError(null); // Clear any previous auth errors
+      }
+
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -177,8 +297,20 @@ export function UserManagement() {
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    console.log('UserManagement useEffect:', { isLoaded, isSignedIn });
+    
+    // Only load data if authentication is loaded and user is signed in
+    if (isLoaded && isSignedIn) {
+      console.log('User is authenticated, loading data...');
+      loadData();
+    } else if (isLoaded && !isSignedIn) {
+      console.log('User is not authenticated, showing auth error');
+      setIsLoading(false);
+      setAuthError('Se requiere autenticación para acceder a esta página.');
+    } else {
+      console.log('Authentication still loading...', { isLoaded, isSignedIn });
+    }
+  }, [isLoaded, isSignedIn]);
 
 
   // Filter users
@@ -197,18 +329,6 @@ export function UserManagement() {
     return matchesSearch && matchesRole && matchesStatus && matchesTenant;
   });
 
-  // Handle role change
-  const handleRoleChange = async (userId: string, newRole: string) => {
-    try {
-      console.log(`Changing role of user ${userId} to ${newRole}`);
-      
-      setUsers(prev => prev.map(u => 
-        u.id === userId ? { ...u, role: newRole as any } : u
-      ));
-    } catch (error) {
-      console.error('Error updating user role:', error);
-    }
-  };
 
   // Handle status change
   const handleStatusChange = async (userId: string, newStatus: string) => {
@@ -521,7 +641,8 @@ export function UserManagement() {
     }
   };
 
-  if (isLoading) {
+  // Show loading state while authentication is loading
+  if (!isLoaded || isLoading) {
     return (
       <div className="bg-white rounded-lg shadow-sm border p-6">
         <div className="animate-pulse space-y-4">
@@ -536,8 +657,28 @@ export function UserManagement() {
     );
   }
 
+  // Show authentication required state
+  if (!isSignedIn) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm border p-6">
+        <div className="text-center py-12">
+          <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Autenticación Requerida</h3>
+          <p className="text-gray-600 mb-6">Debes iniciar sesión para acceder a la gestión de usuarios.</p>
+          <button
+            onClick={() => window.location.href = '/auth/login'}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <Crown className="h-5 w-5 mr-2" />
+            Iniciar Sesión
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full max-w-full overflow-hidden min-w-0">
       {/* Header */}
       <div className="bg-white rounded-lg shadow-sm border p-6">
         <div className="flex items-center justify-between mb-6">
@@ -579,6 +720,48 @@ export function UserManagement() {
             </button>
           </div>
         </div>
+
+        {/* Authentication Error */}
+        {authError && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <AlertCircle className="h-5 w-5 text-red-400" />
+              </div>
+              <div className="ml-3 flex-1">
+                <p className="text-sm text-red-800 font-medium">{authError}</p>
+                <div className="mt-3 flex space-x-3">
+                  {!isSignedIn ? (
+                    <button
+                      onClick={() => window.location.href = '/auth/login'}
+                      className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    >
+                      <Crown className="h-4 w-4 mr-2" />
+                      Iniciar Sesión
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => window.location.reload()}
+                        className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Reintentar
+                      </button>
+                      <button
+                        onClick={() => signOut()}
+                        className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                      >
+                        <UserX className="h-4 w-4 mr-2" />
+                        Cerrar Sesión
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Filters */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -665,27 +848,27 @@ export function UserManagement() {
       {activeTab === 'users' && (
         <>
           {/* Users Table */}
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden relative">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+      <div className="bg-white rounded-lg shadow-sm border overflow-hidden relative w-full max-w-full min-w-0">
+        <div className="overflow-x-auto w-full max-w-full min-w-0">
+          <table className="w-full divide-y divide-gray-200 table-fixed min-w-0">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider" style={{width: '35%'}}>
                   Usuario
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider" style={{width: '15%'}}>
                   Rol
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider" style={{width: '20%'}}>
                   Cowork
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider" style={{width: '10%'}}>
                   Estado
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider" style={{width: '15%'}}>
                   Último acceso
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-2 sm:px-6 py-3 text-right text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider" style={{width: '5%'}}>
                   Acciones
                 </th>
               </tr>
@@ -693,84 +876,79 @@ export function UserManagement() {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
+                  <td className="px-3 sm:px-6 py-4 min-w-0 overflow-hidden" style={{width: '35%'}}>
+                    <div className="flex items-center min-w-0">
+                      <div className="flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10">
                         {user.avatar ? (
-                          <img className="h-10 w-10 rounded-full object-cover" src={user.avatar} alt="" />
+                          <img className="h-8 w-8 sm:h-10 sm:w-10 rounded-full object-cover" src={user.avatar} alt="" />
                         ) : (
-                          <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
-                            <Users className="h-6 w-6 text-gray-400" />
+                          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-gray-100 flex items-center justify-center">
+                            <Users className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                           </div>
                         )}
                       </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
+                      <div className="ml-3 sm:ml-4 min-w-0 flex-1">
+                        <div className="text-sm sm:text-base font-medium text-gray-900 truncate">
                           {user.firstName} {user.lastName}
                         </div>
-                        <div className="text-sm text-gray-500 flex items-center space-x-2">
-                          <Mail className="h-3 w-3" />
-                          <span>{user.email}</span>
+                        <div className="text-xs sm:text-sm text-gray-500 flex items-center space-x-1 min-w-0">
+                          <Mail className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                          <span className="truncate">{user.email}</span>
                         </div>
-                        {user.phone && (
-                          <div className="text-sm text-gray-500 flex items-center space-x-2">
-                            <Phone className="h-3 w-3" />
-                            <span>{user.phone}</span>
-                          </div>
-                        )}
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
+                  <td className="px-3 sm:px-6 py-4 min-w-0 overflow-hidden" style={{width: '15%'}}>
+                    <div className="flex items-center space-x-1 min-w-0">
                       {getRoleIcon(user.role)}
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${ROLE_COLORS[user.role]}`}>
+                      <span className={`inline-flex px-1 sm:px-2 py-0.5 sm:py-1 text-xs sm:text-sm font-medium rounded truncate ${ROLE_COLORS[user.role]}`}>
                         {ROLE_LABELS[user.role]}
                       </span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
+                  <td className="px-3 sm:px-6 py-4 min-w-0 overflow-hidden" style={{width: '20%'}}>
+                    <div className="text-sm sm:text-base text-gray-900 min-w-0">
                       {user.tenantName ? (
-                        <div className="flex items-center space-x-2">
-                          <Building2 className="h-4 w-4 text-gray-400" />
-                          <span>{user.tenantName}</span>
+                        <div className="flex items-center space-x-1 min-w-0">
+                          <Building2 className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 flex-shrink-0" />
+                          <span className="truncate text-xs sm:text-sm">{user.tenantName}</span>
                         </div>
                       ) : (
-                        <span className="text-purple-600 font-medium flex items-center space-x-1">
-                          <Crown className="h-3 w-3" />
-                          <span>Plataforma</span>
+                        <span className="text-purple-600 font-medium flex items-center space-x-1 min-w-0">
+                          <Crown className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                          <span className="truncate text-xs sm:text-sm">Plataforma</span>
                         </span>
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
+                  <td className="px-3 sm:px-6 py-4 min-w-0 overflow-hidden" style={{width: '10%'}}>
+                    <div className="flex items-center space-x-1 min-w-0">
                       {getStatusIcon(user.status)}
-                      <span className="text-sm text-gray-900">
+                      <span className="text-xs sm:text-sm text-gray-900 truncate">
                         {user.status === 'ACTIVE' ? 'Activo' : 
                          user.status === 'INACTIVE' ? 'Inactivo' : 'Suspendido'}
                       </span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {user.lastLoginAt ? (
-                      <div className="flex items-center space-x-1">
-                        <Calendar className="h-3 w-3" />
-                        <span>{new Date(user.lastLoginAt).toLocaleDateString('es-ES')}</span>
-                      </div>
-                    ) : (
-                      <span className="text-gray-400">Nunca</span>
-                    )}
+                  <td className="px-3 sm:px-6 py-4 min-w-0 overflow-hidden" style={{width: '15%'}}>
+                    <div className="text-xs sm:text-sm text-gray-500 min-w-0">
+                      {user.lastLoginAt ? (
+                        <div className="flex items-center space-x-1 min-w-0">
+                          <Calendar className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                          <span className="truncate">{new Date(user.lastLoginAt).toLocaleDateString('es-ES')}</span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 truncate">Nunca</span>
+                      )}
+                    </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <td className="px-2 sm:px-6 py-4 text-right text-sm font-medium min-w-0" style={{width: '5%'}}>
                     <div className="relative">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           const rect = e.currentTarget.getBoundingClientRect();
                           const menuWidth = 200;
-                          const viewportWidth = window.innerWidth;
                           
                           // Calculate horizontal position to keep menu on screen
                           let left = rect.right - menuWidth;

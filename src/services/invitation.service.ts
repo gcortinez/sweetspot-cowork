@@ -414,6 +414,22 @@ export class InvitationService {
 
         logger.logInvitationAccepted(email, clerkUserId, updated.count)
 
+        // Update Clerk user metadata to mark onboarding as complete
+        try {
+          const clerk = await clerkClient()
+          await clerk.users.updateUserMetadata(clerkUserId, {
+            publicMetadata: {
+              onboardingComplete: true,
+              role: user.role,
+              tenantId: user.tenantId
+            }
+          })
+          logger.info('Clerk metadata updated for completed onboarding', { clerkUserId, email })
+        } catch (clerkError) {
+          logger.warn('Failed to update Clerk metadata but user creation succeeded', { clerkUserId, email, error: clerkError })
+          // Don't fail the entire operation if Clerk update fails
+        }
+
         return {
           success: true,
           message: 'Invitation accepted successfully',

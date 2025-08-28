@@ -231,18 +231,21 @@ const getCachedDashboardData = unstable_cache(
 )
 
 // Optimized dashboard stats function
-export async function getDashboardStats() {
+export async function getDashboardStats(overrideTenantId?: string) {
   try {
     const user = await getUserWithTenant()
     
-    if (!user.tenantId) {
+    // Use provided tenantId for Super Admins, otherwise use user's tenantId
+    const tenantId = overrideTenantId || user.tenantId
+    
+    if (!tenantId) {
       return {
         success: false,
         error: 'Usuario sin tenant asignado'
       }
     }
 
-    const data = await getCachedDashboardData(user.tenantId)
+    const data = await getCachedDashboardData(tenantId)
     
     return {
       success: true,
@@ -311,18 +314,21 @@ const getCachedRecentActivities = unstable_cache(
   }
 )
 
-export async function getRecentActivities() {
+export async function getRecentActivities(overrideTenantId?: string) {
   try {
     const user = await getUserWithTenant()
     
-    if (!user.tenantId) {
+    // Use provided tenantId for Super Admins, otherwise use user's tenantId
+    const tenantId = overrideTenantId || user.tenantId
+    
+    if (!tenantId) {
       return {
         success: false,
         error: 'Usuario sin tenant asignado'
       }
     }
 
-    const activities = await getCachedRecentActivities(user.tenantId)
+    const activities = await getCachedRecentActivities(tenantId)
     
     return {
       success: true,

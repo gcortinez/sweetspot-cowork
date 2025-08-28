@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { AppHeader } from '@/components/shared/app-header'
 import { Sidebar } from '@/components/layout/Sidebar'
 import dynamic from 'next/dynamic'
+import { Menu, X } from 'lucide-react'
 
 // Lazy load modals to avoid loading them unnecessarily
 const CreateLeadModal = dynamic(
@@ -21,6 +22,7 @@ export default function ProtectedLayoutWrapper({
   children: React.ReactNode
 }) {
   const [showCreateLeadModal, setShowCreateLeadModal] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const pathname = usePathname()
 
   // Don't show sidebar on certain pages
@@ -46,27 +48,65 @@ export default function ProtectedLayoutWrapper({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar - Fixed on the left */}
-      {!hideSidebar && (
-        <div className="w-64 flex-shrink-0">
-          <div className="fixed top-0 left-0 w-64 h-full">
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile menu overlay */}
+      {!hideSidebar && isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="fixed inset-0 bg-black/50" onClick={() => setIsMobileMenuOpen(false)} />
+          <div className="fixed top-0 left-0 w-64 h-full bg-white shadow-xl">
+            <div className="flex items-center justify-between p-4 border-b">
+              <span className="font-semibold text-gray-900">Menú</span>
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-1 rounded-md text-gray-400 hover:text-gray-500"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
             <Sidebar onCreateLead={() => setShowCreateLeadModal(true)} />
           </div>
         </div>
       )}
       
-      {/* Main content area */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <AppHeader currentPage={getCurrentPageTitle()} />
-        
-        {/* Main content */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="p-6">
-            {children}
+      <div className="flex min-h-screen">
+        {/* Desktop Sidebar - Hidden on mobile */}
+        {!hideSidebar && (
+          <div className="hidden lg:flex w-64 flex-shrink-0">
+            <div className="fixed top-0 left-0 w-64 h-full">
+              <Sidebar onCreateLead={() => setShowCreateLeadModal(true)} />
+            </div>
           </div>
-        </main>
+        )}
+        
+        {/* Main content area */}
+        <div className={`flex-1 flex flex-col ${!hideSidebar ? 'lg:ml-0' : ''}`}>
+          {/* Header with mobile menu button */}
+          <div className="sticky top-0 z-40 bg-white shadow-sm border-b border-gray-200">
+            <div className="flex items-center justify-between h-16 px-3 sm:px-4 lg:px-6">
+              {/* Mobile menu button */}
+              {!hideSidebar && (
+                <button
+                  onClick={() => setIsMobileMenuOpen(true)}
+                  className="lg:hidden p-1.5 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 flex-shrink-0 mr-2"
+                >
+                  <Menu className="h-5 w-5" />
+                </button>
+              )}
+              
+              {/* Header content */}
+              <div className="flex-1 min-w-0">
+                <AppHeader currentPage={getCurrentPageTitle()} />
+              </div>
+            </div>
+          </div>
+          
+          {/* Main content */}
+          <main className="flex-1 overflow-y-auto overflow-x-hidden">
+            <div className="w-full min-h-0 max-w-full overflow-hidden">
+              {children}
+            </div>
+          </main>
+        </div>
       </div>
 
       {/* Global modals */}

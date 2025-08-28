@@ -118,30 +118,30 @@ export default function DashboardClient({
   return (
     <>
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
         {/* Dashboard Header */}
-        <div className="mb-8">
-          <div className="bg-gradient-to-r from-purple-600 to-indigo-700 rounded-2xl p-8 text-white shadow-2xl">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="h-16 w-16 rounded-2xl bg-white/20 flex items-center justify-center">
-                  <Building2 className="h-8 w-8 text-white" />
+        <div className="mb-6 md:mb-8">
+          <div className="bg-gradient-to-r from-purple-600 to-indigo-700 rounded-2xl p-4 md:p-8 text-white shadow-2xl">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center space-x-3 md:space-x-4">
+                <div className="h-12 w-12 md:h-16 md:w-16 rounded-xl md:rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                  <Building2 className="h-6 w-6 md:h-8 md:w-8 text-white" />
                 </div>
-                <div>
-                  <h2 className="text-3xl font-bold text-white mb-2">
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-xl md:text-3xl font-bold text-white mb-1 md:mb-2 truncate">
                     Dashboard SweetSpot
                   </h2>
-                  <p className="text-purple-100 text-lg">
+                  <p className="text-purple-100 text-sm md:text-lg leading-tight">
                     Gestiona tu coworking de manera integral
                   </p>
-                  <div className="flex items-center space-x-4 mt-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mt-2 md:mt-3 space-y-1 sm:space-y-0">
                     <div className="flex items-center text-purple-100">
-                      <Clock className="h-4 w-4 mr-1" />
-                      <span className="text-sm">Actualizado hace 5 min</span>
+                      <Clock className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                      <span className="text-xs md:text-sm">Actualizado hace 5 min</span>
                     </div>
                     <div className="flex items-center text-purple-100">
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                      <span className="text-sm">Sistema activo</span>
+                      <CheckCircle className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                      <span className="text-xs md:text-sm">Sistema activo</span>
                     </div>
                   </div>
                 </div>
@@ -152,22 +152,26 @@ export default function DashboardClient({
 
         {/* Dashboard Tabs with Lazy Loading */}
         <Tabs defaultValue="crm" className="w-full" onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 bg-white shadow-md rounded-xl p-1">
-            <TabsTrigger value="crm" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">
-              <Target className="h-4 w-4 mr-2" />
-              CRM
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-white shadow-md rounded-xl p-1 gap-1">
+            <TabsTrigger value="crm" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white text-xs sm:text-sm">
+              <Target className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">CRM</span>
+              <span className="sm:hidden">CRM</span>
             </TabsTrigger>
-            <TabsTrigger value="operacion" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">
-              <Settings className="h-4 w-4 mr-2" />
-              Operación
+            <TabsTrigger value="operacion" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white text-xs sm:text-sm">
+              <Settings className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Operación</span>
+              <span className="sm:hidden">Ops</span>
             </TabsTrigger>
-            <TabsTrigger value="analitica" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Analítica
+            <TabsTrigger value="analitica" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white text-xs sm:text-sm">
+              <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Analítica</span>
+              <span className="sm:hidden">Data</span>
             </TabsTrigger>
-            <TabsTrigger value="facturacion" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">
-              <DollarSign className="h-4 w-4 mr-2" />
-              Facturación
+            <TabsTrigger value="facturacion" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white text-xs sm:text-sm">
+              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Facturación</span>
+              <span className="sm:hidden">$</span>
             </TabsTrigger>
           </TabsList>
 
@@ -189,7 +193,7 @@ export default function DashboardClient({
             </TabsContent>
           </Suspense>
         </Tabs>
-      </main>
+      </div>
 
       {/* Lazy loaded modals */}
       {showQuickView && quickViewType && (

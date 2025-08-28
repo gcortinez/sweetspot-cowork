@@ -185,7 +185,9 @@ export default function InvitationAcceptClient() {
         setState('success')
         
         setTimeout(() => {
-          router.push('/onboarding')
+          // After successful invitation acceptance, redirect to dashboard
+          // since the InvitationService now marks onboarding as complete
+          router.push('/dashboard')
         }, 2000)
       } else {
         setState('error')

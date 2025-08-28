@@ -15,9 +15,12 @@ import {
   UserCheck,
   FileText,
   Wrench,
-  TrendingUp
+  TrendingUp,
+  Shield,
+  Database
 } from '@/lib/icons'
 import { useUser } from '@clerk/nextjs'
+import { useCoworkSelection } from '@/contexts/cowork-selection-context'
 import { Button } from '@/components/ui/button'
 
 interface SidebarProps {
@@ -29,19 +32,29 @@ export function Sidebar({ className = '', onCreateLead }: SidebarProps) {
   const [isMounted, setIsMounted] = React.useState(false)
   const { user } = useUser()
   const pathname = usePathname()
+  const { selectedCowork, isPlatformView, isSuperAdmin } = useCoworkSelection()
 
   React.useEffect(() => {
     setIsMounted(true)
   }, [])
 
-  // Check if user is Super Admin
+  // Get user role for footer display
   const privateMetadata = user?.privateMetadata as any
   const publicMetadata = user?.publicMetadata as any
   const userRole = privateMetadata?.role || publicMetadata?.role || 'END_USER'
-  const isSuperAdmin = userRole === 'SUPER_ADMIN'
 
-  // Navigation items - all in one list for now (simpler)
-  const navigationItems = [
+  // Platform view navigation items (Super Admin only)
+  const platformNavigationItems = [
+    {
+      label: 'Vista General de la Plataforma',
+      href: '/dashboard',
+      icon: Database,
+      active: pathname === '/dashboard'
+    }
+  ]
+
+  // Cowork-specific navigation items
+  const coworkNavigationItems = [
     {
       label: 'Dashboard',
       href: '/dashboard',
@@ -80,13 +93,16 @@ export function Sidebar({ className = '', onCreateLead }: SidebarProps) {
     }
   ]
 
+  // Select navigation items based on current view
+  const navigationItems = isPlatformView ? platformNavigationItems : coworkNavigationItems
+
   return (
     <div className={`flex flex-col h-full bg-white border-r border-gray-200 ${className}`}>
       {/* Logo Section */}
       <div className="flex items-center p-6 border-b border-gray-200">
         <Link href="/dashboard" className="flex items-center space-x-3 group">
           <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-600 to-purple-700 flex items-center justify-center group-hover:shadow-lg shadow-purple-500/25 transition-all">
-            {isMounted && isSuperAdmin ? (
+            {isMounted && isPlatformView ? (
               <Crown className="h-5 w-5 text-white" />
             ) : (
               <Building2 className="h-5 w-5 text-white" />
@@ -94,14 +110,17 @@ export function Sidebar({ className = '', onCreateLead }: SidebarProps) {
           </div>
           <div>
             <h1 className="text-xl font-bold text-gray-900 group-hover:text-purple-600 transition-colors">
-              SweetSpot
+              {selectedCowork ? selectedCowork.name : 'SweetSpot'}
             </h1>
+            {isMounted && isPlatformView && (
+              <p className="text-xs text-purple-600 font-medium">Vista General de la Plataforma</p>
+            )}
           </div>
         </Link>
       </div>
 
       {/* Quick Actions */}
-      {onCreateLead && (
+      {onCreateLead && !isPlatformView && (
         <div className="p-4 border-b border-gray-200">
           <Button
             onClick={onCreateLead}
