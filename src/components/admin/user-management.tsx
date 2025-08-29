@@ -5,6 +5,10 @@ import { createPortal } from 'react-dom';
 import { useAuth, useUser } from '@clerk/nextjs';
 // Removed createInvitation import - using API instead
 import InvitationsDashboard from './invitations-dashboard';
+import { PermissionGuard } from '@/components/guards/PermissionGuard';
+import { CanAccess } from '@/components/guards/CanAccess';
+import { Resource } from '@/lib/auth/permissions';
+import { useUserPermissions } from '@/hooks/use-permissions';
 import { 
   Users, 
   Search, 
@@ -64,6 +68,7 @@ const ROLE_COLORS = {
 export function UserManagement() {
   const { isLoaded, isSignedIn, signOut } = useAuth();
   const { user: clerkUser } = useUser();
+  const userPermissions = useUserPermissions();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -678,7 +683,21 @@ export function UserManagement() {
   }
 
   return (
-    <div className="space-y-6 w-full max-w-full overflow-hidden min-w-0">
+    <PermissionGuard 
+      require={Resource.USER_VIEW}
+      fallback={
+        <div className="text-center py-12">
+          <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Acceso Restringido
+          </h3>
+          <p className="text-gray-600">
+            No tienes permisos para gestionar usuarios.
+          </p>
+        </div>
+      }
+    >
+      <div className="space-y-6 w-full max-w-full overflow-hidden min-w-0">
       {/* Header */}
       <div className="bg-white rounded-lg shadow-sm border p-6">
         <div className="flex items-center justify-between mb-6">
@@ -706,18 +725,20 @@ export function UserManagement() {
               <RefreshCw className={`h-4 w-4 ${isCleaningInvitations ? 'animate-spin' : ''}`} />
               <span>{isCleaningInvitations ? 'Limpiando...' : 'Limpiar Invitaciones'}</span>
             </button>
-            <button 
-              onClick={() => {
-                // Close any open action menu
-                setActionMenuOpen(null);
-                setMenuPosition(null);
-                setShowInviteModal(true);
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm flex items-center space-x-2 transition-colors"
-            >
-              <Users className="h-4 w-4" />
-              <span>Invitar Usuario</span>
-            </button>
+            <CanAccess permission={Resource.USER_INVITE}>
+              <button 
+                onClick={() => {
+                  // Close any open action menu
+                  setActionMenuOpen(null);
+                  setMenuPosition(null);
+                  setShowInviteModal(true);
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm flex items-center space-x-2 transition-colors"
+              >
+                <Users className="h-4 w-4" />
+                <span>Invitar Usuario</span>
+              </button>
+            </CanAccess>
           </div>
         </div>
 
@@ -1478,7 +1499,8 @@ export function UserManagement() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </PermissionGuard>
   );
 }
 
