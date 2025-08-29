@@ -4,11 +4,9 @@
  */
 
 export const ROLE_HIERARCHY = {
-  SUPER_ADMIN: 5,
-  COWORK_ADMIN: 4,
-  COWORK_USER: 3,
-  CLIENT_ADMIN: 2,
-  END_USER: 1,
+  SUPER_ADMIN: 3,
+  COWORK_ADMIN: 2,
+  COWORK_USER: 1,
 } as const;
 
 export type UserRole = keyof typeof ROLE_HIERARCHY;
@@ -57,22 +55,14 @@ export function getAssignableRoles(userRole: string, hasActiveCowork: boolean = 
   switch (effectiveRole) {
     case 'SUPER_ADMIN':
       // SUPER_ADMIN can assign any role
-      return ['SUPER_ADMIN', 'COWORK_ADMIN', 'COWORK_USER', 'CLIENT_ADMIN', 'END_USER'];
+      return ['SUPER_ADMIN', 'COWORK_ADMIN', 'COWORK_USER'];
     
     case 'COWORK_ADMIN':
       // COWORK_ADMIN can assign roles within their cowork
-      return ['COWORK_USER', 'CLIENT_ADMIN', 'END_USER'];
-    
-    case 'COWORK_USER':
-      // COWORK_USER can assign client roles
-      return ['CLIENT_ADMIN', 'END_USER'];
-    
-    case 'CLIENT_ADMIN':
-      // CLIENT_ADMIN can only assign END_USER
-      return ['END_USER'];
+      return ['COWORK_USER'];
     
     default:
-      // END_USER cannot assign roles
+      // COWORK_USER cannot assign roles
       return [];
   }
 }
@@ -98,11 +88,9 @@ export function canManageUser(
  * Role labels for UI display
  */
 export const ROLE_LABELS = {
-  SUPER_ADMIN: 'Super Administrador',
-  COWORK_ADMIN: 'Administrador de Cowork',
-  COWORK_USER: 'Empleado del Cowork',
-  CLIENT_ADMIN: 'Administrador de Cliente',
-  END_USER: 'Usuario Final',
+  SUPER_ADMIN: 'Super Admin',
+  COWORK_ADMIN: 'Admin de Cowork',
+  COWORK_USER: 'Usuario',
 } as const;
 
 /**
@@ -111,9 +99,7 @@ export const ROLE_LABELS = {
 export const ROLE_DESCRIPTIONS = {
   SUPER_ADMIN: 'Administra toda la plataforma y puede acceder a cualquier cowork',
   COWORK_ADMIN: 'Administra la configuración del cowork y todos sus usuarios',
-  COWORK_USER: 'Gestiona clientes, facturas y servicios del cowork',
-  CLIENT_ADMIN: 'Administra usuarios y servicios de su empresa',
-  END_USER: 'Usuario básico con acceso a servicios asignados',
+  COWORK_USER: 'Usuario con acceso a funcionalidades básicas del cowork',
 } as const;
 
 /**
@@ -123,6 +109,4 @@ export const ROLE_COLORS = {
   SUPER_ADMIN: 'bg-purple-100 text-purple-800 border-purple-200',
   COWORK_ADMIN: 'bg-blue-100 text-blue-800 border-blue-200',
   COWORK_USER: 'bg-green-100 text-green-800 border-green-200',
-  CLIENT_ADMIN: 'bg-orange-100 text-orange-800 border-orange-200',
-  END_USER: 'bg-gray-100 text-gray-800 border-gray-200',
 } as const;

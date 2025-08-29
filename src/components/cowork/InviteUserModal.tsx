@@ -32,7 +32,7 @@ interface InviteUserModalProps {
   tenantId?: string
 }
 
-type ValidRole = 'SUPER_ADMIN' | 'COWORK_ADMIN' | 'COWORK_USER' | 'CLIENT_ADMIN' | 'END_USER'
+type ValidRole = 'SUPER_ADMIN' | 'COWORK_ADMIN' | 'COWORK_USER'
 
 // Remove local roleLabels - using the ones from permissions utils
 
@@ -47,7 +47,7 @@ export default function InviteUserModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
-    role: 'END_USER' as ValidRole
+    role: 'COWORK_USER' as ValidRole
   })
 
   // Get available roles based on current user's role and cowork context
@@ -115,7 +115,7 @@ export default function InviteUserModal({
   const handleClose = () => {
     setFormData({
       email: '',
-      role: 'END_USER'
+      role: 'COWORK_USER'
     })
     onClose()
   }
@@ -187,8 +187,7 @@ export default function InviteUserModal({
                       <div className={`w-3 h-3 rounded-full mt-1 ${
                         role === 'SUPER_ADMIN' ? 'bg-purple-500' :
                         role === 'COWORK_ADMIN' ? 'bg-blue-500' :
-                        role === 'COWORK_USER' ? 'bg-cyan-500' :
-                        role === 'CLIENT_ADMIN' ? 'bg-green-500' :
+                        role === 'COWORK_USER' ? 'bg-green-500' :
                         'bg-gray-500'
                       }`}></div>
                       <div className="flex-1">
@@ -213,8 +212,8 @@ export default function InviteUserModal({
                   <p className="font-medium mb-1">Tus permisos de invitación:</p>
                   <p className="text-gray-600 text-xs leading-relaxed">
                     {userRole === 'SUPER_ADMIN' && 'Como Super Administrador, puedes asignar cualquier rol.'}
-                    {userRole === 'COWORK_ADMIN' && 'Como Administrador de Cowork, puedes asignar empleados del cowork y roles de cliente.'}
-                    {userRole === 'COWORK_USER' && 'Como Empleado de Cowork, puedes invitar administradores y usuarios de clientes.'}
+                    {userRole === 'COWORK_ADMIN' && 'Como Administrador de Cowork, puedes asignar usuarios del cowork.'}
+                    {userRole === 'COWORK_USER' && 'Como Usuario de Cowork, no puedes invitar otros usuarios.'}
                   </p>
                 </div>
               </div>

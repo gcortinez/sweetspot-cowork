@@ -11,13 +11,21 @@ const isProtectedRoute = createRouteMatcher([
 const isSuspendedAllowedRoute = createRouteMatcher([
   '/suspended',
   '/api/auth(.*)',
-  '/api/internal(.*)'
+  '/api/internal(.*)',
+  '/api/invitations(.*)'
 ])
 
 // Define auth routes (sign in/up pages)
 const isAuthRoute = createRouteMatcher([
   '/auth/login(.*)',
   '/auth/register(.*)'
+])
+
+// Define invitation routes that should skip user status checks
+const isInvitationRoute = createRouteMatcher([
+  '/invitation(.*)',
+  '/accept-invitation(.*)',
+  '/api/invitations(.*)'
 ])
 
 export default clerkMiddleware(async (auth, req) => {
@@ -41,8 +49,8 @@ export default clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) {
     await auth.protect()
     
-    // Check if user is suspended (only for authenticated users on protected routes)
-    if (userId && sessionClaims) {
+    // Check if user is suspended (only for authenticated users on protected routes, skip for invitation routes)
+    if (userId && sessionClaims && !isInvitationRoute(req)) {
       try {
         // Get email from different possible locations in sessionClaims
         const userEmail = sessionClaims.email || sessionClaims.primaryEmailAddress?.emailAddress || sessionClaims.emailAddresses?.[0]?.emailAddress
@@ -89,6 +97,7 @@ export default clerkMiddleware(async (auth, req) => {
           }
         } else {
           console.error('❌ Failed to check user status:', response.status, response.statusText)
+          // Don't block access if user status check fails, just log the error
         }
       } catch (error) {
         console.error('❌ Error checking user status:', error)
