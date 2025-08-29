@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import { Crown } from 'lucide-react'
 import { CanAccess } from '@/components/guards/CanAccess'
 import { Resource } from '@/lib/auth/permissions'
+import type { AuthUser } from '@/types/database'
 
 // Lazy load admin components - using default exports directly
 const PlatformStats = dynamic(
@@ -32,7 +33,7 @@ const UserManagement = dynamic(
 )
 
 interface SuperAdminDashboardProps {
-  user: any
+  user: AuthUser
 }
 
 export function SuperAdminDashboard({ user }: SuperAdminDashboardProps) {
@@ -97,7 +98,7 @@ export function SuperAdminDashboard({ user }: SuperAdminDashboardProps) {
           
           {/* User Management - Lazy loaded with permission check */}
           <CanAccess 
-            permission={Resource.USER_VIEW}
+            permission={Resource.PLATFORM_USER_VIEW}
             fallback={
               <div className="text-center py-8">
                 <p className="text-gray-500">No tienes permisos para gestionar usuarios</p>
