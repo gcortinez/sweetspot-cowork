@@ -684,7 +684,7 @@ export function UserManagement() {
 
   return (
     <PermissionGuard 
-      require={Resource.USER_VIEW}
+      require={Resource.PLATFORM_USER_VIEW}
       fallback={
         <div className="text-center py-12">
           <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />

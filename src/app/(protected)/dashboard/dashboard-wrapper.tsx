@@ -53,8 +53,8 @@ export default function DashboardWrapper({
     }
   }, [selectedCowork?.id, isPlatformView, isSuperAdmin])
 
-  // If Super Admin is in platform view, show Super Admin Dashboard
-  if (isSuperAdmin && isPlatformView) {
+  // Only show Super Admin Dashboard if user is actually SUPER_ADMIN role and in platform view
+  if (userData.role === 'SUPER_ADMIN' && isSuperAdmin && isPlatformView) {
     return (
       <div className="w-full max-w-full overflow-hidden min-w-0">
         <SuperAdminDashboard user={userData} />

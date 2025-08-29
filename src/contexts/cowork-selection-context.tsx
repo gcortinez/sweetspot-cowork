@@ -48,13 +48,9 @@ export function CoworkSelectionProvider({ children }: CoworkSelectionProviderPro
   const [isLoadingCoworks, setIsLoadingCoworks] = useState(true);
   
   // Computed values
-  // TEMPORARY: Force Super Admin for testing
-  const isGustavo = user?.firstName === 'Gustavo' || 
-                    user?.emailAddresses?.[0]?.emailAddress?.includes('gustavo');
   // Check both private and public metadata for backward compatibility
   const isSuperAdmin = user?.privateMetadata?.role === 'SUPER_ADMIN' || 
-                       user?.publicMetadata?.role === 'SUPER_ADMIN' || 
-                       isGustavo;
+                       user?.publicMetadata?.role === 'SUPER_ADMIN';
   const isPlatformView = isSuperAdmin && selectedCowork === null;
   
   // Debug logging
@@ -65,7 +61,6 @@ export function CoworkSelectionProvider({ children }: CoworkSelectionProviderPro
         email: user.emailAddresses?.[0]?.emailAddress,
         publicRole: user.publicMetadata?.role,
         privateRole: user.privateMetadata?.role,
-        isGustavo,
         isSuperAdmin,
         selectedCowork: selectedCowork?.name || 'null',
         isPlatformView,
@@ -87,14 +82,14 @@ export function CoworkSelectionProvider({ children }: CoworkSelectionProviderPro
         const coworks = isSuperAdmin ? data.data.allCoworks || [] : data.data.userCoworks || [];
         setAvailableCoworks(coworks);
         
-        // For regular users, auto-select their default cowork
+        // For regular users (including COWORK_ADMIN), auto-select their default cowork
         if (!isSuperAdmin && data.data.defaultCowork) {
           setSelectedCowork(data.data.defaultCowork);
         }
         
-        // For Super Admins, force platform view initially (for debugging)
-        if (isSuperAdmin) {
-          console.log('🔧 Forcing platform view for Super Admin');
+        // For true SUPER_ADMIN users, start with platform view
+        if (isSuperAdmin && (user?.privateMetadata?.role === 'SUPER_ADMIN' || user?.publicMetadata?.role === 'SUPER_ADMIN')) {
+          console.log('🔧 Starting platform view for SUPER_ADMIN');
           setSelectedCowork(null); // Force platform view
           localStorage.setItem(SELECTED_COWORK_KEY, 'platform');
         }
