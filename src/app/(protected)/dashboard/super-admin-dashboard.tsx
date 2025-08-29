@@ -36,7 +36,7 @@ interface SuperAdminDashboardProps {
   user: AuthUser
 }
 
-export function SuperAdminDashboard({ user }: SuperAdminDashboardProps) {
+export function SuperAdminDashboard({ user: _ }: SuperAdminDashboardProps) {
   return (
     <div 
       className="w-full max-w-full overflow-hidden"

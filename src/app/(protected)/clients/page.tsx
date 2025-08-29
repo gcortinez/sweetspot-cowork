@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge'
 import { PermissionGuard } from '@/components/guards/PermissionGuard'
 import { CanAccess } from '@/components/guards/CanAccess'
 import { Resource } from '@/lib/auth/permissions'
-import { useCRMPermissions } from '@/hooks/use-permissions'
 import { 
   Building2,
   Users,
@@ -80,7 +79,7 @@ function ClientsPageContent() {
   const [editingClient, setEditingClient] = useState<ClientWithRelations | null>(null)
   const [deletingClientId, setDeletingClientId] = useState<string | null>(null)
   const { toast } = useToast()
-  const crmPermissions = useCRMPermissions()
+  // CRM permissions handled by ClientsTable component
 
   // Load clients and stats
   useEffect(() => {

@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { PermissionGuard } from '@/components/guards/PermissionGuard'
 import { CanAccess } from '@/components/guards/CanAccess'
 import { Resource } from '@/lib/auth/permissions'
-import { useCRMPermissions } from '@/hooks/use-permissions'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
@@ -137,7 +136,7 @@ function QuotationsPageContent() {
   const [sendingQuotation, setSendingQuotation] = useState<Quotation | null>(null)
   
   const { toast } = useToast()
-  const crmPermissions = useCRMPermissions()
+  // CRM permissions handled by QuotationsList component
 
   // Load quotations
   const loadQuotations = async () => {
