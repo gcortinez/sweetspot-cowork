@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { 
-  createAnalyticsPresetAction,
-  listAnalyticsPresetsAction 
-} from '@/lib/actions/report'
+// TODO: Implement these actions
+// import { 
+//   createAnalyticsPresetAction,
+//   listAnalyticsPresetsAction 
+// } from '@/lib/actions/report'
 
 /**
  * GET /api/analytics/presets - List analytics presets
@@ -21,7 +22,10 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'name'
     const sortOrder = searchParams.get('sortOrder') || 'asc'
 
-    const result = await listAnalyticsPresetsAction({
+    // TODO: Implement listAnalyticsPresetsAction
+    return NextResponse.json({ error: 'Not implemented' }, { status: 501 })
+    
+    /* const result = await listAnalyticsPresetsAction({
       page,
       limit,
       search,
@@ -41,7 +45,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json(result.data)
+    return NextResponse.json(result.data) */
   } catch (error) {
     console.error('List analytics presets API error:', error)
     return NextResponse.json(

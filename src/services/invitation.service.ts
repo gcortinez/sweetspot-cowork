@@ -499,7 +499,7 @@ export class InvitationService {
       // Get all pending invitations from Clerk
       const clerk = await clerkClient()
       const clerkInvitations = await clerk.invitations.getInvitationList()
-      const pendingInvitations = clerkInvitations.filter(inv => inv.status === 'pending')
+      const pendingInvitations = clerkInvitations.data?.filter(inv => inv.status === 'pending') || []
       
       console.log(`📋 Found ${pendingInvitations.length} pending invitations in Clerk`)
 
@@ -607,7 +607,9 @@ export class InvitationService {
       
       try {
         const clerk = await clerkClient()
-        clerkInvitation = await clerk.invitations.getInvitation(invitation.clerkInvitationId)
+        // Try to find the invitation in the list
+        const invitations = await clerk.invitations.getInvitationList()
+        clerkInvitation = invitations.data?.find(inv => inv.id === invitation.clerkInvitationId)
       } catch (clerkError: any) {
         if (clerkError.status === 404) {
           // Invitation not found in Clerk, check if user exists

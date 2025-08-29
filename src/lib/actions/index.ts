@@ -67,7 +67,9 @@ export * from './clients'
 
 // Dashboard stats actions
 export * from './dashboard'
-export * from './dashboard-optimized'
+// Temporarily commented due to conflicting exports with dashboard.ts
+// TODO: Refactor to use only one implementation
+// export * from './dashboard-optimized'
 
 // Quotation management actions
 export * from './quotations'

@@ -36,7 +36,18 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
+  metadataBase: (() => {
+    try {
+      const url = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+      // Ensure URL has protocol
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        return new URL('https://' + url)
+      }
+      return new URL(url)
+    } catch {
+      return new URL('http://localhost:3000')
+    }
+  })(),
   openGraph: {
     title: "SweetSpot Cowork",
     description: "Comprehensive coworking space management platform",

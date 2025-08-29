@@ -53,7 +53,7 @@ export default clerkMiddleware(async (auth, req) => {
     if (userId && sessionClaims && !isInvitationRoute(req)) {
       try {
         // Get email from different possible locations in sessionClaims
-        const userEmail = sessionClaims.email || sessionClaims.primaryEmailAddress?.emailAddress || sessionClaims.emailAddresses?.[0]?.emailAddress
+        const userEmail = (sessionClaims as any).email || (sessionClaims as any).primaryEmailAddress?.emailAddress || (sessionClaims as any).emailAddresses?.[0]?.emailAddress
         console.log('🔍 Checking suspension for user:', {
           clerkId: userId,
           email: userEmail,
