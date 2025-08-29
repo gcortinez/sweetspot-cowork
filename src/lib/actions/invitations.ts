@@ -119,11 +119,7 @@ export async function createInvitation(data: {
     }
 
     // Create invitation via Clerk
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || (
-      process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:3000' 
-        : 'https://cowork.thesweetspot.cloud'
-    )
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
     const redirectUrl = `${appUrl}/accept-invitation`
     
     console.log('🔧 Environment variables check:', {
@@ -411,9 +407,10 @@ export async function resendInvitation(invitationId: string) {
     }
 
     // Create new Clerk invitation (previous one might be expired)
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
     const clerkInvitation = await client.invitations.createInvitation({
       emailAddress: invitation.email,
-      redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}/accept-invitation`,
+      redirectUrl: `${appUrl}/accept-invitation`,
       publicMetadata: {
         role: invitation.role,
         tenantId: invitation.tenantId,

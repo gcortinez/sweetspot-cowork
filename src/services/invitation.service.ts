@@ -597,11 +597,7 @@ export class InvitationService {
   }
 
   private getAppUrl(): string {
-    return process.env.NEXT_PUBLIC_APP_URL || (
-      process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:3000' 
-        : 'https://cowork.thesweetspot.cloud'
-    )
+    return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
   }
 
   private async syncSingleInvitation(invitation: any) {
