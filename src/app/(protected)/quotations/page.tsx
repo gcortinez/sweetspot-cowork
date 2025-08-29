@@ -3,6 +3,10 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { PermissionGuard } from '@/components/guards/PermissionGuard'
+import { CanAccess } from '@/components/guards/CanAccess'
+import { Resource } from '@/lib/auth/permissions'
+import { useCRMPermissions } from '@/hooks/use-permissions'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
@@ -105,7 +109,7 @@ const SORT_OPTIONS = [
   { value: 'total-asc', label: 'Valor menor a mayor' },
 ]
 
-export default function QuotationsPage() {
+function QuotationsPageContent() {
   const [quotations, setQuotations] = useState<Quotation[]>([])
   const [stats, setStats] = useState<QuotationStats>({
     total: 0,
@@ -133,6 +137,7 @@ export default function QuotationsPage() {
   const [sendingQuotation, setSendingQuotation] = useState<Quotation | null>(null)
   
   const { toast } = useToast()
+  const crmPermissions = useCRMPermissions()
 
   // Load quotations
   const loadQuotations = async () => {
@@ -363,13 +368,15 @@ export default function QuotationsPage() {
             </h1>
             <p className="text-gray-600 mt-1">Administra y da seguimiento a todas las cotizaciones</p>
           </div>
-          <Button 
-            onClick={() => setShowCreateModal(true)}
-            className="bg-gradient-to-r from-brand-purple to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-lg hover:shadow-xl transition-all duration-200"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Agregar Cotización
-          </Button>
+          <CanAccess permission={Resource.QUOTATION_CREATE}>
+            <Button 
+              onClick={() => setShowCreateModal(true)}
+              className="bg-gradient-to-r from-brand-purple to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Agregar Cotización
+            </Button>
+          </CanAccess>
         </div>
 
         {/* Stats Cards */}
@@ -553,5 +560,29 @@ export default function QuotationsPage() {
       />
       </div>
     </div>
+  )
+}
+
+// Main page component with permission protection
+export default function QuotationsPage() {
+  return (
+    <PermissionGuard 
+      require={Resource.QUOTATION_VIEW}
+      fallback={
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Acceso Restringido
+            </h3>
+            <p className="text-gray-600">
+              No tienes permisos para ver las cotizaciones.
+            </p>
+          </div>
+        </div>
+      }
+    >
+      <QuotationsPageContent />
+    </PermissionGuard>
   )
 }

@@ -4,6 +4,10 @@ import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { PermissionGuard } from '@/components/guards/PermissionGuard'
+import { CanAccess } from '@/components/guards/CanAccess'
+import { Resource } from '@/lib/auth/permissions'
+import { useCRMPermissions } from '@/hooks/use-permissions'
 import { 
   Building2,
   Users,
@@ -64,7 +68,7 @@ interface ClientStats {
   byStatus: Record<string, number>;
 }
 
-export default function ClientsPage() {
+function ClientsPageContent() {
   const [clients, setClients] = useState<ClientWithRelations[]>([])
   const [stats, setStats] = useState<ClientStats | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
@@ -76,6 +80,7 @@ export default function ClientsPage() {
   const [editingClient, setEditingClient] = useState<ClientWithRelations | null>(null)
   const [deletingClientId, setDeletingClientId] = useState<string | null>(null)
   const { toast } = useToast()
+  const crmPermissions = useCRMPermissions()
 
   // Load clients and stats
   useEffect(() => {
@@ -244,7 +249,9 @@ export default function ClientsPage() {
                 <p className="text-gray-600">Administra y da seguimiento a tus clientes y prospectos</p>
               </div>
             </div>
-            <CreateClientModal onClientCreated={handleClientCreated} />
+            <CanAccess permission={Resource.CLIENT_CREATE}>
+              <CreateClientModal onClientCreated={handleClientCreated} />
+            </CanAccess>
           </div>
         </div>
 
@@ -431,5 +438,29 @@ export default function ClientsPage() {
       </AlertDialog>
       </div>
     </div>
+  )
+}
+
+// Main page component with permission protection
+export default function ClientsPage() {
+  return (
+    <PermissionGuard 
+      require={Resource.CLIENT_VIEW}
+      fallback={
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Acceso Restringido
+            </h3>
+            <p className="text-gray-600">
+              No tienes permisos para ver los clientes.
+            </p>
+          </div>
+        </div>
+      }
+    >
+      <ClientsPageContent />
+    </PermissionGuard>
   )
 }

@@ -4,6 +4,10 @@ import React, { useState, useEffect, startTransition } from 'react'
 import Link from 'next/link'
 // import { AppHeader } from '@/components/shared/app-header' // Removed - handled by ProtectedLayoutWrapper
 import { Button } from '@/components/ui/button'
+import { PermissionGuard } from '@/components/guards/PermissionGuard'
+import { CanAccess } from '@/components/guards/CanAccess'
+import { Resource } from '@/lib/auth/permissions'
+import { useCRMPermissions } from '@/hooks/use-permissions'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -109,7 +113,7 @@ interface Opportunity {
   }
 }
 
-export default function OpportunitiesPage() {
+function OpportunitiesPageContent() {
   const [allOpportunities, setAllOpportunities] = useState<Opportunity[]>([])
   const [opportunities, setOpportunities] = useState<Opportunity[]>([])
   const [stats, setStats] = useState<any>(null)
@@ -130,6 +134,7 @@ export default function OpportunitiesPage() {
   const [activityOpportunityId, setActivityOpportunityId] = useState<string | null>(null)
   
   const { toast } = useToast()
+  const crmPermissions = useCRMPermissions()
 
   // Configure drag sensors
   const sensors = useSensors(
@@ -1613,7 +1618,9 @@ export default function OpportunitiesPage() {
               )}
             </Button>
             
-            <CreateOpportunityModal onOpportunityCreated={() => { loadData(); loadStats(); }} />
+            <CanAccess permission={Resource.OPPORTUNITY_CREATE}>
+              <CreateOpportunityModal onOpportunityCreated={() => { loadData(); loadStats(); }} />
+            </CanAccess>
             
             <Link href="/quotations">
               <Button 
@@ -1729,7 +1736,9 @@ export default function OpportunitiesPage() {
                     <p className="text-gray-600 mb-4">
                       Comienza creando tu primera oportunidad o convirtiendo un prospecto.
                     </p>
-                    <CreateOpportunityModal onOpportunityCreated={() => { loadData(); loadStats(); }} />
+                    <CanAccess permission={Resource.OPPORTUNITY_CREATE}>
+                      <CreateOpportunityModal onOpportunityCreated={() => { loadData(); loadStats(); }} />
+                    </CanAccess>
                   </>
                 )}
               </div>
@@ -1782,5 +1791,29 @@ export default function OpportunitiesPage() {
         />
       )}
     </div>
+  )
+}
+
+// Main page component with permission protection
+export default function OpportunitiesPage() {
+  return (
+    <PermissionGuard 
+      require={Resource.OPPORTUNITY_VIEW}
+      fallback={
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Acceso Restringido
+            </h3>
+            <p className="text-gray-600">
+              No tienes permisos para ver las oportunidades.
+            </p>
+          </div>
+        </div>
+      }
+    >
+      <OpportunitiesPageContent />
+    </PermissionGuard>
   )
 }

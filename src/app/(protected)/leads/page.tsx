@@ -29,6 +29,10 @@ import {
 } from 'lucide-react'
 import { useUser } from '@clerk/nextjs'
 import { SignOutButton } from '@clerk/nextjs'
+import { PermissionGuard } from '@/components/guards/PermissionGuard'
+import { CanAccess } from '@/components/guards/CanAccess'
+import { Resource } from '@/lib/auth/permissions'
+import { useCRMPermissions } from '@/hooks/use-permissions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -125,7 +129,7 @@ const SOURCE_COLORS = {
   OTHER: 'bg-gradient-to-r from-gray-100 to-slate-100 text-gray-700 border border-gray-200'
 }
 
-export default function LeadsPage() {
+function LeadsPageContent() {
   const { user } = useUser()
   const [leads, setLeads] = useState<Lead[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -141,11 +145,8 @@ export default function LeadsPage() {
   const api = useApi()
   const router = useRouter()
 
-  // Check if user is Super Admin
-  const privateMetadata = user?.privateMetadata as any
-  const publicMetadata = user?.publicMetadata as any
-  const userRole = privateMetadata?.role || publicMetadata?.role || 'END_USER'
-  const isSuperAdmin = userRole === 'SUPER_ADMIN'
+  // Use RBAC permissions instead of manual role checking
+  const crmPermissions = useCRMPermissions()
 
 
   useEffect(() => {
@@ -314,7 +315,9 @@ export default function LeadsPage() {
                 <p className="text-gray-600">Administra y da seguimiento a tus leads</p>
               </div>
             </div>
-            <CreateLeadModal onLeadCreated={handleLeadCreated} />
+            <CanAccess permission={Resource.PROSPECT_CREATE}>
+              <CreateLeadModal onLeadCreated={handleLeadCreated} />
+            </CanAccess>
           </div>
         </div>
 
@@ -586,17 +589,21 @@ export default function LeadsPage() {
                             <Eye className="mr-2 h-4 w-4" />
                             Ver detalles
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditLead(lead)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleDeleteLead(lead.id)}
-                            className="text-red-600"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Eliminar
-                          </DropdownMenuItem>
+                          {crmPermissions.prospects.canEdit && (
+                            <DropdownMenuItem onClick={() => handleEditLead(lead)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Editar
+                            </DropdownMenuItem>
+                          )}
+                          {crmPermissions.prospects.canDelete && (
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteLead(lead.id)}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Eliminar
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -695,5 +702,29 @@ export default function LeadsPage() {
         )}
       </div>
     </div>
+  )
+}
+
+// Main page component with permission protection
+export default function LeadsPage() {
+  return (
+    <PermissionGuard 
+      require={Resource.PROSPECT_VIEW}
+      fallback={
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <UserCheck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Acceso Restringido
+            </h3>
+            <p className="text-gray-600">
+              No tienes permisos para ver los prospectos.
+            </p>
+          </div>
+        </div>
+      }
+    >
+      <LeadsPageContent />
+    </PermissionGuard>
   )
 }
