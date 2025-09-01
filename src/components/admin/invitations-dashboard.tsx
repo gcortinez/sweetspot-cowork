@@ -25,25 +25,19 @@ interface InvitationsDashboardProps {
 const ROLE_LABELS = {
   SUPER_ADMIN: 'Super Admin',
   COWORK_ADMIN: 'Admin de Cowork',
-  COWORK_USER: 'Usuario de Cowork',
-  CLIENT_ADMIN: 'Admin de Cliente',
-  END_USER: 'Usuario Final'
+  COWORK_USER: 'Usuario de Cowork'
 };
 
 const ROLE_COLORS = {
   SUPER_ADMIN: 'bg-purple-100 text-purple-800',
   COWORK_ADMIN: 'bg-blue-100 text-blue-800',
-  COWORK_USER: 'bg-green-100 text-green-800',
-  CLIENT_ADMIN: 'bg-orange-100 text-orange-800',
-  END_USER: 'bg-gray-100 text-gray-800'
+  COWORK_USER: 'bg-green-100 text-green-800'
 };
 
 const ROLE_ICONS = {
   SUPER_ADMIN: Crown,
   COWORK_ADMIN: Shield,
-  COWORK_USER: Building2,
-  CLIENT_ADMIN: Users,
-  END_USER: User
+  COWORK_USER: Building2
 };
 
 export function InvitationsDashboard({ className = "" }: InvitationsDashboardProps) {

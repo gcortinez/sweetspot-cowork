@@ -39,7 +39,7 @@ interface User {
   lastName: string;
   phone?: string;
   avatar?: string;
-  role: 'SUPER_ADMIN' | 'COWORK_ADMIN' | 'COWORK_USER' | 'CLIENT_ADMIN' | 'END_USER';
+  role: 'SUPER_ADMIN' | 'COWORK_ADMIN' | 'COWORK_USER';
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
   tenantId?: string;
   tenantName?: string;
@@ -52,17 +52,13 @@ interface User {
 const ROLE_LABELS = {
   SUPER_ADMIN: 'Super Admin',
   COWORK_ADMIN: 'Admin de Cowork',
-  COWORK_USER: 'Usuario de Cowork',
-  CLIENT_ADMIN: 'Admin de Cliente',
-  END_USER: 'Usuario Final'
+  COWORK_USER: 'Usuario de Cowork'
 };
 
 const ROLE_COLORS = {
   SUPER_ADMIN: 'bg-purple-100 text-purple-800',
   COWORK_ADMIN: 'bg-blue-100 text-blue-800',
-  COWORK_USER: 'bg-green-100 text-green-800',
-  CLIENT_ADMIN: 'bg-orange-100 text-orange-800',
-  END_USER: 'bg-gray-100 text-gray-800'
+  COWORK_USER: 'bg-green-100 text-green-800'
 };
 
 export function UserManagement() {
@@ -85,7 +81,7 @@ export function UserManagement() {
     lastName: '',
     email: '',
     phone: '',
-    role: 'END_USER' as User['role'],
+    role: 'COWORK_USER' as User['role'],
     status: 'ACTIVE' as User['status']
   });
   const [isUpdatingUser, setIsUpdatingUser] = useState(false);
@@ -94,7 +90,7 @@ export function UserManagement() {
   const [availableTenants, setAvailableTenants] = useState<any[]>([]);
   const [mounted, setMounted] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<'SUPER_ADMIN' | 'COWORK_ADMIN' | 'COWORK_USER' | 'CLIENT_ADMIN' | 'END_USER'>('END_USER');
+  const [inviteRole, setInviteRole] = useState<'SUPER_ADMIN' | 'COWORK_ADMIN' | 'COWORK_USER'>('COWORK_USER');
   const [inviteTenantId, setInviteTenantId] = useState('');
   const [isSubmittingInvite, setIsSubmittingInvite] = useState(false);
   const [inviteMessage, setInviteMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
@@ -597,7 +593,7 @@ export function UserManagement() {
         
         // Reset form
         setInviteEmail('');
-        setInviteRole('END_USER');
+        setInviteRole('COWORK_USER');
         setInviteTenantId('');
         
         // Close modal after 2 seconds
@@ -1213,9 +1209,7 @@ export function UserManagement() {
                   disabled={isSubmittingInvite}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
                 >
-                  <option value="END_USER">Usuario Final</option>
                   <option value="COWORK_USER">Usuario de Cowork</option>
-                  <option value="CLIENT_ADMIN">Admin de Cliente</option>
                   <option value="COWORK_ADMIN">Admin de Cowork</option>
                   <option value="SUPER_ADMIN">Super Admin</option>
                 </select>
@@ -1255,7 +1249,7 @@ export function UserManagement() {
                   setShowInviteModal(false);
                   setInviteMessage(null);
                   setInviteEmail('');
-                  setInviteRole('END_USER');
+                  setInviteRole('COWORK_USER');
                   setInviteTenantId('');
                 }}
                 disabled={isSubmittingInvite}

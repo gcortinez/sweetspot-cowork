@@ -16,17 +16,13 @@ interface OnboardingData {
 const ROLE_LABELS = {
   SUPER_ADMIN: 'Super Administrador',
   COWORK_ADMIN: 'Administrador de Cowork',
-  COWORK_USER: 'Usuario de Cowork',
-  CLIENT_ADMIN: 'Administrador de Cliente',
-  END_USER: 'Usuario Final'
+  COWORK_USER: 'Usuario de Cowork'
 }
 
 const ROLE_ICONS = {
   SUPER_ADMIN: Crown,
-  COWORK_ADMIN: Shield,
-  COWORK_USER: Building2,
-  CLIENT_ADMIN: Users,
-  END_USER: User
+  COWORK_ADMIN: Building2,
+  COWORK_USER: Users
 }
 
 export default function OnboardingPage() {

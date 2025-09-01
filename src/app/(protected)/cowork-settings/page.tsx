@@ -70,17 +70,13 @@ interface TenantUser {
 const roleLabels = {
   SUPER_ADMIN: "Super Administrador",
   COWORK_ADMIN: "Administrador de Cowork",
-  COWORK_USER: "Empleado de Cowork",
-  CLIENT_ADMIN: "Administrador de Cliente", 
-  END_USER: "Usuario Final",
+  COWORK_USER: "Usuario de Cowork"
 }
 
 const roleColors = {
   SUPER_ADMIN: "bg-purple-100 text-purple-800 border-purple-200",
   COWORK_ADMIN: "bg-blue-100 text-blue-800 border-blue-200",
-  COWORK_USER: "bg-cyan-100 text-cyan-800 border-cyan-200",
-  CLIENT_ADMIN: "bg-green-100 text-green-800 border-green-200",
-  END_USER: "bg-gray-100 text-gray-800 border-gray-200",
+  COWORK_USER: "bg-green-100 text-green-800 border-green-200"
 }
 
 export default function CoworkSettingsPage() {
@@ -864,12 +860,6 @@ export default function CoworkSettingsPage() {
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="COWORK_ADMIN" className="flex items-center gap-2">
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                                      Administrador de Cowork
-                                    </div>
-                                  </SelectItem>
                                   <SelectItem value="COWORK_USER" className="flex items-center gap-2">
                                     <div className="flex items-center gap-2">
                                       <div className="w-2 h-2 rounded-full bg-cyan-500"></div>
@@ -880,12 +870,6 @@ export default function CoworkSettingsPage() {
                                     <div className="flex items-center gap-2">
                                       <div className="w-2 h-2 rounded-full bg-green-500"></div>
                                       Administrador de Cliente
-                                    </div>
-                                  </SelectItem>
-                                  <SelectItem value="END_USER" className="flex items-center gap-2">
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-2 h-2 rounded-full bg-gray-500"></div>
-                                      Usuario Final
                                     </div>
                                   </SelectItem>
                                 </SelectContent>

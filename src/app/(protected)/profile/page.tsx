@@ -43,15 +43,13 @@ interface UserProfile {
 const roleLabels = {
   SUPER_ADMIN: "Super Administrador",
   COWORK_ADMIN: "Administrador de Cowork",
-  CLIENT_ADMIN: "Administrador de Cliente", 
-  END_USER: "Usuario Final",
+  COWORK_USER: "Usuario de Cowork"
 }
 
 const roleColors = {
   SUPER_ADMIN: "bg-purple-100 text-purple-800 border-purple-200",
   COWORK_ADMIN: "bg-blue-100 text-blue-800 border-blue-200",
-  CLIENT_ADMIN: "bg-green-100 text-green-800 border-green-200",
-  END_USER: "bg-gray-100 text-gray-800 border-gray-200",
+  COWORK_USER: "bg-green-100 text-green-800 border-green-200"
 }
 
 export default function ProfilePage() {

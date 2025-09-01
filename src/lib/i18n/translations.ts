@@ -518,8 +518,7 @@ export const translations = {
     role: {
       SUPER_ADMIN: 'Super Administrador',
       COWORK_ADMIN: 'Administrador de Cowork',
-      CLIENT_ADMIN: 'Administrador de Cliente',
-      END_USER: 'Usuario Final',
+      COWORK_USER: 'Usuario de Cowork',
       Guest: 'Invitado',
     },
   },
@@ -938,8 +937,7 @@ export const translations = {
     role: {
       SUPER_ADMIN: 'Super Admin',
       COWORK_ADMIN: 'Cowork Admin',
-      CLIENT_ADMIN: 'Client Admin',
-      END_USER: 'End User',
+      COWORK_USER: 'Cowork User',
       Guest: 'Guest',
     },
   },

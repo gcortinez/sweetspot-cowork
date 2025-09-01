@@ -4,9 +4,7 @@
 export enum UserRole {
   SUPER_ADMIN = "SUPER_ADMIN",
   COWORK_ADMIN = "COWORK_ADMIN",
-  COWORK_USER = "COWORK_USER",
-  CLIENT_ADMIN = "CLIENT_ADMIN",
-  END_USER = "END_USER"
+  COWORK_USER = "COWORK_USER"
 }
 
 export enum UserStatus {

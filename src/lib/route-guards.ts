@@ -19,11 +19,9 @@ export interface User {
 
 // Role hierarchy for comparison
 const ROLE_HIERARCHY: Record<UserRole, number> = {
-  END_USER: 1,
-  CLIENT_ADMIN: 2,
-  COWORK_USER: 3,
-  COWORK_ADMIN: 4,
-  SUPER_ADMIN: 5,
+  COWORK_USER: 1,
+  COWORK_ADMIN: 2,
+  SUPER_ADMIN: 3,
 };
 
 /**
@@ -56,10 +54,6 @@ export function getDefaultRedirectForRole(role: UserRole): string {
     case "COWORK_ADMIN":
       return "/dashboard";
     case "COWORK_USER":
-      return "/dashboard";
-    case "CLIENT_ADMIN":
-      return "/dashboard";
-    case "END_USER":
       return "/dashboard";
     default:
       return "/dashboard";

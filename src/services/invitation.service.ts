@@ -5,7 +5,7 @@ import { logger } from '@/lib/logger'
 
 export interface CreateInvitationParams {
   emailAddress: string
-  role: 'SUPER_ADMIN' | 'COWORK_ADMIN' | 'COWORK_USER' | 'CLIENT_ADMIN' | 'END_USER'
+  role: 'SUPER_ADMIN' | 'COWORK_ADMIN' | 'COWORK_USER'
   tenantId?: string
   invitedBy: string
   redirectUrl?: string
@@ -597,6 +597,16 @@ export class InvitationService {
   }
 
   private getAppUrl(): string {
+    // Handle dynamic Vercel URL expansion
+    if (process.env.NEXT_PUBLIC_APP_URL?.includes('$VERCEL_URL') && process.env.VERCEL_URL) {
+      return process.env.NEXT_PUBLIC_APP_URL.replace('$VERCEL_URL', process.env.VERCEL_URL)
+    }
+    
+    // Fallback to Vercel URL if available (for preview environments)
+    if (process.env.VERCEL_URL && process.env.VERCEL_ENV === 'preview') {
+      return `https://${process.env.VERCEL_URL}`
+    }
+    
     return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
   }
 
