@@ -15,6 +15,15 @@ import {
   getSpaceStatsSchema,
   getSpaceUtilizationSchema,
   calculateSpacePricingSchema,
+  createSpaceAvailabilityScheduleSchema,
+  updateSpaceAvailabilityScheduleSchema,
+  createSpaceMaintenanceScheduleSchema,
+  updateSpaceMaintenanceScheduleSchema,
+  createCheckInOutSchema,
+  performCheckOutSchema,
+  createBookingWithRecurrenceSchema,
+  generateQRCodeSchema,
+  getOccupancyDataSchema,
   type CreateSpaceRequest,
   type UpdateSpaceRequest,
   type DeleteSpaceRequest,
@@ -25,6 +34,15 @@ import {
   type GetSpaceStatsRequest,
   type GetSpaceUtilizationRequest,
   type CalculateSpacePricingRequest,
+  type CreateSpaceAvailabilityScheduleRequest,
+  type UpdateSpaceAvailabilityScheduleRequest,
+  type CreateSpaceMaintenanceScheduleRequest,
+  type UpdateSpaceMaintenanceScheduleRequest,
+  type CreateCheckInOutRequest,
+  type PerformCheckOutRequest,
+  type CreateBookingWithRecurrenceRequest,
+  type GenerateQRCodeRequest,
+  type GetOccupancyDataRequest,
 } from '@/lib/validations/space'
 import { PricingCalculator } from '@/lib/utils/pricing'
 
@@ -899,5 +917,345 @@ export async function calculateSpacePricingAction(data: CalculateSpacePricingReq
     }
 
     return { success: false, error: 'Failed to calculate space pricing' }
+  }
+}
+
+// ============================================================================
+// ENHANCED SPACE MANAGEMENT ACTIONS
+// ============================================================================
+
+/**
+ * Create space availability schedule
+ */
+export async function createSpaceAvailabilityScheduleAction(data: any): Promise<ActionResult<any>> {
+  try {
+    const { tenantId, user } = await getTenantContext()
+    if (!tenantId || !user) {
+      return { success: false, error: 'Authentication required' }
+    }
+
+    // Verify space belongs to tenant
+    const space = await prisma.space.findFirst({
+      where: { id: data.spaceId, tenantId }
+    })
+
+    if (!space) {
+      return { success: false, error: 'Space not found' }
+    }
+
+    const schedule = await prisma.spaceAvailabilitySchedule.create({
+      data: {
+        spaceId: data.spaceId,
+        dayOfWeek: data.dayOfWeek,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        isActive: data.isActive ?? true,
+      }
+    })
+
+    revalidatePath('/spaces')
+    return { success: true, data: schedule }
+  } catch (error: any) {
+    console.error('Create space availability schedule error:', error)
+    return { success: false, error: 'Failed to create availability schedule' }
+  }
+}
+
+/**
+ * Update space availability schedule
+ */
+export async function updateSpaceAvailabilityScheduleAction(data: any): Promise<ActionResult<any>> {
+  try {
+    const { tenantId, user } = await getTenantContext()
+    if (!tenantId || !user) {
+      return { success: false, error: 'Authentication required' }
+    }
+
+    const schedule = await prisma.spaceAvailabilitySchedule.update({
+      where: {
+        id: data.id,
+        space: { tenantId } // Ensure belongs to tenant
+      },
+      data: {
+        dayOfWeek: data.dayOfWeek,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        isActive: data.isActive,
+      }
+    })
+
+    revalidatePath('/spaces')
+    return { success: true, data: schedule }
+  } catch (error: any) {
+    console.error('Update space availability schedule error:', error)
+    return { success: false, error: 'Failed to update availability schedule' }
+  }
+}
+
+/**
+ * Create space maintenance schedule
+ */
+export async function createSpaceMaintenanceScheduleAction(data: any): Promise<ActionResult<any>> {
+  try {
+    const { tenantId, user } = await getTenantContext()
+    if (!tenantId || !user) {
+      return { success: false, error: 'Authentication required' }
+    }
+
+    // Verify space belongs to tenant
+    const space = await prisma.space.findFirst({
+      where: { id: data.spaceId, tenantId }
+    })
+
+    if (!space) {
+      return { success: false, error: 'Space not found' }
+    }
+
+    const maintenance = await prisma.spaceMaintenanceSchedule.create({
+      data: {
+        spaceId: data.spaceId,
+        title: data.title,
+        description: data.description,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        isRecurring: data.isRecurring ?? false,
+        recurrence: data.recurrence ? JSON.stringify(data.recurrence) : null,
+        createdBy: user.id,
+      }
+    })
+
+    revalidatePath('/spaces')
+    return { success: true, data: maintenance }
+  } catch (error: any) {
+    console.error('Create space maintenance schedule error:', error)
+    return { success: false, error: 'Failed to create maintenance schedule' }
+  }
+}
+
+/**
+ * Perform check-in
+ */
+export async function performCheckInAction(data: any): Promise<ActionResult<any>> {
+  try {
+    const { tenantId, user } = await getTenantContext()
+    if (!tenantId || !user) {
+      return { success: false, error: 'Authentication required' }
+    }
+
+    // Verify booking exists and belongs to tenant
+    const booking = await prisma.booking.findFirst({
+      where: {
+        id: data.bookingId,
+        tenantId,
+        space: { tenantId }
+      },
+      include: { space: true }
+    })
+
+    if (!booking) {
+      return { success: false, error: 'Booking not found' }
+    }
+
+    // Check if already checked in
+    const existingCheckIn = await prisma.checkInOut.findFirst({
+      where: {
+        bookingId: data.bookingId,
+        checkOutTime: null
+      }
+    })
+
+    if (existingCheckIn) {
+      return { success: false, error: 'Already checked in' }
+    }
+
+    const checkIn = await prisma.checkInOut.create({
+      data: {
+        tenantId,
+        bookingId: data.bookingId,
+        spaceId: booking.spaceId,
+        userId: user.id,
+        checkInMethod: data.checkInMethod,
+        qrCode: data.qrCode,
+        notes: data.notes,
+      }
+    })
+
+    // Update booking status
+    await prisma.booking.update({
+      where: { id: data.bookingId },
+      data: { status: 'CHECKED_IN' }
+    })
+
+    revalidatePath('/bookings')
+    revalidatePath('/check-in')
+    return { success: true, data: checkIn }
+  } catch (error: any) {
+    console.error('Perform check-in error:', error)
+    return { success: false, error: 'Failed to perform check-in' }
+  }
+}
+
+/**
+ * Perform check-out
+ */
+export async function performCheckOutAction(data: any): Promise<ActionResult<any>> {
+  try {
+    const { tenantId, user } = await getTenantContext()
+    if (!tenantId || !user) {
+      return { success: false, error: 'Authentication required' }
+    }
+
+    const checkOut = await prisma.checkInOut.update({
+      where: {
+        id: data.checkInId,
+        tenantId
+      },
+      data: {
+        checkOutTime: new Date(),
+        notes: data.notes,
+      }
+    })
+
+    // Update booking status
+    await prisma.booking.update({
+      where: { id: checkOut.bookingId },
+      data: { status: 'CHECKED_OUT' }
+    })
+
+    revalidatePath('/bookings')
+    revalidatePath('/check-in')
+    return { success: true, data: checkOut }
+  } catch (error: any) {
+    console.error('Perform check-out error:', error)
+    return { success: false, error: 'Failed to perform check-out' }
+  }
+}
+
+/**
+ * Generate QR code for booking
+ */
+export async function generateBookingQRCodeAction(data: any): Promise<ActionResult<any>> {
+  try {
+    const { tenantId, user } = await getTenantContext()
+    if (!tenantId || !user) {
+      return { success: false, error: 'Authentication required' }
+    }
+
+    // Verify booking
+    const booking = await prisma.booking.findFirst({
+      where: {
+        id: data.bookingId,
+        tenantId
+      }
+    })
+
+    if (!booking) {
+      return { success: false, error: 'Booking not found' }
+    }
+
+    // Generate QR code data
+    const qrData = {
+      bookingId: data.bookingId,
+      userId: user.id,
+      tenantId,
+      timestamp: Date.now(),
+      expiresAt: Date.now() + (data.expiresInHours * 60 * 60 * 1000)
+    }
+
+    const QRCode = require('qrcode')
+    const qrCodeString = await QRCode.toDataURL(JSON.stringify(qrData))
+
+    return {
+      success: true,
+      data: {
+        qrCode: qrCodeString,
+        qrData
+      }
+    }
+  } catch (error: any) {
+    console.error('Generate QR code error:', error)
+    return { success: false, error: 'Failed to generate QR code' }
+  }
+}
+
+/**
+ * Get space occupancy data
+ */
+export async function getSpaceOccupancyAction(data: any): Promise<ActionResult<any>> {
+  try {
+    const { tenantId } = await getTenantContext()
+    if (!tenantId) {
+      return { success: false, error: 'Authentication required' }
+    }
+
+    const occupancyData = await prisma.checkInOut.findMany({
+      where: {
+        tenantId,
+        ...(data.spaceId && { spaceId: data.spaceId }),
+        checkInTime: {
+          gte: data.startDate,
+          lte: data.endDate
+        }
+      },
+      include: {
+        space: { select: { name: true, capacity: true } },
+        user: { select: { firstName: true, lastName: true } },
+        booking: { select: { title: true, startTime: true, endTime: true } }
+      },
+      orderBy: { checkInTime: 'desc' }
+    })
+
+    return { success: true, data: occupancyData }
+  } catch (error: any) {
+    console.error('Get space occupancy error:', error)
+    return { success: false, error: 'Failed to get occupancy data' }
+  }
+}
+
+/**
+ * Create recurring booking
+ */
+export async function createRecurringBookingAction(data: any): Promise<ActionResult<any>> {
+  try {
+    const { tenantId, user } = await getTenantContext()
+    if (!tenantId || !user) {
+      return { success: false, error: 'Authentication required' }
+    }
+
+    // Create main booking
+    const booking = await prisma.booking.create({
+      data: {
+        tenantId,
+        spaceId: data.spaceId,
+        userId: user.id,
+        title: data.title,
+        description: data.description,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        status: 'CONFIRMED'
+      }
+    })
+
+    // Create recurrence if specified
+    if (data.recurrence) {
+      await prisma.bookingRecurrence.create({
+        data: {
+          bookingId: booking.id,
+          pattern: data.recurrence.pattern,
+          interval: data.recurrence.interval,
+          daysOfWeek: data.recurrence.daysOfWeek ? JSON.stringify(data.recurrence.daysOfWeek) : null,
+          dayOfMonth: data.recurrence.dayOfMonth,
+          endDate: data.recurrence.endDate,
+          occurrences: data.recurrence.occurrences,
+          exceptions: data.recurrence.exceptions ? JSON.stringify(data.recurrence.exceptions) : null,
+        }
+      })
+    }
+
+    revalidatePath('/bookings')
+    return { success: true, data: booking }
+  } catch (error: any) {
+    console.error('Create recurring booking error:', error)
+    return { success: false, error: 'Failed to create recurring booking' }
   }
 }
