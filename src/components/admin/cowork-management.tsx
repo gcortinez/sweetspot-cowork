@@ -238,13 +238,18 @@ export function CoworkManagement() {
       }
       
       console.log('Cowork deleted successfully:', data.message);
-      
+
       // Update local state
       setCoworks(prev => prev.filter(c => c.id !== coworkId));
       setShowDeleteConfirm(null);
-      
+
       // Refresh the cowork selection context
       await refreshCoworks();
+
+      // Refresh platform statistics
+      if (typeof (window as any).refreshPlatformStats === 'function') {
+        (window as any).refreshPlatformStats();
+      }
       
     } catch (error) {
       console.error('Error deleting cowork:', error);

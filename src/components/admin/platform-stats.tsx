@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { 
-  Building2, 
-  Users, 
-  DollarSign, 
-  TrendingUp, 
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  Building2,
+  Users,
+  DollarSign,
+  TrendingUp,
   Activity,
   BarChart3,
   AlertCircle,
@@ -52,36 +52,36 @@ interface RecentActivity {
   metadata?: any;
 }
 
-// Default stats - always available, never null
-const defaultStats: PlatformStats = {
+// Loading stats - shown while data loads
+const loadingStats: PlatformStats = {
   overview: {
-    totalCoworks: 3,
-    activeCoworks: 2,
-    totalUsers: 2,
-    activeUsers: 2,
+    totalCoworks: 0,
+    activeCoworks: 0,
+    totalUsers: 0,
+    activeUsers: 0,
     totalRevenue: 0,
     monthlyRevenue: 0,
     revenueGrowth: 0
   },
   coworkStats: {
     byStatus: {
-      active: 2,
-      inactive: 1,
+      active: 0,
+      inactive: 0,
       suspended: 0
     },
-    recentlyCreated: 3,
-    averageUsersPerCowork: 1
+    recentlyCreated: 0,
+    averageUsersPerCowork: 0
   },
   userStats: {
     byRole: {
-      super_admin: 1,
+      super_admin: 0,
       cowork_admin: 0,
       cowork_user: 0,
       client_admin: 0,
-      end_user: 1
+      end_user: 0
     },
     newUsersThisMonth: 0,
-    activeUsersToday: 2
+    activeUsersToday: 0
   },
   revenueStats: {
     thisMonth: 0,
@@ -91,31 +91,16 @@ const defaultStats: PlatformStats = {
   }
 };
 
-const defaultActivities: RecentActivity[] = [
-  {
-    id: '1',
-    type: 'cowork_created',
-    message: 'Cowork "Example Space Name" creado',
-    timestamp: 'Hace 2 días'
-  },
-  {
-    id: '2', 
-    type: 'cowork_activated',
-    message: 'Cowork "Another Long Space Name" creado',
-    timestamp: 'Hace 1 día'
-  },
-  {
-    id: '3',
-    type: 'cowork_created',
-    message: 'Cowork "Demo Workspace" creado',
-    timestamp: 'Recién'
-  }
-];
+const defaultActivities: RecentActivity[] = [];
 
 export function PlatformStats() {
-  const [stats, setStats] = useState<PlatformStats>(defaultStats);
+  const [stats, setStats] = useState<PlatformStats>(loadingStats);
   const [activities, setActivities] = useState<RecentActivity[]>(defaultActivities);
   const [mounted, setMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Listen to cowork selection changes to refresh stats
+  const { refreshCoworks } = useCoworkSelection();
 
   // Set mounted after component mounts
   useEffect(() => {
@@ -148,38 +133,68 @@ export function PlatformStats() {
     }));
   };
 
-  // Try to fetch real data silently in background after mount
+  // Fetch real data immediately and set up auto-refresh
+  const fetchRealData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/platform/stats', {
+        cache: 'no-store'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setStats(data.stats);
+          setActivities(normalizeActivities(data.activities || defaultActivities));
+          console.log('📊 Platform stats updated:', data.stats.overview);
+        }
+      } else {
+        console.log('📊 Platform stats API failed:', response.status);
+      }
+    } catch (error) {
+      console.error('📊 Platform stats fetch error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Fetch data immediately when component mounts
+  useEffect(() => {
+    if (!mounted) return;
+    fetchRealData();
+  }, [mounted, fetchRealData]);
+
+  // Set up auto-refresh every 30 seconds
   useEffect(() => {
     if (!mounted) return;
 
-    const fetchRealData = async () => {
-      try {
-        // Wait a moment for smooth UX
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const response = await fetch('/api/platform/stats', {
-          cache: 'no-store'
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            setStats(data.stats);
-            setActivities(normalizeActivities(data.activities || defaultActivities));
-          }
-        }
-      } catch (error) {
-        // Silently fail - keep default data
-        console.log('Using default platform stats');
-      }
+    const interval = setInterval(() => {
+      fetchRealData();
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [mounted, fetchRealData]);
+
+  // Expose refresh function globally for manual refresh
+  useEffect(() => {
+    // Add to window for manual refresh from cowork management
+    (window as any).refreshPlatformStats = fetchRealData;
+
+    return () => {
+      delete (window as any).refreshPlatformStats;
     };
+  }, [fetchRealData]);
 
-    fetchRealData();
-  }, [mounted]);
-
-  // Always render content - never show loading or error states
+  // Always render content with loading indicator
   return (
     <div className="w-full max-w-full space-y-3 sm:space-y-4 lg:space-y-6 overflow-hidden min-w-0 break-words">
+      {/* Loading indicator */}
+      {isLoading && (
+        <div className="fixed top-4 right-4 z-50 bg-white shadow-lg rounded-lg p-3 flex items-center space-x-2 border">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
+          <span className="text-sm text-gray-600">Actualizando estadísticas...</span>
+        </div>
+      )}
       {/* Overview Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 min-w-0 auto-cols-fr">
         {/* Total Coworks */}
