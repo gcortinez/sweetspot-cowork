@@ -13,11 +13,11 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 // Removed Select import - using native select to prevent navigation issues
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { 
-  listOpportunities, 
+import {
+  listOpportunities,
   getOpportunityStats,
   changeOpportunityStage,
-  deleteOpportunity 
+  deleteOpportunity
 } from '@/lib/actions'
 import { STAGE_METADATA } from '@/lib/validations/opportunities'
 import { useToast } from '@/hooks/use-toast'

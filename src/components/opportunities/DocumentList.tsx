@@ -76,7 +76,7 @@ export default function DocumentList({
   const loadDocuments = async () => {
     try {
       setLoading(true)
-      const result = await listOpportunityDocuments({ 
+      const result = await listOpportunityDocuments({
         opportunityId,
         limit: 50 // Load more documents at once
       })

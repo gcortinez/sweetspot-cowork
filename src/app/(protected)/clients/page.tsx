@@ -46,6 +46,7 @@ import {
 import ClientsTable from '@/components/clients/ClientsTable'
 import CreateClientModal from '@/components/clients/CreateClientModal'
 import EditClientModal from '@/components/clients/EditClientModal'
+import ViewClientModal from '@/components/clients/ViewClientModal'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -77,6 +78,7 @@ function ClientsPageContent() {
   const [isLoading, setIsLoading] = useState(true)
   const [isStatsLoading, setIsStatsLoading] = useState(true)
   const [editingClient, setEditingClient] = useState<ClientWithRelations | null>(null)
+  const [viewingClient, setViewingClient] = useState<ClientWithRelations | null>(null)
   const [deletingClientId, setDeletingClientId] = useState<string | null>(null)
   const { toast } = useToast()
   // CRM permissions handled by ClientsTable component
@@ -163,9 +165,8 @@ function ClientsPageContent() {
     setDeletingClientId(clientId)
   }
 
-  const handleViewClient = (clientId: string) => {
-    // Navigate to client detail page
-    window.location.href = `/clients/${clientId}`
+  const handleViewClient = (client: ClientWithRelations) => {
+    setViewingClient(client)
   }
 
   const confirmDeleteClient = async () => {
@@ -234,10 +235,9 @@ function ClientsPageContent() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Page Header */}
-        <div className="mb-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      {/* Page Header */}
+      <div>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-600 to-purple-700 flex items-center justify-center shadow-lg">
@@ -407,6 +407,15 @@ function ClientsPageContent() {
         </CardContent>
       </Card>
 
+      {/* View Client Modal */}
+      {viewingClient && (
+        <ViewClientModal
+          client={viewingClient}
+          isOpen={!!viewingClient}
+          onClose={() => setViewingClient(null)}
+        />
+      )}
+
       {/* Edit Client Modal */}
       {editingClient && (
         <EditClientModal
@@ -435,7 +444,6 @@ function ClientsPageContent() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      </div>
     </div>
   )
 }

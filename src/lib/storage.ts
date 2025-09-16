@@ -38,8 +38,8 @@ export const generateUniqueFileName = (originalName: string) => {
 
 // Upload file to Vercel Blob
 export async function uploadToBlob(
-  filePath: string, 
-  file: Buffer | File, 
+  filePath: string,
+  file: Buffer | File,
   contentType: string
 ) {
   'use server'
@@ -48,7 +48,7 @@ export async function uploadToBlob(
       access: 'public',
       contentType,
     })
-    
+
     return { success: true, url: blob.url }
   } catch (error) {
     console.error('Error uploading to Vercel Blob:', error)

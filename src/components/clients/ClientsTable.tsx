@@ -56,7 +56,7 @@ interface ClientsTableProps {
   onStatusFilter: (status: ClientStatus | 'all') => void;
   onEditClient: (client: ClientWithRelations) => void;
   onDeleteClient: (clientId: string) => void;
-  onViewClient: (clientId: string) => void;
+  onViewClient: (client: ClientWithRelations) => void;
   isLoading?: boolean;
 }
 
@@ -225,7 +225,7 @@ export default function ClientsTable({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => onViewClient(client.id)}
+                          onClick={() => onViewClient(client)}
                           className="h-6 px-2 text-xs"
                         >
                           Ver
@@ -246,7 +246,7 @@ export default function ClientsTable({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem onClick={() => onViewClient(client.id)}>
+                        <DropdownMenuItem onClick={() => onViewClient(client)}>
                           <Eye className="h-4 w-4 mr-2" />
                           Ver detalles
                         </DropdownMenuItem>
@@ -304,7 +304,7 @@ export default function ClientsTable({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onViewClient(client.id)}>
+                    <DropdownMenuItem onClick={() => onViewClient(client)}>
                       <Eye className="h-4 w-4 mr-2" />
                       Ver detalles
                     </DropdownMenuItem>

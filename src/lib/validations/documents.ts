@@ -1,5 +1,11 @@
 import { z } from 'zod'
 
+// CUID validation regex - matches the pattern used by Prisma cuid()
+const CUID_REGEX = /^c[0-9a-z]{24}$/
+
+// Helper function to validate CUID
+const cuidValidation = z.string().regex(CUID_REGEX, 'ID inválido')
+
 // Document types enum
 export const DOCUMENT_TYPES = {
   general: 'General',
@@ -13,7 +19,7 @@ export type DocumentType = keyof typeof DOCUMENT_TYPES
 
 // Schema for document upload
 export const uploadDocumentSchema = z.object({
-  opportunityId: z.string().uuid('ID de oportunidad inválido'),
+  opportunityId: cuidValidation,
   documentType: z.enum(['general', 'contract', 'proposal', 'requirement', 'technical'] as const)
     .default('general'),
   description: z.string().max(500, 'Descripción muy larga').optional(),
@@ -22,7 +28,7 @@ export const uploadDocumentSchema = z.object({
 
 // Schema for document filters
 export const documentFilterSchema = z.object({
-  opportunityId: z.string().uuid('ID de oportunidad inválido'),
+  opportunityId: cuidValidation,
   documentType: z.enum(['general', 'contract', 'proposal', 'requirement', 'technical'] as const).optional(),
   isActive: z.boolean().default(true).optional(),
   page: z.number().min(1).default(1),

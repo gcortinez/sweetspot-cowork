@@ -17,8 +17,8 @@ Implementación completa del módulo de Gestión de Espacios y Reservas para Swe
 
 ### Stack Actual (a mantener)
 - **Framework**: Next.js 15.3.3 con App Router y Server Actions
-- **Base de Datos**: Supabase PostgreSQL con Prisma ORM
-- **Autenticación**: Supabase Auth con JWT y RLS
+- **Base de Datos**: PostgreSQL con Prisma ORM
+- **Autenticación**: Clerk Auth
 - **UI**: React 19, TailwindCSS, shadcn/ui, Radix UI
 - **Validación**: Zod schemas
 - **Estado**: Zustand + React Context
