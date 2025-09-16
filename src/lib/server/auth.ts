@@ -69,8 +69,63 @@ export async function getCurrentUser(): Promise<ServerAuthUser | null> {
         }
       }
 
-      console.log('❌ User exists in Clerk but not in database');
-      // User exists in Clerk but not in database
+      console.log('❌ User exists in Clerk but not in database - checking for pending invitations...');
+
+      // Check if there are pending invitations for this user
+      const email = clerkUser.emailAddresses[0]?.emailAddress;
+      if (email) {
+        const pendingInvitation = await prisma.invitation.findFirst({
+          where: {
+            email: email,
+            status: 'PENDING'
+          }
+        });
+
+        if (pendingInvitation) {
+          console.log('🎫 Found pending invitation - creating user automatically...');
+
+          // Create user from invitation
+          const newUser = await prisma.user.create({
+            data: {
+              clerkId: clerkUser.id,
+              email: email,
+              firstName: clerkUser.firstName || '',
+              lastName: clerkUser.lastName || '',
+              role: pendingInvitation.role as UserRole,
+              tenantId: pendingInvitation.tenantId,
+              status: 'ACTIVE',
+              isOnboarded: true
+            }
+          });
+
+          // Mark invitation as accepted
+          await prisma.invitation.update({
+            where: { id: pendingInvitation.id },
+            data: {
+              status: 'ACCEPTED',
+              acceptedAt: new Date(),
+              updatedAt: new Date()
+            }
+          });
+
+          console.log('✅ User created from pending invitation:', newUser.email, 'Role:', newUser.role);
+
+          return {
+            id: newUser.id,
+            email: newUser.email,
+            firstName: newUser.firstName,
+            lastName: newUser.lastName,
+            role: newUser.role as UserRole,
+            tenantId: newUser.tenantId,
+            clientId: newUser.clientId,
+            isOnboarded: Boolean(newUser.isOnboarded),
+            clerkId: newUser.clerkId || clerkUser.id
+          };
+        }
+      }
+
+      console.log('❌ User exists in Clerk but not in database and no pending invitations found');
+      // User exists in Clerk but not in database and no invitation
       // This might happen during registration flow
       return {
         id: clerkUser.id,
