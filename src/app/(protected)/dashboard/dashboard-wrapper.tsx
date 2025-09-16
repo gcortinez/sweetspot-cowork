@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useCoworkSelection } from '@/contexts/cowork-selection-context'
+import { useAuth } from '@/contexts/clerk-auth-context'
 import { SuperAdminDashboard } from './super-admin-dashboard'
 import DashboardClient from './dashboard-client'
 import { getDashboardStats, getRecentActivities } from '@/lib/actions/dashboard-optimized'
@@ -14,17 +15,22 @@ interface DashboardWrapperProps {
   error?: string | null
 }
 
-export default function DashboardWrapper({ 
-  userData, 
-  initialStats, 
-  initialActivities, 
-  error 
+export default function DashboardWrapper({
+  userData,
+  initialStats,
+  initialActivities,
+  error
 }: DashboardWrapperProps) {
-  const { selectedCowork, isPlatformView, isSuperAdmin } = useCoworkSelection()
+  const { isLoading: isAuthLoading, isInitialized: isAuthInitialized } = useAuth()
+  const { selectedCowork, isPlatformView, isSuperAdmin, isLoadingCoworks } = useCoworkSelection()
   const [contextStats, setContextStats] = useState(initialStats)
   const [contextActivities, setContextActivities] = useState(initialActivities)
   const [contextError, setContextError] = useState(error)
   const [isLoadingContext, setIsLoadingContext] = useState(false)
+
+  // Check if auth and cowork contexts are ready
+  const isAuthReady = isAuthInitialized && !isAuthLoading
+  const isContextReady = isAuthReady && !isLoadingCoworks
 
   // Load data for the selected cowork when Super Admin switches context
   useEffect(() => {
@@ -52,6 +58,15 @@ export default function DashboardWrapper({
       loadCoworkData()
     }
   }, [selectedCowork?.id, isPlatformView, isSuperAdmin])
+
+  // Show loading state while auth or cowork contexts are not ready
+  if (!isContextReady) {
+    return (
+      <div className="w-full max-w-full overflow-hidden min-w-0">
+        <DashboardSkeleton />
+      </div>
+    )
+  }
 
   // Only show Super Admin Dashboard if user is actually SUPER_ADMIN role and in platform view
   if (userData.role === 'SUPER_ADMIN' && isSuperAdmin && isPlatformView) {
