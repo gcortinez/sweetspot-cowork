@@ -40,7 +40,7 @@ export default async function SpaceDetailPage({ params }: SpaceDetailPageProps) 
   }
 
   const formatCurrency = (amount?: number) => {
-    if (!amount) return 'Free'
+    if (!amount) return 'Gratuito'
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -48,10 +48,10 @@ export default async function SpaceDetailPage({ params }: SpaceDetailPageProps) 
   }
 
   const formatDuration = (minutes: number) => {
-    if (minutes < 60) return `${minutes} minutes`
+    if (minutes < 60) return `${minutes} minutos`
     const hours = Math.floor(minutes / 60)
     const remainingMinutes = minutes % 60
-    return remainingMinutes > 0 ? `${hours} hours ${remainingMinutes} minutes` : `${hours} hours`
+    return remainingMinutes > 0 ? `${hours} horas ${remainingMinutes} minutos` : `${hours} horas`
   }
 
   return (
@@ -62,18 +62,18 @@ export default async function SpaceDetailPage({ params }: SpaceDetailPageProps) 
           <Button variant="ghost" size="sm" asChild>
             <Link href="/spaces">
               <ArrowLeft className="h-4 w-4 mr-1" />
-              Back to Spaces
+              Volver a Espacios
             </Link>
           </Button>
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
               {space.name}
               <Badge variant={space.isActive ? 'default' : 'secondary'}>
-                {space.isActive ? 'Active' : 'Inactive'}
+                {space.isActive ? 'Activo' : 'Inactivo'}
               </Badge>
             </h1>
             <p className="text-muted-foreground">
-              {formatSpaceType(space.type)} • Created {new Date(space.createdAt).toLocaleDateString()}
+              {formatSpaceType(space.type)} • Creado {new Date(space.createdAt).toLocaleDateString()}
             </p>
           </div>
         </div>
@@ -81,13 +81,13 @@ export default async function SpaceDetailPage({ params }: SpaceDetailPageProps) 
           <Button variant="outline" asChild>
             <Link href={`/spaces/${space.id}/edit`}>
               <Edit className="h-4 w-4 mr-1" />
-              Edit Space
+              Editar Espacio
             </Link>
           </Button>
           <Button asChild>
             <Link href={`/bookings/new?spaceId=${space.id}`}>
               <Calendar className="h-4 w-4 mr-1" />
-              Book Space
+              Reservar Espacio
             </Link>
           </Button>
         </div>
@@ -99,8 +99,8 @@ export default async function SpaceDetailPage({ params }: SpaceDetailPageProps) 
           {/* Space Card Preview */}
           <Card>
             <CardHeader>
-              <CardTitle>Space Preview</CardTitle>
-              <CardDescription>How this space appears to users</CardDescription>
+              <CardTitle>Vista Previa del Espacio</CardTitle>
+              <CardDescription>Cómo aparece este espacio a los usuarios</CardDescription>
             </CardHeader>
             <CardContent>
               <SpaceCardEnhanced space={space} showActions={false} />
@@ -111,7 +111,7 @@ export default async function SpaceDetailPage({ params }: SpaceDetailPageProps) 
           {space.description && (
             <Card>
               <CardHeader>
-                <CardTitle>Description</CardTitle>
+                <CardTitle>Descripción</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">{space.description}</p>
@@ -124,7 +124,7 @@ export default async function SpaceDetailPage({ params }: SpaceDetailPageProps) 
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings className="h-5 w-5" />
-                Booking Rules & Settings
+                Reglas y Configuración de Reservas
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -132,12 +132,12 @@ export default async function SpaceDetailPage({ params }: SpaceDetailPageProps) 
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm font-medium">
                     <Clock className="h-4 w-4" />
-                    Duration Limits
+                    Límites de Duración
                   </div>
                   <div className="pl-6 space-y-1 text-sm text-muted-foreground">
-                    <div>Minimum: {formatDuration(space.minBookingDuration)}</div>
+                    <div>Mínimo: {formatDuration(space.minBookingDuration)}</div>
                     {space.maxBookingDuration && (
-                      <div>Maximum: {formatDuration(space.maxBookingDuration)}</div>
+                      <div>Máximo: {formatDuration(space.maxBookingDuration)}</div>
                     )}
                   </div>
                 </div>
@@ -145,11 +145,11 @@ export default async function SpaceDetailPage({ params }: SpaceDetailPageProps) 
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm font-medium">
                     <Calendar className="h-4 w-4" />
-                    Advance Booking
+                    Reserva Anticipada
                   </div>
                   <div className="pl-6 space-y-1 text-sm text-muted-foreground">
-                    <div>Up to {space.maxAdvanceBooking} days ahead</div>
-                    <div>Cancel {space.cancellationHours}h before start</div>
+                    <div>Hasta {space.maxAdvanceBooking} días de anticipación</div>
+                    <div>Cancelar {space.cancellationHours}h antes del inicio</div>
                   </div>
                 </div>
               </div>
@@ -160,19 +160,19 @@ export default async function SpaceDetailPage({ params }: SpaceDetailPageProps) 
                 {space.requiresApproval && (
                   <Badge variant="outline" className="flex items-center gap-1">
                     <Shield className="w-3 h-3" />
-                    Requires Approval
+                    Requiere Aprobación
                   </Badge>
                 )}
                 {space.allowRecurring && (
                   <Badge variant="outline" className="flex items-center gap-1">
                     <RotateCcw className="w-3 h-3" />
-                    Recurring Bookings Allowed
+                    Reservas Recurrentes Permitidas
                   </Badge>
                 )}
                 {!space.requiresApproval && (
                   <Badge variant="outline" className="flex items-center gap-1">
                     <Calendar className="w-3 h-3" />
-                    Instant Booking
+                    Reserva Instantánea
                   </Badge>
                 )}
               </div>
@@ -185,22 +185,22 @@ export default async function SpaceDetailPage({ params }: SpaceDetailPageProps) 
           {/* Quick Stats */}
           <Card>
             <CardHeader>
-              <CardTitle>Quick Stats</CardTitle>
+              <CardTitle>Estadísticas Rápidas</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Capacity</span>
+                  <span className="text-sm">Capacidad</span>
                 </div>
-                <span className="font-medium">{space.capacity} people</span>
+                <span className="font-medium">{space.capacity} personas</span>
               </div>
 
               {space.area && (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">Area</span>
+                    <span className="text-sm">Área</span>
                   </div>
                   <span className="font-medium">{space.area} m²</span>
                 </div>
@@ -209,7 +209,7 @@ export default async function SpaceDetailPage({ params }: SpaceDetailPageProps) 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Hourly Rate</span>
+                  <span className="text-sm">Tarifa por Hora</span>
                 </div>
                 <span className="font-medium">{formatCurrency(space.hourlyRate)}</span>
               </div>
@@ -218,11 +218,11 @@ export default async function SpaceDetailPage({ params }: SpaceDetailPageProps) 
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Created</span>
+                  <span className="text-muted-foreground">Creado</span>
                   <span>{new Date(space.createdAt).toLocaleDateString()}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Last Updated</span>
+                  <span className="text-muted-foreground">Última Actualización</span>
                   <span>{new Date(space.updatedAt).toLocaleDateString()}</span>
                 </div>
               </div>
@@ -234,24 +234,24 @@ export default async function SpaceDetailPage({ params }: SpaceDetailPageProps) 
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5" />
-                Location
+                Ubicación
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {space.floor && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Floor</span>
+                  <span className="text-muted-foreground">Piso</span>
                   <span>{space.floor}</span>
                 </div>
               )}
               {space.zone && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Zone</span>
+                  <span className="text-muted-foreground">Zona</span>
                   <span>{space.zone}</span>
                 </div>
               )}
               {!space.floor && !space.zone && (
-                <p className="text-sm text-muted-foreground">No location details available</p>
+                <p className="text-sm text-muted-foreground">No hay detalles de ubicación disponibles</p>
               )}
             </CardContent>
           </Card>
@@ -259,25 +259,25 @@ export default async function SpaceDetailPage({ params }: SpaceDetailPageProps) 
           {/* Quick Actions */}
           <Card>
             <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
+              <CardTitle>Acciones Rápidas</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <Button variant="outline" className="w-full justify-start" asChild>
                 <Link href={`/spaces/${space.id}/availability`}>
                   <Settings className="h-4 w-4 mr-2" />
-                  Manage Availability
+                  Gestionar Disponibilidad
                 </Link>
               </Button>
               <Button variant="outline" className="w-full justify-start" asChild>
                 <Link href={`/bookings?spaceId=${space.id}`}>
                   <Calendar className="h-4 w-4 mr-2" />
-                  View Bookings
+                  Ver Reservas
                 </Link>
               </Button>
               <Button variant="outline" className="w-full justify-start" asChild>
                 <Link href={`/spaces/${space.id}/analytics`}>
                   <Users className="h-4 w-4 mr-2" />
-                  Analytics
+                  Analíticas
                 </Link>
               </Button>
             </CardContent>

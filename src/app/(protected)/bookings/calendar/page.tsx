@@ -82,9 +82,9 @@ async function CalendarContent({ selectedSpaceId, view }: { selectedSpaceId?: st
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Error Loading Calendar</CardTitle>
+          <CardTitle>Error al Cargar Calendario</CardTitle>
           <CardDescription>
-            {result.error || 'Unable to load booking calendar at this time'}
+            {result.error || 'No se puede cargar el calendario de reservas en este momento'}
           </CardDescription>
         </CardHeader>
       </Card>
@@ -110,7 +110,7 @@ async function CalendarContent({ selectedSpaceId, view }: { selectedSpaceId?: st
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                Booking Calendar
+                Calendario de Reservas
                 {selectedSpace && (
                   <Badge variant="outline">
                     {selectedSpace.name}
@@ -119,8 +119,8 @@ async function CalendarContent({ selectedSpaceId, view }: { selectedSpaceId?: st
               </CardTitle>
               <CardDescription>
                 {selectedSpace
-                  ? `Showing bookings for ${selectedSpace.name}`
-                  : `Showing all bookings across ${activeSpaces.length} spaces`
+                  ? `Mostrando reservas para ${selectedSpace.name}`
+                  : `Mostrando todas las reservas en ${activeSpaces.length} espacios`
                 }
               </CardDescription>
             </div>
@@ -128,16 +128,16 @@ async function CalendarContent({ selectedSpaceId, view }: { selectedSpaceId?: st
             <div className="flex items-center gap-2">
               <Select defaultValue={selectedSpaceId || 'all'}>
                 <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Select space" />
+                  <SelectValue placeholder="Seleccionar espacio" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Spaces</SelectItem>
+                  <SelectItem value="all">Todos los Espacios</SelectItem>
                   {activeSpaces.map((space) => (
                     <SelectItem key={space.id} value={space.id}>
                       <div className="flex items-center gap-2">
                         <span>{space.name}</span>
                         <Badge variant="outline" className="text-xs">
-                          {space.capacity} people
+                          {space.capacity} personas
                         </Badge>
                       </div>
                     </SelectItem>
@@ -148,7 +148,7 @@ async function CalendarContent({ selectedSpaceId, view }: { selectedSpaceId?: st
               <Button asChild>
                 <Link href="/bookings/new">
                   <Plus className="h-4 w-4 mr-1" />
-                  New Booking
+                  Nueva Reserva
                 </Link>
               </Button>
             </div>
@@ -196,14 +196,14 @@ async function CalendarContent({ selectedSpaceId, view }: { selectedSpaceId?: st
           <CardContent>
             <div className="text-2xl font-bold">{bookings.length}</div>
             <p className="text-xs text-muted-foreground">
-              Upcoming bookings
+              Próximas reservas
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Attendees</CardTitle>
+            <CardTitle className="text-sm font-medium">Total de Asistentes</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -211,14 +211,14 @@ async function CalendarContent({ selectedSpaceId, view }: { selectedSpaceId?: st
               {bookings.reduce((sum, booking) => sum + (booking.attendeeCount || 0), 0)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Expected participants
+              Participantes esperados
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Recurring Events</CardTitle>
+            <CardTitle className="text-sm font-medium">Eventos Recurrentes</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -226,7 +226,7 @@ async function CalendarContent({ selectedSpaceId, view }: { selectedSpaceId?: st
               {bookings.filter(b => b.isRecurring).length}
             </div>
             <p className="text-xs text-muted-foreground">
-              Repeating bookings
+              Reservas que se repiten
             </p>
           </CardContent>
         </Card>
@@ -289,13 +289,13 @@ export default function CalendarPage({ searchParams }: CalendarPageProps) {
           <Button variant="ghost" size="sm" asChild>
             <Link href="/bookings">
               <ArrowLeft className="h-4 w-4 mr-1" />
-              Back to Bookings
+              Volver a Reservas
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Calendar View</h1>
+            <h1 className="text-3xl font-bold">Vista de Calendario</h1>
             <p className="text-muted-foreground">
-              Interactive calendar for managing space bookings
+              Calendario interactivo para gestionar reservas de espacios
             </p>
           </div>
         </div>

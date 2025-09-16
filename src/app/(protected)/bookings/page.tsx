@@ -83,52 +83,52 @@ async function BookingsContent() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+            <CardTitle className="text-sm font-medium">Total de Reservas</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalBookings}</div>
             <p className="text-xs text-muted-foreground">
-              All upcoming bookings
+              Todas las reservas próximas
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Confirmed</CardTitle>
+            <CardTitle className="text-sm font-medium">Confirmadas</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{stats.confirmedBookings}</div>
             <p className="text-xs text-muted-foreground">
-              Ready to go
+              Listas para usar
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Approval</CardTitle>
+            <CardTitle className="text-sm font-medium">Pendientes de Aprobación</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-600">{stats.pendingBookings}</div>
             <p className="text-xs text-muted-foreground">
-              Awaiting approval
+              Esperando aprobación
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Recurring</CardTitle>
+            <CardTitle className="text-sm font-medium">Recurrentes</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.recurringBookings}</div>
             <p className="text-xs text-muted-foreground">
-              Repeating events
+              Eventos que se repiten
             </p>
           </CardContent>
         </Card>
@@ -208,23 +208,23 @@ export default function BookingsPage() {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Calendar className="h-8 w-8" />
-            Bookings
+            Reservas
           </h1>
           <p className="text-muted-foreground">
-            Manage and view all space bookings
+            Gestiona y visualiza todas las reservas de espacios
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" asChild>
             <Link href="/bookings/calendar">
               <Calendar className="h-4 w-4 mr-1" />
-              Calendar View
+              Vista de Calendario
             </Link>
           </Button>
           <Button asChild>
             <Link href="/bookings/new">
               <Plus className="h-4 w-4 mr-1" />
-              New Booking
+              Nueva Reserva
             </Link>
           </Button>
         </div>

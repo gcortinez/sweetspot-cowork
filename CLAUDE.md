@@ -34,9 +34,9 @@ npm run test:performance  # Run performance tests
 ## Architecture Overview
 
 **Technology Stack:**
-- **Framework**: Next.js 15.3.3 with App Router and Server Actions
-- **Authentication**: Supabase Auth with JWT tokens and Row Level Security (RLS)
-- **Database**: Supabase PostgreSQL with Prisma ORM
+- **Framework**: Next.js 15.5.0 with App Router and Server Actions
+- **Authentication**: Clerk Auth
+- **Database**: PostgreSQL with Prisma ORM
 - **UI**: React 19, TailwindCSS, shadcn/ui components, Radix UI primitives
 - **Validation**: Zod schemas for type-safe validation
 - **State Management**: Zustand for client state, React Context for auth

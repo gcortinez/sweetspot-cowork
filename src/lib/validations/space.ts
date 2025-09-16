@@ -63,11 +63,6 @@ export const AvailabilityRuleSchema = z.object({
 })
 
 // New schemas for enhanced space management
-export const CoordinatesSchema = z.object({
-  x: z.number(),
-  y: z.number(),
-}).optional()
-
 export const SpaceAvailabilityScheduleSchema = z.object({
   dayOfWeek: z.number().min(0).max(6), // 0 = Sunday, 6 = Saturday
   startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format (HH:MM)'),
@@ -124,41 +119,26 @@ export const BookingRecurrenceSchema = z.object({
 
 // Base space schema
 export const baseSpaceSchema = z.object({
-  name: z.string().min(1, 'Space name is required').max(100, 'Name must be less than 100 characters'),
-  description: z.string().max(500, 'Description must be less than 500 characters').optional(),
+  name: z.string().min(1, 'El nombre del espacio es requerido').max(100, 'El nombre debe tener menos de 100 caracteres'),
+  description: z.string().max(500, 'La descripción debe tener menos de 500 caracteres').optional(),
   type: SpaceTypeSchema,
-  capacity: z.number().int().min(1, 'Capacity must be at least 1'),
+  capacity: z.number().int().min(1, 'La capacidad debe ser al menos 1'),
   amenities: z.array(AmenitySchema).default([]),
-  hourlyRate: z.number().min(0, 'Hourly rate cannot be negative').optional(),
+  hourlyRate: z.preprocess((val) => val === '' ? undefined : val, z.number().min(0, 'La tarifa por hora no puede ser negativa').optional()),
   isActive: z.boolean().default(true),
 
   // Enhanced space management fields
-  floor: z.string().max(50, 'Floor must be less than 50 characters').optional(),
-  zone: z.string().max(50, 'Zone must be less than 50 characters').optional(),
-  coordinates: CoordinatesSchema,
+  floor: z.string().max(50, 'El piso debe tener menos de 50 caracteres').optional(),
+  zone: z.string().max(50, 'La zona debe tener menos de 50 caracteres').optional(),
   images: z.array(z.string().url('Invalid image URL')).default([]),
-  area: z.number().positive('Area must be positive').optional(), // Square meters
-  maxAdvanceBooking: z.number().int().min(1, 'Max advance booking must be at least 1 day').default(30), // Days
-  minBookingDuration: z.number().int().min(15, 'Min booking duration must be at least 15 minutes').default(60), // Minutes
-  maxBookingDuration: z.number().int().min(15, 'Max booking duration must be at least 15 minutes').optional(), // Minutes
-  cancellationHours: z.number().int().min(0, 'Cancellation hours cannot be negative').default(24), // Hours
+  area: z.preprocess((val) => val === '' ? undefined : val, z.number().positive('El área debe ser positiva').optional()), // Square meters
+  maxAdvanceBooking: z.number().int().min(1, 'La reserva anticipada debe ser al menos 1 día').default(30), // Days
+  minBookingDuration: z.number().int().min(15, 'La duración mínima debe ser al menos 15 minutos').default(60), // Minutes
+  maxBookingDuration: z.preprocess((val) => val === '' ? undefined : val, z.number().int().min(15, 'La duración máxima debe ser al menos 15 minutos').optional()), // Minutes
+  cancellationHours: z.number().int().min(0, 'Las horas de cancelación no pueden ser negativas').default(24), // Hours
   requiresApproval: z.boolean().default(false),
   allowRecurring: z.boolean().default(true),
 
-  // Legacy fields for backward compatibility
-  status: SpaceStatusSchema.default('AVAILABLE'),
-  location: LocationSchema.optional(),
-  pricingMode: PricingModeSchema.default('HOURLY'),
-  basePrice: z.number().min(0, 'Base price cannot be negative').default(0),
-  pricingTiers: z.array(PricingTierSchema).default([]),
-  availabilityRules: z.array(AvailabilityRuleSchema).default([]),
-  minimumBookingDuration: z.number().min(0.25, 'Minimum booking duration must be at least 15 minutes').default(1), // in hours
-  maximumBookingDuration: z.number().positive('Maximum booking duration must be positive').optional(), // in hours
-  advanceBookingDays: z.number().int().min(0, 'Advance booking days cannot be negative').default(30),
-  cancellationPolicy: z.string().max(1000, 'Cancellation policy must be less than 1000 characters').optional(),
-  bookingRules: z.string().max(1000, 'Booking rules must be less than 1000 characters').optional(),
-  allowMultipleBookings: z.boolean().default(false),
-  metadata: z.record(z.any()).optional(),
 })
 
 // Create space schema

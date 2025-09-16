@@ -75,7 +75,7 @@ export function SpaceCardEnhanced({
   }
 
   const formatCurrency = (amount?: number) => {
-    if (!amount) return 'Free'
+    if (!amount) return 'Gratuito'
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -84,7 +84,7 @@ export function SpaceCardEnhanced({
 
   const formatLocation = () => {
     const parts = [space.floor, space.zone].filter(Boolean)
-    return parts.length > 0 ? parts.join(', ') : 'No location specified'
+    return parts.length > 0 ? parts.join(', ') : 'Ubicación no especificada'
   }
 
   const formatDuration = (minutes: number) => {
@@ -147,7 +147,7 @@ export function SpaceCardEnhanced({
         {/* Status Badge */}
         <div className="absolute top-3 left-3">
           <Badge variant={space.isActive ? 'default' : 'secondary'} className="text-xs">
-            {space.isActive ? 'Active' : 'Inactive'}
+            {space.isActive ? 'Activo' : 'Inactivo'}
           </Badge>
         </div>
 
@@ -163,16 +163,16 @@ export function SpaceCardEnhanced({
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={handleViewDetails}>
                   <Eye className="mr-2 h-4 w-4" />
-                  View Details
+                  Ver Detalles
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleEdit}>
                   <Edit className="mr-2 h-4 w-4" />
-                  Edit Space
+                  Editar Espacio
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleBook}>
                   <Calendar className="mr-2 h-4 w-4" />
-                  Book Space
+                  Reservar Espacio
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -212,7 +212,7 @@ export function SpaceCardEnhanced({
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-muted-foreground" />
-              <span>{space.capacity} people</span>
+              <span>{space.capacity} personas</span>
             </div>
             <div className="flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -226,7 +226,7 @@ export function SpaceCardEnhanced({
             )}
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-muted-foreground" />
-              <span>Min {formatDuration(space.minBookingDuration)}</span>
+              <span>Mín {formatDuration(space.minBookingDuration)}</span>
             </div>
           </div>
 
@@ -235,30 +235,30 @@ export function SpaceCardEnhanced({
             {space.requiresApproval && (
               <Badge variant="outline" className="text-xs">
                 <Shield className="w-3 h-3 mr-1" />
-                Approval Required
+                Requiere Aprobación
               </Badge>
             )}
             {space.allowRecurring && (
               <Badge variant="outline" className="text-xs">
                 <RotateCcw className="w-3 h-3 mr-1" />
-                Recurring
+                Recurrente
               </Badge>
             )}
             <Badge variant="outline" className="text-xs">
               <Calendar className="w-3 h-3 mr-1" />
-              {space.maxAdvanceBooking}d advance
+              {space.maxAdvanceBooking}d anticipación
             </Badge>
           </div>
 
           {/* Booking Settings Summary */}
           <div className="text-xs text-muted-foreground space-y-1">
             <div className="flex justify-between">
-              <span>Min duration:</span>
+              <span>Duración mín:</span>
               <span>{formatDuration(space.minBookingDuration)}</span>
             </div>
             <div className="flex justify-between">
-              <span>Cancellation:</span>
-              <span>{space.cancellationHours}h notice</span>
+              <span>Cancelación:</span>
+              <span>{space.cancellationHours}h aviso</span>
             </div>
           </div>
         </CardContent>
@@ -273,7 +273,7 @@ export function SpaceCardEnhanced({
               className="flex-1"
             >
               <Eye className="w-4 h-4 mr-1" />
-              View
+              Ver
             </Button>
             <Button
               size="sm"
@@ -282,7 +282,7 @@ export function SpaceCardEnhanced({
               className="flex-1"
             >
               <Calendar className="w-4 h-4 mr-1" />
-              Book
+              Reservar
             </Button>
           </div>
         </div>

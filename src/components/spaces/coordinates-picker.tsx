@@ -129,10 +129,10 @@ export function CoordinatesPicker({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MapPin className="h-5 w-5" />
-            Select Location
+            Seleccionar Ubicación
           </CardTitle>
           <CardDescription>
-            Click on the map or enter coordinates manually
+            Haz clic en el mapa o ingresa las coordenadas manualmente
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -147,10 +147,10 @@ export function CoordinatesPicker({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MapPin className="h-5 w-5" />
-          Select Location
+          Seleccionar Ubicación
         </CardTitle>
         <CardDescription>
-          Click on the map to set coordinates or enter them manually below
+          Haz clic en el mapa para establecer coordenadas o ingrésalas manualmente abajo
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -177,7 +177,7 @@ export function CoordinatesPicker({
         {/* Manual coordinate input */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="lat">Latitude</Label>
+            <Label htmlFor="lat">Latitud</Label>
             <Input
               id="lat"
               type="number"
@@ -189,7 +189,7 @@ export function CoordinatesPicker({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="lng">Longitude</Label>
+            <Label htmlFor="lng">Longitud</Label>
             <Input
               id="lng"
               type="number"
@@ -206,7 +206,7 @@ export function CoordinatesPicker({
         {value && (
           <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
             <div className="text-sm">
-              <span className="font-medium">Selected:</span>{' '}
+              <span className="font-medium">Seleccionado:</span>{' '}
               {value.lat.toFixed(6)}, {value.lng.toFixed(6)}
             </div>
             <Button
@@ -216,7 +216,7 @@ export function CoordinatesPicker({
               onClick={handleClear}
             >
               <RotateCcw className="h-4 w-4 mr-1" />
-              Clear
+              Limpiar
             </Button>
           </div>
         )}
@@ -224,7 +224,7 @@ export function CoordinatesPicker({
         {!value && (
           <div className="text-center p-6 text-muted-foreground">
             <MapPin className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Click on the map to select a location</p>
+            <p className="text-sm">Haz clic en el mapa para seleccionar una ubicación</p>
           </div>
         )}
       </CardContent>

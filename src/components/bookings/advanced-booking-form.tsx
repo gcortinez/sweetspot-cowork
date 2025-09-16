@@ -34,13 +34,13 @@ import { format, differenceInMinutes, parseISO } from 'date-fns'
 import { toast } from 'sonner'
 
 const bookingSchema = z.object({
-  spaceId: z.string().min(1, 'Please select a space'),
-  title: z.string().min(1, 'Title is required').max(100, 'Title must be less than 100 characters'),
+  spaceId: z.string().min(1, 'Por favor selecciona un espacio'),
+  title: z.string().min(1, 'El título es requerido').max(100, 'El título debe tener menos de 100 caracteres'),
   description: z.string().optional(),
-  startDateTime: z.string().min(1, 'Start date and time is required'),
-  endDateTime: z.string().min(1, 'End date and time is required'),
-  attendeeCount: z.number().min(1, 'At least 1 attendee is required').max(1000, 'Too many attendees'),
-  contactEmail: z.string().email('Please enter a valid email address'),
+  startDateTime: z.string().min(1, 'La fecha y hora de inicio es requerida'),
+  endDateTime: z.string().min(1, 'La fecha y hora de fin es requerida'),
+  attendeeCount: z.number().min(1, 'Se requiere al menos 1 asistente').max(1000, 'Demasiados asistentes'),
+  contactEmail: z.string().email('Por favor ingresa una dirección de email válida'),
   contactPhone: z.string().optional(),
   setupTime: z.number().min(0).max(120).default(0),
   cleanupTime: z.number().min(0).max(120).default(0),
@@ -162,21 +162,21 @@ export function AdvancedBookingForm({
 
         if (durationMinutes < selectedSpace.minBookingDuration) {
           form.setError('endDateTime', {
-            message: `Minimum booking duration is ${selectedSpace.minBookingDuration} minutes`
+            message: `La duración mínima de reserva es ${selectedSpace.minBookingDuration} minutos`
           })
           return
         }
 
         if (selectedSpace.maxBookingDuration && durationMinutes > selectedSpace.maxBookingDuration) {
           form.setError('endDateTime', {
-            message: `Maximum booking duration is ${selectedSpace.maxBookingDuration} minutes`
+            message: `La duración máxima de reserva es ${selectedSpace.maxBookingDuration} minutos`
           })
           return
         }
 
         if (data.attendeeCount > selectedSpace.capacity) {
           form.setError('attendeeCount', {
-            message: `Space capacity is ${selectedSpace.capacity} people`
+            message: `La capacidad del espacio es ${selectedSpace.capacity} personas`
           })
           return
         }
@@ -186,7 +186,7 @@ export function AdvancedBookingForm({
         await onSubmit({ ...data, recurring: recurringData })
       }
 
-      toast.success(isEdit ? 'Booking updated successfully' : 'Booking created successfully')
+      toast.success(isEdit ? 'Reserva actualizada exitosamente' : 'Reserva creada exitosamente')
 
       if (!isEdit) {
         form.reset()
@@ -194,7 +194,7 @@ export function AdvancedBookingForm({
       }
     } catch (error) {
       console.error('Booking submission error:', error)
-      toast.error('An error occurred while processing your booking')
+      toast.error('Ocurrió un error al procesar tu reserva')
     } finally {
       setIsLoading(false)
     }
@@ -215,10 +215,10 @@ export function AdvancedBookingForm({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                Booking Details
+                Detalles de la Reserva
               </CardTitle>
               <CardDescription>
-                Enter the basic information for your booking
+                Ingresa la información básica para tu reserva
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -228,11 +228,11 @@ export function AdvancedBookingForm({
                   name="spaceId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Space</FormLabel>
+                      <FormLabel>Espacio</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select a space" />
+                            <SelectValue placeholder="Seleccionar un espacio" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -245,7 +245,7 @@ export function AdvancedBookingForm({
                                     {space.type.replace('_', ' ')}
                                   </Badge>
                                   <span className="text-xs text-muted-foreground">
-                                    {space.capacity} people
+                                    {space.capacity} personas
                                   </span>
                                 </div>
                               </div>
@@ -263,9 +263,9 @@ export function AdvancedBookingForm({
                   name="title"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Title</FormLabel>
+                      <FormLabel>Título</FormLabel>
                       <FormControl>
-                        <Input placeholder="Meeting title" {...field} />
+                        <Input placeholder="Título de la reunión" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -278,10 +278,10 @@ export function AdvancedBookingForm({
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description (Optional)</FormLabel>
+                    <FormLabel>Descripción (Opcional)</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Additional details about your booking..."
+                        placeholder="Detalles adicionales sobre tu reserva..."
                         className="resize-none"
                         {...field}
                       />
@@ -298,7 +298,7 @@ export function AdvancedBookingForm({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
-                Schedule
+                Horario
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -308,7 +308,7 @@ export function AdvancedBookingForm({
                   name="startDateTime"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Start Date & Time</FormLabel>
+                      <FormLabel>Fecha y Hora de Inicio</FormLabel>
                       <FormControl>
                         <Input
                           type="datetime-local"
@@ -325,7 +325,7 @@ export function AdvancedBookingForm({
                   name="endDateTime"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>End Date & Time</FormLabel>
+                      <FormLabel>Fecha y Hora de Fin</FormLabel>
                       <FormControl>
                         <Input
                           type="datetime-local"
@@ -344,7 +344,7 @@ export function AdvancedBookingForm({
                   name="setupTime"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Setup Time (minutes)</FormLabel>
+                      <FormLabel>Tiempo de Preparación (minutos)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -354,7 +354,7 @@ export function AdvancedBookingForm({
                           onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                         />
                       </FormControl>
-                      <FormDescription>Additional time before the event</FormDescription>
+                      <FormDescription>Tiempo adicional antes del evento</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -365,7 +365,7 @@ export function AdvancedBookingForm({
                   name="cleanupTime"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Cleanup Time (minutes)</FormLabel>
+                      <FormLabel>Tiempo de Limpieza (minutos)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -375,7 +375,7 @@ export function AdvancedBookingForm({
                           onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                         />
                       </FormControl>
-                      <FormDescription>Additional time after the event</FormDescription>
+                      <FormDescription>Tiempo adicional después del evento</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -386,7 +386,7 @@ export function AdvancedBookingForm({
                   name="attendeeCount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Number of Attendees</FormLabel>
+                      <FormLabel>Número de Asistentes</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -408,7 +408,7 @@ export function AdvancedBookingForm({
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <div className="font-medium">Duration</div>
+                      <div className="font-medium">Duración</div>
                       <div className="text-sm text-muted-foreground">{formatDuration(duration)}</div>
                     </div>
                   </div>
@@ -416,7 +416,7 @@ export function AdvancedBookingForm({
                     <div className="flex items-center gap-2">
                       <DollarSign className="h-4 w-4 text-muted-foreground" />
                       <div>
-                        <div className="font-medium">Total Cost</div>
+                        <div className="font-medium">Costo Total</div>
                         <div className="text-sm text-muted-foreground">
                           ${totalCost.toFixed(2)}
                         </div>
@@ -427,9 +427,9 @@ export function AdvancedBookingForm({
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-muted-foreground" />
                       <div>
-                        <div className="font-medium">Capacity</div>
+                        <div className="font-medium">Capacidad</div>
                         <div className="text-sm text-muted-foreground">
-                          {watchedValues.attendeeCount} / {selectedSpace.capacity} people
+                          {watchedValues.attendeeCount} / {selectedSpace.capacity} personas
                         </div>
                       </div>
                     </div>
@@ -444,7 +444,7 @@ export function AdvancedBookingForm({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
-                Contact Information
+                Información de Contacto
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -454,9 +454,9 @@ export function AdvancedBookingForm({
                   name="contactEmail"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Contact Email</FormLabel>
+                      <FormLabel>Email de Contacto</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="contact@example.com" {...field} />
+                        <Input type="email" placeholder="contacto@ejemplo.com" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -468,7 +468,7 @@ export function AdvancedBookingForm({
                   name="contactPhone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Contact Phone (Optional)</FormLabel>
+                      <FormLabel>Teléfono de Contacto (Opcional)</FormLabel>
                       <FormControl>
                         <Input placeholder="+1 (555) 123-4567" {...field} />
                       </FormControl>
@@ -483,10 +483,10 @@ export function AdvancedBookingForm({
                 name="notes"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Additional Notes (Optional)</FormLabel>
+                    <FormLabel>Notas Adicionales (Opcional)</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Special requirements, setup instructions, etc."
+                        placeholder="Requisitos especiales, instrucciones de configuración, etc."
                         className="resize-none"
                         {...field}
                       />
@@ -514,7 +514,7 @@ export function AdvancedBookingForm({
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
                 <div className="space-y-2">
-                  <div className="font-medium">Scheduling Conflicts Detected</div>
+                  <div className="font-medium">Conflictos de Horario Detectados</div>
                   <div className="space-y-1">
                     {conflicts.map((conflict) => (
                       <div key={conflict.id} className="text-sm">
@@ -533,15 +533,15 @@ export function AdvancedBookingForm({
               <CheckCircle className="h-4 w-4" />
               <AlertDescription>
                 <div className="space-y-2">
-                  <div className="font-medium">Space Requirements</div>
+                  <div className="font-medium">Requisitos del Espacio</div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                    <div>Min Duration: {formatDuration(selectedSpace.minBookingDuration)}</div>
+                    <div>Duración Mín: {formatDuration(selectedSpace.minBookingDuration)}</div>
                     {selectedSpace.maxBookingDuration && (
-                      <div>Max Duration: {formatDuration(selectedSpace.maxBookingDuration)}</div>
+                      <div>Duración Máx: {formatDuration(selectedSpace.maxBookingDuration)}</div>
                     )}
-                    <div>Capacity: {selectedSpace.capacity} people</div>
+                    <div>Capacidad: {selectedSpace.capacity} personas</div>
                     {selectedSpace.requiresApproval && (
-                      <div className="text-amber-600">Requires Approval</div>
+                      <div className="text-amber-600">Requiere Aprobación</div>
                     )}
                   </div>
                 </div>
@@ -556,10 +556,10 @@ export function AdvancedBookingForm({
               variant="outline"
               onClick={() => router.back()}
             >
-              Cancel
+              Cancelar
             </Button>
             <Button type="submit" disabled={isLoading || conflicts.length > 0}>
-              {isLoading ? 'Processing...' : isEdit ? 'Update Booking' : 'Create Booking'}
+              {isLoading ? 'Procesando...' : isEdit ? 'Actualizar Reserva' : 'Crear Reserva'}
             </Button>
           </div>
         </form>

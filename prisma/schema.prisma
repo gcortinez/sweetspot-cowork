@@ -50,6 +50,7 @@ model Tenant {
     activities          Activity[]
     tasks               Task[]
     communications      Communication[]
+    spaceTypeConfigs    SpaceTypeConfig[]
     leadConversions     LeadConversion[]
     pricingTiers        PricingTier[]
     pricingRules        PricingRule[]
@@ -882,7 +883,6 @@ model Space {
     // New fields for enhanced space management
     floor               String?
     zone                String?
-    coordinates         Json?      // {x: number, y: number} for map positioning
     images              Json?      // Array of image URLs
     area                Float?     // Square meters
     maxAdvanceBooking   Int        @default(30)    // Days in advance
@@ -1067,6 +1067,29 @@ model RoomFeature {
 
     @@unique([tenantId, name])
     @@map("room_features")
+}
+
+model SpaceTypeConfig {
+    id          String   @id @default(cuid())
+    tenantId    String
+    name        String   // Display name in Spanish
+    key         String   // Enum key (e.g., "MEETING_ROOM")
+    description String?
+    icon        String?  // Icon identifier
+    color       String?  // Color for UI display
+    isActive    Boolean  @default(true)
+    isDefault   Boolean  @default(false) // Default types that come with the system
+    sortOrder   Int      @default(0)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    // Relationships
+    tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+    @@unique([tenantId, key])
+    @@unique([tenantId, name])
+    @@index([tenantId, isActive])
+    @@map("space_type_configs")
 }
 
 enum FeatureCategory {

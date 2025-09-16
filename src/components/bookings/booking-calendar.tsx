@@ -121,10 +121,10 @@ export function BookingCalendar({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            Booking Calendar
+            Calendario de Reservas
           </CardTitle>
           <CardDescription>
-            View and manage all bookings in calendar format
+            Ver y gestionar todas las reservas en formato calendario
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -141,17 +141,17 @@ export function BookingCalendar({
           <div>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              Booking Calendar
+              Calendario de Reservas
               {selectedSpaceId && (
                 <Badge variant="outline">
-                  {spaces.find(s => s.id === selectedSpaceId)?.name || 'Selected Space'}
+                  {spaces.find(s => s.id === selectedSpaceId)?.name || 'Espacio Seleccionado'}
                 </Badge>
               )}
             </CardTitle>
             <CardDescription>
               {selectedSpaceId
-                ? `Showing bookings for selected space`
-                : `Showing ${bookings.length} bookings across ${spaces.length} spaces`
+                ? `Mostrando reservas para el espacio seleccionado`
+                : `Mostrando ${bookings.length} reservas en ${spaces.length} espacios`
               }
             </CardDescription>
           </div>
@@ -162,21 +162,21 @@ export function BookingCalendar({
               size="sm"
               onClick={() => setCurrentView('month')}
             >
-              Month
+              Mes
             </Button>
             <Button
               variant={currentView === 'week' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setCurrentView('week')}
             >
-              Week
+              Semana
             </Button>
             <Button
               variant={currentView === 'day' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setCurrentView('day')}
             >
-              Day
+              Día
             </Button>
           </div>
         </div>
@@ -241,24 +241,24 @@ export function BookingCalendar({
         <div className="flex flex-wrap items-center gap-4 mt-4 pt-4 border-t">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-green-500 rounded"></div>
-            <span className="text-xs text-muted-foreground">Confirmed</span>
+            <span className="text-xs text-muted-foreground">Confirmado</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-yellow-500 rounded"></div>
-            <span className="text-xs text-muted-foreground">Pending</span>
+            <span className="text-xs text-muted-foreground">Pendiente</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-red-500 rounded"></div>
-            <span className="text-xs text-muted-foreground">Cancelled</span>
+            <span className="text-xs text-muted-foreground">Cancelado</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-gray-500 rounded"></div>
-            <span className="text-xs text-muted-foreground">Completed</span>
+            <span className="text-xs text-muted-foreground">Completado</span>
           </div>
           {onDateSelect && (
             <div className="flex items-center gap-2 ml-auto">
               <Plus className="h-4 w-4" />
-              <span className="text-xs text-muted-foreground">Click and drag to create booking</span>
+              <span className="text-xs text-muted-foreground">Haz clic y arrastra para crear reserva</span>
             </div>
           )}
         </div>

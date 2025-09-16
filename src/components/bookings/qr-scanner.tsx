@@ -51,7 +51,7 @@ export function QRScanner({ onScanSuccess, onCheckInOut, className }: QRScannerP
         setCodeReader(reader)
       } catch (error) {
         console.error('Error initializing QR scanner:', error)
-        setError('Failed to initialize camera scanner')
+        setError('Error al inicializar el escáner de cámara')
       }
     }
 
@@ -96,11 +96,11 @@ export function QRScanner({ onScanSuccess, onCheckInOut, className }: QRScannerP
       setHasPermission(false)
 
       if (error.name === 'NotAllowedError') {
-        setError('Camera permission denied. Please allow camera access to scan QR codes.')
+        setError('Permiso de cámara denegado. Por favor permite el acceso a la cámara para escanear códigos QR.')
       } else if (error.name === 'NotFoundError') {
-        setError('No camera found on this device.')
+        setError('No se encontró cámara en este dispositivo.')
       } else {
-        setError('Failed to access camera. Please try again.')
+        setError('Error al acceder a la cámara. Por favor inténtalo de nuevo.')
       }
       setIsScanning(false)
     }
@@ -119,7 +119,7 @@ export function QRScanner({ onScanSuccess, onCheckInOut, className }: QRScannerP
 
       // Validate QR code structure
       if (!scanData.bookingId || !scanData.spaceId || !scanData.type) {
-        throw new Error('Invalid QR code format')
+        throw new Error('Formato de código QR inválido')
       }
 
       // Stop scanning temporarily to prevent multiple scans
@@ -139,14 +139,14 @@ export function QRScanner({ onScanSuccess, onCheckInOut, className }: QRScannerP
       }
 
       if (checkInOutResult.success) {
-        toast.success(`${checkInOutResult.action === 'CHECK_IN' ? 'Checked in' : 'Checked out'} successfully`)
+        toast.success(`${checkInOutResult.action === 'CHECK_IN' ? 'Registrado' : 'Salida registrada'} exitosamente`)
       } else {
-        toast.error(checkInOutResult.error || 'Check-in/out failed')
+        toast.error(checkInOutResult.error || 'Error en registro de entrada/salida')
       }
 
     } catch (error) {
       console.error('Error processing QR code:', error)
-      toast.error('Invalid QR code or processing failed')
+      toast.error('Código QR inválido o fallo en el procesamiento')
 
       // Resume scanning after a brief delay
       setTimeout(() => {
@@ -191,10 +191,10 @@ export function QRScanner({ onScanSuccess, onCheckInOut, className }: QRScannerP
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <QrCode className="h-5 w-5" />
-          QR Code Scanner
+          Escáner de Código QR
         </CardTitle>
         <CardDescription>
-          Scan booking QR codes for space check-in and check-out
+          Escanea códigos QR de reservas para registrar entrada y salida del espacio
         </CardDescription>
       </CardHeader>
 
@@ -213,7 +213,7 @@ export function QRScanner({ onScanSuccess, onCheckInOut, className }: QRScannerP
               <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75">
                 <div className="text-center text-white">
                   <Camera className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-sm">Camera not active</p>
+                  <p className="text-sm">Cámara no activa</p>
                 </div>
               </div>
             )}
@@ -229,7 +229,7 @@ export function QRScanner({ onScanSuccess, onCheckInOut, className }: QRScannerP
                 </div>
                 <div className="absolute bottom-4 left-0 right-0 text-center">
                   <Badge variant="secondary" className="bg-black bg-opacity-50 text-white">
-                    Scanning for QR codes...
+                    Escaneando códigos QR...
                   </Badge>
                 </div>
               </div>
@@ -242,19 +242,19 @@ export function QRScanner({ onScanSuccess, onCheckInOut, className }: QRScannerP
           {!isScanning ? (
             <Button onClick={startScanning} disabled={!codeReader}>
               <Camera className="h-4 w-4 mr-2" />
-              Start Scanning
+              Iniciar Escaneo
             </Button>
           ) : (
             <Button variant="outline" onClick={stopScanning}>
               <CameraOff className="h-4 w-4 mr-2" />
-              Stop Scanning
+              Detener Escaneo
             </Button>
           )}
 
           {lastScanResult && (
             <Button variant="outline" onClick={resetScanner}>
               <RotateCcw className="h-4 w-4 mr-2" />
-              Scan Again
+              Escanear de Nuevo
             </Button>
           )}
         </div>
@@ -272,7 +272,7 @@ export function QRScanner({ onScanSuccess, onCheckInOut, className }: QRScannerP
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Camera permission is required to scan QR codes. Please enable camera access in your browser settings.
+              Se requiere permiso de cámara para escanear códigos QR. Por favor habilita el acceso a la cámara en la configuración de tu navegador.
             </AlertDescription>
           </Alert>
         )}
@@ -289,7 +289,7 @@ export function QRScanner({ onScanSuccess, onCheckInOut, className }: QRScannerP
               {lastScanResult.success ? (
                 <div className="space-y-1">
                   <div className="font-medium text-green-800">
-                    {lastScanResult.action === 'CHECK_IN' ? 'Checked In Successfully' : 'Checked Out Successfully'}
+                    {lastScanResult.action === 'CHECK_IN' ? 'Entrada Registrada Exitosamente' : 'Salida Registrada Exitosamente'}
                   </div>
                   {lastScanResult.booking && (
                     <div className="text-sm text-green-700">
@@ -299,7 +299,7 @@ export function QRScanner({ onScanSuccess, onCheckInOut, className }: QRScannerP
                 </div>
               ) : (
                 <div className="font-medium text-red-800">
-                  {lastScanResult.error || 'Check-in/out failed'}
+                  {lastScanResult.error || 'Error en registro de entrada/salida'}
                 </div>
               )}
             </AlertDescription>
@@ -308,12 +308,12 @@ export function QRScanner({ onScanSuccess, onCheckInOut, className }: QRScannerP
 
         {/* Instructions */}
         <div className="bg-muted p-4 rounded-lg text-sm">
-          <h5 className="font-medium mb-2">How to scan:</h5>
+          <h5 className="font-medium mb-2">Cómo escanear:</h5>
           <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
-            <li>Allow camera access when prompted</li>
-            <li>Position the QR code within the scanning area</li>
-            <li>Hold steady until the code is recognized</li>
-            <li>The system will automatically process check-in/out</li>
+            <li>Permite el acceso a la cámara cuando se solicite</li>
+            <li>Posiciona el código QR dentro del área de escaneo</li>
+            <li>Mantén firme hasta que el código sea reconocido</li>
+            <li>El sistema procesará automáticamente el registro de entrada/salida</li>
           </ol>
         </div>
       </CardContent>

@@ -3,9 +3,9 @@
 import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { 
-  Building2, 
-  Crown, 
+import {
+  Building2,
+  Crown,
   Home,
   Target,
   BarChart3,
@@ -19,7 +19,8 @@ import {
   Shield,
   Database,
   UserCog,
-  Folder
+  Folder,
+  Palette
 } from 'lucide-react'
 import { useAuth } from '@/contexts/clerk-auth-context'
 import { useCoworkSelection } from '@/contexts/cowork-selection-context'
@@ -139,8 +140,19 @@ export function Sidebar({ className = '', onCreateLead }: SidebarProps) {
       })
     }
 
+    // Space Type Admin (for COWORK_ADMIN and SUPER_ADMIN)
+    if (navPermissions.showSpaceAdmin) {
+      items.push({
+        label: 'Tipos de Espacio',
+        href: '/admin/space-types',
+        icon: Palette,
+        active: pathname.startsWith('/admin/space-types'),
+        permission: Resource.SPACE_EDIT
+      })
+    }
+
     // Admin Section Separator
-    if (navPermissions.showUsers || navPermissions.showReports) {
+    if (navPermissions.showUsers || navPermissions.showReports || navPermissions.showSpaceAdmin) {
       items.push({ separator: true } as any)
     }
 

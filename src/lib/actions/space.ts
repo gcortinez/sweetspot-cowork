@@ -60,17 +60,27 @@ export async function createSpaceAction(data: CreateSpaceRequest): Promise<Actio
     // Validate input data
     const validatedData = createSpaceSchema.parse(data)
 
-    // Create space
+    // Create space with only valid database fields
     const space = await prisma.space.create({
       data: {
-        ...validatedData,
         tenantId,
+        name: validatedData.name,
+        description: validatedData.description,
+        type: validatedData.type,
+        capacity: validatedData.capacity,
+        hourlyRate: validatedData.hourlyRate,
+        isActive: validatedData.isActive,
+        floor: validatedData.floor,
+        zone: validatedData.zone,
+        area: validatedData.area,
+        maxAdvanceBooking: validatedData.maxAdvanceBooking,
+        minBookingDuration: validatedData.minBookingDuration,
+        maxBookingDuration: validatedData.maxBookingDuration,
+        cancellationHours: validatedData.cancellationHours,
+        requiresApproval: validatedData.requiresApproval,
+        allowRecurring: validatedData.allowRecurring,
         amenities: validatedData.amenities ? JSON.stringify(validatedData.amenities) : null,
-        location: validatedData.location ? JSON.stringify(validatedData.location) : null,
-        pricingTiers: validatedData.pricingTiers ? JSON.stringify(validatedData.pricingTiers) : null,
-        availabilityRules: validatedData.availabilityRules ? JSON.stringify(validatedData.availabilityRules) : null,
         images: validatedData.images ? JSON.stringify(validatedData.images) : null,
-        metadata: validatedData.metadata ? JSON.stringify(validatedData.metadata) : null,
       },
       include: {
         tenant: true,
@@ -136,25 +146,32 @@ export async function updateSpaceAction(data: UpdateSpaceRequest): Promise<Actio
       return { success: false, error: 'Space not found' }
     }
 
-    // Prepare update data with JSON stringification
-    const processedUpdateData: any = { ...updateData }
-    if (updateData.amenities) {
-      processedUpdateData.amenities = JSON.stringify(updateData.amenities)
+    // Prepare update data with only valid database fields
+    const processedUpdateData: any = {}
+
+    // Only include fields that exist in the database model
+    if (updateData.name !== undefined) processedUpdateData.name = updateData.name
+    if (updateData.description !== undefined) processedUpdateData.description = updateData.description
+    if (updateData.type !== undefined) processedUpdateData.type = updateData.type
+    if (updateData.capacity !== undefined) processedUpdateData.capacity = updateData.capacity
+    if (updateData.hourlyRate !== undefined) processedUpdateData.hourlyRate = updateData.hourlyRate
+    if (updateData.isActive !== undefined) processedUpdateData.isActive = updateData.isActive
+    if (updateData.floor !== undefined) processedUpdateData.floor = updateData.floor
+    if (updateData.zone !== undefined) processedUpdateData.zone = updateData.zone
+    if (updateData.area !== undefined) processedUpdateData.area = updateData.area
+    if (updateData.maxAdvanceBooking !== undefined) processedUpdateData.maxAdvanceBooking = updateData.maxAdvanceBooking
+    if (updateData.minBookingDuration !== undefined) processedUpdateData.minBookingDuration = updateData.minBookingDuration
+    if (updateData.maxBookingDuration !== undefined) processedUpdateData.maxBookingDuration = updateData.maxBookingDuration
+    if (updateData.cancellationHours !== undefined) processedUpdateData.cancellationHours = updateData.cancellationHours
+    if (updateData.requiresApproval !== undefined) processedUpdateData.requiresApproval = updateData.requiresApproval
+    if (updateData.allowRecurring !== undefined) processedUpdateData.allowRecurring = updateData.allowRecurring
+
+    // Handle JSON fields
+    if (updateData.amenities !== undefined) {
+      processedUpdateData.amenities = updateData.amenities ? JSON.stringify(updateData.amenities) : null
     }
-    if (updateData.location) {
-      processedUpdateData.location = JSON.stringify(updateData.location)
-    }
-    if (updateData.pricingTiers) {
-      processedUpdateData.pricingTiers = JSON.stringify(updateData.pricingTiers)
-    }
-    if (updateData.availabilityRules) {
-      processedUpdateData.availabilityRules = JSON.stringify(updateData.availabilityRules)
-    }
-    if (updateData.images) {
-      processedUpdateData.images = JSON.stringify(updateData.images)
-    }
-    if (updateData.metadata) {
-      processedUpdateData.metadata = JSON.stringify(updateData.metadata)
+    if (updateData.images !== undefined) {
+      processedUpdateData.images = updateData.images ? JSON.stringify(updateData.images) : null
     }
 
     // Update space

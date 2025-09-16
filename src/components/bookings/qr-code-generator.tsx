@@ -55,7 +55,7 @@ export function QRCodeGenerator({
       setQrCodeDataURL(dataURL)
     } catch (error) {
       console.error('Error generating QR code:', error)
-      toast.error('Failed to generate QR code')
+      toast.error('Error al generar el código QR')
     } finally {
       setIsGenerating(false)
     }
@@ -83,7 +83,7 @@ export function QRCodeGenerator({
     link.download = `booking-qr-${booking.id}.png`
     link.href = qrCodeDataURL
     link.click()
-    toast.success('QR code downloaded')
+    toast.success('Código QR descargado')
   }
 
   const handleCopy = async () => {
@@ -99,7 +99,7 @@ export function QRCodeGenerator({
             'image/png': blob
           })
         ])
-        toast.success('QR code copied to clipboard')
+        toast.success('Código QR copiado al portapapeles')
       } else {
         // Fallback for browsers that don't support clipboard API
         const canvas = document.createElement('canvas')
@@ -117,9 +117,9 @@ export function QRCodeGenerator({
                 await navigator.clipboard.write([
                   new ClipboardItem({ 'image/png': blob })
                 ])
-                toast.success('QR code copied to clipboard')
+                toast.success('Código QR copiado al portapapeles')
               } catch {
-                toast.error('Could not copy QR code')
+                toast.error('No se pudo copiar el código QR')
               }
             }
           })
@@ -128,7 +128,7 @@ export function QRCodeGenerator({
       }
     } catch (error) {
       console.error('Error copying QR code:', error)
-      toast.error('Failed to copy QR code')
+      toast.error('Error al copiar el código QR')
     }
   }
 
@@ -144,7 +144,7 @@ export function QRCodeGenerator({
         type: 'space_access'
       })
       await generateQRCode(qrData)
-      toast.success('QR code regenerated')
+      toast.success('Código QR regenerado')
     }
   }
 
@@ -168,10 +168,10 @@ export function QRCodeGenerator({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <QrCode className="h-5 w-5" />
-          Access QR Code
+          Código QR de Acceso
         </CardTitle>
         <CardDescription>
-          Scan this QR code to check in/out of the space
+          Escanea este código QR para registrar entrada/salida del espacio
         </CardDescription>
       </CardHeader>
 
@@ -184,7 +184,7 @@ export function QRCodeGenerator({
             <div className="border rounded-lg p-4 bg-white">
               <img
                 src={qrCodeDataURL}
-                alt="Booking QR Code"
+                alt="Código QR de Reserva"
                 className="block"
                 style={{ width: size, height: size }}
               />
@@ -196,7 +196,7 @@ export function QRCodeGenerator({
             >
               <div className="text-center text-muted-foreground">
                 <QrCode className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">Failed to generate QR code</p>
+                <p className="text-sm">Error al generar el código QR</p>
               </div>
             </div>
           )}
@@ -211,7 +211,7 @@ export function QRCodeGenerator({
             disabled={!qrCodeDataURL}
           >
             <Download className="h-4 w-4 mr-1" />
-            Download
+            Descargar
           </Button>
           <Button
             variant="outline"
@@ -220,7 +220,7 @@ export function QRCodeGenerator({
             disabled={!qrCodeDataURL}
           >
             <Copy className="h-4 w-4 mr-1" />
-            Copy
+            Copiar
           </Button>
           <Button
             variant="outline"
@@ -229,7 +229,7 @@ export function QRCodeGenerator({
             disabled={isGenerating}
           >
             <RefreshCw className={`h-4 w-4 mr-1 ${isGenerating ? 'animate-spin' : ''}`} />
-            Regenerate
+            Regenerar
           </Button>
         </div>
 
@@ -237,7 +237,7 @@ export function QRCodeGenerator({
         {showBookingDetails && (
           <div className="space-y-4 pt-4 border-t">
             <div className="flex items-center justify-between">
-              <h4 className="font-medium">Booking Details</h4>
+              <h4 className="font-medium">Detalles de la Reserva</h4>
               <Badge className={getStatusColor(booking.status)}>
                 {booking.status}
               </Badge>
@@ -264,7 +264,7 @@ export function QRCodeGenerator({
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Users className="h-4 w-4" />
-                  <span>{booking.attendeeCount} attendees</span>
+                  <span>{booking.attendeeCount} asistentes</span>
                 </div>
               </div>
             </div>
@@ -273,12 +273,12 @@ export function QRCodeGenerator({
 
         {/* Instructions */}
         <div className="bg-muted p-4 rounded-lg text-sm">
-          <h5 className="font-medium mb-2">How to use:</h5>
+          <h5 className="font-medium mb-2">Cómo usar:</h5>
           <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
-            <li>Show this QR code to the space access scanner</li>
-            <li>Or use the mobile app to scan for check-in</li>
-            <li>The system will automatically log your entry/exit</li>
-            <li>Keep this QR code accessible during your booking</li>
+            <li>Muestra este código QR al escáner de acceso del espacio</li>
+            <li>O usa la aplicación móvil para escanear y registrarte</li>
+            <li>El sistema registrará automáticamente tu entrada/salida</li>
+            <li>Mantén este código QR accesible durante tu reserva</li>
           </ol>
         </div>
       </CardContent>

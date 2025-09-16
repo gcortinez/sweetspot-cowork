@@ -127,7 +127,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
           <Button variant="ghost" size="sm" asChild>
             <Link href="/bookings">
               <ArrowLeft className="h-4 w-4 mr-1" />
-              Back to Bookings
+              Volver a Reservas
             </Link>
           </Button>
           <div>
@@ -141,7 +141,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
               </div>
             </h1>
             <p className="text-muted-foreground">
-              Booking ID: {booking.id} • Created {format(new Date(booking.createdAt), 'MMM dd, yyyy')}
+              ID de Reserva: {booking.id} • Creado {format(new Date(booking.createdAt), 'MMM dd, yyyy')}
             </p>
           </div>
         </div>
@@ -149,7 +149,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
           <Button variant="outline" asChild>
             <Link href={`/bookings/${booking.id}/edit`}>
               <Edit className="h-4 w-4 mr-1" />
-              Edit Booking
+              Editar Reserva
             </Link>
           </Button>
         </div>
@@ -163,7 +163,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                Booking Details
+                Detalles de la Reserva
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -272,7 +272,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Mail className="h-5 w-5" />
-                Contact Information
+                Información de Contacto
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -280,7 +280,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <div className="font-medium">Email</div>
+                    <div className="font-medium">Correo</div>
                     <a href={`mailto:${booking.contactEmail}`} className="text-sm text-blue-600 hover:underline">
                       {booking.contactEmail}
                     </a>
@@ -291,7 +291,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <div className="font-medium">Phone</div>
+                      <div className="font-medium">Teléfono</div>
                       <a href={`tel:${booking.contactPhone}`} className="text-sm text-blue-600 hover:underline">
                         {booking.contactPhone}
                       </a>
@@ -308,10 +308,10 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <RotateCcw className="h-5 w-5" />
-                  Access History
+                  Historial de Acceso
                 </CardTitle>
                 <CardDescription>
-                  Recent check-in and check-out activity
+                  Actividad reciente de entrada y salida
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -328,7 +328,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
                         </div>
                         <div>
                           <div className="font-medium">
-                            {activity.action === 'CHECK_IN' ? 'Checked In' : 'Checked Out'}
+                            {activity.action === 'CHECK_IN' ? 'Registró Entrada' : 'Registró Salida'}
                           </div>
                           <div className="text-sm text-muted-foreground">
                             {activity.userName}
@@ -363,27 +363,27 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
           {/* Quick Actions */}
           <Card>
             <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
+              <CardTitle>Acciones Rápidas</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <Button variant="outline" className="w-full justify-start" asChild>
                 <Link href={`/spaces/${booking.spaceId}`}>
                   <MapPin className="h-4 w-4 mr-2" />
-                  View Space Details
+                  Ver Detalles del Espacio
                 </Link>
               </Button>
 
               <Button variant="outline" className="w-full justify-start" asChild>
                 <Link href="/check-in">
                   <Calendar className="h-4 w-4 mr-2" />
-                  Space Access Scanner
+                  Escáner de Acceso al Espacio
                 </Link>
               </Button>
 
               <Button variant="outline" className="w-full justify-start" asChild>
                 <Link href={`/bookings/new?spaceId=${booking.spaceId}&start=${booking.startDateTime}&end=${booking.endDateTime}`}>
                   <RotateCcw className="h-4 w-4 mr-2" />
-                  Book Again
+                  Reservar Nuevamente
                 </Link>
               </Button>
             </CardContent>
@@ -392,34 +392,34 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
           {/* Booking Summary */}
           <Card>
             <CardHeader>
-              <CardTitle>Summary</CardTitle>
+              <CardTitle>Resumen</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Duration</span>
+                  <span className="text-muted-foreground">Duración</span>
                   <span className="font-medium">{formatDuration(duration)}</span>
                 </div>
                 {booking.setupTime && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Setup</span>
+                    <span className="text-muted-foreground">Preparación</span>
                     <span className="font-medium">{formatDuration(booking.setupTime)}</span>
                   </div>
                 )}
                 {booking.cleanupTime && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Cleanup</span>
+                    <span className="text-muted-foreground">Limpieza</span>
                     <span className="font-medium">{formatDuration(booking.cleanupTime)}</span>
                   </div>
                 )}
                 <Separator />
                 <div className="flex justify-between font-medium">
-                  <span>Total Time</span>
+                  <span>Tiempo Total</span>
                   <span>{formatDuration(totalDuration)}</span>
                 </div>
                 {totalCost > 0 && (
                   <div className="flex justify-between font-medium">
-                    <span>Total Cost</span>
+                    <span>Costo Total</span>
                     <span>${totalCost.toFixed(2)}</span>
                   </div>
                 )}

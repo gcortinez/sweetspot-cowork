@@ -205,7 +205,7 @@ export function useCRMPermissions() {
  */
 export function useNavigationPermissions() {
   const permissions = usePermissions()
-  
+
   return useMemo(() => ({
     visibleItems: permissions.visibleNavItems,
     showDashboard: permissions.visibleNavItems.includes('dashboard'),
@@ -215,9 +215,10 @@ export function useNavigationPermissions() {
     showQuotations: permissions.visibleNavItems.includes('quotations'),
     showServices: permissions.visibleNavItems.includes('services'),
     showSpaces: permissions.visibleNavItems.includes('spaces'),
+    showSpaceAdmin: permissions.can(Resource.SPACE_EDIT), // Admin can manage space types
     showUsers: permissions.visibleNavItems.includes('users'),
     showReports: permissions.visibleNavItems.includes('reports'),
-  }), [permissions.visibleNavItems])
+  }), [permissions.visibleNavItems, permissions])
 }
 
 /**

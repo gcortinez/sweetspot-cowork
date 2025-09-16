@@ -31,10 +31,10 @@ export function SpaceMapView({ space, height = "300px" }: SpaceMapViewProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MapPin className="h-5 w-5" />
-            Location Map
+            Mapa de Ubicación
           </CardTitle>
           <CardDescription>
-            No coordinates have been set for this space
+            No se han establecido coordenadas para este espacio
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -44,8 +44,8 @@ export function SpaceMapView({ space, height = "300px" }: SpaceMapViewProps) {
           >
             <div className="text-center">
               <MapPin className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">No location data available</p>
-              <p className="text-xs">Edit the space to add coordinates</p>
+              <p className="text-sm">No hay datos de ubicación disponibles</p>
+              <p className="text-xs">Edita el espacio para agregar coordenadas</p>
             </div>
           </div>
         </CardContent>
@@ -61,7 +61,7 @@ export function SpaceMapView({ space, height = "300px" }: SpaceMapViewProps) {
           Location Map
         </CardTitle>
         <CardDescription>
-          Interactive map showing the exact location of this space
+          Mapa interactivo que muestra la ubicación exacta de este espacio
         </CardDescription>
       </CardHeader>
       <CardContent className="p-0">

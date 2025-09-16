@@ -16,9 +16,9 @@ async function SpacesContent() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Error Loading Spaces</CardTitle>
+          <CardTitle>Error al Cargar Espacios</CardTitle>
           <CardDescription>
-            {result.error || 'Unable to load spaces at this time'}
+            {result.error || 'No se pueden cargar los espacios en este momento'}
           </CardDescription>
         </CardHeader>
       </Card>
@@ -86,9 +86,9 @@ export default function SpacesPage() {
     <div className="container mx-auto py-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold">Spaces</h1>
+          <h1 className="text-3xl font-bold">Espacios</h1>
           <p className="text-muted-foreground">
-            Manage your coworking spaces and their availability
+            Gestiona tus espacios de coworking y su disponibilidad
           </p>
         </div>
       </div>

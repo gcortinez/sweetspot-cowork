@@ -19,9 +19,9 @@ export default async function SpacesMapPage() {
       <div className="container mx-auto py-6">
         <Card>
           <CardHeader>
-            <CardTitle>Error Loading Spaces</CardTitle>
+            <CardTitle>Error al Cargar Espacios</CardTitle>
             <CardDescription>
-              {result.error || 'Unable to load spaces at this time'}
+              {result.error || 'No se pueden cargar los espacios en este momento'}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -40,23 +40,23 @@ export default async function SpacesMapPage() {
           <Button variant="ghost" size="sm" asChild>
             <Link href="/spaces">
               <ArrowLeft className="h-4 w-4 mr-1" />
-              Back to Spaces
+              Volver a Espacios
             </Link>
           </Button>
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <MapPin className="h-8 w-8" />
-              Spaces Map
+              Mapa de Espacios
             </h1>
             <p className="text-muted-foreground">
-              Interactive map showing all your spaces
+              Mapa interactivo que muestra todos tus espacios
             </p>
           </div>
         </div>
         <Button asChild>
           <Link href="/spaces/new">
             <Plus className="h-4 w-4 mr-1" />
-            Add Space
+            Agregar Espacio
           </Link>
         </Button>
       </div>
@@ -64,9 +64,9 @@ export default async function SpacesMapPage() {
       {/* Map */}
       <Card>
         <CardHeader>
-          <CardTitle>All Spaces Overview</CardTitle>
+          <CardTitle>Vista General de Todos los Espacios</CardTitle>
           <CardDescription>
-            {spacesWithCoordinates.length} of {spaces?.length || 0} spaces have coordinates set
+            {spacesWithCoordinates.length} de {spaces?.length || 0} espacios tienen coordenadas establecidas
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
@@ -84,14 +84,14 @@ export default async function SpacesMapPage() {
               <div className="text-center space-y-4">
                 <MapPin className="h-12 w-12 mx-auto opacity-50" />
                 <div>
-                  <h3 className="text-lg font-medium">No spaces with coordinates</h3>
+                  <h3 className="text-lg font-medium">No hay espacios con coordenadas</h3>
                   <p className="text-sm">
-                    Add coordinates to your spaces to see them on the map
+                    Agrega coordenadas a tus espacios para verlos en el mapa
                   </p>
                 </div>
                 <Button asChild>
                   <Link href="/spaces">
-                    Manage Spaces
+                    Gestionar Espacios
                   </Link>
                 </Button>
               </div>
@@ -105,7 +105,7 @@ export default async function SpacesMapPage() {
         <div className="grid gap-4 md:grid-cols-3 mt-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Spaces</CardTitle>
+              <CardTitle className="text-sm font-medium">Total de Espacios</CardTitle>
               <MapPin className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -115,20 +115,20 @@ export default async function SpacesMapPage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">With Coordinates</CardTitle>
+              <CardTitle className="text-sm font-medium">Con Coordenadas</CardTitle>
               <MapPin className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{spacesWithCoordinates.length}</div>
               <p className="text-xs text-muted-foreground">
-                {((spacesWithCoordinates.length / spaces.length) * 100).toFixed(1)}% mapped
+                {((spacesWithCoordinates.length / spaces.length) * 100).toFixed(1)}% mapeados
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Spaces</CardTitle>
+              <CardTitle className="text-sm font-medium">Espacios Activos</CardTitle>
               <MapPin className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -136,7 +136,7 @@ export default async function SpacesMapPage() {
                 {spaces.filter(space => space.isActive).length}
               </div>
               <p className="text-xs text-muted-foreground">
-                Currently available
+                Actualmente disponibles
               </p>
             </CardContent>
           </Card>

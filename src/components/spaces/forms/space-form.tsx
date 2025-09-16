@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
@@ -9,9 +9,9 @@ import {
   updateSpaceSchema,
   type CreateSpaceRequest,
   type UpdateSpaceRequest,
-  SpaceTypeSchema,
 } from '@/lib/validations/space'
 import { createSpaceAction, updateSpaceAction } from '@/lib/actions/space'
+import { getSpaceTypeOptionsAction, createDefaultSpaceTypesAction } from '@/lib/actions/space-type'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -36,7 +36,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { MapPin, Settings, DollarSign, Clock, Shield } from 'lucide-react'
 import { toast } from 'sonner'
-import { CoordinatesPicker } from '@/components/spaces/coordinates-picker'
 
 interface SpaceFormProps {
   space?: any // Space from database
@@ -45,6 +44,8 @@ interface SpaceFormProps {
 
 export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const [spaceTypeOptions, setSpaceTypeOptions] = useState<Array<{ key: string; name: string }>>([])
+  const [isLoadingTypes, setIsLoadingTypes] = useState(true)
   const router = useRouter()
 
   const formSchema = isEdit ? updateSpaceSchema : createSpaceSchema
@@ -53,36 +54,34 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
     description: space.description || '',
     type: space.type,
     capacity: space.capacity || 1,
-    hourlyRate: space.hourlyRate ? parseFloat(space.hourlyRate.toString()) : undefined,
+    hourlyRate: space.hourlyRate ? parseFloat(space.hourlyRate.toString()) : '',
     floor: space.floor || '',
     zone: space.zone || '',
-    area: space.area ? parseFloat(space.area.toString()) : undefined,
+    area: space.area ? parseFloat(space.area.toString()) : '',
     maxAdvanceBooking: space.maxAdvanceBooking || 30,
     minBookingDuration: space.minBookingDuration || 60,
-    maxBookingDuration: space.maxBookingDuration || undefined,
+    maxBookingDuration: space.maxBookingDuration || '',
     cancellationHours: space.cancellationHours || 24,
     requiresApproval: space.requiresApproval || false,
     allowRecurring: space.allowRecurring || true,
     isActive: space.isActive || true,
-    coordinates: space.coordinates || undefined,
     images: space.images ? JSON.parse(space.images) : [],
   } : {
     name: '',
     description: '',
     type: 'MEETING_ROOM' as const,
     capacity: 1,
-    hourlyRate: undefined,
+    hourlyRate: '',
     floor: '',
     zone: '',
-    area: undefined,
+    area: '',
     maxAdvanceBooking: 30,
     minBookingDuration: 60,
-    maxBookingDuration: undefined,
+    maxBookingDuration: '',
     cancellationHours: 24,
     requiresApproval: false,
     allowRecurring: true,
     isActive: true,
-    coordinates: undefined,
     images: [],
   }
 
@@ -90,6 +89,46 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues,
   })
+
+  // Fetch space type options
+  useEffect(() => {
+    const fetchSpaceTypes = async () => {
+      try {
+        setIsLoadingTypes(true)
+        const result = await getSpaceTypeOptionsAction()
+        if (result.success) {
+          if (result.data.length === 0) {
+            // No space types configured, try to create defaults
+            const defaultResult = await createDefaultSpaceTypesAction({ overwrite: false })
+            if (defaultResult.success) {
+              // Retry fetching after creating defaults
+              const retryResult = await getSpaceTypeOptionsAction()
+              if (retryResult.success) {
+                setSpaceTypeOptions(retryResult.data)
+                toast.success('Tipos de espacio por defecto creados exitosamente')
+              } else {
+                toast.error('No hay tipos de espacio configurados. Contacta al administrador.')
+              }
+            } else {
+              toast.error('No hay tipos de espacio configurados. Contacta al administrador para configurar tipos de espacio.')
+            }
+          } else {
+            setSpaceTypeOptions(result.data)
+          }
+        } else {
+          console.error('Error fetching space types:', result.error)
+          toast.error('Error al cargar tipos de espacio')
+        }
+      } catch (error) {
+        console.error('Error fetching space types:', error)
+        toast.error('Error al cargar tipos de espacio')
+      } finally {
+        setIsLoadingTypes(false)
+      }
+    }
+
+    fetchSpaceTypes()
+  }, [])
 
   const onSubmit = async (data: CreateSpaceRequest | UpdateSpaceRequest) => {
     setIsLoading(true)
@@ -99,11 +138,11 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
         : await createSpaceAction(data as CreateSpaceRequest)
 
       if (result.success) {
-        toast.success(isEdit ? 'Space updated successfully' : 'Space created successfully')
+        toast.success(isEdit ? 'Espacio actualizado exitosamente' : 'Espacio creado exitosamente')
         router.push('/spaces')
         router.refresh()
       } else {
-        toast.error(result.error || 'An error occurred')
+        toast.error(result.error || 'Ocurrió un error')
         if (result.fieldErrors) {
           Object.entries(result.fieldErrors).forEach(([field, message]) => {
             form.setError(field as any, { message })
@@ -112,7 +151,7 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
       }
     } catch (error) {
       console.error('Form submission error:', error)
-      toast.error('An unexpected error occurred')
+      toast.error('Ocurrió un error inesperado')
     } finally {
       setIsLoading(false)
     }
@@ -123,10 +162,10 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold">
-            {isEdit ? 'Edit Space' : 'Create New Space'}
+            {isEdit ? 'Editar Espacio' : 'Crear Nuevo Espacio'}
           </h1>
           <p className="text-muted-foreground">
-            {isEdit ? 'Update space details and settings' : 'Add a new space to your coworking location'}
+            {isEdit ? 'Actualizar detalles y configuración del espacio' : 'Agregar un nuevo espacio a tu coworking'}
           </p>
         </div>
       </div>
@@ -138,7 +177,7 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings className="h-5 w-5" />
-                Basic Information
+                Información Básica
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -148,12 +187,12 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Space Name</FormLabel>
+                      <FormLabel>Nombre del Espacio</FormLabel>
                       <FormControl>
-                        <Input placeholder="Conference Room A" {...field} />
+                        <Input placeholder="Sala de Conferencias A" {...field} />
                       </FormControl>
                       <FormDescription>
-                        A descriptive name for this space
+                        Un nombre descriptivo para este espacio
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -165,19 +204,24 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
                   name="type"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Space Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormLabel>Tipo de Espacio</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoadingTypes}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select space type" />
+                            <SelectValue placeholder={isLoadingTypes ? "Cargando tipos..." : "Seleccionar tipo de espacio"} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {SpaceTypeSchema.options.map((type) => (
-                            <SelectItem key={type} value={type}>
-                              {type.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
+                          {spaceTypeOptions.map((type) => (
+                            <SelectItem key={type.key} value={type.key}>
+                              {type.name}
                             </SelectItem>
                           ))}
+                          {spaceTypeOptions.length === 0 && !isLoadingTypes && (
+                            <SelectItem value="" disabled>
+                              No hay tipos de espacio disponibles
+                            </SelectItem>
+                          )}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -191,16 +235,16 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>Descripción</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Describe this space, its features, and ideal use cases..."
+                        placeholder="Describe este espacio, sus características y casos de uso ideales..."
                         className="resize-none"
                         {...field}
                       />
                     </FormControl>
                     <FormDescription>
-                      Optional description of the space
+                      Descripción opcional del espacio
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -213,7 +257,7 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
                   name="capacity"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Capacity</FormLabel>
+                      <FormLabel>Capacidad</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -224,7 +268,7 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
                         />
                       </FormControl>
                       <FormDescription>
-                        Maximum people
+                        Máximo de personas
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -236,7 +280,7 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
                   name="area"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Area (m²)</FormLabel>
+                      <FormLabel>Área (m²)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -244,11 +288,11 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
                           min="0"
                           placeholder="25.5"
                           {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)}
+                          onChange={(e) => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value) || '')}
                         />
                       </FormControl>
                       <FormDescription>
-                        Square meters
+                        Metros cuadrados
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -260,7 +304,7 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
                   name="hourlyRate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Hourly Rate</FormLabel>
+                      <FormLabel>Tarifa por Hora</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -268,11 +312,11 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
                           min="0"
                           placeholder="25.00"
                           {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)}
+                          onChange={(e) => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value) || '')}
                         />
                       </FormControl>
                       <FormDescription>
-                        Price per hour
+                        Precio por hora
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -287,7 +331,7 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5" />
-                Location Details
+                Detalles de Ubicación
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -297,12 +341,12 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
                   name="floor"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Floor</FormLabel>
+                      <FormLabel>Piso</FormLabel>
                       <FormControl>
-                        <Input placeholder="1st Floor" {...field} />
+                        <Input placeholder="Piso 1" {...field} />
                       </FormControl>
                       <FormDescription>
-                        Which floor is this space on?
+                        ¿En qué piso está este espacio?
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -314,12 +358,12 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
                   name="zone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Zone</FormLabel>
+                      <FormLabel>Zona</FormLabel>
                       <FormControl>
-                        <Input placeholder="East Wing" {...field} />
+                        <Input placeholder="Ala Este" {...field} />
                       </FormControl>
                       <FormDescription>
-                        Area or zone within the building
+                        Área o zona dentro del edificio
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -327,28 +371,6 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
                 />
               </div>
 
-              <Separator className="my-6" />
-
-              {/* Coordinates Picker */}
-              <FormField
-                control={form.control}
-                name="coordinates"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Map Coordinates (Optional)</FormLabel>
-                    <FormControl>
-                      <CoordinatesPicker
-                        value={field.value}
-                        onChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Set the exact location of this space for map display and navigation
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </CardContent>
           </Card>
 
@@ -357,7 +379,7 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
-                Booking Settings
+                Configuración de Reservas
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -367,7 +389,7 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
                   name="maxAdvanceBooking"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Max Advance Booking (days)</FormLabel>
+                      <FormLabel>Reserva Anticipada Máxima (días)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -378,7 +400,7 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
                         />
                       </FormControl>
                       <FormDescription>
-                        How far in advance can users book?
+                        ¿Con cuánta anticipación pueden reservar los usuarios?
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -390,7 +412,7 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
                   name="cancellationHours"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Cancellation Notice (hours)</FormLabel>
+                      <FormLabel>Aviso de Cancelación (horas)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -401,7 +423,7 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
                         />
                       </FormControl>
                       <FormDescription>
-                        Minimum hours before cancellation
+                        Horas mínimas antes de la cancelación
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -413,7 +435,7 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
                   name="minBookingDuration"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Min Duration (minutes)</FormLabel>
+                      <FormLabel>Duración Mínima (minutos)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -425,7 +447,7 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
                         />
                       </FormControl>
                       <FormDescription>
-                        Minimum booking duration
+                        Duración mínima de reserva
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -437,7 +459,7 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
                   name="maxBookingDuration"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Max Duration (minutes)</FormLabel>
+                      <FormLabel>Duración Máxima (minutos)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -445,11 +467,11 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
                           step="15"
                           placeholder="480"
                           {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
+                          onChange={(e) => field.onChange(e.target.value === '' ? '' : parseInt(e.target.value) || '')}
                         />
                       </FormControl>
                       <FormDescription>
-                        Maximum booking duration (optional)
+                        Duración máxima de reserva (opcional)
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -467,10 +489,10 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                       <div className="space-y-0.5">
                         <FormLabel className="text-base">
-                          Requires Approval
+                          Requiere Aprobación
                         </FormLabel>
                         <FormDescription>
-                          Bookings need admin approval
+                          Las reservas necesitan aprobación del administrador
                         </FormDescription>
                       </div>
                       <FormControl>
@@ -490,10 +512,10 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                       <div className="space-y-0.5">
                         <FormLabel className="text-base">
-                          Allow Recurring
+                          Permitir Recurrencia
                         </FormLabel>
                         <FormDescription>
-                          Enable recurring bookings
+                          Habilitar reservas recurrentes
                         </FormDescription>
                       </div>
                       <FormControl>
@@ -513,10 +535,10 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                       <div className="space-y-0.5">
                         <FormLabel className="text-base">
-                          Active
+                          Activo
                         </FormLabel>
                         <FormDescription>
-                          Space is available for booking
+                          El espacio está disponible para reservar
                         </FormDescription>
                       </div>
                       <FormControl>
@@ -540,10 +562,10 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
               onClick={() => router.back()}
               disabled={isLoading}
             >
-              Cancel
+              Cancelar
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Saving...' : (isEdit ? 'Update Space' : 'Create Space')}
+              {isLoading ? 'Guardando...' : (isEdit ? 'Actualizar Espacio' : 'Crear Espacio')}
             </Button>
           </div>
         </form>

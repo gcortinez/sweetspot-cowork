@@ -103,52 +103,52 @@ async function CheckInContent() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Bookings</CardTitle>
+            <CardTitle className="text-sm font-medium">Reservas Activas</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.activeBookings}</div>
             <p className="text-xs text-muted-foreground">
-              Ongoing sessions
+              Sesiones en curso
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Check-ins Today</CardTitle>
+            <CardTitle className="text-sm font-medium">Entradas Hoy</CardTitle>
             <LogIn className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{stats.checkedInToday}</div>
             <p className="text-xs text-muted-foreground">
-              Space entries
+              Entradas a espacios
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Check-outs Today</CardTitle>
+            <CardTitle className="text-sm font-medium">Salidas Hoy</CardTitle>
             <LogOut className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">{stats.checkedOutToday}</div>
             <p className="text-xs text-muted-foreground">
-              Space exits
+              Salidas de espacios
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Currently In Spaces</CardTitle>
+            <CardTitle className="text-sm font-medium">Actualmente en Espacios</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.currentlyInSpaces}</div>
             <p className="text-xs text-muted-foreground">
-              Active occupancy
+              Ocupación activa
             </p>
           </CardContent>
         </Card>
@@ -157,9 +157,9 @@ async function CheckInContent() {
       {/* Main Content */}
       <Tabs defaultValue="scanner" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="scanner">QR Scanner</TabsTrigger>
-          <TabsTrigger value="my-bookings">My QR Codes</TabsTrigger>
-          <TabsTrigger value="activity">Activity Log</TabsTrigger>
+          <TabsTrigger value="scanner">Escáner QR</TabsTrigger>
+          <TabsTrigger value="my-bookings">Mis Códigos QR</TabsTrigger>
+          <TabsTrigger value="activity">Registro de Actividad</TabsTrigger>
         </TabsList>
 
         {/* QR Scanner Tab */}
@@ -172,9 +172,9 @@ async function CheckInContent() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Instructions</CardTitle>
+                <CardTitle>Instrucciones</CardTitle>
                 <CardDescription>
-                  How to use the QR code system
+                  Cómo usar el sistema de códigos QR
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -184,9 +184,9 @@ async function CheckInContent() {
                       1
                     </div>
                     <div>
-                      <h4 className="font-medium">Get Your QR Code</h4>
+                      <h4 className="font-medium">Obtén tu Código QR</h4>
                       <p className="text-sm text-muted-foreground">
-                        Find your booking in the "My QR Codes" tab to display the access QR code
+                        Encuentra tu reserva en la pestaña "Mis Códigos QR" para mostrar el código QR de acceso
                       </p>
                     </div>
                   </div>
@@ -196,9 +196,9 @@ async function CheckInContent() {
                       2
                     </div>
                     <div>
-                      <h4 className="font-medium">Scan for Access</h4>
+                      <h4 className="font-medium">Escanear para Acceso</h4>
                       <p className="text-sm text-muted-foreground">
-                        Use this scanner to scan your QR code when entering or leaving the space
+                        Usa este escáner para escanear tu código QR al entrar o salir del espacio
                       </p>
                     </div>
                   </div>
@@ -208,9 +208,9 @@ async function CheckInContent() {
                       3
                     </div>
                     <div>
-                      <h4 className="font-medium">Automatic Tracking</h4>
+                      <h4 className="font-medium">Seguimiento Automático</h4>
                       <p className="text-sm text-muted-foreground">
-                        The system automatically tracks your check-in and check-out times
+                        El sistema rastrea automáticamente tus horas de entrada y salida
                       </p>
                     </div>
                   </div>
@@ -218,7 +218,7 @@ async function CheckInContent() {
 
                 <div className="bg-blue-50 p-3 rounded-lg">
                   <p className="text-sm text-blue-700">
-                    <strong>Tip:</strong> Keep your QR code easily accessible on your phone for quick scanning
+                    <strong>Consejo:</strong> Mantén tu código QR fácilmente accesible en tu teléfono para un escaneo rápido
                   </p>
                 </div>
               </CardContent>
@@ -267,12 +267,12 @@ async function CheckInContent() {
               <Card>
                 <CardContent className="text-center py-12">
                   <QrCode className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                  <h3 className="text-lg font-medium mb-2">No Active Bookings</h3>
+                  <h3 className="text-lg font-medium mb-2">No Hay Reservas Activas</h3>
                   <p className="text-muted-foreground mb-4">
-                    You don't have any confirmed bookings at this time.
+                    No tienes reservas confirmadas en este momento.
                   </p>
                   <Button asChild>
-                    <a href="/bookings/new">Create New Booking</a>
+                    <a href="/bookings/new">Crear Nueva Reserva</a>
                   </Button>
                 </CardContent>
               </Card>
@@ -284,9 +284,9 @@ async function CheckInContent() {
         <TabsContent value="activity">
           <Card>
             <CardHeader>
-              <CardTitle>Recent Check-in Activity</CardTitle>
+              <CardTitle>Actividad Reciente de Registro</CardTitle>
               <CardDescription>
-                Latest space access logs
+                Últimos registros de acceso a espacios
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -321,7 +321,7 @@ async function CheckInContent() {
                 {checkInActivity.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <TrendingUp className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>No check-in activity yet</p>
+                    <p>Aún no hay actividad de registro</p>
                   </div>
                 )}
               </div>
@@ -373,10 +373,10 @@ export default function CheckInPage() {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <QrCode className="h-8 w-8" />
-            Space Access
+            Acceso a Espacios
           </h1>
           <p className="text-muted-foreground">
-            QR code check-in and check-out system
+            Sistema de entrada y salida con códigos QR
           </p>
         </div>
       </div>

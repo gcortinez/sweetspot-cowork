@@ -114,16 +114,16 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
       const result = await deleteSpaceAction({ id: spaceToDelete.id })
 
       if (result.success) {
-        toast.success('Space deleted successfully')
+        toast.success('Espacio eliminado exitosamente')
         router.refresh()
         setDeleteDialogOpen(false)
         setSpaceToDelete(null)
       } else {
-        toast.error(result.error || 'Failed to delete space')
+        toast.error(result.error || 'Error al eliminar el espacio')
       }
     } catch (error) {
       console.error('Delete space error:', error)
-      toast.error('An unexpected error occurred')
+      toast.error('Ocurrió un error inesperado')
     } finally {
       setIsDeleting(false)
     }
@@ -139,7 +139,7 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
             className="h-8 px-2"
           >
-            Space Name
+            Nombre del Espacio
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         )
@@ -160,7 +160,7 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
     },
     {
       accessorKey: 'type',
-      header: 'Type',
+      header: 'Tipo',
       cell: ({ row }) => {
         const type = row.getValue('type') as string
         return (
@@ -180,7 +180,7 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
             className="h-8 px-2"
           >
             <Users className="h-4 w-4 mr-1" />
-            Capacity
+            Capacidad
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         )
@@ -196,7 +196,7 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
     },
     {
       accessorKey: 'location',
-      header: 'Location',
+      header: 'Ubicación',
       cell: ({ row }) => {
         const space = row.original
         const location = [space.floor, space.zone].filter(Boolean).join(', ') || '-'
@@ -218,7 +218,7 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
             className="h-8 px-2"
           >
             <DollarSign className="h-4 w-4 mr-1" />
-            Rate
+            Tarifa
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         )
@@ -235,24 +235,24 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
     },
     {
       accessorKey: 'status',
-      header: 'Status',
+      header: 'Estado',
       cell: ({ row }) => {
         const space = row.original
         const isActive = space.isActive
         return (
           <div className="flex flex-col gap-1">
             <Badge variant={isActive ? 'default' : 'secondary'}>
-              {isActive ? 'Active' : 'Inactive'}
+              {isActive ? 'Activo' : 'Inactivo'}
             </Badge>
             <div className="flex gap-1">
               {space.requiresApproval && (
                 <Badge variant="outline" className="text-xs">
-                  Approval Required
+                  Requiere Aprobación
                 </Badge>
               )}
               {space.allowRecurring && (
                 <Badge variant="outline" className="text-xs">
-                  Recurring
+                  Recurrente
                 </Badge>
               )}
             </div>
@@ -270,35 +270,35 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
+                <span className="sr-only">Abrir menú</span>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuLabel>Acciones</DropdownMenuLabel>
               <DropdownMenuItem
                 onClick={() => navigator.clipboard.writeText(space.id)}
               >
-                Copy space ID
+                Copiar ID del espacio
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => router.push(`/spaces/${space.id}`)}
               >
                 <Eye className="mr-2 h-4 w-4" />
-                View details
+                Ver detalles
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => router.push(`/spaces/${space.id}/edit`)}
               >
                 <Edit className="mr-2 h-4 w-4" />
-                Edit space
+                Editar espacio
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => router.push(`/spaces/${space.id}/availability`)}
               >
                 <Settings className="mr-2 h-4 w-4" />
-                Manage availability
+                Gestionar disponibilidad
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -309,7 +309,7 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
                 className="text-destructive"
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                Delete space
+                Eliminar espacio
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -343,20 +343,20 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Spaces</CardTitle>
+            <CardTitle className="text-sm font-medium">Total de Espacios</CardTitle>
             <Settings className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalCount}</div>
             <p className="text-xs text-muted-foreground">
-              {spaces.filter(s => s.isActive).length} active
+              {spaces.filter(s => s.isActive).length} activos
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Capacity</CardTitle>
+            <CardTitle className="text-sm font-medium">Capacidad Total</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -364,14 +364,14 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
               {spaces.reduce((sum, space) => sum + space.capacity, 0)}
             </div>
             <p className="text-xs text-muted-foreground">
-              people across all spaces
+              personas en todos los espacios
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg. Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">Tarifa Promedio</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -382,14 +382,14 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              per hour average
+              promedio por hora
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Approval Required</CardTitle>
+            <CardTitle className="text-sm font-medium">Requieren Aprobación</CardTitle>
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -397,7 +397,7 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
               {spaces.filter(s => s.requiresApproval).length}
             </div>
             <p className="text-xs text-muted-foreground">
-              spaces need approval
+              espacios necesitan aprobación
             </p>
           </CardContent>
         </Card>
@@ -409,7 +409,7 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search spaces..."
+              placeholder="Buscar espacios..."
               value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
               onChange={(event) =>
                 table.getColumn('name')?.setFilterValue(event.target.value)
@@ -422,7 +422,7 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="ml-auto">
-                Columns
+                Columnas
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -447,11 +447,11 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
           </DropdownMenu>
           <Button variant="outline" onClick={() => router.push('/spaces/map')}>
             <MapPin className="mr-2 h-4 w-4" />
-            Map View
+            Vista de Mapa
           </Button>
           <Button onClick={() => router.push('/spaces/new')}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Space
+            Agregar Espacio
           </Button>
         </div>
       </div>
@@ -500,13 +500,13 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No spaces found.
+                  No se encontraron espacios.
                   <Button
                     variant="link"
                     onClick={() => router.push('/spaces/new')}
                     className="ml-1"
                   >
-                    Create your first space
+                    Crear tu primer espacio
                   </Button>
                 </TableCell>
               </TableRow>
@@ -518,8 +518,8 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
       {/* Pagination */}
       <div className="flex items-center justify-end space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{' '}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
+          {table.getFilteredSelectedRowModel().rows.length} de{' '}
+          {table.getFilteredRowModel().rows.length} fila(s) seleccionada(s).
         </div>
         <div className="space-x-2">
           <Button
@@ -528,7 +528,7 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
-            Previous
+            Anterior
           </Button>
           <Button
             variant="outline"
@@ -536,7 +536,7 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
-            Next
+            Siguiente
           </Button>
         </div>
       </div>
@@ -545,21 +545,21 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>¿Estás completamente seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the space
-              "{spaceToDelete?.name}" and remove all associated data including bookings,
-              availability schedules, and maintenance records.
+              Esta acción no se puede deshacer. Esto eliminará permanentemente el espacio
+              "{spaceToDelete?.name}" y removerá todos los datos asociados incluyendo reservas,
+              horarios de disponibilidad y registros de mantenimiento.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteSpace}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? 'Deleting...' : 'Delete Space'}
+              {isDeleting ? 'Eliminando...' : 'Eliminar Espacio'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -104,7 +104,7 @@ export function SpaceMap({
   }
 
   const formatCurrency = (amount?: number) => {
-    if (!amount) return 'Free'
+    if (!amount) return 'Gratuito'
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -148,33 +148,33 @@ export function SpaceMap({
                 <h3 className="font-semibold text-sm mb-1">{space.name}</h3>
                 <div className="space-y-1 text-xs text-gray-600">
                   <div className="flex justify-between">
-                    <span>Type:</span>
+                    <span>Tipo:</span>
                     <span className="capitalize">{space.type.replace('_', ' ')}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Capacity:</span>
-                    <span>{space.capacity} people</span>
+                    <span>Capacidad:</span>
+                    <span>{space.capacity} personas</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Rate:</span>
-                    <span>{formatCurrency(space.hourlyRate)}/hour</span>
+                    <span>Tarifa:</span>
+                    <span>{formatCurrency(space.hourlyRate)}/hora</span>
                   </div>
                   {space.floor && (
                     <div className="flex justify-between">
-                      <span>Floor:</span>
+                      <span>Piso:</span>
                       <span>{space.floor}</span>
                     </div>
                   )}
                   {space.zone && (
                     <div className="flex justify-between">
-                      <span>Zone:</span>
+                      <span>Zona:</span>
                       <span>{space.zone}</span>
                     </div>
                   )}
                   <div className="flex justify-between">
-                    <span>Status:</span>
+                    <span>Estado:</span>
                     <span className={`font-medium ${space.isActive ? 'text-green-600' : 'text-red-600'}`}>
-                      {space.isActive ? 'Active' : 'Inactive'}
+                      {space.isActive ? 'Activo' : 'Inactivo'}
                     </span>
                   </div>
                 </div>
@@ -183,7 +183,7 @@ export function SpaceMap({
                     onClick={() => onSpaceSelect(space.id)}
                     className="mt-2 w-full bg-blue-500 text-white text-xs py-1 px-2 rounded hover:bg-blue-600 transition-colors"
                   >
-                    View Details
+                    Ver Detalles
                   </button>
                 )}
               </div>

@@ -25,14 +25,14 @@ export default async function NewBookingPage({ searchParams }: NewBookingPagePro
     return (
       <div className="container mx-auto py-6">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-destructive mb-2">Error Loading Spaces</h1>
+          <h1 className="text-2xl font-bold text-destructive mb-2">Error al Cargar Espacios</h1>
           <p className="text-muted-foreground mb-4">
-            {result.error || 'Unable to load spaces for booking'}
+            {result.error || 'No se pueden cargar los espacios para reservar'}
           </p>
           <Button asChild>
             <Link href="/bookings">
               <ArrowLeft className="h-4 w-4 mr-1" />
-              Back to Bookings
+              Volver a Reservas
             </Link>
           </Button>
         </div>
@@ -47,20 +47,20 @@ export default async function NewBookingPage({ searchParams }: NewBookingPagePro
     return (
       <div className="container mx-auto py-6">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">No Active Spaces Available</h1>
+          <h1 className="text-2xl font-bold mb-2">No Hay Espacios Activos Disponibles</h1>
           <p className="text-muted-foreground mb-4">
-            There are no active spaces available for booking at this time.
+            No hay espacios activos disponibles para reservar en este momento.
           </p>
           <div className="flex items-center justify-center gap-2">
             <Button variant="outline" asChild>
               <Link href="/bookings">
                 <ArrowLeft className="h-4 w-4 mr-1" />
-                Back to Bookings
+                Volver a Reservas
               </Link>
             </Button>
             <Button asChild>
               <Link href="/spaces">
-                View Spaces
+                Ver Espacios
               </Link>
             </Button>
           </div>
@@ -95,16 +95,16 @@ export default async function NewBookingPage({ searchParams }: NewBookingPagePro
           <Button variant="ghost" size="sm" asChild>
             <Link href="/bookings">
               <ArrowLeft className="h-4 w-4 mr-1" />
-              Back to Bookings
+              Volver a Reservas
             </Link>
           </Button>
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <Calendar className="h-8 w-8" />
-              New Booking
+              Nueva Reserva
             </h1>
             <p className="text-muted-foreground">
-              Create a new space booking with advanced options
+              Crear una nueva reserva de espacio con opciones avanzadas
             </p>
           </div>
         </div>

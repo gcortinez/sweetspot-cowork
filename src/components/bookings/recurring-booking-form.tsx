@@ -132,17 +132,17 @@ export function RecurringBookingForm({
     onChange(watchedValues)
   }, [watchedValues, onChange])
 
-  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+  const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
   return (
     <Card className={className}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <RotateCcw className="h-5 w-5" />
-          Recurring Booking
+          Reserva Recurrente
         </CardTitle>
         <CardDescription>
-          Set up recurring bookings for regular meetings or events
+          Configurar reservas recurrentes para reuniones o eventos regulares
         </CardDescription>
       </CardHeader>
 
@@ -154,9 +154,9 @@ export function RecurringBookingForm({
             render={({ field }) => (
               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                 <div className="space-y-0.5">
-                  <FormLabel className="text-base">Enable Recurring Booking</FormLabel>
+                  <FormLabel className="text-base">Habilitar Reserva Recurrente</FormLabel>
                   <FormDescription>
-                    Create multiple bookings based on a schedule
+                    Crear múltiples reservas basadas en un horario
                   </FormDescription>
                 </div>
                 <FormControl>
@@ -177,17 +177,17 @@ export function RecurringBookingForm({
                   name="frequency"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Frequency</FormLabel>
+                      <FormLabel>Frecuencia</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select frequency" />
+                            <SelectValue placeholder="Seleccionar frecuencia" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="DAILY">Daily</SelectItem>
-                          <SelectItem value="WEEKLY">Weekly</SelectItem>
-                          <SelectItem value="MONTHLY">Monthly</SelectItem>
+                          <SelectItem value="DAILY">Diario</SelectItem>
+                          <SelectItem value="WEEKLY">Semanal</SelectItem>
+                          <SelectItem value="MONTHLY">Mensual</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -201,8 +201,8 @@ export function RecurringBookingForm({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        Every {watchedValues.frequency === 'DAILY' ? 'days' :
-                              watchedValues.frequency === 'WEEKLY' ? 'weeks' : 'months'}
+                        Cada {watchedValues.frequency === 'DAILY' ? 'días' :
+                              watchedValues.frequency === 'WEEKLY' ? 'semanas' : 'meses'}
                       </FormLabel>
                       <FormControl>
                         <Input
@@ -214,8 +214,8 @@ export function RecurringBookingForm({
                         />
                       </FormControl>
                       <FormDescription>
-                        Repeat every {field.value} {watchedValues.frequency === 'DAILY' ? 'day(s)' :
-                                                  watchedValues.frequency === 'WEEKLY' ? 'week(s)' : 'month(s)'}
+                        Repetir cada {field.value} {watchedValues.frequency === 'DAILY' ? 'día(s)' :
+                                                  watchedValues.frequency === 'WEEKLY' ? 'semana(s)' : 'mes(es)'}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -229,9 +229,9 @@ export function RecurringBookingForm({
                   name="daysOfWeek"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Days of Week</FormLabel>
+                      <FormLabel>Días de la Semana</FormLabel>
                       <FormDescription>
-                        Select which days of the week to repeat the booking
+                        Seleccionar qué días de la semana repetir la reserva
                       </FormDescription>
                       <FormControl>
                         <div className="flex flex-wrap gap-2">
@@ -264,17 +264,17 @@ export function RecurringBookingForm({
                 name="endType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>End Condition</FormLabel>
+                    <FormLabel>Condición de Finalización</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select end condition" />
+                          <SelectValue placeholder="Seleccionar condición de finalización" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="NEVER">Never end</SelectItem>
-                        <SelectItem value="DATE">End by date</SelectItem>
-                        <SelectItem value="COUNT">End after occurrences</SelectItem>
+                        <SelectItem value="NEVER">Nunca terminar</SelectItem>
+                        <SelectItem value="DATE">Terminar en fecha</SelectItem>
+                        <SelectItem value="COUNT">Terminar después de ocurrencias</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -288,7 +288,7 @@ export function RecurringBookingForm({
                   name="endDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>End Date</FormLabel>
+                      <FormLabel>Fecha de Finalización</FormLabel>
                       <FormControl>
                         <Input
                           type="date"
@@ -297,7 +297,7 @@ export function RecurringBookingForm({
                         />
                       </FormControl>
                       <FormDescription>
-                        The last date when recurring bookings should be created
+                        La última fecha cuando se deben crear reservas recurrentes
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -311,7 +311,7 @@ export function RecurringBookingForm({
                   name="occurrences"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Number of Occurrences</FormLabel>
+                      <FormLabel>Número de Ocurrencias</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -322,7 +322,7 @@ export function RecurringBookingForm({
                         />
                       </FormControl>
                       <FormDescription>
-                        Total number of bookings to create (including the original)
+                        Número total de reservas a crear (incluyendo la original)
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -336,7 +336,7 @@ export function RecurringBookingForm({
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
-                      <span className="font-medium">Preview (Next {previewDates.length} dates)</span>
+                      <span className="font-medium">Vista Previa (Próximas {previewDates.length} fechas)</span>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                       {previewDates.map((date, index) => (
@@ -348,7 +348,7 @@ export function RecurringBookingForm({
                     {previewDates.length >= 10 && (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <AlertCircle className="h-4 w-4" />
-                        <span>Showing first 10 dates. More will be created based on your settings.</span>
+                        <span>Mostrando las primeras 10 fechas. Se crearán más basadas en tu configuración.</span>
                       </div>
                     )}
                   </div>
