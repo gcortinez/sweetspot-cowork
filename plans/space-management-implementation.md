@@ -28,7 +28,7 @@ Implementación completa del módulo de Gestión de Espacios y Reservas para Swe
 - **Calendario**: @fullcalendar/react para gestión de reservas
 - **QR**: qrcode + react-qr-reader para check-in/check-out
 - **Fechas**: date-fns para manejo avanzado de fechas
-- **APIs**: Google Calendar API, Microsoft Graph API
+- **APIs**: Google Calendar API
 
 ## 📊 Modelo de Datos
 
@@ -323,7 +323,6 @@ model SpaceMaintenanceSchedule {
 - [ ] Implementar `/lib/actions/calendar-sync.ts`:
   ```typescript
   - connectGoogleCalendar(authCode)
-  - connectOutlookCalendar(authCode)
   - syncBookingsToExternal(userId)
   - importExternalEvents(userId)
   - generateICalFeed(userId)
@@ -449,11 +448,6 @@ GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GOOGLE_REDIRECT_URI=
 
-# Microsoft Calendar
-MICROSOFT_CLIENT_ID=
-MICROSOFT_CLIENT_SECRET=
-MICROSOFT_REDIRECT_URI=
-
 # QR Settings
 QR_CODE_SECRET=
 QR_CODE_EXPIRY_HOURS=24
@@ -474,7 +468,7 @@ npm install recharts
 
 # APIs
 npm install @googleapis/calendar
-npm install @microsoft/microsoft-graph-client
+
 
 # Utilidades
 npm install react-dropzone
@@ -516,22 +510,7 @@ npm install react-hook-form-persist
 - Satisfacción del usuario > 90%
 - ROI positivo en 3 meses
 
-## 🚀 Plan de Despliegue
 
-### Fase Alpha (Semana 1-2)
-- Despliegue en ambiente de staging
-- Testing con equipo interno
-- Ajustes basados en feedback
-
-### Fase Beta (Semana 3)
-- Despliegue a grupo piloto de usuarios
-- Monitoreo de métricas
-- Corrección de bugs críticos
-
-### Producción (Semana 4)
-- Despliegue gradual por tenants
-- Monitoreo 24/7
-- Soporte activo
 
 ## 📝 Documentación a Generar
 
@@ -552,7 +531,6 @@ npm install react-hook-form-persist
 
 4. **Guías de Integración**
    - Google Calendar
-   - Microsoft Calendar
    - Sistemas externos
 
 ## ⚠️ Consideraciones y Riesgos
@@ -589,40 +567,10 @@ npm install react-hook-form-persist
 - Sistema de pagos integrado
 - Analytics avanzado con ML
 
-## ✅ Checklist de Implementación
 
-### Pre-desarrollo
-- [ ] Validar requerimientos con stakeholders
-- [ ] Revisar diseños UI/UX
-- [ ] Configurar ambiente de desarrollo
-- [ ] Crear branch de feature
-
-### Durante desarrollo
-- [ ] Daily standups
-- [ ] Code reviews en cada PR
-- [ ] Testing continuo
-- [ ] Documentación inline
-
-### Post-desarrollo
-- [ ] Testing de aceptación
-- [ ] Documentación completa
-- [ ] Training de usuarios
-- [ ] Plan de rollback
-
-## 📞 Contactos y Recursos
-
-### Equipo
-- Product Owner: [Definir]
-- Tech Lead: [Definir]
-- QA Lead: [Definir]
-
-### Recursos
-- Diseños en Figma: [URL]
-- API Docs: [URL]
-- Jira Board: [URL]
 
 ---
 
 **Última actualización**: 16 de Septiembre de 2025
 **Versión**: 1.0.0
-**Estado**: Pendiente de Aprobación
+**Estado**: Aprobado

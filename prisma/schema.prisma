@@ -100,6 +100,9 @@ model Tenant {
     financialDashboards    FinancialDashboard[]
     budgetPlans            BudgetPlan[]
 
+    // Space management relationships
+    checkInOuts            CheckInOut[]
+
     @@map("tenants")
 }
 
@@ -196,6 +199,10 @@ model User {
 
     // Invitation management relationships
     sentInvitations         Invitation[] @relation("InvitationSender")
+
+    // Space management relationships
+    createdMaintenanceSchedules SpaceMaintenanceSchedule[] @relation("MaintenanceScheduleCreator")
+    checkInOuts                 CheckInOut[]               @relation("CheckInOutUser")
 
     @@unique([tenantId, email])
     @@map("users")
@@ -872,18 +879,96 @@ model Space {
     createdAt   DateTime  @default(now())
     updatedAt   DateTime  @updatedAt
 
+    // New fields for enhanced space management
+    floor               String?
+    zone                String?
+    coordinates         Json?      // {x: number, y: number} for map positioning
+    images              Json?      // Array of image URLs
+    area                Float?     // Square meters
+    maxAdvanceBooking   Int        @default(30)    // Days in advance
+    minBookingDuration  Int        @default(60)    // Minutes
+    maxBookingDuration  Int?       // Minutes (null = no limit)
+    cancellationHours   Int        @default(24)    // Hours before start
+    requiresApproval    Boolean    @default(false)
+    allowRecurring      Boolean    @default(true)
+
     // Relationships
-    tenant            Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-    bookings          Booking[]
-    occupancyTracking OccupancyTracking[]
-    features          SpaceFeature[]
-    pricingRules      RoomPricingRule[]
-    checkIns          RoomCheckIn[]
-    availability      RoomAvailability[]
-    maintenanceLogs   RoomMaintenanceLog[]
-    usageAnalytics    RoomUsageAnalytics[]
+    tenant                    Tenant                      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    bookings                  Booking[]
+    occupancyTracking         OccupancyTracking[]
+    features                  SpaceFeature[]
+    pricingRules              RoomPricingRule[]
+    checkIns                  RoomCheckIn[]
+    availability              RoomAvailability[]
+    maintenanceLogs           RoomMaintenanceLog[]
+    usageAnalytics            RoomUsageAnalytics[]
+    availabilitySchedules     SpaceAvailabilitySchedule[]
+    maintenanceSchedules      SpaceMaintenanceSchedule[]
+    checkInOuts               CheckInOut[]
 
     @@map("spaces")
+}
+
+model SpaceAvailabilitySchedule {
+    id        String   @id @default(cuid())
+    spaceId   String
+    dayOfWeek Int      // 0-6 (Sunday-Saturday)
+    startTime String   // "09:00"
+    endTime   String   // "18:00"
+    isActive  Boolean  @default(true)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Relationships
+    space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+    @@unique([spaceId, dayOfWeek])
+    @@map("space_availability_schedules")
+}
+
+model SpaceMaintenanceSchedule {
+    id          String   @id @default(cuid())
+    spaceId     String
+    title       String
+    description String?
+    startTime   DateTime
+    endTime     DateTime
+    isRecurring Boolean  @default(false)
+    recurrence  Json?    // Recurrence configuration
+    createdBy   String
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    // Relationships
+    space   Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+    creator User  @relation("MaintenanceScheduleCreator", fields: [createdBy], references: [id])
+
+    @@map("space_maintenance_schedules")
+}
+
+model CheckInOut {
+    id            String    @id @default(cuid())
+    tenantId      String
+    bookingId     String
+    spaceId       String
+    userId        String
+    checkInTime   DateTime  @default(now())
+    checkOutTime  DateTime?
+    checkInMethod String    // QR, MANUAL, AUTO
+    qrCode        String?
+    notes         String?
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime  @updatedAt
+
+    // Relationships
+    tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+    space   Space   @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+    user    User    @relation("CheckInOutUser", fields: [userId], references: [id])
+
+    @@index([tenantId, checkInTime])
+    @@index([spaceId, checkInTime])
+    @@map("check_in_outs")
 }
 
 enum SpaceType {
@@ -915,11 +1000,13 @@ model Booking {
     updatedAt   DateTime      @updatedAt
 
     // Relationships
-    tenant   Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-    space    Space            @relation(fields: [spaceId], references: [id])
-    user     User             @relation(fields: [userId], references: [id])
-    approval BookingApproval?
-    checkIns RoomCheckIn[]
+    tenant     Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    space      Space              @relation(fields: [spaceId], references: [id])
+    user       User               @relation(fields: [userId], references: [id])
+    approval   BookingApproval?
+    checkIns   RoomCheckIn[]
+    checkInOuts CheckInOut[]
+    recurrence BookingRecurrence?
 
     @@map("bookings")
 }
@@ -932,6 +1019,32 @@ enum BookingStatus {
     NO_SHOW
     CHECKED_IN
     CHECKED_OUT
+}
+
+model BookingRecurrence {
+    id              String            @id @default(cuid())
+    bookingId       String            @unique
+    pattern         RecurrencePattern // DAILY, WEEKLY, MONTHLY
+    interval        Int               @default(1)
+    daysOfWeek      Json?             // [1,3,5] for Mon,Wed,Fri
+    dayOfMonth      Int?              // For monthly recurrence
+    endDate         DateTime?
+    occurrences     Int?              // Number of occurrences
+    exceptions      Json?             // Excluded dates
+    createdAt       DateTime          @default(now())
+    updatedAt       DateTime          @updatedAt
+
+    // Relationships
+    booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+    @@map("booking_recurrences")
+}
+
+enum RecurrencePattern {
+    DAILY
+    WEEKLY
+    MONTHLY
+    YEARLY
 }
 
 // ============================================================================
