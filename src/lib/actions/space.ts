@@ -45,6 +45,118 @@ import {
   type GetOccupancyDataRequest,
 } from '@/lib/validations/space'
 import { PricingCalculator } from '@/lib/utils/pricing'
+import { redirect } from 'next/navigation'
+import { Decimal } from '@prisma/client/runtime/library'
+
+// Helper function to serialize Decimal fields
+function serializeSpaceData(space: any) {
+  return {
+    ...space,
+    hourlyRate: space.hourlyRate ? Number(space.hourlyRate) : null,
+    area: space.area ? Number(space.area) : null,
+    amenities: space.amenities ? JSON.parse(space.amenities) : [],
+    location: space.location ? JSON.parse(space.location) : null,
+    pricingTiers: space.pricingTiers ? JSON.parse(space.pricingTiers) : [],
+    availabilityRules: space.availabilityRules ? JSON.parse(space.availabilityRules) : [],
+    images: space.images ? JSON.parse(space.images) : [],
+    metadata: space.metadata ? JSON.parse(space.metadata) : null,
+  }
+}
+
+/**
+ * Server Action for creating a space from FormData (Next.js 15.5 best practices)
+ */
+export async function createSpaceFormAction(formData: FormData) {
+  try {
+    // Get tenant context
+    const { tenantId, user } = await getTenantContext()
+    if (!tenantId || !user) {
+      throw new Error('Authentication required')
+    }
+
+    // Extract and convert form data
+    const data: CreateSpaceRequest = {
+      name: formData.get('name') as string,
+      description: formData.get('description') as string || undefined,
+      type: formData.get('type') as string,
+      capacity: parseInt(formData.get('capacity') as string),
+      hourlyRate: formData.get('hourlyRate') ? parseFloat(formData.get('hourlyRate') as string) : undefined,
+      isActive: formData.get('isActive') === 'on' || formData.get('isActive') === 'true',
+      floor: formData.get('floor') as string || undefined,
+      zone: formData.get('zone') as string || undefined,
+      area: formData.get('area') ? parseFloat(formData.get('area') as string) : undefined,
+      maxAdvanceBooking: formData.get('maxAdvanceBooking') ? parseInt(formData.get('maxAdvanceBooking') as string) : undefined,
+      minBookingDuration: formData.get('minBookingDuration') ? parseInt(formData.get('minBookingDuration') as string) : undefined,
+      maxBookingDuration: formData.get('maxBookingDuration') ? parseInt(formData.get('maxBookingDuration') as string) : undefined,
+      cancellationHours: formData.get('cancellationHours') ? parseInt(formData.get('cancellationHours') as string) : undefined,
+      requiresApproval: formData.get('requiresApproval') === 'on' || formData.get('requiresApproval') === 'true',
+      allowRecurring: formData.get('allowRecurring') === 'on' || formData.get('allowRecurring') === 'true',
+    }
+
+    // Validate and create space
+    const result = await createSpaceAction(data)
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to create space')
+    }
+
+    revalidatePath('/spaces')
+  } catch (error: any) {
+    console.error('Create space form error:', error)
+    // In a real app, you might want to handle errors differently
+    throw error
+  }
+
+  // Redirect on success
+  redirect('/spaces')
+}
+
+/**
+ * Server Action for updating a space from FormData
+ */
+export async function updateSpaceFormAction(spaceId: string, formData: FormData) {
+  try {
+    // Get tenant context
+    const { tenantId, user } = await getTenantContext()
+    if (!tenantId || !user) {
+      throw new Error('Authentication required')
+    }
+
+    // Extract and convert form data
+    const data: UpdateSpaceRequest = {
+      id: spaceId,
+      name: formData.get('name') as string,
+      description: formData.get('description') as string || undefined,
+      type: formData.get('type') as string,
+      capacity: parseInt(formData.get('capacity') as string),
+      hourlyRate: formData.get('hourlyRate') ? parseFloat(formData.get('hourlyRate') as string) : undefined,
+      isActive: formData.get('isActive') === 'on' || formData.get('isActive') === 'true',
+      floor: formData.get('floor') as string || undefined,
+      zone: formData.get('zone') as string || undefined,
+      area: formData.get('area') ? parseFloat(formData.get('area') as string) : undefined,
+      maxAdvanceBooking: formData.get('maxAdvanceBooking') ? parseInt(formData.get('maxAdvanceBooking') as string) : undefined,
+      minBookingDuration: formData.get('minBookingDuration') ? parseInt(formData.get('minBookingDuration') as string) : undefined,
+      maxBookingDuration: formData.get('maxBookingDuration') ? parseInt(formData.get('maxBookingDuration') as string) : undefined,
+      cancellationHours: formData.get('cancellationHours') ? parseInt(formData.get('cancellationHours') as string) : undefined,
+      requiresApproval: formData.get('requiresApproval') === 'on' || formData.get('requiresApproval') === 'true',
+      allowRecurring: formData.get('allowRecurring') === 'on' || formData.get('allowRecurring') === 'true',
+    }
+
+    // Validate and update space
+    const result = await updateSpaceAction(data)
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to update space')
+    }
+
+    revalidatePath('/spaces')
+    revalidatePath(`/spaces/${spaceId}`)
+  } catch (error: any) {
+    console.error('Update space form error:', error)
+    throw error
+  }
+
+  // Redirect on success
+  redirect('/spaces')
+}
 
 /**
  * Create a new space
@@ -89,17 +201,9 @@ export async function createSpaceAction(data: CreateSpaceRequest): Promise<Actio
 
     revalidatePath('/spaces')
     
-    return { 
-      success: true, 
-      data: {
-        ...space,
-        amenities: space.amenities ? JSON.parse(space.amenities) : [],
-        location: space.location ? JSON.parse(space.location) : null,
-        pricingTiers: space.pricingTiers ? JSON.parse(space.pricingTiers) : [],
-        availabilityRules: space.availabilityRules ? JSON.parse(space.availabilityRules) : [],
-        images: space.images ? JSON.parse(space.images) : [],
-        metadata: space.metadata ? JSON.parse(space.metadata) : null,
-      }
+    return {
+      success: true,
+      data: serializeSpaceData(space)
     }
   } catch (error: any) {
     console.error('Create space error:', error)
@@ -186,17 +290,9 @@ export async function updateSpaceAction(data: UpdateSpaceRequest): Promise<Actio
     revalidatePath('/spaces')
     revalidatePath(`/spaces/${id}`)
     
-    return { 
-      success: true, 
-      data: {
-        ...space,
-        amenities: space.amenities ? JSON.parse(space.amenities) : [],
-        location: space.location ? JSON.parse(space.location) : null,
-        pricingTiers: space.pricingTiers ? JSON.parse(space.pricingTiers) : [],
-        availabilityRules: space.availabilityRules ? JSON.parse(space.availabilityRules) : [],
-        images: space.images ? JSON.parse(space.images) : [],
-        metadata: space.metadata ? JSON.parse(space.metadata) : null,
-      }
+    return {
+      success: true,
+      data: serializeSpaceData(space)
     }
   } catch (error: any) {
     console.error('Update space error:', error)
@@ -318,17 +414,9 @@ export async function getSpaceAction(data: GetSpaceRequest): Promise<ActionResul
       return { success: false, error: 'Space not found' }
     }
     
-    return { 
-      success: true, 
-      data: {
-        ...space,
-        amenities: space.amenities ? JSON.parse(space.amenities) : [],
-        location: space.location ? JSON.parse(space.location) : null,
-        pricingTiers: space.pricingTiers ? JSON.parse(space.pricingTiers) : [],
-        availabilityRules: space.availabilityRules ? JSON.parse(space.availabilityRules) : [],
-        images: space.images ? JSON.parse(space.images) : [],
-        metadata: space.metadata ? JSON.parse(space.metadata) : null,
-      }
+    return {
+      success: true,
+      data: serializeSpaceData(space)
     }
   } catch (error: any) {
     console.error('Get space error:', error)
