@@ -8,22 +8,23 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Plus, 
-  Loader2, 
-  User, 
-  Mail, 
-  Phone, 
-  Building2, 
-  Briefcase, 
-  Globe, 
-  Hash, 
+import {
+  Plus,
+  Loader2,
+  User,
+  Mail,
+  Phone,
+  Building2,
+  Briefcase,
+  Globe,
+  Hash,
   DollarSign,
   MessageSquare,
   Sparkles,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateLead } from "@/hooks/use-clients";
+import { useCoworkSelection } from '@/contexts/cowork-selection-context';
 
 interface CreateLeadModalProps {
   onLeadCreated?: () => void;
@@ -78,6 +79,7 @@ export default function CreateLeadModal({ onLeadCreated, isOpen: externalIsOpen,
   const [formData, setFormData] = useState<CreateLeadForm>(initialFormData);
   const { toast } = useToast();
   const createLeadMutation = useCreateLead();
+  const { selectedCowork, isPlatformView } = useCoworkSelection();
 
   // Use external state if provided, otherwise use internal state
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
@@ -93,7 +95,17 @@ export default function CreateLeadModal({ onLeadCreated, isOpen: externalIsOpen,
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Prepare data for API
+    // Check if a cowork is selected (for Super Admin)
+    if (isPlatformView) {
+      toast({
+        title: "Seleccione un cowork",
+        description: "Debe seleccionar un cowork antes de crear un prospecto",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Prepare data for API, including targetTenantId for Super Admin
     const leadData = {
       firstName: formData.firstName,
       lastName: formData.lastName,
@@ -107,6 +119,7 @@ export default function CreateLeadModal({ onLeadCreated, isOpen: externalIsOpen,
       interests: formData.interests ? formData.interests.split(',').map(s => s.trim()) : undefined,
       qualificationNotes: formData.qualificationNotes || undefined,
       assignedToId: formData.assignedToId || undefined,
+      targetTenantId: selectedCowork?.id, // Pass the selected cowork ID
     };
 
     createLeadMutation.mutate(leadData, {

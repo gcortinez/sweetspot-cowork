@@ -26,12 +26,50 @@ export async function getCurrentUser(): Promise<ServerAuthUser | null> {
       return null
     }
     
+    console.log('🔍 Looking for user with Clerk ID:', clerkUser.id);
+
     // Get user from database using Clerk ID
     const dbUser = await prisma.user.findFirst({
       where: { clerkId: clerkUser.id }
     })
-    
+
+    console.log('📊 Database user lookup result:', {
+      found: !!dbUser,
+      email: dbUser?.email,
+      role: dbUser?.role,
+      clerkId: dbUser?.clerkId
+    });
+
     if (!dbUser) {
+      console.log('❌ User not found in database, trying by email fallback...');
+
+      // Try to find by email as fallback
+      const userByEmail = await prisma.user.findFirst({
+        where: { email: clerkUser.emailAddresses[0]?.emailAddress }
+      });
+
+      if (userByEmail && !userByEmail.clerkId) {
+        console.log('🔗 Found user by email, updating with Clerk ID...');
+        const updatedUser = await prisma.user.update({
+          where: { id: userByEmail.id },
+          data: { clerkId: clerkUser.id }
+        });
+        console.log('✅ User updated with Clerk ID');
+
+        return {
+          id: updatedUser.id,
+          email: updatedUser.email,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          role: updatedUser.role as UserRole,
+          tenantId: updatedUser.tenantId,
+          clientId: updatedUser.clientId,
+          isOnboarded: Boolean(updatedUser.isOnboarded),
+          clerkId: updatedUser.clerkId || clerkUser.id
+        }
+      }
+
+      console.log('❌ User exists in Clerk but not in database');
       // User exists in Clerk but not in database
       // This might happen during registration flow
       return {
@@ -55,7 +93,7 @@ export async function getCurrentUser(): Promise<ServerAuthUser | null> {
       role: dbUser.role as UserRole,
       tenantId: dbUser.tenantId,
       clientId: dbUser.clientId,
-      isOnboarded: Boolean(dbUser.status === 'ACTIVE'),
+      isOnboarded: Boolean(dbUser.isOnboarded),
       clerkId: dbUser.clerkId || clerkUser.id
     }
     

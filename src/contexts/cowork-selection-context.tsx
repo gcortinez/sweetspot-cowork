@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useUser } from '@clerk/nextjs';
+import { useAuth } from '@/contexts/clerk-auth-context';
 
 // Types
 interface Cowork {
@@ -39,39 +40,41 @@ const SELECTED_COWORK_KEY = 'sweetspot-selected-cowork';
 
 // Provider Component
 export function CoworkSelectionProvider({ children }: CoworkSelectionProviderProps) {
-  // Clerk user
+  // Clerk user and auth context
   const { user, isLoaded } = useUser();
-  
+  const { user: authUser, isAuthenticated, isLoading: isAuthLoading, isInitialized: isAuthInitialized } = useAuth();
+
   // State
   const [selectedCowork, setSelectedCowork] = useState<Cowork | null>(null);
   const [availableCoworks, setAvailableCoworks] = useState<Cowork[]>([]);
   const [isLoadingCoworks, setIsLoadingCoworks] = useState(true);
-  
-  // Computed values
-  // Check both private and public metadata for backward compatibility
-  const isSuperAdmin = user?.privateMetadata?.role === 'SUPER_ADMIN' || 
-                       user?.publicMetadata?.role === 'SUPER_ADMIN';
+
+  // Computed values - Use auth context instead of Clerk metadata directly
+  // SECURITY: Auth context gets role from database, which is secure
+  // Don't determine role until auth is fully loaded to prevent incorrect initial state
+  const isAuthReady = isAuthInitialized && !isAuthLoading;
+  const isSuperAdmin = isAuthReady && authUser?.role === 'SUPER_ADMIN';
   const isPlatformView = isSuperAdmin && selectedCowork === null;
   
   // Debug logging
   useEffect(() => {
-    if (user) {
+    if (user && authUser) {
       console.log('🔍 Cowork Selection Context Debug:', {
         firstName: user.firstName,
         email: user.emailAddresses?.[0]?.emailAddress,
-        publicRole: user.publicMetadata?.role,
-        privateRole: user.privateMetadata?.role,
+        authUserRole: authUser?.role,
         isSuperAdmin,
         selectedCowork: selectedCowork?.name || 'null',
         isPlatformView,
-        isLoadingCoworks
+        isLoadingCoworks,
+        isAuthenticated
       });
     }
-  }, [user, isSuperAdmin, selectedCowork, isPlatformView, isLoadingCoworks]);
+  }, [user, authUser, isSuperAdmin, selectedCowork, isPlatformView, isLoadingCoworks, isAuthenticated]);
 
   // Load coworks from API
   const loadCoworks = async () => {
-    if (!isLoaded || !user) return;
+    if (!isLoaded || !user || !isAuthenticated || !isAuthReady) return;
     
     setIsLoadingCoworks(true);
     try {
@@ -88,7 +91,7 @@ export function CoworkSelectionProvider({ children }: CoworkSelectionProviderPro
         }
         
         // For true SUPER_ADMIN users, start with platform view
-        if (isSuperAdmin && (user?.privateMetadata?.role === 'SUPER_ADMIN' || user?.publicMetadata?.role === 'SUPER_ADMIN')) {
+        if (isSuperAdmin && authUser?.role === 'SUPER_ADMIN') {
           console.log('🔧 Starting platform view for SUPER_ADMIN');
           setSelectedCowork(null); // Force platform view
           localStorage.setItem(SELECTED_COWORK_KEY, 'platform');
@@ -129,10 +132,10 @@ export function CoworkSelectionProvider({ children }: CoworkSelectionProviderPro
 
   // Load coworks when user changes or component mounts
   useEffect(() => {
-    if (isLoaded) {
+    if (isLoaded && isAuthenticated && authUser && isAuthReady) {
       loadCoworks();
     }
-  }, [isLoaded, user?.id]);
+  }, [isLoaded, user?.id, isAuthenticated, authUser?.role, isAuthReady]);
 
   // Context value
   const contextValue: CoworkSelectionContextType = {

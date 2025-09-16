@@ -4,6 +4,7 @@ import React from 'react'
 import { Bell } from '@/lib/icons'
 import { useUser, SignOutButton } from '@clerk/nextjs'
 import { useCoworkSelection } from '@/contexts/cowork-selection-context'
+import { useAuth } from '@/contexts/clerk-auth-context'
 import { CoworkSelector } from '@/components/admin/cowork-selector'
 
 interface AppHeaderProps {
@@ -15,13 +16,14 @@ interface AppHeaderProps {
   }>
 }
 
-export function AppHeader({ 
+export function AppHeader({
   currentPage,
   showBreadcrumb = false,
   breadcrumbItems = []
 }: AppHeaderProps) {
   const [isMounted, setIsMounted] = React.useState(false)
   const { user } = useUser()
+  const { user: authUser, isLoading: isAuthLoading, isInitialized: isAuthInitialized } = useAuth()
   const {
     selectedCowork,
     isPlatformView,
@@ -32,10 +34,10 @@ export function AppHeader({
     setIsMounted(true)
   }, [])
 
-  // Check if user is Super Admin
-  const privateMetadata = user?.privateMetadata as any
-  const publicMetadata = user?.publicMetadata as any
-  const userRole = privateMetadata?.role || publicMetadata?.role || 'END_USER'
+  // Check if user is Super Admin - SECURITY: Use auth context (gets role from database)
+  // Don't show role until auth is fully loaded to prevent END_USER flash
+  const isAuthReady = isAuthInitialized && !isAuthLoading
+  const userRole = isAuthReady ? (authUser?.role || 'END_USER') : null
   const isSuperAdmin = userRole === 'SUPER_ADMIN'
 
   return (
@@ -67,7 +69,11 @@ export function AppHeader({
             {/* User Role Display */}
             {isMounted && (
               <>
-                {isSuperAdmin ? (
+                {!isAuthReady ? (
+                  <div className="hidden sm:inline bg-gray-50 text-gray-400 text-xs font-medium px-2.5 py-0.5 rounded whitespace-nowrap animate-pulse">
+                    Loading...
+                  </div>
+                ) : isSuperAdmin ? (
                   <span className="hidden sm:inline bg-purple-100 text-purple-700 text-xs font-medium px-2.5 py-0.5 rounded whitespace-nowrap">
                     SUPER_ADMIN
                   </span>

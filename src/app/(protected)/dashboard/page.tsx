@@ -19,10 +19,9 @@ export default async function DashboardPage() {
     redirect('/auth/login')
   }
 
-  // Get user metadata
+  // Get user metadata - SECURITY: Only use privateMetadata
   const privateMetadata = user.privateMetadata as any
-  const publicMetadata = user.publicMetadata as any
-  const userRole = privateMetadata?.role || publicMetadata?.role || 'END_USER'
+  const userRole = privateMetadata?.role || 'END_USER'
   const isSuperAdmin = userRole === 'SUPER_ADMIN'
 
   // User data for client components

@@ -67,13 +67,17 @@ export function useCreateLead() {
     mutationFn: async (leadData: any) => {
       const response = await api.post('/api/leads', leadData)
       if (!response.ok) {
-        throw new Error('Failed to create lead')
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to create lead')
       }
       return response.json()
     },
     onSuccess: () => {
       // Invalidate and refetch leads
       queryClient.invalidateQueries({ queryKey: ['leads'] })
+    },
+    onError: (error: any) => {
+      console.error('Error creating lead:', error)
     },
   })
 }

@@ -7,19 +7,22 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     console.log('POST /api/leads - Creating lead:', body);
-    
-    // Call Server Action
-    const result = await createLead(body);
-    
+
+    // Extract targetTenantId from body if present (for Super Admin)
+    const { targetTenantId, ...leadData } = body;
+
+    // Call Server Action with targetTenantId as second parameter
+    const result = await createLead(leadData, targetTenantId);
+
     if (!result.success) {
       return NextResponse.json(
         { message: result.error },
         { status: 400 }
       );
     }
-    
+
     return NextResponse.json(result, { status: 201 });
-    
+
   } catch (error) {
     console.error('Error in POST /api/leads:', error);
     return NextResponse.json(

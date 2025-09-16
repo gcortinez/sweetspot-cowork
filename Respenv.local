@@ -1,0 +1,114 @@
+# SweetSpot Cowork - Environment Configuration
+# Copy this file to .env.local and update with your actual values
+
+# ============================================
+# Database Configuration
+# ============================================
+
+# Connect to Supabase via connection pooling
+# DATABASE_URL="postgresql://postgres.qyozasdgumobhlwfdihh:ECKczIisQglln6DP@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+
+# Direct connection to the database. Used for migrations
+# DIRECT_URL="postgresql://postgres.qyozasdgumobhlwfdihh:ECKczIisQglln6DP@aws-0-us-east-1.pooler.supabase.com:5432/postgres"
+
+
+# DATABASE_URL="postgresql://postgres@localhost:5432/sweetspot_dev?schema=public"
+
+# # Conexión directa (misma URL para desarrollo local)
+# DIRECT_URL="postgresql://postgres@localhost:5432/sweetspot_dev?schema=public"
+
+DATABASE_URL="postgresql://postgres:SFaacXTyTdTxiJbxvYHVUsAdGygEQUjs@maglev.proxy.rlwy.net:25587/railway"
+DIRECT_URL="postgresql://postgres:SFaacXTyTdTxiJbxvYHVUsAdGygEQUjs@maglev.proxy.rlwy.net:25587/railway"
+
+# ============================================
+# Supabase Configuration
+# ============================================
+# NEXT_PUBLIC_SUPABASE_URL="https://qyozasdgumobhlwfdihh.supabase.co"
+# NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF5b3phc2RndW1vYmhsd2ZkaWhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk3NDQ3NDksImV4cCI6MjA2NTMyMDc0OX0.BNwuP-f_unS9GlEwjJnKe__yNcRPMXKqOOUh_HTGT-o"
+# SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF5b3phc2RndW1vYmhsd2ZkaWhoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0OTc0NDc0OSwiZXhwIjoyMDY1MzIwNzQ5fQ.HvQBNetE6HFSG63RhHMGJbBs78wg01AIvB1rGC0rR2E"
+
+# ============================================
+# Authentication & Security - Clerk
+# ============================================
+# Replace these with your actual Clerk keys from clerk.com dashboard
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_bWlnaHR5LXRlYWwtOC5jbGVyay5hY2NvdW50cy5kZXYk
+CLERK_SECRET_KEY=sk_test_uTGITDsbrQEDbVr5Jnx9oXujsgBcFWxsxn8bGGQnLS
+
+CLERK_WEBHOOK_SECRET=whsec_JCPHswzrNQnDaCLKV9WLPmS9EyEhz8NR
+
+# App URL for invitation redirects
+
+# Legacy auth keys (keeping for gradual migration)
+JWT_SECRET="UXXhpYMafOKa5GQ8eKWVxlxS/bZXXreqFm4aIlNiMvM="
+ENCRYPTION_KEY="85c07780919c52cb5fd49f6524d1cce9"
+
+# ============================================
+# Application Configuration
+# ============================================
+NODE_ENV="development"
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+NEXT_PUBLIC_API_BASE_URL="http://localhost:3000"
+
+# ============================================
+# Email Configuration (Optional)
+# ============================================
+# Uncomment and configure if using custom email service
+# SMTP_HOST="smtp.example.com"
+# SMTP_PORT="587"
+# SMTP_USER="noreply@example.com"
+# SMTP_PASS="your-smtp-password"
+# SMTP_FROM="SweetSpot Cowork <noreply@example.com>"
+
+# ============================================
+# File Upload Configuration
+# ============================================
+UPLOAD_MAX_SIZE="52428800" # 50MB in bytes
+UPLOAD_ALLOWED_TYPES="image/jpeg,image/png,image/webp,application/pdf"
+
+# ============================================
+# Rate Limiting
+# ============================================
+RATE_LIMIT_REQUESTS_PER_HOUR="1000"
+RATE_LIMIT_REQUESTS_PER_MINUTE="100"
+
+# ============================================
+# Logging & Monitoring (Optional)
+# ============================================
+LOG_LEVEL="info"
+# SENTRY_DSN="https://your-sentry-dsn@sentry.io/project-id"
+
+# ============================================
+# Payment Configuration (Optional)
+# ============================================
+# Uncomment and configure if using Stripe
+# STRIPE_PUBLISHABLE_KEY="pk_test_..."
+# STRIPE_SECRET_KEY="sk_test_..."
+# STRIPE_WEBHOOK_SECRET="whsec_..."
+
+# ============================================
+# External APIs (Optional)
+# ============================================
+# Uncomment and configure if needed
+# GOOGLE_MAPS_API_KEY="your-google-maps-api-key"
+# TWILIO_ACCOUNT_SID="your-twilio-account-sid"
+# TWILIO_AUTH_TOKEN="your-twilio-auth-token"
+
+# ============================================
+# Analytics (Optional)
+# ============================================
+# Uncomment and configure if using analytics
+# GOOGLE_ANALYTICS_ID="G-XXXXXXXXXX"
+# MIXPANEL_PROJECT_TOKEN="your-mixpanel-token"
+
+# ============================================
+# Testing Configuration (Optional)
+# ============================================
+# Uncomment for testing purposes
+# TEST_TENANT_ID="your-test-tenant-id"
+# TEST_CLIENT_ID="your-test-client-id"
+
+# ============================================
+# RESEND API KEY
+# ============================================
+RESEND_API_KEY=re_SCHVp1fU_621VNbM1DrThZ8EXoHEYsyQM
+FROM_EMAIL=noreply@thesweetspot.cloud
