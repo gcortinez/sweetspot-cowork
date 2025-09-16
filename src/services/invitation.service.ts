@@ -89,11 +89,17 @@ export class InvitationService {
       const invitationParams = {
         emailAddress,
         redirectUrl: finalRedirectUrl,
-        publicMetadata: {
+        // SECURITY: Use privateMetadata for sensitive information like role and tenantId
+        privateMetadata: {
           role,
           tenantId: tenantId || null,
           tenantName: tenantInfo?.name || 'SweetSpot Cowork',
           invitedBy,
+          invitationDate: new Date().toISOString()
+        },
+        // Only non-sensitive information in public metadata
+        publicMetadata: {
+          tenantName: tenantInfo?.name || 'SweetSpot Cowork',
           invitationDate: new Date().toISOString(),
           ...publicMetadata
         },
@@ -287,7 +293,8 @@ export class InvitationService {
           const retryInvitation = await retryClerk.invitations.createInvitation({
             emailAddress,
             redirectUrl: retryRedirectUrl,
-            publicMetadata: {
+            // SECURITY: Use privateMetadata for sensitive information like role and tenantId
+            privateMetadata: {
               role,
               tenantId: tenantId || null,
               tenantName: retryTenantInfo?.name || 'SweetSpot Cowork',
@@ -418,10 +425,17 @@ export class InvitationService {
         try {
           const clerk = await clerkClient()
           await clerk.users.updateUserMetadata(clerkUserId, {
+            // SECURITY: Use privateMetadata for sensitive information like role and tenantId
+            privateMetadata: {
+              role: user.role,
+              tenantId: user.tenantId,
+              onboardingComplete: true,
+              onboardingCompletedAt: new Date().toISOString()
+            },
+            // Only non-sensitive information in public metadata
             publicMetadata: {
               onboardingComplete: true,
-              role: user.role,
-              tenantId: user.tenantId
+              onboardingCompletedAt: new Date().toISOString()
             }
           })
           logger.info('Clerk metadata updated for completed onboarding', { clerkUserId, email })

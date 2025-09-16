@@ -26,8 +26,16 @@ const CoworkManagement = dynamic(
 
 const UserManagement = dynamic(
   () => import('@/components/admin/user-management'),
-  { 
+  {
     loading: () => <div className="animate-pulse bg-gray-200 rounded-lg h-64"></div>,
+    ssr: false
+  }
+)
+
+const MetadataCleanup = dynamic(
+  () => import('@/components/admin/metadata-cleanup'),
+  {
+    loading: () => <div className="animate-pulse bg-gray-200 rounded-lg h-48"></div>,
     ssr: false
   }
 )
@@ -95,9 +103,9 @@ export function SuperAdminDashboard({ user: _ }: SuperAdminDashboardProps) {
               </div>
             </nav>
           </div>
-          
+
           {/* User Management - Lazy loaded with permission check */}
-          <CanAccess 
+          <CanAccess
             permission={Resource.PLATFORM_USER_VIEW}
             fallback={
               <div className="text-center py-8">
@@ -109,6 +117,22 @@ export function SuperAdminDashboard({ user: _ }: SuperAdminDashboardProps) {
               <UserManagement />
             </Suspense>
           </CanAccess>
+        </div>
+
+        {/* Security Section */}
+        <div className="mt-6 sm:mt-8 lg:mt-10">
+          <div className="border-b border-gray-200 mb-4 sm:mb-6">
+            <nav className="-mb-px flex overflow-x-auto">
+              <div className="py-2 px-1 border-b-2 border-purple-600 text-purple-600 font-medium text-sm whitespace-nowrap">
+                Seguridad
+              </div>
+            </nav>
+          </div>
+
+          {/* Metadata Cleanup - Lazy loaded */}
+          <Suspense fallback={<ManagementSkeleton />}>
+            <MetadataCleanup />
+          </Suspense>
         </div>
       </main>
     </div>
