@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { getSpaceAction } from '@/lib/actions/space'
 import { SpaceCardEnhanced } from '@/components/spaces/space-card-enhanced'
+import { SpaceMapView } from '@/components/spaces/space-map-view'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -281,6 +282,9 @@ export default async function SpaceDetailPage({ params }: SpaceDetailPageProps) 
               </Button>
             </CardContent>
           </Card>
+
+          {/* Map View */}
+          <SpaceMapView space={space} />
         </div>
       </div>
     </div>

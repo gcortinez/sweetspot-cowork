@@ -445,6 +445,10 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
                 })}
             </DropdownMenuContent>
           </DropdownMenu>
+          <Button variant="outline" onClick={() => router.push('/spaces/map')}>
+            <MapPin className="mr-2 h-4 w-4" />
+            Map View
+          </Button>
           <Button onClick={() => router.push('/spaces/new')}>
             <Plus className="mr-2 h-4 w-4" />
             Add Space

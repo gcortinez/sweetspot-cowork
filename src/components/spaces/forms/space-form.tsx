@@ -36,6 +36,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { MapPin, Settings, DollarSign, Clock, Shield } from 'lucide-react'
 import { toast } from 'sonner'
+import { CoordinatesPicker } from '@/components/spaces/coordinates-picker'
 
 interface SpaceFormProps {
   space?: any // Space from database
@@ -325,6 +326,29 @@ export function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
                   )}
                 />
               </div>
+
+              <Separator className="my-6" />
+
+              {/* Coordinates Picker */}
+              <FormField
+                control={form.control}
+                name="coordinates"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Map Coordinates (Optional)</FormLabel>
+                    <FormControl>
+                      <CoordinatesPicker
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Set the exact location of this space for map display and navigation
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </CardContent>
           </Card>
 
