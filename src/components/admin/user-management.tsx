@@ -250,15 +250,17 @@ export function UserManagement() {
       }
       
       if (coworksData.success) {
-        // Set available coworks/tenants
-        const formattedCoworks = coworksData.coworks.map((cowork: any) => ({
-          id: cowork.id,
-          name: cowork.name,
-          slug: cowork.slug,
-          status: cowork.status,
-          userCount: cowork.userCount
-        }));
-        
+        // Set available coworks/tenants - filter to only show ACTIVE coworks for invitations
+        const formattedCoworks = coworksData.coworks
+          .filter((cowork: any) => cowork.status === 'ACTIVE') // Only active coworks for user invitations
+          .map((cowork: any) => ({
+            id: cowork.id,
+            name: cowork.name,
+            slug: cowork.slug,
+            status: cowork.status,
+            userCount: cowork.userCount
+          }));
+
         setAvailableTenants(formattedCoworks);
       } else {
         console.error('Failed to fetch coworks:', coworksData.error);
