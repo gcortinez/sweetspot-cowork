@@ -197,15 +197,15 @@ export function PlatformStats() {
       )}
       {/* Overview Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 min-w-0 auto-cols-fr">
-        {/* Total Coworks */}
+        {/* Active Coworks */}
         <div className="bg-white p-3 sm:p-4 lg:p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow min-w-0 overflow-hidden break-words">
           <div className="flex items-start justify-between min-w-0">
             <div className="min-w-0 flex-1 overflow-hidden">
-              <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Coworks</p>
-              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mt-1 break-all w-16 min-w-0">{stats.overview.totalCoworks}</p>
-              <p className="text-xs text-green-600 flex items-center mt-1.5 min-w-0">
-                <CheckCircle className="h-3 w-3 mr-1 flex-shrink-0" />
-                <span className="truncate min-w-0 max-w-20">{stats.overview.activeCoworks} activos</span>
+              <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Coworks Activos</p>
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mt-1 break-all w-16 min-w-0">{stats.overview.activeCoworks}</p>
+              <p className="text-xs text-gray-500 flex items-center mt-1.5 min-w-0">
+                <Building2 className="h-3 w-3 mr-1 flex-shrink-0" />
+                <span className="truncate min-w-0 max-w-20">{stats.overview.totalCoworks} total</span>
               </p>
             </div>
             <Building2 className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8 text-blue-600 flex-shrink-0 ml-2" />
