@@ -97,9 +97,7 @@ export function SpaceTypeList({ spaceTypes, totalCount }: SpaceTypeListProps) {
             Comienza creando tipos de espacio para organizar tus espacios.
           </p>
           <Button asChild>
-            <Link href="/admin/space-types/new">
-              Crear Primer Tipo
-            </Link>
+            <Link href="/admin/space-types/new">Crear Primer Tipo</Link>
           </Button>
         </CardContent>
       </Card>
