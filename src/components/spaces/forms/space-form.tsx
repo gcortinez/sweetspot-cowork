@@ -55,9 +55,7 @@ export async function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" asChild>
-            <Link href="/spaces">
-              ← Volver a Espacios
-            </Link>
+            <Link href="/spaces">← Volver a Espacios</Link>
           </Button>
           <div>
             <h1 className="text-3xl font-bold">
@@ -395,9 +393,7 @@ export async function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
         {/* Form Actions */}
         <div className="flex items-center justify-end space-x-4">
           <Button type="button" variant="outline" asChild>
-            <Link href="/spaces">
-              Cancelar
-            </Link>
+            <Link href="/spaces">Cancelar</Link>
           </Button>
           <Button type="submit">
             {isEdit ? 'Actualizar Espacio' : 'Crear Espacio'}
