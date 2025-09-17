@@ -60,10 +60,7 @@ export default async function SpaceDetailPage({ params }: SpaceDetailPageProps) 
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" asChild>
-            <Link href="/spaces">
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Volver a Espacios
-            </Link>
+            <Link href="/spaces"><ArrowLeft className="h-4 w-4 mr-1" />Volver a Espacios</Link>
           </Button>
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
@@ -79,16 +76,10 @@ export default async function SpaceDetailPage({ params }: SpaceDetailPageProps) 
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" asChild>
-            <Link href={`/spaces/${space.id}/edit`}>
-              <Edit className="h-4 w-4 mr-1" />
-              Editar Espacio
-            </Link>
+            <Link href={`/spaces/${space.id}/edit`}><Edit className="h-4 w-4 mr-1" />Editar Espacio</Link>
           </Button>
           <Button asChild>
-            <Link href={`/bookings/new?spaceId=${space.id}`}>
-              <Calendar className="h-4 w-4 mr-1" />
-              Reservar Espacio
-            </Link>
+            <Link href={`/bookings/new?spaceId=${space.id}`}><Calendar className="h-4 w-4 mr-1" />Reservar Espacio</Link>
           </Button>
         </div>
       </div>
@@ -263,22 +254,13 @@ export default async function SpaceDetailPage({ params }: SpaceDetailPageProps) 
             </CardHeader>
             <CardContent className="space-y-2">
               <Button variant="outline" className="w-full justify-start" asChild>
-                <Link href={`/spaces/${space.id}/availability`}>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Gestionar Disponibilidad
-                </Link>
+                <Link href={`/spaces/${space.id}/availability`}><Settings className="h-4 w-4 mr-2" />Gestionar Disponibilidad</Link>
               </Button>
               <Button variant="outline" className="w-full justify-start" asChild>
-                <Link href={`/bookings?spaceId=${space.id}`}>
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Ver Reservas
-                </Link>
+                <Link href={`/bookings?spaceId=${space.id}`}><Calendar className="h-4 w-4 mr-2" />Ver Reservas</Link>
               </Button>
               <Button variant="outline" className="w-full justify-start" asChild>
-                <Link href={`/spaces/${space.id}/analytics`}>
-                  <Users className="h-4 w-4 mr-2" />
-                  Analíticas
-                </Link>
+                <Link href={`/spaces/${space.id}/analytics`}><Users className="h-4 w-4 mr-2" />Analíticas</Link>
               </Button>
             </CardContent>
           </Card>

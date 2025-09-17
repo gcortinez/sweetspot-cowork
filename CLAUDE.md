@@ -49,7 +49,7 @@ npm run test:performance  # Run performance tests
 
 **Multi-Tenant SaaS Architecture:**
 - Complete tenant isolation through database design and middleware
-- Four user roles: `SUPER_ADMIN`, `COWORK_ADMIN`, `CLIENT_ADMIN`, `END_USER`
+- Four user roles: `SUPER_ADMIN`, `COWORK_ADMIN`, `COWORK_USER`
 - Super Admins (tenantId: null) manage the platform and can access all coworks
 - Each cowork is a separate tenant with isolated data and users
 - Clerk metadata integration for user role management
