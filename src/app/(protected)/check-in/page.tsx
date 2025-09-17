@@ -271,9 +271,9 @@ async function CheckInContent() {
                   <p className="text-muted-foreground mb-4">
                     No tienes reservas confirmadas en este momento.
                   </p>
-                  <Button asChild>
-                    <a href="/bookings/new">Crear Nueva Reserva</a>
-                  </Button>
+                  <a href="/bookings/new">
+                    <Button>Crear Nueva Reserva</Button>
+                  </a>
                 </CardContent>
               </Card>
             )}

@@ -37,9 +37,11 @@ export default async function SpacesMapPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/spaces"><ArrowLeft className="h-4 w-4 mr-1" />Volver a Espacios</Link>
-          </Button>
+          <Link href="/spaces">
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-1" />Volver a Espacios
+            </Button>
+          </Link>
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <MapPin className="h-8 w-8" />
@@ -50,9 +52,11 @@ export default async function SpacesMapPage() {
             </p>
           </div>
         </div>
-        <Button asChild>
-          <Link href="/spaces/new"><Plus className="h-4 w-4 mr-1" />Agregar Espacio</Link>
-        </Button>
+        <Link href="/spaces/new">
+          <Button>
+            <Plus className="h-4 w-4 mr-1" />Agregar Espacio
+          </Button>
+        </Link>
       </div>
 
       {/* Map */}

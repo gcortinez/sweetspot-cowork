@@ -215,12 +215,16 @@ export default function BookingsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" asChild>
-            <Link href="/bookings/calendar"><Calendar className="h-4 w-4 mr-1" />Vista de Calendario</Link>
-          </Button>
-          <Button asChild>
-            <Link href="/bookings/new"><Plus className="h-4 w-4 mr-1" />Nueva Reserva</Link>
-          </Button>
+          <Link href="/bookings/calendar">
+            <Button variant="outline">
+              <Calendar className="h-4 w-4 mr-1" />Vista de Calendario
+            </Button>
+          </Link>
+          <Link href="/bookings/new">
+            <Button>
+              <Plus className="h-4 w-4 mr-1" />Nueva Reserva
+            </Button>
+          </Link>
         </div>
       </div>
 

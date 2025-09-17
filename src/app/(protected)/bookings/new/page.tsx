@@ -29,9 +29,11 @@ export default async function NewBookingPage({ searchParams }: NewBookingPagePro
           <p className="text-muted-foreground mb-4">
             {result.error || 'No se pueden cargar los espacios para reservar'}
           </p>
-          <Button asChild>
-            <Link href="/bookings"><ArrowLeft className="h-4 w-4 mr-1" />Volver a Reservas</Link>
-          </Button>
+          <Link href="/bookings">
+            <Button>
+              <ArrowLeft className="h-4 w-4 mr-1" />Volver a Reservas
+            </Button>
+          </Link>
         </div>
       </div>
     )
@@ -49,9 +51,11 @@ export default async function NewBookingPage({ searchParams }: NewBookingPagePro
             No hay espacios activos disponibles para reservar en este momento.
           </p>
           <div className="flex items-center justify-center gap-2">
-            <Button variant="outline" asChild>
-              <Link href="/bookings"><ArrowLeft className="h-4 w-4 mr-1" />Volver a Reservas</Link>
-            </Button>
+            <Link href="/bookings">
+              <Button variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-1" />Volver a Reservas
+              </Button>
+            </Link>
             <Button asChild>
               <Link href="/spaces">Ver Espacios</Link>
             </Button>
@@ -84,9 +88,11 @@ export default async function NewBookingPage({ searchParams }: NewBookingPagePro
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/bookings"><ArrowLeft className="h-4 w-4 mr-1" />Volver a Reservas</Link>
-          </Button>
+          <Link href="/bookings">
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-1" />Volver a Reservas
+            </Button>
+          </Link>
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <Calendar className="h-8 w-8" />

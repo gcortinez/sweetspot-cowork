@@ -145,9 +145,11 @@ async function CalendarContent({ selectedSpaceId, view }: { selectedSpaceId?: st
                 </SelectContent>
               </Select>
 
-              <Button asChild>
-                <Link href="/bookings/new"><Plus className="h-4 w-4 mr-1" />Nueva Reserva</Link>
-              </Button>
+              <Link href="/bookings/new">
+                <Button>
+                  <Plus className="h-4 w-4 mr-1" />Nueva Reserva
+                </Button>
+              </Link>
             </div>
           </div>
         </CardHeader>
@@ -283,9 +285,11 @@ export default function CalendarPage({ searchParams }: CalendarPageProps) {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/bookings"><ArrowLeft className="h-4 w-4 mr-1" />Volver a Reservas</Link>
-          </Button>
+          <Link href="/bookings">
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-1" />Volver a Reservas
+            </Button>
+          </Link>
           <div>
             <h1 className="text-3xl font-bold">Vista de Calendario</h1>
             <p className="text-muted-foreground">
