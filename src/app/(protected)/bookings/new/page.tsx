@@ -30,10 +30,7 @@ export default async function NewBookingPage({ searchParams }: NewBookingPagePro
             {result.error || 'No se pueden cargar los espacios para reservar'}
           </p>
           <Button asChild>
-            <Link href="/bookings">
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Volver a Reservas
-            </Link>
+            <Link href="/bookings"><ArrowLeft className="h-4 w-4 mr-1" />Volver a Reservas</Link>
           </Button>
         </div>
       </div>
@@ -53,15 +50,10 @@ export default async function NewBookingPage({ searchParams }: NewBookingPagePro
           </p>
           <div className="flex items-center justify-center gap-2">
             <Button variant="outline" asChild>
-              <Link href="/bookings">
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Volver a Reservas
-              </Link>
+              <Link href="/bookings"><ArrowLeft className="h-4 w-4 mr-1" />Volver a Reservas</Link>
             </Button>
             <Button asChild>
-              <Link href="/spaces">
-                Ver Espacios
-              </Link>
+              <Link href="/spaces">Ver Espacios</Link>
             </Button>
           </div>
         </div>
@@ -93,10 +85,7 @@ export default async function NewBookingPage({ searchParams }: NewBookingPagePro
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" asChild>
-            <Link href="/bookings">
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Volver a Reservas
-            </Link>
+            <Link href="/bookings"><ArrowLeft className="h-4 w-4 mr-1" />Volver a Reservas</Link>
           </Button>
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">

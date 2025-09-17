@@ -125,10 +125,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" asChild>
-            <Link href="/bookings">
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Volver a Reservas
-            </Link>
+            <Link href="/bookings"><ArrowLeft className="h-4 w-4 mr-1" />Volver a Reservas</Link>
           </Button>
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3">
@@ -147,10 +144,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" asChild>
-            <Link href={`/bookings/${booking.id}/edit`}>
-              <Edit className="h-4 w-4 mr-1" />
-              Editar Reserva
-            </Link>
+            <Link href={`/bookings/${booking.id}/edit`}><Edit className="h-4 w-4 mr-1" />Editar Reserva</Link>
           </Button>
         </div>
       </div>
@@ -367,24 +361,15 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
             </CardHeader>
             <CardContent className="space-y-2">
               <Button variant="outline" className="w-full justify-start" asChild>
-                <Link href={`/spaces/${booking.spaceId}`}>
-                  <MapPin className="h-4 w-4 mr-2" />
-                  Ver Detalles del Espacio
-                </Link>
+                <Link href={`/spaces/${booking.spaceId}`}><MapPin className="h-4 w-4 mr-2" />Ver Detalles del Espacio</Link>
               </Button>
 
               <Button variant="outline" className="w-full justify-start" asChild>
-                <Link href="/check-in">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Escáner de Acceso al Espacio
-                </Link>
+                <Link href="/check-in"><Calendar className="h-4 w-4 mr-2" />Escáner de Acceso al Espacio</Link>
               </Button>
 
               <Button variant="outline" className="w-full justify-start" asChild>
-                <Link href={`/bookings/new?spaceId=${booking.spaceId}&start=${booking.startDateTime}&end=${booking.endDateTime}`}>
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Reservar Nuevamente
-                </Link>
+                <Link href={`/bookings/new?spaceId=${booking.spaceId}&start=${booking.startDateTime}&end=${booking.endDateTime}`}><RotateCcw className="h-4 w-4 mr-2" />Reservar Nuevamente</Link>
               </Button>
             </CardContent>
           </Card>

@@ -216,16 +216,10 @@ export default function BookingsPage() {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" asChild>
-            <Link href="/bookings/calendar">
-              <Calendar className="h-4 w-4 mr-1" />
-              Vista de Calendario
-            </Link>
+            <Link href="/bookings/calendar"><Calendar className="h-4 w-4 mr-1" />Vista de Calendario</Link>
           </Button>
           <Button asChild>
-            <Link href="/bookings/new">
-              <Plus className="h-4 w-4 mr-1" />
-              Nueva Reserva
-            </Link>
+            <Link href="/bookings/new"><Plus className="h-4 w-4 mr-1" />Nueva Reserva</Link>
           </Button>
         </div>
       </div>

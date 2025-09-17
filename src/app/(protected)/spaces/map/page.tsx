@@ -38,10 +38,7 @@ export default async function SpacesMapPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" asChild>
-            <Link href="/spaces">
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Volver a Espacios
-            </Link>
+            <Link href="/spaces"><ArrowLeft className="h-4 w-4 mr-1" />Volver a Espacios</Link>
           </Button>
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
@@ -54,10 +51,7 @@ export default async function SpacesMapPage() {
           </div>
         </div>
         <Button asChild>
-          <Link href="/spaces/new">
-            <Plus className="h-4 w-4 mr-1" />
-            Agregar Espacio
-          </Link>
+          <Link href="/spaces/new"><Plus className="h-4 w-4 mr-1" />Agregar Espacio</Link>
         </Button>
       </div>
 
@@ -90,9 +84,7 @@ export default async function SpacesMapPage() {
                   </p>
                 </div>
                 <Button asChild>
-                  <Link href="/spaces">
-                    Gestionar Espacios
-                  </Link>
+                  <Link href="/spaces">Gestionar Espacios</Link>
                 </Button>
               </div>
             </div>

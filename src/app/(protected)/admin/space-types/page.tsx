@@ -180,10 +180,7 @@ export default function SpaceTypesPage() {
           </p>
         </div>
         <Button asChild>
-          <Link href="/admin/space-types/new">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo Tipo
-          </Link>
+          <Link href="/admin/space-types/new"><Plus className="h-4 w-4 mr-2" />Nuevo Tipo</Link>
         </Button>
       </div>
 
