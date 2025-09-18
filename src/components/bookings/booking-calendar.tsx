@@ -14,9 +14,6 @@ import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import { EventClickArg, DateSelectArg, EventDropArg } from '@fullcalendar/core'
 
-// Import FullCalendar CSS
-import '@fullcalendar/core/vdom'
-
 interface Booking {
   id: string
   title: string
