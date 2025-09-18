@@ -103,54 +103,6 @@ async function CalendarContent({ selectedSpaceId, view }: { selectedSpaceId?: st
         selectedSpaceId={selectedSpaceId}
         view={view}
       />
-
-      {/* Quick Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {selectedSpace ? selectedSpace.name : 'Todos los Espacios'}
-            </CardTitle>
-            <MapPin className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{bookings.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Próximas reservas
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Asistentes</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {bookings.reduce((sum, booking) => sum + (booking.attendeeCount || 0), 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Participantes esperados
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Eventos Recurrentes</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {bookings.filter(b => b.isRecurring).length}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Reservas que se repiten
-            </p>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   )
 }
@@ -169,6 +121,9 @@ function CalendarLoading() {
             <div className="flex items-center gap-2">
               <Skeleton className="h-10 w-48" />
               <Skeleton className="h-10 w-32" />
+              <Skeleton className="h-10 w-24" />
+              <Skeleton className="h-10 w-24" />
+              <Skeleton className="h-10 w-24" />
             </div>
           </div>
         </CardHeader>
@@ -176,22 +131,6 @@ function CalendarLoading() {
           <Skeleton className="w-full h-96" />
         </CardContent>
       </Card>
-
-      {/* Stats Skeleton */}
-      <div className="grid gap-4 md:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Card key={i}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-4 w-4" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-8 w-16 mb-1" />
-              <Skeleton className="h-3 w-20" />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
     </div>
   )
 }

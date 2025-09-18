@@ -150,15 +150,21 @@ export function BookingCalendar({
             <select
               value={selectedSpace}
               onChange={(e) => setSelectedSpace(e.target.value)}
-              className="px-3 py-1.5 text-sm border rounded-md"
+              className="px-3 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             >
               <option value="all">Todos los espacios</option>
               {spaces.map(space => (
                 <option key={space.id} value={space.id}>
-                  {space.name}
+                  {space.name} ({space.capacity} personas)
                 </option>
               ))}
             </select>
+
+            {/* Nueva Reserva Button */}
+            <Button onClick={() => window.location.href = '/bookings/new'}>
+              <Plus className="h-4 w-4 mr-1" />
+              Nueva Reserva
+            </Button>
 
             {/* View Selector */}
             <div className="flex gap-1">
