@@ -3,13 +3,6 @@ import { listSpacesAction } from '@/lib/actions/space'
 import { CalendarPageWrapper } from '@/components/bookings/calendar-page-wrapper'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ArrowLeft, Calendar, Plus, MapPin, Users } from 'lucide-react'
@@ -103,58 +96,6 @@ async function CalendarContent({ selectedSpaceId, view }: { selectedSpaceId?: st
 
   return (
     <div className="space-y-6">
-      {/* Space Selector and Filters */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Calendario de Reservas
-                {selectedSpace && (
-                  <Badge variant="outline">
-                    {selectedSpace.name}
-                  </Badge>
-                )}
-              </CardTitle>
-              <CardDescription>
-                {selectedSpace
-                  ? `Mostrando reservas para ${selectedSpace.name}`
-                  : `Mostrando todas las reservas en ${activeSpaces.length} espacios`
-                }
-              </CardDescription>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Select defaultValue={selectedSpaceId || 'all'}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Seleccionar espacio" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los Espacios</SelectItem>
-                  {activeSpaces.map((space) => (
-                    <SelectItem key={space.id} value={space.id}>
-                      <div className="flex items-center gap-2">
-                        <span>{space.name}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {space.capacity} personas
-                        </Badge>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Link href="/bookings/new">
-                <Button>
-                  <Plus className="h-4 w-4 mr-1" />Nueva Reserva
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
-
       {/* Calendar - Client Component wrapper */}
       <CalendarPageWrapper
         bookings={bookings}
@@ -168,7 +109,7 @@ async function CalendarContent({ selectedSpaceId, view }: { selectedSpaceId?: st
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {selectedSpace ? selectedSpace.name : 'All Spaces'}
+              {selectedSpace ? selectedSpace.name : 'Todos los Espacios'}
             </CardTitle>
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -217,7 +158,7 @@ async function CalendarContent({ selectedSpaceId, view }: { selectedSpaceId?: st
 function CalendarLoading() {
   return (
     <div className="space-y-6">
-      {/* Header Skeleton */}
+      {/* Calendar Skeleton */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -231,10 +172,6 @@ function CalendarLoading() {
             </div>
           </div>
         </CardHeader>
-      </Card>
-
-      {/* Calendar Skeleton */}
-      <Card>
         <CardContent className="p-6">
           <Skeleton className="w-full h-96" />
         </CardContent>
