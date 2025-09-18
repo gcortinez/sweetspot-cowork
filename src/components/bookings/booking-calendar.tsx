@@ -58,7 +58,6 @@ export function BookingCalendar({
   view = 'week',
   height = '600px',
 }: BookingCalendarProps) {
-  const [currentView, setCurrentView] = useState(view)
   const [selectedSpace, setSelectedSpace] = useState(selectedSpaceId || 'all')
   const [isLoading, setIsLoading] = useState(true)
 
@@ -166,30 +165,6 @@ export function BookingCalendar({
               Nueva Reserva
             </Button>
 
-            {/* View Selector */}
-            <div className="flex gap-1">
-              <Button
-                variant={currentView === 'month' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setCurrentView('month')}
-              >
-                Mes
-              </Button>
-              <Button
-                variant={currentView === 'week' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setCurrentView('week')}
-              >
-                Semana
-              </Button>
-              <Button
-                variant={currentView === 'day' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setCurrentView('day')}
-              >
-                Día
-              </Button>
-            </div>
           </div>
         </div>
       </CardHeader>
@@ -204,19 +179,12 @@ export function BookingCalendar({
               right: onDateSelect ? 'dayGridMonth,timeGridWeek,timeGridDay' : 'dayGridMonth,timeGridWeek,timeGridDay'
             }}
             initialView={
-              currentView === 'month'
+              view === 'month'
                 ? 'dayGridMonth'
-                : currentView === 'week'
+                : view === 'week'
                 ? 'timeGridWeek'
                 : 'timeGridDay'
             }
-            viewDidMount={(info) => {
-              // Sync view changes with our state
-              const viewName = info.view.type
-              if (viewName === 'dayGridMonth') setCurrentView('month')
-              else if (viewName === 'timeGridWeek') setCurrentView('week')
-              else if (viewName === 'timeGridDay') setCurrentView('day')
-            }}
             editable={!!onEventDrop}
             selectable={!!onDateSelect}
             selectMirror={true}
