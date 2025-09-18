@@ -689,6 +689,26 @@
     gap: 0.25rem !important;
   }
 
+  .fc-button-group .fc-button {
+    margin-right: 0.5rem !important;
+    margin-left: 0 !important;
+    border-radius: 0.375rem !important;
+  }
+
+  .fc-button-group .fc-button:last-child {
+    margin-right: 0 !important;
+  }
+
+  /* Específico para botones de vista en header toolbar */
+  .fc-header-toolbar .fc-button-group {
+    gap: 0.5rem !important;
+  }
+
+  .fc-header-toolbar .fc-button-group .fc-button {
+    margin-right: 0.5rem !important;
+    border-radius: 0.375rem !important;
+  }
+
   .fc-event-title {
     font-size: 0.625rem !important;
   }
