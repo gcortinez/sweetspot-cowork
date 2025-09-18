@@ -9,10 +9,10 @@ import { ArrowLeft, Calendar, Plus, MapPin, Users } from 'lucide-react'
 import Link from 'next/link'
 
 interface CalendarPageProps {
-  searchParams: {
+  searchParams: Promise<{
     spaceId?: string
     view?: 'month' | 'week' | 'day'
-  }
+  }>
 }
 
 // Mock bookings data - in real implementation, this would come from server actions
@@ -135,7 +135,9 @@ function CalendarLoading() {
   )
 }
 
-export default function CalendarPage({ searchParams }: CalendarPageProps) {
+export default async function CalendarPage({ searchParams }: CalendarPageProps) {
+  const params = await searchParams
+
   return (
     <div className="container mx-auto py-6">
       {/* Header */}
@@ -157,8 +159,8 @@ export default function CalendarPage({ searchParams }: CalendarPageProps) {
 
       <Suspense fallback={<CalendarLoading />}>
         <CalendarContent
-          selectedSpaceId={searchParams.spaceId}
-          view={searchParams.view}
+          selectedSpaceId={params.spaceId}
+          view={params.view}
         />
       </Suspense>
     </div>
