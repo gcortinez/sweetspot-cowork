@@ -20,7 +20,9 @@ import {
   Database,
   UserCog,
   Folder,
-  Palette
+  Palette,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react'
 import { useAuth } from '@/contexts/clerk-auth-context'
 import { useCoworkSelection } from '@/contexts/cowork-selection-context'
@@ -34,8 +36,30 @@ interface SidebarProps {
   onCreateLead?: () => void
 }
 
+interface NavigationItem {
+  label: string
+  href: string
+  icon: any
+  active: boolean
+  permission?: Resource
+}
+
+interface NavigationSection {
+  label: string
+  icon: any
+  items: NavigationItem[]
+  isOpen: boolean
+  permission?: Resource
+}
+
 export function Sidebar({ className = '', onCreateLead }: SidebarProps) {
   const [isMounted, setIsMounted] = React.useState(false)
+  const [openSections, setOpenSections] = React.useState<Record<string, boolean>>({
+    crm: false,
+    operación: false,
+    administración: false,
+    reportes: false
+  })
   const { user } = useAuth()
   const pathname = usePathname()
   const { selectedCowork, isPlatformView } = useCoworkSelection()
@@ -45,41 +69,57 @@ export function Sidebar({ className = '', onCreateLead }: SidebarProps) {
     setIsMounted(true)
   }, [])
 
-  // Build navigation items based on permissions
-  const getNavigationItems = () => {
-    const items: Array<{
-      label: string
-      href: string
-      icon: any
-      active: boolean
-      permission?: Resource
-      separator?: boolean
-    }> = []
+  // Toggle section open/close
+  const toggleSection = (sectionKey: string) => {
+    setOpenSections(prev => ({
+      ...prev,
+      [sectionKey]: !prev[sectionKey]
+    }))
+  }
 
+  // Check if any item in a section is active
+  const isSectionActive = (items: NavigationItem[]) => {
+    return items.some(item => item.active)
+  }
+
+  // Build navigation sections based on permissions
+  const getNavigationSections = (): NavigationSection[] => {
     // Platform view for Super Admin
     if (isPlatformView) {
-      items.push({
-        label: 'Vista General de la Plataforma',
-        href: '/dashboard',
+      return [{
+        label: 'Plataforma',
         icon: Database,
-        active: pathname === '/dashboard'
-      })
-      return items
+        isOpen: true,
+        items: [{
+          label: 'Vista General de la Plataforma',
+          href: '/dashboard',
+          icon: Database,
+          active: pathname === '/dashboard'
+        }]
+      }]
     }
 
-    // Dashboard (always visible)
+    const sections: NavigationSection[] = []
+
+    // Dashboard (always visible first at root level)
     if (navPermissions.showDashboard) {
-      items.push({
+      sections.push({
         label: 'Dashboard',
-        href: '/dashboard',
         icon: Home,
-        active: pathname === '/dashboard'
+        isOpen: true, // Always visible, not collapsible
+        items: [{
+          label: 'Dashboard',
+          href: '/dashboard',
+          icon: Home,
+          active: pathname === '/dashboard'
+        }]
       })
     }
 
     // CRM Section
+    const crmItems: NavigationItem[] = []
     if (navPermissions.showLeads) {
-      items.push({
+      crmItems.push({
         label: 'Prospectos',
         href: '/leads',
         icon: Users,
@@ -87,9 +127,8 @@ export function Sidebar({ className = '', onCreateLead }: SidebarProps) {
         permission: Resource.PROSPECT_VIEW
       })
     }
-
     if (navPermissions.showOpportunities) {
-      items.push({
+      crmItems.push({
         label: 'Oportunidades',
         href: '/opportunities',
         icon: TrendingUp,
@@ -97,9 +136,8 @@ export function Sidebar({ className = '', onCreateLead }: SidebarProps) {
         permission: Resource.OPPORTUNITY_VIEW
       })
     }
-
     if (navPermissions.showClients) {
-      items.push({
+      crmItems.push({
         label: 'Clientes',
         href: '/clients',
         icon: UserCheck,
@@ -107,20 +145,8 @@ export function Sidebar({ className = '', onCreateLead }: SidebarProps) {
         permission: Resource.CLIENT_VIEW
       })
     }
-
-    if (navPermissions.showQuotations) {
-      items.push({
-        label: 'Cotizaciones',
-        href: '/quotations',
-        icon: FileText,
-        active: pathname.startsWith('/quotations'),
-        permission: Resource.QUOTATION_VIEW
-      })
-    }
-
-    // Services
     if (navPermissions.showServices) {
-      items.push({
+      crmItems.push({
         label: 'Servicios',
         href: '/services',
         icon: Wrench,
@@ -129,9 +155,19 @@ export function Sidebar({ className = '', onCreateLead }: SidebarProps) {
       })
     }
 
-    // Spaces
+    if (crmItems.length > 0) {
+      sections.push({
+        label: 'CRM',
+        icon: Target,
+        isOpen: openSections.crm,
+        items: crmItems
+      })
+    }
+
+    // Operación Section
+    const operacionItems: NavigationItem[] = []
     if (navPermissions.showSpaces) {
-      items.push({
+      operacionItems.push({
         label: 'Espacios',
         href: '/spaces',
         icon: Folder,
@@ -140,9 +176,19 @@ export function Sidebar({ className = '', onCreateLead }: SidebarProps) {
       })
     }
 
-    // Space Type Admin (for COWORK_ADMIN and SUPER_ADMIN)
+    if (operacionItems.length > 0) {
+      sections.push({
+        label: 'Operación',
+        icon: Settings,
+        isOpen: openSections.operación,
+        items: operacionItems
+      })
+    }
+
+    // Admin Section
+    const adminItems: NavigationItem[] = []
     if (navPermissions.showSpaceAdmin) {
-      items.push({
+      adminItems.push({
         label: 'Tipos de Espacio',
         href: '/admin/space-types',
         icon: Palette,
@@ -150,15 +196,8 @@ export function Sidebar({ className = '', onCreateLead }: SidebarProps) {
         permission: Resource.SPACE_EDIT
       })
     }
-
-    // Admin Section Separator
-    if (navPermissions.showUsers || navPermissions.showReports || navPermissions.showSpaceAdmin) {
-      items.push({ separator: true } as any)
-    }
-
-    // User Management
     if (navPermissions.showUsers) {
-      items.push({
+      adminItems.push({
         label: 'Gestión de Usuarios',
         href: '/users',
         icon: UserCog,
@@ -167,9 +206,19 @@ export function Sidebar({ className = '', onCreateLead }: SidebarProps) {
       })
     }
 
-    // Reports
+    if (adminItems.length > 0) {
+      sections.push({
+        label: 'Administración',
+        icon: Shield,
+        isOpen: openSections.administración,
+        items: adminItems
+      })
+    }
+
+    // Reportes Section
+    const reportesItems: NavigationItem[] = []
     if (navPermissions.showReports) {
-      items.push({
+      reportesItems.push({
         label: 'Reportes',
         href: '/reports',
         icon: BarChart3,
@@ -177,10 +226,19 @@ export function Sidebar({ className = '', onCreateLead }: SidebarProps) {
       })
     }
 
-    return items
+    if (reportesItems.length > 0) {
+      sections.push({
+        label: 'Reportes',
+        icon: BarChart3,
+        isOpen: openSections.reportes,
+        items: reportesItems
+      })
+    }
+
+    return sections
   }
 
-  const navigationItems = getNavigationItems()
+  const navigationSections = getNavigationSections()
 
   return (
     <div className={`flex flex-col h-full bg-white border-r border-gray-200 ${className}`}>
@@ -222,30 +280,92 @@ export function Sidebar({ className = '', onCreateLead }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto p-4">
-        <div className="space-y-1">
-          {navigationItems.map((item, index) => {
-            if (item.separator) {
-              return (
-                <div key={`separator-${index}`} className="h-px bg-gray-200 my-3"></div>
-              )
-            }
+        <div className="space-y-2">
+          {/* Dashboard - Always visible at root level */}
+          {navPermissions.showDashboard && (
+            <Link href="/dashboard">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`w-full justify-start h-10 px-3 mb-3 font-medium ${
+                  pathname === '/dashboard'
+                    ? 'bg-purple-100 text-purple-700 hover:bg-purple-200 font-medium border-l-2 border-purple-500'
+                    : 'text-gray-700 hover:text-purple-700 hover:bg-purple-50'
+                }`}
+              >
+                <Home className="h-4 w-4 mr-3" />
+                Dashboard
+              </Button>
+            </Link>
+          )}
 
-            const ItemIcon = item.icon
+          {/* Collapsible Sections */}
+          {navigationSections.map((section, sectionIndex) => {
+            // Skip Dashboard section since we render it separately above
+            if (section.label === 'Dashboard') return null
+
+            const SectionIcon = section.icon
+            const isSectionActiveState = isSectionActive(section.items)
+            const getSectionKey = (label: string): string => {
+              switch (label) {
+                case 'CRM': return 'crm'
+                case 'Operación': return 'operación'
+                case 'Administración': return 'administración'
+                case 'Reportes': return 'reportes'
+                default: return label.toLowerCase()
+              }
+            }
+            const sectionKey = getSectionKey(section.label)
+
             return (
-              <Link key={item.href} href={item.href}>
+              <div key={`section-${sectionIndex}`} className="mb-2">
+                {/* Section Header */}
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`w-full justify-start h-10 px-3 ${
-                    item.active
-                      ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                      : 'text-gray-600 hover:text-purple-700 hover:bg-purple-50'
+                  onClick={() => toggleSection(sectionKey)}
+                  className={`w-full justify-between h-10 px-3 mb-1 font-medium ${
+                    isSectionActiveState
+                      ? 'bg-purple-50 text-purple-700 hover:bg-purple-100'
+                      : 'text-gray-700 hover:text-purple-700 hover:bg-purple-50'
                   }`}
                 >
-                  <ItemIcon className="h-4 w-4 mr-3" />
-                  {item.label}
+                  <div className="flex items-center">
+                    <SectionIcon className="h-4 w-4 mr-3" />
+                    {section.label}
+                  </div>
+                  {section.isOpen ? (
+                    <ChevronDown className="h-4 w-4 transition-transform" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 transition-transform" />
+                  )}
                 </Button>
-              </Link>
+
+                {/* Section Items */}
+                {section.isOpen && (
+                  <div className="ml-4 space-y-1">
+                    {section.items.map((item, itemIndex) => {
+                      const ItemIcon = item.icon
+                      return (
+                        <Link key={`${section.label}-${itemIndex}`} href={item.href}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`w-full justify-start h-9 px-3 text-sm ${
+                              item.active
+                                ? 'bg-purple-100 text-purple-700 hover:bg-purple-200 font-medium border-l-2 border-purple-500'
+                                : 'text-gray-600 hover:text-purple-700 hover:bg-purple-50'
+                            }`}
+                          >
+                            <ItemIcon className="h-4 w-4 mr-3" />
+                            {item.label}
+                          </Button>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
             )
           })}
         </div>

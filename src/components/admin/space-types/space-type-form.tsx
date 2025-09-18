@@ -154,9 +154,9 @@ export function SpaceTypeForm({ spaceType, isEdit = false }: SpaceTypeFormProps)
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/admin/space-types"><ArrowLeft className="h-4 w-4 mr-1" />Volver a Tipos de Espacio</Link>
-          </Button>
+          <Link href="/admin/space-types">
+            <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4 mr-1" />Volver a Tipos de Espacio</Button>
+          </Link>
           <div>
             <h1 className="text-3xl font-bold">
               {isEdit ? 'Editar Tipo de Espacio' : 'Crear Nuevo Tipo de Espacio'}

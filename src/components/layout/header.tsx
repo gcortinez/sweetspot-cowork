@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { CoworkSelector } from "@/components/ui/cowork-selector";
@@ -47,6 +47,7 @@ export function Header({
   showMobileMenuButton = true 
 }: HeaderProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, logout } = useAuth();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -203,20 +204,19 @@ export function Header({
         <div className="flex items-center gap-2">
           {/* Cowork Settings - Prominent Button for Admins */}
           {(user?.role === 'SUPER_ADMIN' || user?.role === 'COWORK_ADMIN') && (
-            <Button
-              asChild
-              variant="outline"
-              size="sm"
-              className={cn(
-                "flex items-center gap-2 border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:border-blue-300",
-                isSuperAdmin && "border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 hover:border-purple-300"
-              )}
-            >
-              <Link href="/cowork-settings">
+            <Link href="/cowork-settings">
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "flex items-center gap-2 border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:border-blue-300",
+                  isSuperAdmin && "border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 hover:border-purple-300"
+                )}
+              >
                 <Settings className="h-4 w-4" />
                 <span className="hidden sm:inline">Configurar</span>
-              </Link>
-            </Button>
+              </Button>
+            </Link>
           )}
           {/* Quick Actions */}
           <div className="hidden sm:flex items-center gap-1">
@@ -364,29 +364,23 @@ export function Header({
 
               <DropdownMenuSeparator className="lg:hidden" />
 
-              <DropdownMenuItem asChild>
-                <Link href="/profile" className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Mi Perfil
-                </Link>
+              <DropdownMenuItem onClick={() => router.push('/profile')}>
+                <User className="mr-2 h-4 w-4" />
+                Mi Perfil
               </DropdownMenuItem>
 
               {/* Show cowork settings only for admins */}
               {(user?.role === 'SUPER_ADMIN' || user?.role === 'COWORK_ADMIN') && (
-                <DropdownMenuItem asChild>
-                  <Link href="/cowork-settings" className="flex items-center gap-2">
-                    <Settings className="h-4 w-4" />
-                    Configuración del Cowork
-                  </Link>
+                <DropdownMenuItem onClick={() => router.push('/cowork-settings')}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Configuración del Cowork
                 </DropdownMenuItem>
               )}
 
-              <DropdownMenuItem asChild>
-                <Link href="/notifications" className="flex items-center gap-2">
-                  <Bell className="h-4 w-4" />
-                  Notificaciones
-                  <span className="ml-auto h-2 w-2 bg-red-500 rounded-full"></span>
-                </Link>
+              <DropdownMenuItem onClick={() => router.push('/notifications')}>
+                <Bell className="mr-2 h-4 w-4" />
+                Notificaciones
+                <span className="ml-auto h-2 w-2 bg-red-500 rounded-full"></span>
               </DropdownMenuItem>
 
               <DropdownMenuSeparator />

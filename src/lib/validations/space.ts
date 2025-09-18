@@ -1,5 +1,8 @@
 import { z } from 'zod'
 
+// Helper for ID validation - works with both UUIDs and CUIDs
+const idSchema = z.string().min(1, 'ID is required')
+
 // Enums for space-related fields (matches Prisma enum)
 export const SpaceTypeSchema = z.enum([
   'MEETING_ROOM',
@@ -146,17 +149,17 @@ export const createSpaceSchema = baseSpaceSchema
 
 // Update space schema (all fields optional except ID)
 export const updateSpaceSchema = z.object({
-  id: z.string().uuid('Invalid space ID'),
+  id: idSchema,
 }).merge(baseSpaceSchema.partial())
 
 // Delete space schema
 export const deleteSpaceSchema = z.object({
-  id: z.string().uuid('Invalid space ID'),
+  id: idSchema,
 })
 
 // Get space schema
 export const getSpaceSchema = z.object({
-  id: z.string().uuid('Invalid space ID'),
+  id: idSchema,
 })
 
 // List spaces schema

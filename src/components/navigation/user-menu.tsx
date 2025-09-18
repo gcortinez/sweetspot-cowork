@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   LogOut,
   Settings,
@@ -29,6 +30,7 @@ interface UserMenuProps {
 }
 
 export function UserMenu({ className }: UserMenuProps) {
+  const router = useRouter();
   const { user, logout } = useAuth();
   const { isEndUser, isClientAdmin, isCoworkAdmin, isSuperAdmin } =
     useRoleAccess();
@@ -90,18 +92,14 @@ export function UserMenu({ className }: UserMenuProps) {
         <DropdownMenuSeparator />
 
         {/* Profile Settings */}
-        <DropdownMenuItem asChild>
-          <Link href="/profile" className="flex items-center">
-            <User className="mr-2 h-4 w-4" />
-            <span>Profile</span>
-          </Link>
+        <DropdownMenuItem onClick={() => router.push('/profile')}>
+          <User className="mr-2 h-4 w-4" />
+          <span>Profile</span>
         </DropdownMenuItem>
 
-        <DropdownMenuItem asChild>
-          <Link href="/settings" className="flex items-center">
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
-          </Link>
+        <DropdownMenuItem onClick={() => router.push('/settings')}>
+          <Settings className="mr-2 h-4 w-4" />
+          <span>Settings</span>
         </DropdownMenuItem>
 
         {/* Role-specific menu items */}
@@ -110,49 +108,39 @@ export function UserMenu({ className }: UserMenuProps) {
           <DropdownMenuLabel>Admin</DropdownMenuLabel>
 
           <FeatureToggle feature="user-management">
-            <DropdownMenuItem asChild>
-              <Link href="/users" className="flex items-center">
-                <Users className="mr-2 h-4 w-4" />
-                <span>Manage Users</span>
-              </Link>
+            <DropdownMenuItem onClick={() => router.push('/users')}>
+              <Users className="mr-2 h-4 w-4" />
+              <span>Manage Users</span>
             </DropdownMenuItem>
           </FeatureToggle>
 
           <FeatureToggle feature="client-management">
-            <DropdownMenuItem asChild>
-              <Link href="/clients" className="flex items-center">
-                <Building className="mr-2 h-4 w-4" />
-                <span>Manage Clients</span>
-              </Link>
+            <DropdownMenuItem onClick={() => router.push('/clients')}>
+              <Building className="mr-2 h-4 w-4" />
+              <span>Manage Clients</span>
             </DropdownMenuItem>
           </FeatureToggle>
 
           <FeatureToggle feature="basic-reports">
-            <DropdownMenuItem asChild>
-              <Link href="/reports" className="flex items-center">
-                <Shield className="mr-2 h-4 w-4" />
-                <span>Reports</span>
-              </Link>
+            <DropdownMenuItem onClick={() => router.push('/reports')}>
+              <Shield className="mr-2 h-4 w-4" />
+              <span>Reports</span>
             </DropdownMenuItem>
           </FeatureToggle>
         </RoleGate>
 
         <RoleGate minRole="COWORK_ADMIN">
           <FeatureToggle feature="billing-management">
-            <DropdownMenuItem asChild>
-              <Link href="/billing" className="flex items-center">
-                <Building className="mr-2 h-4 w-4" />
-                <span>Billing</span>
-              </Link>
+            <DropdownMenuItem onClick={() => router.push('/billing')}>
+              <Building className="mr-2 h-4 w-4" />
+              <span>Billing</span>
             </DropdownMenuItem>
           </FeatureToggle>
 
           <FeatureToggle feature="integrations">
-            <DropdownMenuItem asChild>
-              <Link href="/integrations" className="flex items-center">
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Integrations</span>
-              </Link>
+            <DropdownMenuItem onClick={() => router.push('/integrations')}>
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Integrations</span>
             </DropdownMenuItem>
           </FeatureToggle>
         </RoleGate>
@@ -162,29 +150,23 @@ export function UserMenu({ className }: UserMenuProps) {
           <DropdownMenuLabel>Super Admin</DropdownMenuLabel>
 
           <FeatureToggle feature="tenant-management">
-            <DropdownMenuItem asChild>
-              <Link href="/tenants" className="flex items-center">
-                <Crown className="mr-2 h-4 w-4" />
-                <span>Manage Tenants</span>
-              </Link>
+            <DropdownMenuItem onClick={() => router.push('/tenants')}>
+              <Crown className="mr-2 h-4 w-4" />
+              <span>Manage Tenants</span>
             </DropdownMenuItem>
           </FeatureToggle>
 
           <FeatureToggle feature="system-settings">
-            <DropdownMenuItem asChild>
-              <Link href="/system" className="flex items-center">
-                <Shield className="mr-2 h-4 w-4" />
-                <span>System Settings</span>
-              </Link>
+            <DropdownMenuItem onClick={() => router.push('/system')}>
+              <Shield className="mr-2 h-4 w-4" />
+              <span>System Settings</span>
             </DropdownMenuItem>
           </FeatureToggle>
 
           <FeatureToggle feature="system-logs">
-            <DropdownMenuItem asChild>
-              <Link href="/logs" className="flex items-center">
-                <Settings className="mr-2 h-4 w-4" />
-                <span>System Logs</span>
-              </Link>
+            <DropdownMenuItem onClick={() => router.push('/logs')}>
+              <Settings className="mr-2 h-4 w-4" />
+              <span>System Logs</span>
             </DropdownMenuItem>
           </FeatureToggle>
         </RoleGate>

@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation'
 import { getSpaceAction } from '@/lib/actions/space'
 import { SpaceCardEnhanced } from '@/components/spaces/space-card-enhanced'
-import { SpaceMapView } from '@/components/spaces/space-map-view'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -21,13 +20,14 @@ import {
 import Link from 'next/link'
 
 interface SpaceDetailPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export default async function SpaceDetailPage({ params }: SpaceDetailPageProps) {
-  const result = await getSpaceAction({ id: params.id })
+  const { id } = await params
+  const result = await getSpaceAction({ id })
 
   if (!result.success || !result.data) {
     notFound()
@@ -277,8 +277,6 @@ export default async function SpaceDetailPage({ params }: SpaceDetailPageProps) 
             </CardContent>
           </Card>
 
-          {/* Map View */}
-          <SpaceMapView space={space} />
         </div>
       </div>
     </div>

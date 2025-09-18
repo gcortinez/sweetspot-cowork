@@ -3,13 +3,14 @@ import { getSpaceAction } from '@/lib/actions/space'
 import { SpaceForm } from '@/components/spaces/forms/space-form'
 
 interface EditSpacePageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export default async function EditSpacePage({ params }: EditSpacePageProps) {
-  const result = await getSpaceAction({ id: params.id })
+  const { id } = await params
+  const result = await getSpaceAction({ id })
 
   if (!result.success || !result.data) {
     notFound()

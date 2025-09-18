@@ -23,9 +23,9 @@ import Link from 'next/link'
 import { format, differenceInMinutes } from 'date-fns'
 
 interface BookingDetailPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 // Mock booking data - in real implementation, this would come from server actions

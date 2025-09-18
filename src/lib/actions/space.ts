@@ -48,18 +48,29 @@ import { PricingCalculator } from '@/lib/utils/pricing'
 import { redirect } from 'next/navigation'
 import { Decimal } from '@prisma/client/runtime/library'
 
+// Helper function to safely parse JSON fields
+function safeJsonParse(jsonString: string | null, fallback: any = null) {
+  if (!jsonString || jsonString.trim() === '') return fallback
+  try {
+    return JSON.parse(jsonString)
+  } catch (error) {
+    console.warn('Failed to parse JSON:', jsonString, error)
+    return fallback
+  }
+}
+
 // Helper function to serialize Decimal fields
 function serializeSpaceData(space: any) {
   return {
     ...space,
     hourlyRate: space.hourlyRate ? Number(space.hourlyRate) : null,
     area: space.area ? Number(space.area) : null,
-    amenities: space.amenities ? JSON.parse(space.amenities) : [],
-    location: space.location ? JSON.parse(space.location) : null,
-    pricingTiers: space.pricingTiers ? JSON.parse(space.pricingTiers) : [],
-    availabilityRules: space.availabilityRules ? JSON.parse(space.availabilityRules) : [],
-    images: space.images ? JSON.parse(space.images) : [],
-    metadata: space.metadata ? JSON.parse(space.metadata) : null,
+    amenities: safeJsonParse(space.amenities, []),
+    location: safeJsonParse(space.location, null),
+    pricingTiers: safeJsonParse(space.pricingTiers, []),
+    availabilityRules: safeJsonParse(space.availabilityRules, []),
+    images: safeJsonParse(space.images, []),
+    metadata: safeJsonParse(space.metadata, null),
   }
 }
 
@@ -343,7 +354,7 @@ export async function deleteSpaceAction(data: DeleteSpaceRequest): Promise<Actio
       where: {
         spaceId: validatedData.id,
         status: {
-          in: ['PENDING', 'CONFIRMED', 'CHECKED_IN', 'IN_PROGRESS'],
+          in: ['PENDING', 'CONFIRMED', 'CHECKED_IN'],
         },
       },
     })
@@ -358,9 +369,8 @@ export async function deleteSpaceAction(data: DeleteSpaceRequest): Promise<Actio
     // Soft delete by setting isActive to false instead of actual deletion
     await prisma.space.update({
       where: { id: validatedData.id },
-      data: { 
+      data: {
         isActive: false,
-        status: 'UNAVAILABLE',
       },
     })
 
@@ -382,6 +392,150 @@ export async function deleteSpaceAction(data: DeleteSpaceRequest): Promise<Actio
     }
 
     return { success: false, error: 'Failed to delete space' }
+  }
+}
+
+/**
+ * Reactivate a space
+ */
+export async function reactivateSpaceAction(data: DeleteSpaceRequest): Promise<ActionResult<void>> {
+  try {
+    // Get tenant context and validate auth
+    const { tenantId, user } = await getTenantContext()
+    if (!tenantId || !user) {
+      return { success: false, error: 'Authentication required' }
+    }
+
+    // Validate input data
+    const validatedData = deleteSpaceSchema.parse(data)
+
+    // Check if space exists and belongs to tenant
+    const existingSpace = await prisma.space.findFirst({
+      where: {
+        id: validatedData.id,
+        tenantId,
+      },
+    })
+
+    if (!existingSpace) {
+      return { success: false, error: 'Space not found' }
+    }
+
+    // Reactivate by setting isActive to true
+    await prisma.space.update({
+      where: { id: validatedData.id },
+      data: {
+        isActive: true,
+      },
+    })
+
+    revalidatePath('/spaces')
+
+    return { success: true }
+  } catch (error: any) {
+    console.error('Reactivate space error:', error)
+
+    if (error.name === 'ZodError') {
+      return {
+        success: false,
+        error: 'Validation failed',
+        fieldErrors: error.errors.reduce((acc: any, err: any) => {
+          acc[err.path.join('.')] = err.message
+          return acc
+        }, {}),
+      }
+    }
+
+    return { success: false, error: 'Failed to reactivate space' }
+  }
+}
+
+/**
+ * Permanently delete a space (hard delete)
+ */
+export async function permanentDeleteSpaceAction(data: DeleteSpaceRequest): Promise<ActionResult<void>> {
+  try {
+    // Get tenant context and validate auth
+    const { tenantId, user } = await getTenantContext()
+    if (!tenantId || !user) {
+      return { success: false, error: 'Authentication required' }
+    }
+
+    // Validate input data
+    const validatedData = deleteSpaceSchema.parse(data)
+
+    // Check if space exists and belongs to tenant
+    const existingSpace = await prisma.space.findFirst({
+      where: {
+        id: validatedData.id,
+        tenantId,
+      },
+    })
+
+    if (!existingSpace) {
+      return { success: false, error: 'Space not found' }
+    }
+
+    // Check for any bookings (past, present, or future)
+    const allBookings = await prisma.booking.count({
+      where: {
+        spaceId: validatedData.id,
+      },
+    })
+
+    if (allBookings > 0) {
+      return {
+        success: false,
+        error: 'Cannot permanently delete space with existing bookings. This action would affect booking history and cannot be undone.'
+      }
+    }
+
+    // Check for other related records that might prevent deletion
+    const relatedRecords = await Promise.all([
+      prisma.occupancyTracking.count({ where: { spaceId: validatedData.id } }),
+      prisma.spaceFeature.count({ where: { spaceId: validatedData.id } }),
+      prisma.roomPricingRule.count({ where: { spaceId: validatedData.id } }),
+      prisma.roomCheckIn.count({ where: { spaceId: validatedData.id } }),
+      prisma.roomAvailability.count({ where: { spaceId: validatedData.id } }),
+      prisma.roomMaintenanceLog.count({ where: { spaceId: validatedData.id } }),
+      prisma.roomUsageAnalytics.count({ where: { spaceId: validatedData.id } }),
+      prisma.spaceAvailabilitySchedule.count({ where: { spaceId: validatedData.id } }),
+      prisma.spaceMaintenanceSchedule.count({ where: { spaceId: validatedData.id } }),
+      prisma.checkInOut.count({ where: { spaceId: validatedData.id } })
+    ])
+
+    const totalRelatedRecords = relatedRecords.reduce((sum, count) => sum + count, 0)
+
+    if (totalRelatedRecords > 0) {
+      return {
+        success: false,
+        error: 'Cannot permanently delete space with related records (occupancy tracking, features, pricing rules, etc.). Consider using soft delete instead.'
+      }
+    }
+
+    // Perform hard delete - this will permanently remove the space from the database
+    await prisma.space.delete({
+      where: { id: validatedData.id },
+    })
+
+    revalidatePath('/spaces')
+
+    return { success: true }
+  } catch (error: any) {
+    console.error('Permanent delete space error:', error)
+
+    if (error.name === 'ZodError') {
+      return {
+        success: false,
+        error: 'Validation failed',
+        fieldErrors: error.errors.reduce((acc: any, err: any) => {
+          acc[err.path.join('.')] = err.message
+          return acc
+        }, {}),
+      }
+    }
+
+    return { success: false, error: 'Failed to permanently delete space' }
   }
 }
 
@@ -510,16 +664,8 @@ export async function listSpacesAction(data: ListSpacesRequest = {}): Promise<Ac
       },
     })
 
-    // Process JSON fields
-    const processedSpaces = spaces.map(space => ({
-      ...space,
-      amenities: space.amenities ? JSON.parse(space.amenities) : [],
-      location: space.location ? JSON.parse(space.location) : null,
-      pricingTiers: space.pricingTiers ? JSON.parse(space.pricingTiers) : [],
-      availabilityRules: space.availabilityRules ? JSON.parse(space.availabilityRules) : [],
-      images: space.images ? JSON.parse(space.images) : [],
-      metadata: space.metadata ? JSON.parse(space.metadata) : null,
-    }))
+    // Process JSON fields and serialize Decimal fields
+    const processedSpaces = spaces.map(space => serializeSpaceData(space))
     
     return { 
       success: true, 

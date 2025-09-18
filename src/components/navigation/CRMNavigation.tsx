@@ -2,7 +2,7 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -81,6 +81,7 @@ const navigationItems: NavigationItem[] = [
 
 export default function CRMNavigation({ onCreateLead, onCreateQuotation }: CRMNavigationProps) {
   const pathname = usePathname()
+  const router = useRouter()
 
   const isActive = (href: string) => {
     if (href === '/dashboard') {
@@ -214,11 +215,9 @@ export default function CRMNavigation({ onCreateLead, onCreateQuotation }: CRMNa
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/quotations">
-                      <FileText className="h-4 w-4 mr-2" />
-                      Ir a Cotizaciones
-                    </Link>
+                  <DropdownMenuItem onClick={() => router.push('/quotations')}>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Ir a Cotizaciones
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

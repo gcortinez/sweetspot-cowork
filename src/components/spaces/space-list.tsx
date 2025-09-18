@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ColumnDef,
@@ -26,6 +26,11 @@ import {
   Users,
   DollarSign,
   Settings,
+  Shield,
+  Clock,
+  EyeOff,
+  RotateCcw,
+  Loader2,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -49,6 +54,7 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,10 +65,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { deleteSpaceAction } from '@/lib/actions/space'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { deleteSpaceAction, reactivateSpaceAction, permanentDeleteSpaceAction } from '@/lib/actions/space'
 import { toast } from 'sonner'
+import { AddSpaceModal } from './modals/add-space-modal'
+import { EditSpaceModal } from './modals/edit-space-modal'
 
-interface Space {
+// Define a simplified Space type for the list view
+interface SpaceListItem {
   id: string
   name: string
   type: string
@@ -75,12 +91,15 @@ interface Space {
   isActive: boolean
   requiresApproval: boolean
   allowRecurring: boolean
+  minBookingDuration?: number
+  maxAdvanceBooking?: number
+  cancellationHours?: number
   createdAt: Date
   updatedAt: Date
 }
 
 interface SpaceListProps {
-  spaces: Space[]
+  spaces: SpaceListItem[]
   totalCount: number
 }
 
@@ -91,8 +110,25 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = useState({})
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [spaceToDelete, setSpaceToDelete] = useState<Space | null>(null)
+  const [spaceToDelete, setSpaceToDelete] = useState<SpaceListItem | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [detailModalOpen, setDetailModalOpen] = useState(false)
+  const [spaceToView, setSpaceToView] = useState<SpaceListItem | null>(null)
+  const [addModalOpen, setAddModalOpen] = useState(false)
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [spaceToEdit, setSpaceToEdit] = useState<SpaceListItem | null>(null)
+  const [showInactive, setShowInactive] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const formatSpaceType = (type: string) => {
     return type.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
@@ -106,30 +142,105 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
     }).format(amount)
   }
 
+  const showSpinnerTemporarily = (duration: number = 500) => {
+    // Clear any existing timeout
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current)
+    }
+
+    setIsRefreshing(true)
+    refreshTimeoutRef.current = setTimeout(() => {
+      setIsRefreshing(false)
+      refreshTimeoutRef.current = null
+    }, duration)
+  }
+
   const handleDeleteSpace = async () => {
     if (!spaceToDelete) return
 
     setIsDeleting(true)
     try {
-      const result = await deleteSpaceAction({ id: spaceToDelete.id })
+      const result = await permanentDeleteSpaceAction({ id: spaceToDelete.id })
 
       if (result.success) {
-        toast.success('Espacio eliminado exitosamente')
-        router.refresh()
+        toast.success('Espacio eliminado permanentemente')
         setDeleteDialogOpen(false)
         setSpaceToDelete(null)
+        router.refresh()
+        showSpinnerTemporarily(600)
       } else {
         toast.error(result.error || 'Error al eliminar el espacio')
       }
     } catch (error) {
-      console.error('Delete space error:', error)
+      console.error('Permanent delete space error:', error)
       toast.error('Ocurrió un error inesperado')
     } finally {
       setIsDeleting(false)
     }
   }
 
-  const columns: ColumnDef<Space>[] = [
+  const handleToggleActive = async (space: SpaceListItem) => {
+    // Prevent multiple simultaneous actions
+    if (isRefreshing) return
+
+    try {
+      let result
+
+      if (space.isActive) {
+        // Desactivar (soft delete)
+        result = await deleteSpaceAction({ id: space.id })
+        if (result.success) {
+          toast.success('Espacio desactivado exitosamente')
+        } else {
+          toast.error(result.error || 'Error al desactivar el espacio')
+        }
+      } else {
+        // Activar
+        result = await reactivateSpaceAction({ id: space.id })
+        if (result.success) {
+          toast.success('Espacio activado exitosamente')
+        } else {
+          toast.error(result.error || 'Error al activar el espacio')
+        }
+      }
+
+      if (result.success) {
+        router.refresh()
+        showSpinnerTemporarily(400)
+      }
+    } catch (error) {
+      console.error('Toggle active space error:', error)
+      toast.error('Ocurrió un error inesperado')
+    }
+  }
+
+  // Memoize filtered spaces to avoid re-filtering on every render
+  const filteredSpaces = useMemo(
+    () => showInactive ? spaces : spaces.filter(space => space.isActive),
+    [spaces, showInactive]
+  )
+
+  // Memoize statistics calculations to avoid re-computing on every render
+  const statistics = useMemo(() => {
+    const activeSpaces = spaces.filter(s => s.isActive)
+    const totalCapacity = spaces.reduce((sum, space) => sum + space.capacity, 0)
+    const spacesWithRate = spaces.filter(s => s.hourlyRate)
+    const averageRate = spacesWithRate.length > 0
+      ? spaces.reduce((sum, space) => sum + (space.hourlyRate || 0), 0) / spacesWithRate.length
+      : 0
+    const requireApprovalCount = spaces.filter(s => s.requiresApproval).length
+
+    return {
+      totalCount: spaces.length,
+      activeCount: activeSpaces.length,
+      totalCapacity,
+      averageRate,
+      requireApprovalCount
+    }
+  }, [spaces])
+
+  // Memoize column definitions to avoid recreating on every render
+  const columns: ColumnDef<SpaceListItem>[] = useMemo(() => [
     {
       accessorKey: 'name',
       header: ({ column }) => {
@@ -160,7 +271,18 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
     },
     {
       accessorKey: 'type',
-      header: 'Tipo',
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            className="h-8 px-2"
+          >
+            Tipo
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
       cell: ({ row }) => {
         const type = row.getValue('type') as string
         return (
@@ -196,7 +318,18 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
     },
     {
       accessorKey: 'location',
-      header: 'Ubicación',
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            className="h-8 px-2"
+          >
+            Ubicación
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
       cell: ({ row }) => {
         const space = row.original
         const location = [space.floor, space.zone].filter(Boolean).join(', ') || '-'
@@ -206,6 +339,11 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
             <span className="text-sm">{location}</span>
           </div>
         )
+      },
+      sortingFn: (rowA, rowB) => {
+        const locationA = [rowA.original.floor, rowA.original.zone].filter(Boolean).join(', ') || ''
+        const locationB = [rowB.original.floor, rowB.original.zone].filter(Boolean).join(', ') || ''
+        return locationA.localeCompare(locationB)
       },
     },
     {
@@ -235,7 +373,18 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
     },
     {
       accessorKey: 'status',
-      header: 'Estado',
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            className="h-8 px-2"
+          >
+            Estado
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
       cell: ({ row }) => {
         const space = row.original
         const isActive = space.isActive
@@ -258,6 +407,11 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
             </div>
           </div>
         )
+      },
+      sortingFn: (rowA, rowB) => {
+        const statusA = rowA.original.isActive ? 'Activo' : 'Inactivo'
+        const statusB = rowB.original.isActive ? 'Activo' : 'Inactivo'
+        return statusA.localeCompare(statusB)
       },
     },
     {
@@ -289,7 +443,10 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
                 Ver detalles
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => router.push(`/spaces/${space.id}/edit`)}
+                onClick={() => {
+                  setSpaceToEdit(space)
+                  setEditModalOpen(true)
+                }}
               >
                 <Edit className="mr-2 h-4 w-4" />
                 Editar espacio
@@ -302,6 +459,22 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
+                onClick={() => handleToggleActive(space)}
+                className={space.isActive ? "text-orange-600" : "text-green-600"}
+              >
+                {space.isActive ? (
+                  <>
+                    <EyeOff className="mr-2 h-4 w-4" />
+                    Desactivar espacio
+                  </>
+                ) : (
+                  <>
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Activar espacio
+                  </>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuItem
                 onClick={() => {
                   setSpaceToDelete(space)
                   setDeleteDialogOpen(true)
@@ -309,17 +482,17 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
                 className="text-destructive"
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                Eliminar espacio
+                Eliminar permanentemente
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         )
       },
     },
-  ]
+  ], [router, handleToggleActive, setSpaceToDelete, setDeleteDialogOpen, setSpaceToEdit, setEditModalOpen, setSpaceToView, setDetailModalOpen])
 
   const table = useReactTable({
-    data: spaces,
+    data: filteredSpaces,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -347,9 +520,9 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
             <Settings className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalCount}</div>
+            <div className="text-2xl font-bold">{statistics.totalCount}</div>
             <p className="text-xs text-muted-foreground">
-              {spaces.filter(s => s.isActive).length} activos
+              {statistics.activeCount} activos
             </p>
           </CardContent>
         </Card>
@@ -361,7 +534,7 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {spaces.reduce((sum, space) => sum + space.capacity, 0)}
+              {statistics.totalCapacity}
             </div>
             <p className="text-xs text-muted-foreground">
               personas en todos los espacios
@@ -376,10 +549,7 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatCurrency(
-                spaces.reduce((sum, space) => sum + (space.hourlyRate || 0), 0) /
-                spaces.filter(s => s.hourlyRate).length
-              )}
+              {formatCurrency(statistics.averageRate)}
             </div>
             <p className="text-xs text-muted-foreground">
               promedio por hora
@@ -394,7 +564,7 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {spaces.filter(s => s.requiresApproval).length}
+              {statistics.requireApprovalCount}
             </div>
             <p className="text-xs text-muted-foreground">
               espacios necesitan aprobación
@@ -445,11 +615,14 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
                 })}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="outline" onClick={() => router.push('/spaces/map')}>
-            <MapPin className="mr-2 h-4 w-4" />
-            Vista de Mapa
+          <Button
+            variant={showInactive ? "default" : "outline"}
+            onClick={() => setShowInactive(!showInactive)}
+          >
+            {showInactive ? <Eye className="mr-2 h-4 w-4" /> : <EyeOff className="mr-2 h-4 w-4" />}
+            {showInactive ? "Ocultar Inactivos" : "Mostrar Inactivos"}
           </Button>
-          <Button onClick={() => router.push('/spaces/new')}>
+          <Button onClick={() => setAddModalOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Agregar Espacio
           </Button>
@@ -457,7 +630,15 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
       </div>
 
       {/* Table */}
-      <div className="rounded-md border">
+      <div className="rounded-md border relative">
+        {isRefreshing && (
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center rounded-md">
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <span className="text-sm font-medium">Actualizando lista...</span>
+            </div>
+          </div>
+        )}
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -483,6 +664,18 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={(e) => {
+                    // Don't open modal if clicking on the actions dropdown
+                    const target = e.target as HTMLElement
+                    if (target.closest('[data-radix-collection-item]') ||
+                        target.closest('button') ||
+                        target.closest('[role="button"]')) {
+                      return
+                    }
+                    setSpaceToView(row.original)
+                    setDetailModalOpen(true)
+                  }}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
@@ -503,7 +696,7 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
                   No se encontraron espacios.
                   <Button
                     variant="link"
-                    onClick={() => router.push('/spaces/new')}
+                    onClick={() => setAddModalOpen(true)}
                     className="ml-1"
                   >
                     Crear tu primer espacio
@@ -564,6 +757,144 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Space Detail Modal */}
+      <Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Vista Rápida - {spaceToView?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Información resumida del espacio
+            </DialogDescription>
+          </DialogHeader>
+          {spaceToView && (
+            <div className="space-y-6">
+              {/* Basic Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">{spaceToView.name}</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">{formatSpaceType(spaceToView.type)}</Badge>
+                      <Badge variant={spaceToView.isActive ? 'default' : 'secondary'}>
+                        {spaceToView.isActive ? 'Activo' : 'Inactivo'}
+                      </Badge>
+                    </div>
+                    {spaceToView.description && (
+                      <p className="text-muted-foreground">{spaceToView.description}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span>Capacidad: {spaceToView.capacity} personas</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                      <span>Tarifa: {formatCurrency(spaceToView.hourlyRate)}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <span>Ubicación: {[spaceToView.floor, spaceToView.zone].filter(Boolean).join(', ') || 'No especificada'}</span>
+                    </div>
+                    {spaceToView.area && (
+                      <div className="flex items-center gap-2">
+                        <Settings className="h-4 w-4 text-muted-foreground" />
+                        <span>Área: {spaceToView.area} m²</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Configuration */}
+              <Separator />
+              <div>
+                <h4 className="font-medium mb-3">Configuración</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">
+                      {spaceToView.requiresApproval ? 'Requiere aprobación' : 'Aprobación automática'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">
+                      {spaceToView.allowRecurring ? 'Permite reservas recurrentes' : 'Solo reservas únicas'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <Separator />
+              <div className="flex gap-2 justify-between">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setDetailModalOpen(false)
+                    router.push(`/spaces/${spaceToView.id}`)
+                  }}
+                >
+                  <Eye className="mr-2 h-4 w-4" />
+                  Ver Detalles Completos
+                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setDetailModalOpen(false)
+                      setSpaceToEdit(spaceToView)
+                      setEditModalOpen(true)
+                    }}
+                  >
+                    <Edit className="mr-2 h-4 w-4" />
+                    Editar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setDetailModalOpen(false)
+                      router.push(`/spaces/${spaceToView.id}/availability`)
+                    }}
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    Gestionar Disponibilidad
+                  </Button>
+                  <Button onClick={() => setDetailModalOpen(false)}>
+                    Cerrar
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Space Modal */}
+      <AddSpaceModal
+        open={addModalOpen}
+        onOpenChange={setAddModalOpen}
+        onSuccess={() => {
+          router.refresh()
+        }}
+      />
+
+      {/* Edit Space Modal */}
+      <EditSpaceModal
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
+        space={spaceToEdit}
+        onSuccess={() => {
+          router.refresh()
+        }}
+      />
     </div>
   )
 }

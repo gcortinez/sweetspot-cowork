@@ -27,6 +27,7 @@ import {
 import { MoreHorizontal, Edit, Trash2, Eye, Palette, Settings } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 interface SpaceType {
   id: string
@@ -49,6 +50,7 @@ interface SpaceTypeListProps {
 
 export function SpaceTypeList({ spaceTypes, totalCount }: SpaceTypeListProps) {
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
+  const router = useRouter()
 
   const handleDelete = async (spaceType: SpaceType) => {
     setIsDeleting(spaceType.id)
@@ -68,6 +70,14 @@ export function SpaceTypeList({ spaceTypes, totalCount }: SpaceTypeListProps) {
     } finally {
       setIsDeleting(null)
     }
+  }
+
+  const handleView = (spaceTypeId: string) => {
+    router.push(`/admin/space-types/${spaceTypeId}`)
+  }
+
+  const handleEdit = (spaceTypeId: string) => {
+    router.push(`/admin/space-types/${spaceTypeId}/edit`)
   }
 
   const getIconDisplay = (icon?: string | null) => {
@@ -96,9 +106,9 @@ export function SpaceTypeList({ spaceTypes, totalCount }: SpaceTypeListProps) {
           <p className="text-muted-foreground mb-4">
             Comienza creando tipos de espacio para organizar tus espacios.
           </p>
-          <Button asChild>
-            <Link href="/admin/space-types/new">Crear Primer Tipo</Link>
-          </Button>
+          <Link href="/admin/space-types/new">
+            <Button>Crear Primer Tipo</Button>
+          </Link>
         </CardContent>
       </Card>
     )
@@ -176,17 +186,13 @@ export function SpaceTypeList({ spaceTypes, totalCount }: SpaceTypeListProps) {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                  <DropdownMenuItem asChild>
-                    <Link href={`/admin/space-types/${spaceType.id}`}>
-                      <Eye className="mr-2 h-4 w-4" />
-                      Ver detalles
-                    </Link>
+                  <DropdownMenuItem onClick={() => handleView(spaceType.id)}>
+                    <Eye className="mr-2 h-4 w-4" />
+                    Ver detalles
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href={`/admin/space-types/${spaceType.id}/edit`}>
-                      <Edit className="mr-2 h-4 w-4" />
-                      Editar
-                    </Link>
+                  <DropdownMenuItem onClick={() => handleEdit(spaceType.id)}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Editar
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <AlertDialog>

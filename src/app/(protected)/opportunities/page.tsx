@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, startTransition } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 // import { AppHeader } from '@/components/shared/app-header' // Removed - handled by ProtectedLayoutWrapper
 import { Button } from '@/components/ui/button'
 import { PermissionGuard } from '@/components/guards/PermissionGuard'
@@ -114,6 +115,7 @@ interface Opportunity {
 }
 
 function OpportunitiesPageContent() {
+  const router = useRouter()
   const [allOpportunities, setAllOpportunities] = useState<Opportunity[]>([])
   const [opportunities, setOpportunities] = useState<Opportunity[]>([])
   const [stats, setStats] = useState<any>(null)
@@ -943,11 +945,9 @@ function OpportunitiesPageContent() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem asChild>
-                        <Link href={`/opportunities/${opportunity.id}`}>
-                          <ExternalLink className="h-3 w-3 mr-2" />
-                          Ver Detalle
-                        </Link>
+                      <DropdownMenuItem onClick={() => router.push(`/opportunities/${opportunity.id}`)}>
+                        <ExternalLink className="h-3 w-3 mr-2" />
+                        Ver Detalle
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleEditOpportunity(opportunity)}>
                         <Edit className="h-3 w-3 mr-2" />
@@ -1244,11 +1244,9 @@ function OpportunitiesPageContent() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link href={`/opportunities/${opportunity.id}`}>
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Ver Detalle
-                    </Link>
+                  <DropdownMenuItem onClick={() => router.push(`/opportunities/${opportunity.id}`)}>
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Ver Detalle
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleEditOpportunity(opportunity)}>
                     <Edit className="h-4 w-4 mr-2" />

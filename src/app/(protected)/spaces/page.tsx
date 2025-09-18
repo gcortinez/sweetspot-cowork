@@ -25,9 +25,9 @@ async function SpacesContent() {
     )
   }
 
-  const { data: spaces, totalCount } = result.data
+  const { spaces, pagination } = result.data
 
-  return <SpaceList spaces={spaces || []} totalCount={totalCount || 0} />
+  return <SpaceList spaces={spaces || []} totalCount={pagination?.total || 0} />
 }
 
 function SpacesLoading() {

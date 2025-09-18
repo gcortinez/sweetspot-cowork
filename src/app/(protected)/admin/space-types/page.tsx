@@ -179,9 +179,11 @@ export default function SpaceTypesPage() {
             Configura y gestiona los tipos de espacios disponibles en tu coworking
           </p>
         </div>
-        <Button asChild>
-          <Link href="/admin/space-types/new"><Plus className="h-4 w-4 mr-2" />Nuevo Tipo</Link>
-        </Button>
+        <Link href="/admin/space-types/new">
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />Nuevo Tipo
+          </Button>
+        </Link>
       </div>
 
       <Suspense fallback={<SpaceTypesLoading />}>
