@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import { listSpacesAction } from '@/lib/actions/space'
-import { BookingCalendar } from '@/components/bookings/booking-calendar'
+import { CalendarPageWrapper } from '@/components/bookings/calendar-page-wrapper'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -155,32 +155,12 @@ async function CalendarContent({ selectedSpaceId, view }: { selectedSpaceId?: st
         </CardHeader>
       </Card>
 
-      {/* Calendar */}
-      <BookingCalendar
+      {/* Calendar - Client Component wrapper */}
+      <CalendarPageWrapper
         bookings={bookings}
         spaces={activeSpaces}
         selectedSpaceId={selectedSpaceId}
-        onBookingSelect={(booking) => {
-          // Navigate to booking details
-          console.log('Selected booking:', booking)
-          // In real implementation: router.push(`/bookings/${booking.id}`)
-        }}
-        onDateSelect={(start, end, spaceId) => {
-          // Navigate to create booking with pre-filled data
-          const params = new URLSearchParams({
-            start: start.toISOString(),
-            end: end.toISOString(),
-            ...(spaceId && { spaceId }),
-          })
-          window.location.href = `/bookings/new?${params.toString()}`
-        }}
-        onEventDrop={(bookingId, newStart, newEnd) => {
-          // Handle booking rescheduling
-          console.log('Reschedule booking:', bookingId, newStart, newEnd)
-          // In real implementation: call rescheduling server action
-        }}
-        view={view as any || 'week'}
-        height="700px"
+        view={view}
       />
 
       {/* Quick Stats */}
