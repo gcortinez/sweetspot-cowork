@@ -356,3 +356,43 @@ export async function getSpaceTypeOptionsAction() {
     return { success: false, error: 'Error al obtener las opciones de tipos de espacio' }
   }
 }
+
+// Update space types sort order
+export async function updateSpaceTypesSortOrderAction(data: { items: { id: string; sortOrder: number }[] }) {
+  try {
+    const user = await getCurrentUser()
+    if (!user?.tenantId) {
+      return { success: false, error: 'No autorizado' }
+    }
+
+    // Validate that all items belong to the current tenant
+    const existingTypes = await prisma.spaceTypeConfig.findMany({
+      where: {
+        tenantId: user.tenantId,
+        id: { in: data.items.map(item => item.id) }
+      },
+      select: { id: true }
+    })
+
+    if (existingTypes.length !== data.items.length) {
+      return { success: false, error: 'Algunos tipos de espacio no pertenecen a tu organización' }
+    }
+
+    // Update each space type with its new sort order
+    await Promise.all(
+      data.items.map(item =>
+        prisma.spaceTypeConfig.update({
+          where: { id: item.id },
+          data: { sortOrder: item.sortOrder }
+        })
+      )
+    )
+
+    revalidatePath('/admin/space-types')
+
+    return { success: true, message: 'Orden actualizado exitosamente' }
+  } catch (error) {
+    console.error('Error updating space types sort order:', error)
+    return { success: false, error: 'Error al actualizar el orden de los tipos de espacio' }
+  }
+}
