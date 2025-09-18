@@ -22,7 +22,8 @@ import {
   Folder,
   Palette,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Calendar
 } from 'lucide-react'
 import { useAuth } from '@/contexts/clerk-auth-context'
 import { useCoworkSelection } from '@/contexts/cowork-selection-context'
@@ -172,6 +173,17 @@ export function Sidebar({ className = '', onCreateLead }: SidebarProps) {
         href: '/spaces',
         icon: Folder,
         active: pathname.startsWith('/spaces'),
+        permission: Resource.SPACE_VIEW
+      })
+    }
+
+    // Add Bookings/Reservations link
+    if (navPermissions.showSpaces) {
+      operacionItems.push({
+        label: 'Reservas',
+        href: '/bookings',
+        icon: Calendar,
+        active: pathname.startsWith('/bookings'),
         permission: Resource.SPACE_VIEW
       })
     }
