@@ -1,18 +1,18 @@
 'use client'
 
 import { useCallback, useState, useEffect } from 'react'
-import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Calendar, Clock, MapPin, Users, Plus } from 'lucide-react'
+import { Calendar, Clock, MapPin, Users, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 
-// Dynamic imports for FullCalendar to avoid SSR issues
-const FullCalendar = dynamic(() => import('@fullcalendar/react'), { ssr: false })
-const dayGridPlugin = dynamic(() => import('@fullcalendar/daygrid'), { ssr: false })
-const timeGridPlugin = dynamic(() => import('@fullcalendar/timegrid'), { ssr: false })
-const interactionPlugin = dynamic(() => import('@fullcalendar/interaction'), { ssr: false })
+// Regular imports for FullCalendar
+import FullCalendar from '@fullcalendar/react'
+import dayGridPlugin from '@fullcalendar/daygrid'
+import timeGridPlugin from '@fullcalendar/timegrid'
+import interactionPlugin from '@fullcalendar/interaction'
+import { EventClickArg, DateSelectArg, EventDropArg } from '@fullcalendar/core'
 
 interface Booking {
   id: string
@@ -58,77 +58,73 @@ export function BookingCalendar({
   view = 'week',
   height = '600px',
 }: BookingCalendarProps) {
-  const [isClient, setIsClient] = useState(false)
   const [currentView, setCurrentView] = useState(view)
+  const [selectedSpace, setSelectedSpace] = useState(selectedSpaceId || 'all')
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    setIsClient(true)
+    // Simulate loading for smooth transition
+    const timer = setTimeout(() => setIsLoading(false), 300)
+    return () => clearTimeout(timer)
   }, [])
 
-  const getEventColor = (status: string) => {
+  const getBookingColor = (status: Booking['status']) => {
     switch (status) {
       case 'CONFIRMED':
-        return '#10b981' // green
+        return '#10b981' // green-500
       case 'PENDING':
-        return '#f59e0b' // yellow
+        return '#f59e0b' // amber-500
       case 'CANCELLED':
-        return '#ef4444' // red
+        return '#ef4444' // red-500
       case 'COMPLETED':
-        return '#6b7280' // gray
+        return '#6b7280' // gray-500
       default:
-        return '#3b82f6' // blue
+        return '#3b82f6' // blue-500
     }
   }
 
-  const calendarEvents = bookings.map(booking => ({
+  const filteredBookings = selectedSpace === 'all'
+    ? bookings
+    : bookings.filter(b => b.spaceId === selectedSpace)
+
+  const calendarEvents = filteredBookings.map(booking => ({
     id: booking.id,
-    title: `${booking.title} (${booking.spaceName})`,
+    title: booking.title,
     start: booking.start,
     end: booking.end,
-    backgroundColor: booking.color || getEventColor(booking.status),
-    borderColor: booking.color || getEventColor(booking.status),
-    extendedProps: {
-      booking,
-      spaceId: booking.spaceId,
-      status: booking.status,
-      attendeeCount: booking.attendeeCount,
-      isRecurring: booking.isRecurring,
-    },
+    backgroundColor: booking.color || getBookingColor(booking.status),
+    borderColor: booking.color || getBookingColor(booking.status),
+    extendedProps: { booking }
   }))
 
-  const handleEventClick = useCallback((info: any) => {
-    const booking = info.event.extendedProps.booking
+  const handleEventClick = useCallback((info: EventClickArg) => {
     if (onBookingSelect) {
+      const booking = info.event.extendedProps.booking as Booking
       onBookingSelect(booking)
     }
   }, [onBookingSelect])
 
-  const handleDateSelect = useCallback((info: any) => {
+  const handleDateSelect = useCallback((info: DateSelectArg) => {
     if (onDateSelect) {
-      onDateSelect(info.start, info.end, selectedSpaceId)
+      onDateSelect(info.start, info.end, selectedSpace === 'all' ? undefined : selectedSpace)
     }
-  }, [onDateSelect, selectedSpaceId])
+  }, [onDateSelect, selectedSpace])
 
-  const handleEventDrop = useCallback((info: any) => {
+  const handleEventDrop = useCallback((info: EventDropArg) => {
     if (onEventDrop) {
-      onEventDrop(info.event.id, info.event.start, info.event.end)
+      onEventDrop(info.event.id, info.event.start!, info.event.end!)
     }
   }, [onEventDrop])
 
-  if (!isClient) {
+  if (isLoading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Calendario de Reservas
-          </CardTitle>
-          <CardDescription>
-            Ver y gestionar todas las reservas en formato calendario
-          </CardDescription>
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-4 w-64" />
         </CardHeader>
         <CardContent>
-          <Skeleton className="w-full h-96 rounded-lg" />
+          <Skeleton className="w-full h-[500px]" />
         </CardContent>
       </Card>
     )
@@ -142,42 +138,51 @@ export function BookingCalendar({
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
               Calendario de Reservas
-              {selectedSpaceId && (
-                <Badge variant="outline">
-                  {spaces.find(s => s.id === selectedSpaceId)?.name || 'Espacio Seleccionado'}
-                </Badge>
-              )}
             </CardTitle>
             <CardDescription>
-              {selectedSpaceId
-                ? `Mostrando reservas para el espacio seleccionado`
-                : `Mostrando ${bookings.length} reservas en ${spaces.length} espacios`
-              }
+              {filteredBookings.length} reservas en el calendario
             </CardDescription>
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant={currentView === 'month' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setCurrentView('month')}
+            {/* Space Filter */}
+            <select
+              value={selectedSpace}
+              onChange={(e) => setSelectedSpace(e.target.value)}
+              className="px-3 py-1.5 text-sm border rounded-md"
             >
-              Mes
-            </Button>
-            <Button
-              variant={currentView === 'week' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setCurrentView('week')}
-            >
-              Semana
-            </Button>
-            <Button
-              variant={currentView === 'day' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setCurrentView('day')}
-            >
-              Día
-            </Button>
+              <option value="all">Todos los espacios</option>
+              {spaces.map(space => (
+                <option key={space.id} value={space.id}>
+                  {space.name}
+                </option>
+              ))}
+            </select>
+
+            {/* View Selector */}
+            <div className="flex gap-1">
+              <Button
+                variant={currentView === 'month' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setCurrentView('month')}
+              >
+                Mes
+              </Button>
+              <Button
+                variant={currentView === 'week' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setCurrentView('week')}
+              >
+                Semana
+              </Button>
+              <Button
+                variant={currentView === 'day' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setCurrentView('day')}
+              >
+                Día
+              </Button>
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -217,50 +222,41 @@ export function BookingCalendar({
               const { booking } = eventInfo.event.extendedProps
               return (
                 <div className="p-1 text-xs">
-                  <div className="font-medium truncate">
-                    {eventInfo.event.title}
+                  <div className="font-semibold truncate">{eventInfo.event.title}</div>
+                  <div className="text-[10px] opacity-90 truncate">
+                    {booking.spaceName}
                   </div>
-                  <div className="flex items-center gap-1 mt-1 opacity-90">
-                    {booking.attendeeCount && (
-                      <span className="flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        {booking.attendeeCount}
-                      </span>
-                    )}
-                    {booking.isRecurring && (
-                      <span className="text-xs">↻</span>
-                    )}
-                  </div>
+                  {booking.attendeeCount && (
+                    <div className="text-[10px] flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      {booking.attendeeCount}
+                    </div>
+                  )}
                 </div>
               )
             }}
+            locale="es"
+            buttonText={{
+              today: 'Hoy',
+              month: 'Mes',
+              week: 'Semana',
+              day: 'Día',
+            }}
+            dayHeaderFormat={{
+              weekday: 'short',
+              day: 'numeric',
+              month: 'numeric',
+            }}
+            titleFormat={{
+              year: 'numeric',
+              month: 'long',
+            }}
+            slotLabelFormat={{
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false,
+            }}
           />
-        </div>
-
-        {/* Legend */}
-        <div className="flex flex-wrap items-center gap-4 mt-4 pt-4 border-t">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-green-500 rounded"></div>
-            <span className="text-xs text-muted-foreground">Confirmado</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-yellow-500 rounded"></div>
-            <span className="text-xs text-muted-foreground">Pendiente</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-red-500 rounded"></div>
-            <span className="text-xs text-muted-foreground">Cancelado</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-gray-500 rounded"></div>
-            <span className="text-xs text-muted-foreground">Completado</span>
-          </div>
-          {onDateSelect && (
-            <div className="flex items-center gap-2 ml-auto">
-              <Plus className="h-4 w-4" />
-              <span className="text-xs text-muted-foreground">Haz clic y arrastra para crear reserva</span>
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>
