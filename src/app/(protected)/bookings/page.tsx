@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import { BookingCalendar } from '@/components/bookings/booking-calendar'
+import { BookingCalendarWrapper } from '@/components/bookings/booking-calendar-wrapper'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -134,26 +134,8 @@ async function BookingsContent() {
         </Card>
       </div>
 
-      {/* Calendar */}
-      <BookingCalendar
-        bookings={bookings}
-        spaces={spaces}
-        onBookingSelect={(booking) => {
-          // Navigate to booking details
-          console.log('Selected booking:', booking)
-        }}
-        onDateSelect={(start, end, spaceId) => {
-          // Navigate to create booking with pre-filled data
-          const params = new URLSearchParams({
-            start: start.toISOString(),
-            end: end.toISOString(),
-            ...(spaceId && { spaceId }),
-          })
-          window.location.href = `/bookings/new?${params.toString()}`
-        }}
-        view="week"
-        height="600px"
-      />
+      {/* Calendar - Client Component wrapper */}
+      <BookingCalendarWrapper bookings={bookings} spaces={spaces} />
     </div>
   )
 }
