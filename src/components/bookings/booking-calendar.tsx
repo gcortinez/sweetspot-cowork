@@ -14,6 +14,9 @@ import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import { EventClickArg, DateSelectArg, EventDropArg } from '@fullcalendar/core'
 
+// Import FullCalendar CSS
+import '@fullcalendar/core/vdom'
+
 interface Booking {
   id: string
   title: string
@@ -94,6 +97,7 @@ export function BookingCalendar({
     end: booking.end,
     backgroundColor: booking.color || getBookingColor(booking.status),
     borderColor: booking.color || getBookingColor(booking.status),
+    className: `booking-${booking.status.toLowerCase()}`,
     extendedProps: { booking }
   }))
 
@@ -203,6 +207,13 @@ export function BookingCalendar({
                 ? 'timeGridWeek'
                 : 'timeGridDay'
             }
+            viewDidMount={(info) => {
+              // Sync view changes with our state
+              const viewName = info.view.type
+              if (viewName === 'dayGridMonth') setCurrentView('month')
+              else if (viewName === 'timeGridWeek') setCurrentView('week')
+              else if (viewName === 'timeGridDay') setCurrentView('day')
+            }}
             editable={!!onEventDrop}
             selectable={!!onDateSelect}
             selectMirror={true}

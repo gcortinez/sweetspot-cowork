@@ -544,3 +544,152 @@
     flex-shrink: 0;
   }
 }
+
+/* FullCalendar Custom Styles */
+.fc {
+  font-family: inherit;
+}
+
+.fc-header-toolbar {
+  margin-bottom: 1rem !important;
+}
+
+.fc-button-primary {
+  background-color: hsl(var(--primary)) !important;
+  border-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  font-size: 0.875rem !important;
+  padding: 0.375rem 0.75rem !important;
+  border-radius: 0.375rem !important;
+}
+
+.fc-button-primary:hover {
+  background-color: hsl(var(--primary)) !important;
+  border-color: hsl(var(--primary)) !important;
+  opacity: 0.9;
+}
+
+.fc-button-primary:disabled {
+  background-color: hsl(var(--muted)) !important;
+  border-color: hsl(var(--muted)) !important;
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+.fc-event {
+  border-radius: 0.375rem !important;
+  border: none !important;
+  padding: 0.125rem 0.25rem !important;
+  margin: 1px !important;
+}
+
+.fc-event-title {
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.fc-timegrid-slot {
+  height: 3rem !important;
+}
+
+.fc-timegrid-slot-label {
+  font-size: 0.75rem !important;
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+.fc-col-header-cell {
+  background-color: hsl(var(--muted)) !important;
+  border-color: hsl(var(--border)) !important;
+  font-weight: 600 !important;
+  padding: 0.5rem !important;
+}
+
+.fc-col-header-cell-cushion {
+  color: hsl(var(--foreground)) !important;
+  font-size: 0.875rem !important;
+}
+
+.fc-daygrid-day {
+  border-color: hsl(var(--border)) !important;
+}
+
+.fc-timegrid-divider {
+  border-color: hsl(var(--border)) !important;
+}
+
+.fc-scrollgrid {
+  border-color: hsl(var(--border)) !important;
+  border-radius: 0.5rem !important;
+  overflow: hidden !important;
+}
+
+.fc-scrollgrid td {
+  border-color: hsl(var(--border)) !important;
+}
+
+.fc-today {
+  background-color: hsl(var(--accent)) !important;
+}
+
+.fc-day-selected {
+  background-color: hsl(var(--primary) / 0.1) !important;
+}
+
+.fc-timegrid-axis {
+  border-color: hsl(var(--border)) !important;
+}
+
+.fc-timegrid-slot-minor {
+  border-color: hsl(var(--border) / 0.5) !important;
+}
+
+.fc-timegrid-now-indicator-line {
+  border-color: hsl(var(--destructive)) !important;
+  border-width: 2px !important;
+}
+
+.fc-timegrid-now-indicator-arrow {
+  border-left-color: hsl(var(--destructive)) !important;
+  border-right-color: hsl(var(--destructive)) !important;
+}
+
+/* Custom event styles for different booking statuses */
+.fc-event.booking-confirmed {
+  background-color: #10b981 !important; /* green-500 */
+  border-color: #10b981 !important;
+}
+
+.fc-event.booking-pending {
+  background-color: #f59e0b !important; /* amber-500 */
+  border-color: #f59e0b !important;
+}
+
+.fc-event.booking-cancelled {
+  background-color: #ef4444 !important; /* red-500 */
+  border-color: #ef4444 !important;
+}
+
+.fc-event.booking-completed {
+  background-color: #6b7280 !important; /* gray-500 */
+  border-color: #6b7280 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .fc-header-toolbar {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+  }
+
+  .fc-toolbar-chunk {
+    display: flex !important;
+    justify-content: center !important;
+  }
+
+  .fc-button-group {
+    gap: 0.25rem !important;
+  }
+
+  .fc-event-title {
+    font-size: 0.625rem !important;
+  }
+}

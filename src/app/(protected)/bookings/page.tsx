@@ -12,8 +12,8 @@ const mockBookings = [
   {
     id: '1',
     title: 'Team Meeting',
-    start: '2024-01-15T09:00:00',
-    end: '2024-01-15T11:00:00',
+    start: '2025-01-20T09:00:00',
+    end: '2025-01-20T11:00:00',
     spaceId: 'space-1',
     spaceName: 'Conference Room A',
     status: 'CONFIRMED' as const,
@@ -23,8 +23,8 @@ const mockBookings = [
   {
     id: '2',
     title: 'Weekly Standup',
-    start: '2024-01-16T10:00:00',
-    end: '2024-01-16T11:00:00',
+    start: '2025-01-21T10:00:00',
+    end: '2025-01-21T11:00:00',
     spaceId: 'space-2',
     spaceName: 'Meeting Room B',
     status: 'CONFIRMED' as const,
@@ -34,8 +34,8 @@ const mockBookings = [
   {
     id: '3',
     title: 'Client Presentation',
-    start: '2024-01-17T14:00:00',
-    end: '2024-01-17T16:00:00',
+    start: '2025-01-22T14:00:00',
+    end: '2025-01-22T16:00:00',
     spaceId: 'space-1',
     spaceName: 'Conference Room A',
     status: 'PENDING' as const,
