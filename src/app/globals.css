@@ -548,6 +548,16 @@
 /* FullCalendar Custom Styles */
 .fc {
   font-family: inherit;
+  height: 100% !important;
+}
+
+.fc-scroller {
+  overflow-y: auto !important;
+  max-height: 600px !important;
+}
+
+.fc-timegrid-body {
+  min-height: 600px !important;
 }
 
 .fc-header-toolbar {

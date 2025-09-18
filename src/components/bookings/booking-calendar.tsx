@@ -170,7 +170,7 @@ export function BookingCalendar({
       </CardHeader>
 
       <CardContent className="p-4">
-        <div style={{ height }} className="w-full">
+        <div className="w-full" style={{ height: height }}>
           <FullCalendar
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
             headerToolbar={{
@@ -199,7 +199,10 @@ export function BookingCalendar({
             allDaySlot={false}
             slotDuration="00:30:00"
             slotLabelInterval="01:00:00"
-            height="auto"
+            height={height}
+            contentHeight={600}
+            expandRows={false}
+            scrollTime="08:00:00"
             eventContent={(eventInfo) => {
               const { booking } = eventInfo.event.extendedProps
               return (
