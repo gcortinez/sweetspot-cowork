@@ -8,12 +8,11 @@ const cuidValidation = z.string().regex(cuidRegex, 'Invalid ID format')
 export const BookingStatusSchema = z.enum([
   'PENDING',
   'CONFIRMED',
-  'CHECKED_IN',
-  'IN_PROGRESS', 
-  'COMPLETED',
   'CANCELLED',
+  'COMPLETED',
   'NO_SHOW',
-  'MODIFIED'
+  'CHECKED_IN',
+  'CHECKED_OUT'
 ])
 
 export const BookingTypeSchema = z.enum([
@@ -72,7 +71,7 @@ export const BookingServiceSchema = z.object({
   quantity: z.number().int().min(1, 'Quantity must be at least 1').default(1),
   unitPrice: z.number().min(0, 'Unit price cannot be negative'),
   totalPrice: z.number().min(0, 'Total price cannot be negative'),
-  status: z.enum(['PENDING', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).default('PENDING'),
+  status: z.enum(['PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED']).default('PENDING'),
   notes: z.string().max(500).optional(),
   startTime: z.date().optional(),
   endTime: z.date().optional(),

@@ -729,7 +729,7 @@ export async function checkSpaceAvailabilityAction(data: CheckSpaceAvailabilityR
     const conflictWhere: any = {
       spaceId: validatedData.spaceId,
       status: {
-        in: ['PENDING', 'CONFIRMED', 'CHECKED_IN', 'IN_PROGRESS'],
+        in: ['PENDING', 'CONFIRMED', 'CHECKED_IN'],
       },
       OR: [
         {
@@ -987,7 +987,7 @@ export async function getSpaceUtilizationAction(data: GetSpaceUtilizationRequest
       startTime: { gte: validatedData.startDate },
       endTime: { lte: validatedData.endDate },
       status: {
-        in: ['CONFIRMED', 'CHECKED_IN', 'IN_PROGRESS', 'COMPLETED'],
+        in: ['CONFIRMED', 'CHECKED_IN', 'COMPLETED'],
       },
     }
 

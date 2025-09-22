@@ -733,7 +733,7 @@ export async function checkOutBookingAction(data: CheckOutBookingRequest): Promi
       return { success: false, error: 'Booking not found' }
     }
 
-    if (booking.status !== 'CHECKED_IN' && booking.status !== 'IN_PROGRESS') {
+    if (booking.status !== 'CHECKED_IN') {
       return { success: false, error: 'Booking must be checked in before check-out' }
     }
 
@@ -874,7 +874,7 @@ async function checkBookingConflictsInternal(
     spaceId,
     space: { tenantId },
     status: {
-      in: ['PENDING', 'CONFIRMED', 'CHECKED_IN', 'IN_PROGRESS'],
+      in: ['PENDING', 'CONFIRMED', 'CHECKED_IN'],
     },
     OR: [
       {
