@@ -81,16 +81,16 @@ export async function createBookingAction(data: CreateBookingRequest): Promise<A
       }
     }
 
-    // Verify client exists
-    const client = await prisma.client.findFirst({
+    // Verify user exists
+    const bookingUser = await prisma.user.findFirst({
       where: {
-        id: validatedData.clientId,
+        id: validatedData.userId,
         tenantId,
       },
     })
 
-    if (!client) {
-      return { success: false, error: 'Client not found' }
+    if (!bookingUser) {
+      return { success: false, error: 'User not found' }
     }
 
     // Verify services exist if specified
@@ -122,13 +122,15 @@ export async function createBookingAction(data: CreateBookingRequest): Promise<A
     // Create booking
     const booking = await prisma.booking.create({
       data: {
-        ...validatedData,
         tenantId,
-        totalAmount,
-        participants: validatedData.participants ? JSON.stringify(validatedData.participants) : null,
-        services: validatedData.services ? JSON.stringify(validatedData.services) : null,
-        recurrenceRule: validatedData.recurrenceRule ? JSON.stringify(validatedData.recurrenceRule) : null,
-        metadata: validatedData.metadata ? JSON.stringify(validatedData.metadata) : null,
+        spaceId: validatedData.spaceId!,
+        userId: validatedData.userId,
+        title: validatedData.title,
+        description: validatedData.description,
+        startTime: validatedData.startTime,
+        endTime: validatedData.endTime,
+        status: validatedData.status,
+        cost: totalAmount,
       },
       include: {
         tenant: true,
@@ -480,8 +482,8 @@ export async function listBookingsAction(data: ListBookingsRequest = {}): Promis
       where.spaceId = validatedData.spaceId
     }
 
-    if (validatedData.clientId) {
-      where.clientId = validatedData.clientId
+    if (validatedData.userId) {
+      where.userId = validatedData.userId
     }
 
     if (validatedData.status) {

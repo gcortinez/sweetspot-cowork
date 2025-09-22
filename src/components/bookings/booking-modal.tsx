@@ -173,7 +173,7 @@ export function BookingModal({
 
       const bookingData = {
         spaceId: formData.spaceId,
-        clientId: databaseUserId, // Use database user ID as clientId
+        userId: databaseUserId, // Use database user ID as userId
         startTime: startDateTime,
         endTime: endDateTime,
         title: formData.title || `Reserva de ${selectedSpace?.name}`,

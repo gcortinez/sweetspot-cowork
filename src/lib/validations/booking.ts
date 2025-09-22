@@ -92,7 +92,7 @@ export const RecurrenceRuleSchema = z.object({
 // Base booking object (without refinements)
 const baseBookingObject = z.object({
   spaceId: cuidValidation.optional(),
-  clientId: cuidValidation,
+  userId: cuidValidation,
   type: BookingTypeSchema.default('SPACE_ONLY'),
   title: z.string().min(1, 'Booking title is required').max(200, 'Title must be less than 200 characters'),
   description: z.string().max(1000, 'Description must be less than 1000 characters').optional(),
@@ -170,7 +170,7 @@ export const listBookingsSchema = z.object({
   limit: z.number().int().min(1, 'Limit must be at least 1').max(100, 'Limit cannot exceed 100').default(20),
   search: z.string().max(100, 'Search query must be less than 100 characters').optional(),
   spaceId: cuidValidation.optional(),
-  clientId: cuidValidation.optional(),
+  userId: cuidValidation.optional(),
   status: BookingStatusSchema.optional(),
   type: BookingTypeSchema.optional(),
   startDate: z.date().optional(),
@@ -262,7 +262,7 @@ export const bulkUpdateBookingsSchema = z.object({
 // Booking statistics schema
 export const getBookingStatsSchema = z.object({
   spaceId: cuidValidation.optional(),
-  clientId: cuidValidation.optional(),
+  userId: cuidValidation.optional(),
   startDate: z.date().optional(),
   endDate: z.date().optional(),
   groupBy: z.enum(['hour', 'day', 'week', 'month']).default('day'),
