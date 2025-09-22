@@ -138,7 +138,6 @@ export async function createBookingAction(data: CreateBookingRequest): Promise<A
         endTime: validatedData.endTime,
         status: bookingStatus,
         cost: totalAmount,
-        requiresApproval: space?.requiresApproval || false,
       },
       include: {
         tenant: true,
@@ -531,9 +530,6 @@ export async function listBookingsAction(data: ListBookingsRequest = {}): Promis
       where.isRecurring = validatedData.isRecurring
     }
 
-    if (validatedData.requiresApproval !== undefined) {
-      where.requiresApproval = validatedData.requiresApproval
-    }
 
     // Build order by
     const orderBy: any = {}
@@ -829,11 +825,15 @@ export async function approveBookingAction(data: ApproveBookingRequest): Promise
     // Validate input data
     const validatedData = approveBookingSchema.parse(data)
 
-    // Get booking
+    // Get booking with space and approval info
     const booking = await prisma.booking.findFirst({
       where: {
         id: validatedData.id,
         tenantId,
+      },
+      include: {
+        space: true,
+        approval: true,
       },
     })
 
@@ -841,7 +841,8 @@ export async function approveBookingAction(data: ApproveBookingRequest): Promise
       return { success: false, error: 'Booking not found' }
     }
 
-    if (!booking.requiresApproval) {
+    // Check if the space requires approval and has a pending approval record
+    if (!booking.space?.requiresApproval || !booking.approval) {
       return { success: false, error: 'Booking does not require approval' }
     }
 
@@ -849,17 +850,28 @@ export async function approveBookingAction(data: ApproveBookingRequest): Promise
       return { success: false, error: 'Only pending bookings can be approved or rejected' }
     }
 
-    // Update booking status
-    const updatedBooking = await prisma.booking.update({
-      where: { id: validatedData.id },
-      data: {
-        status: validatedData.approved ? 'CONFIRMED' : 'CANCELLED',
-        approvedBy: user.id,
-        approvedAt: new Date(),
-        cancellationReason: validatedData.approved ? null : 'ADMIN_REJECTED',
-        cancellationNotes: validatedData.approved ? null : validatedData.notes,
-      },
-    })
+    // Update booking status and approval record
+    const [updatedBooking] = await Promise.all([
+      prisma.booking.update({
+        where: { id: validatedData.id },
+        data: {
+          status: validatedData.approved ? 'CONFIRMED' : 'CANCELLED',
+          approvedBy: user.id,
+          approvedAt: new Date(),
+          cancellationReason: validatedData.approved ? null : 'ADMIN_REJECTED',
+          cancellationNotes: validatedData.approved ? null : validatedData.notes,
+        },
+      }),
+      prisma.bookingApproval.update({
+        where: { bookingId: validatedData.id },
+        data: {
+          status: validatedData.approved ? 'APPROVED' : 'REJECTED',
+          approvedBy: user.id,
+          approvedAt: new Date(),
+          notes: validatedData.notes || booking.approval.notes,
+        },
+      }),
+    ])
 
     revalidatePath('/bookings')
     revalidatePath(`/bookings/${validatedData.id}`)

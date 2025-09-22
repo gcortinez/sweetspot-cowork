@@ -9,13 +9,12 @@ import { Clock, CheckCircle, XCircle, Calendar, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
 async function BookingApprovalsContent() {
-  // Fetch bookings that require approval
+  // Fetch pending bookings and filter for ones that require approval
   const [bookingsResult, spacesResult] = await Promise.all([
     listBookingsAction({
       page: 1,
       limit: 100,
       status: 'PENDING',
-      requiresApproval: true,
       sortBy: 'startTime',
       sortOrder: 'asc',
     }),
@@ -27,34 +26,45 @@ async function BookingApprovalsContent() {
     }),
   ])
 
-  const bookings = bookingsResult.success ? (bookingsResult.data?.bookings || []) : []
+  const allBookings = bookingsResult.success ? (bookingsResult.data?.bookings || []) : []
   const spaces = spacesResult.success ? (spacesResult.data?.spaces || []) : []
+
+  // Filter bookings that require approval (space has requiresApproval = true)
+  const bookings = allBookings.filter(booking => {
+    const space = spaces.find(s => s.id === booking.spaceId)
+    return space?.requiresApproval === true
+  })
 
   // Fetch all approved/rejected bookings for stats
   const approvedBookingsResult = await listBookingsAction({
     page: 1,
     limit: 1000,
-    requiresApproval: true,
     sortBy: 'approvedAt',
     sortOrder: 'desc',
   })
 
   const allApprovalBookings = approvedBookingsResult.success ? (approvedBookingsResult.data?.bookings || []) : []
 
+  // Filter stats to only include bookings from spaces that require approval
+  const approvalBookingsFiltered = allApprovalBookings.filter(booking => {
+    const space = spaces.find(s => s.id === booking.spaceId)
+    return space?.requiresApproval === true
+  })
+
   const stats = {
     pendingApprovals: bookings.length,
-    approvedToday: allApprovalBookings.filter(b =>
+    approvedToday: approvalBookingsFiltered.filter(b =>
       b.status === 'CONFIRMED' &&
       b.approvedAt &&
       new Date(b.approvedAt).toDateString() === new Date().toDateString()
     ).length,
-    rejectedToday: allApprovalBookings.filter(b =>
+    rejectedToday: approvalBookingsFiltered.filter(b =>
       b.status === 'CANCELLED' &&
       b.cancellationReason === 'ADMIN_REJECTED' &&
       b.approvedAt &&
       new Date(b.approvedAt).toDateString() === new Date().toDateString()
     ).length,
-    totalProcessed: allApprovalBookings.filter(b =>
+    totalProcessed: approvalBookingsFiltered.filter(b =>
       b.status === 'CONFIRMED' || (b.status === 'CANCELLED' && b.cancellationReason === 'ADMIN_REJECTED')
     ).length,
   }

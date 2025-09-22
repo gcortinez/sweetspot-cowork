@@ -117,7 +117,6 @@ const baseBookingObject = z.object({
   isRecurring: z.boolean().default(false),
   recurrenceRule: RecurrenceRuleSchema.optional(),
   parentBookingId: cuidValidation.optional(), // For recurring bookings
-  requiresApproval: z.boolean().default(false),
   approvedBy: cuidValidation.optional(),
   approvedAt: z.date().optional(),
   checkedInAt: z.date().optional(),
@@ -176,7 +175,6 @@ export const listBookingsSchema = z.object({
   startDate: z.date().optional(),
   endDate: z.date().optional(),
   isRecurring: z.boolean().optional(),
-  requiresApproval: z.boolean().optional(),
   sortBy: z.enum(['startTime', 'endTime', 'title', 'status', 'totalAmount', 'createdAt', 'updatedAt']).default('startTime'),
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
 })
@@ -248,7 +246,6 @@ export const bulkUpdateBookingsSchema = z.object({
   bookingIds: z.array(cuidValidation).min(1, 'At least one booking ID is required'),
   updates: z.object({
     status: BookingStatusSchema.optional(),
-    requiresApproval: z.boolean().optional(),
     notes: z.string().max(1000).optional(),
     metadata: z.record(z.any()).optional(),
   }).refine(
