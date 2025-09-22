@@ -351,10 +351,6 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
             <QRCodeGenerator
               booking={booking}
               showBookingDetails={false}
-              onRegenerateQR={() => {
-                // In real implementation, call server action to regenerate QR
-                console.log('Regenerating QR code...')
-              }}
             />
           )}
 
