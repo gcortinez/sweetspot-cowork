@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { QRCodeGenerator } from '@/components/bookings/qr-code-generator'
+import { BookingApprovalButtons } from '@/components/bookings/booking-approval-buttons'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -21,6 +22,9 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { format, differenceInMinutes } from 'date-fns'
+import { es } from 'date-fns/locale'
+import { getBookingAction } from '@/lib/actions/booking'
+import { getTenantContext } from '@/lib/auth'
 
 interface BookingDetailPageProps {
   params: Promise<{
@@ -28,60 +32,22 @@ interface BookingDetailPageProps {
   }>
 }
 
-// Mock booking data - in real implementation, this would come from server actions
-const mockBooking = {
-  id: 'booking-1',
-  title: 'Team Weekly Meeting',
-  description: 'Weekly team sync and project updates. We will discuss current progress, blockers, and next steps.',
-  spaceId: 'space-1',
-  spaceName: 'Conference Room A',
-  spaceType: 'MEETING_ROOM',
-  spaceCapacity: 15,
-  spaceFloor: '2nd Floor',
-  spaceZone: 'East Wing',
-  startDateTime: '2024-01-15T09:00:00',
-  endDateTime: '2024-01-15T11:00:00',
-  attendeeCount: 8,
-  contactEmail: 'john.doe@company.com',
-  contactPhone: '+1 (555) 123-4567',
-  status: 'CONFIRMED' as const,
-  setupTime: 15,
-  cleanupTime: 10,
-  hourlyRate: 50,
-  notes: 'Please ensure the projector is set up and tested before the meeting.',
-  createdAt: '2024-01-10T10:30:00',
-  updatedAt: '2024-01-12T14:20:00',
-  qrCodeData: JSON.stringify({
-    bookingId: 'booking-1',
-    spaceId: 'space-1',
-    timestamp: Date.now(),
-    type: 'space_access'
-  }),
-  checkInHistory: [
-    {
-      id: '1',
-      action: 'CHECK_IN' as const,
-      timestamp: '2024-01-15T09:05:00',
-      userName: 'John Doe'
-    },
-    {
-      id: '2',
-      action: 'CHECK_OUT' as const,
-      timestamp: '2024-01-15T10:58:00',
-      userName: 'John Doe'
-    }
-  ]
-}
-
 export default async function BookingDetailPage({ params }: BookingDetailPageProps) {
-  // In real implementation, fetch booking by ID using server action
-  // const result = await getBookingAction({ id: params.id })
+  const resolvedParams = await params
 
-  // Mock data usage
-  const booking = mockBooking
-  if (!booking) {
+  // Get current user context
+  const { user } = await getTenantContext()
+  const isAdmin = user?.role === 'COWORK_ADMIN' || user?.role === 'SUPER_ADMIN'
+
+  // Fetch booking by ID using server action
+  const result = await getBookingAction({ id: resolvedParams.id })
+
+  if (!result.success || !result.data) {
     notFound()
   }
+
+  const booking = result.data
+  const space = booking.space
 
   const formatDuration = (minutes: number) => {
     const hours = Math.floor(minutes / 60)
@@ -115,9 +81,17 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
     }
   }
 
-  const duration = differenceInMinutes(new Date(booking.endDateTime), new Date(booking.startDateTime))
-  const totalDuration = duration + (booking.setupTime || 0) + (booking.cleanupTime || 0)
-  const totalCost = booking.hourlyRate ? (totalDuration / 60) * booking.hourlyRate : 0
+  const duration = differenceInMinutes(new Date(booking.endTime), new Date(booking.startTime))
+  const totalDuration = duration
+  const totalCost = booking.cost ? Number(booking.cost) : 0
+
+  // Generate QR data
+  const qrCodeData = JSON.stringify({
+    bookingId: booking.id,
+    spaceId: booking.spaceId,
+    timestamp: Date.now(),
+    type: 'space_access'
+  })
 
   return (
     <div className="container max-w-6xl mx-auto py-6">
@@ -140,16 +114,18 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
               </div>
             </h1>
             <p className="text-muted-foreground">
-              ID de Reserva: {booking.id} • Creado {format(new Date(booking.createdAt), 'MMM dd, yyyy')}
+              ID de Reserva: {booking.id} • Creado {format(new Date(booking.createdAt), "dd 'de' MMMM, yyyy", { locale: es })}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Link href={`/bookings/${booking.id}/edit`}>
-            <Button variant="outline">
-              <Edit className="h-4 w-4 mr-1" />Editar Reserva
-            </Button>
-          </Link>
+          {booking.status !== 'CANCELLED' && booking.status !== 'COMPLETED' && (
+            <Link href={`/bookings/${booking.id}/edit`}>
+              <Button variant="outline">
+                <Edit className="h-4 w-4 mr-1" />Editar Reserva
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -171,9 +147,9 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <div className="font-medium">{booking.spaceName}</div>
+                      <div className="font-medium">{space?.name || 'Espacio no especificado'}</div>
                       <div className="text-sm text-muted-foreground">
-                        {booking.spaceFloor} • {booking.spaceZone}
+                        {space?.floor && space?.zone ? `${space.floor} • ${space.zone}` : space?.type || 'Sin ubicación'}
                       </div>
                     </div>
                   </div>
@@ -181,9 +157,9 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <div className="font-medium">{booking.attendeeCount} attendees</div>
+                      <div className="font-medium">{booking.participants?.length || 0} participantes</div>
                       <div className="text-sm text-muted-foreground">
-                        Capacity: {booking.spaceCapacity} people
+                        Capacidad: {space?.capacity || 0} personas
                       </div>
                     </div>
                   </div>
@@ -194,10 +170,10 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
                     <Clock className="h-4 w-4 text-muted-foreground" />
                     <div>
                       <div className="font-medium">
-                        {format(new Date(booking.startDateTime), 'MMM dd, yyyy')}
+                        {format(new Date(booking.startTime), "dd 'de' MMMM, yyyy", { locale: es })}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {format(new Date(booking.startDateTime), 'HH:mm')} - {format(new Date(booking.endDateTime), 'HH:mm')}
+                        {format(new Date(booking.startTime), 'HH:mm')} - {format(new Date(booking.endTime), 'HH:mm')}
                       </div>
                     </div>
                   </div>
@@ -208,7 +184,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
                       <div>
                         <div className="font-medium">${totalCost.toFixed(2)}</div>
                         <div className="text-sm text-muted-foreground">
-                          {formatDuration(totalDuration)} @ ${booking.hourlyRate}/hr
+                          {formatDuration(totalDuration)} @ ${space?.hourlyRate ? Number(space.hourlyRate).toFixed(2) : '0.00'}/hr
                         </div>
                       </div>
                     </div>
@@ -221,44 +197,19 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
                 <>
                   <Separator />
                   <div>
-                    <h4 className="font-medium mb-2">Description</h4>
+                    <h4 className="font-medium mb-2">Descripción</h4>
                     <p className="text-muted-foreground">{booking.description}</p>
                   </div>
                 </>
               )}
 
-              {/* Setup/Cleanup Times */}
-              {(booking.setupTime || booking.cleanupTime) && (
-                <>
-                  <Separator />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {booking.setupTime && (
-                      <div>
-                        <h4 className="font-medium mb-1">Setup Time</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {formatDuration(booking.setupTime)} before the meeting
-                        </p>
-                      </div>
-                    )}
-                    {booking.cleanupTime && (
-                      <div>
-                        <h4 className="font-medium mb-1">Cleanup Time</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {formatDuration(booking.cleanupTime)} after the meeting
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-
               {/* Notes */}
-              {booking.notes && (
+              {(booking.notes || booking.specialRequests) && (
                 <>
                   <Separator />
                   <div>
-                    <h4 className="font-medium mb-2">Additional Notes</h4>
-                    <p className="text-muted-foreground">{booking.notes}</p>
+                    <h4 className="font-medium mb-2">Notas Adicionales</h4>
+                    <p className="text-muted-foreground">{booking.notes || booking.specialRequests}</p>
                   </div>
                 </>
               )}
@@ -279,29 +230,57 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
                   <Mail className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <div className="font-medium">Correo</div>
-                    <a href={`mailto:${booking.contactEmail}`} className="text-sm text-blue-600 hover:underline">
-                      {booking.contactEmail}
+                    <a href={`mailto:${booking.user?.email}`} className="text-sm text-blue-600 hover:underline">
+                      {booking.user?.email || 'No disponible'}
                     </a>
                   </div>
                 </div>
 
-                {booking.contactPhone && (
+                {booking.user?.phone && (
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4 text-muted-foreground" />
                     <div>
                       <div className="font-medium">Teléfono</div>
-                      <a href={`tel:${booking.contactPhone}`} className="text-sm text-blue-600 hover:underline">
-                        {booking.contactPhone}
+                      <a href={`tel:${booking.user.phone}`} className="text-sm text-blue-600 hover:underline">
+                        {booking.user.phone}
                       </a>
                     </div>
                   </div>
                 )}
+
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <div className="font-medium">Usuario</div>
+                    <div className="text-sm text-muted-foreground">
+                      {booking.user?.firstName} {booking.user?.lastName}
+                    </div>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
 
+          {/* Approval Section for Admins */}
+          {isAdmin && space?.requiresApproval && booking.status === 'PENDING' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-yellow-600">
+                  <AlertCircle className="h-5 w-5" />
+                  Aprobación Requerida
+                </CardTitle>
+                <CardDescription>
+                  Esta reserva requiere aprobación administrativa
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <BookingApprovalButtons booking={booking} />
+              </CardContent>
+            </Card>
+          )}
+
           {/* Check-in History */}
-          {booking.checkInHistory && booking.checkInHistory.length > 0 && (
+          {booking.checkIns && booking.checkIns.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -314,7 +293,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {booking.checkInHistory.map((activity) => (
+                  {booking.checkIns.map((activity) => (
                     <div key={activity.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
@@ -329,12 +308,12 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
                             {activity.action === 'CHECK_IN' ? 'Registró Entrada' : 'Registró Salida'}
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            {activity.userName}
+                            {activity.user?.firstName} {activity.user?.lastName}
                           </div>
                         </div>
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {format(new Date(activity.timestamp), 'MMM dd, HH:mm')}
+                        {format(new Date(activity.checkInTime || activity.createdAt), "dd 'de' MMM, HH:mm", { locale: es })}
                       </div>
                     </div>
                   ))}
@@ -349,7 +328,10 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
           {/* QR Code */}
           {booking.status === 'CONFIRMED' && (
             <QRCodeGenerator
-              booking={booking}
+              booking={{
+                ...booking,
+                qrCodeData: qrCodeData
+              }}
               showBookingDetails={false}
             />
           )}
@@ -372,7 +354,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
                 </Button>
               </Link>
 
-              <Link href={`/bookings/new?spaceId=${booking.spaceId}&start=${booking.startDateTime}&end=${booking.endDateTime}`}>
+              <Link href={`/bookings/new?spaceId=${booking.spaceId}&start=${booking.startTime}&end=${booking.endTime}`}>
                 <Button variant="outline" className="w-full justify-start">
                   <RotateCcw className="h-4 w-4 mr-2" />Reservar Nuevamente
                 </Button>
@@ -391,18 +373,6 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
                   <span className="text-muted-foreground">Duración</span>
                   <span className="font-medium">{formatDuration(duration)}</span>
                 </div>
-                {booking.setupTime && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Preparación</span>
-                    <span className="font-medium">{formatDuration(booking.setupTime)}</span>
-                  </div>
-                )}
-                {booking.cleanupTime && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Limpieza</span>
-                    <span className="font-medium">{formatDuration(booking.cleanupTime)}</span>
-                  </div>
-                )}
                 <Separator />
                 <div className="flex justify-between font-medium">
                   <span>Tiempo Total</span>
