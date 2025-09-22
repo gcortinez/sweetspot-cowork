@@ -160,11 +160,16 @@ export async function createBookingAction(data: CreateBookingRequest): Promise<A
     }
 
     revalidatePath('/bookings')
-    
-    return { 
-      success: true, 
+
+    return {
+      success: true,
       data: {
         ...booking,
+        cost: booking.cost ? Number(booking.cost) : null,
+        space: booking.space ? {
+          ...booking.space,
+          hourlyRate: booking.space.hourlyRate ? Number(booking.space.hourlyRate) : null,
+        } : null,
         participants: booking.participants ? JSON.parse(booking.participants) : [],
         services: booking.services ? JSON.parse(booking.services) : [],
         recurrenceRule: booking.recurrenceRule ? JSON.parse(booking.recurrenceRule) : null,
@@ -531,9 +536,14 @@ export async function listBookingsAction(data: ListBookingsRequest = {}): Promis
       },
     })
 
-    // Process JSON fields
+    // Process JSON fields and serialize Decimal fields
     const processedBookings = bookings.map(booking => ({
       ...booking,
+      cost: booking.cost ? Number(booking.cost) : null,
+      space: booking.space ? {
+        ...booking.space,
+        hourlyRate: booking.space.hourlyRate ? Number(booking.space.hourlyRate) : null,
+      } : null,
       participants: booking.participants ? JSON.parse(booking.participants) : [],
       services: booking.services ? JSON.parse(booking.services) : [],
       recurrenceRule: booking.recurrenceRule ? JSON.parse(booking.recurrenceRule) : null,
