@@ -159,6 +159,9 @@ export async function createBookingAction(data: CreateBookingRequest): Promise<A
     }
 
     // Create booking service records if services are specified
+    // NOTE: BookingService model not currently defined in schema
+    // Uncomment when model is added
+    /*
     if (validatedData.services && validatedData.services.length > 0) {
       const bookingServices = validatedData.services.map(service => ({
         bookingId: booking.id,
@@ -177,6 +180,7 @@ export async function createBookingAction(data: CreateBookingRequest): Promise<A
         data: bookingServices,
       })
     }
+    */
 
     revalidatePath('/bookings')
 
@@ -382,10 +386,14 @@ export async function deleteBookingAction(data: DeleteBookingRequest): Promise<A
     })
 
     // Update associated booking services to cancelled
+    // NOTE: BookingService model not currently defined in schema
+    // Uncomment when model is added
+    /*
     await prisma.bookingService.updateMany({
       where: { bookingId: validatedData.id },
       data: { status: 'CANCELLED' },
     })
+    */
 
     revalidatePath('/bookings')
     
@@ -439,23 +447,20 @@ export async function getBookingAction(data: GetBookingRequest): Promise<ActionR
       return { success: false, error: 'Booking not found' }
     }
 
-    // Get associated booking services
-    const bookingServices = await prisma.bookingService.findMany({
-      where: { bookingId: booking.id },
-      include: {
-        service: true,
-      },
-    })
-    
-    return { 
-      success: true, 
+    return {
+      success: true,
       data: {
         ...booking,
+        cost: booking.cost ? Number(booking.cost) : null,
+        space: booking.space ? {
+          ...booking.space,
+          hourlyRate: booking.space.hourlyRate ? Number(booking.space.hourlyRate) : null,
+          area: booking.space.area ? Number(booking.space.area) : null,
+        } : null,
         participants: booking.participants ? JSON.parse(booking.participants) : [],
         services: booking.services ? JSON.parse(booking.services) : [],
         recurrenceRule: booking.recurrenceRule ? JSON.parse(booking.recurrenceRule) : null,
         metadata: booking.metadata ? JSON.parse(booking.metadata) : null,
-        bookingServices,
       }
     }
   } catch (error: any) {
