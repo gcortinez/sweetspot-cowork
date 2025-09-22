@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getTenantContext } from '@/lib/auth'
 import type { ActionResult } from '@/types/database'
+import { generateSpaceColor, getNextAvailableColor } from '@/lib/utils/colors'
 import {
   createSpaceSchema,
   updateSpaceSchema,
@@ -184,6 +185,21 @@ export async function createSpaceAction(data: CreateSpaceRequest): Promise<Actio
     // Validate input data
     const validatedData = createSpaceSchema.parse(data)
 
+    // Generate color if not provided
+    let spaceColor = validatedData.color
+    if (!spaceColor) {
+      // Get existing space colors to avoid duplicates
+      const existingSpaces = await prisma.space.findMany({
+        where: { tenantId },
+        select: { color: true }
+      })
+      const usedColors = existingSpaces
+        .map(space => space.color)
+        .filter(color => color !== null) as string[]
+
+      spaceColor = getNextAvailableColor(usedColors)
+    }
+
     // Create space with only valid database fields
     const space = await prisma.space.create({
       data: {
@@ -197,6 +213,7 @@ export async function createSpaceAction(data: CreateSpaceRequest): Promise<Actio
         floor: validatedData.floor,
         zone: validatedData.zone,
         area: validatedData.area,
+        color: spaceColor,
         maxAdvanceBooking: validatedData.maxAdvanceBooking,
         minBookingDuration: validatedData.minBookingDuration,
         maxBookingDuration: validatedData.maxBookingDuration,
@@ -1210,6 +1227,70 @@ export async function createSpaceAvailabilityScheduleAction(data: any): Promise<
   } catch (error: any) {
     console.error('Create space availability schedule error:', error)
     return { success: false, error: 'Failed to create availability schedule' }
+  }
+}
+
+/**
+ * Assign colors to spaces that don't have one
+ */
+export async function assignColorsToExistingSpacesAction(): Promise<ActionResult<any>> {
+  try {
+    const { tenantId } = await getTenantContext()
+    if (!tenantId) {
+      return { success: false, error: 'Authentication required' }
+    }
+
+    // Get spaces without colors
+    const spacesWithoutColors = await prisma.space.findMany({
+      where: {
+        tenantId,
+        color: null
+      },
+      select: { id: true, name: true }
+    })
+
+    if (spacesWithoutColors.length === 0) {
+      return { success: true, data: { message: 'All spaces already have colors assigned' } }
+    }
+
+    // Get existing colors
+    const existingSpaces = await prisma.space.findMany({
+      where: {
+        tenantId,
+        color: { not: null }
+      },
+      select: { color: true }
+    })
+
+    const usedColors = existingSpaces
+      .map(space => space.color)
+      .filter(color => color !== null) as string[]
+
+    // Assign colors to spaces without them
+    const updates = spacesWithoutColors.map((space, index) => {
+      const color = getNextAvailableColor([...usedColors])
+      usedColors.push(color) // Add to used colors for next iteration
+
+      return prisma.space.update({
+        where: { id: space.id },
+        data: { color }
+      })
+    })
+
+    await Promise.all(updates)
+
+    revalidatePath('/spaces')
+
+    return {
+      success: true,
+      data: {
+        message: `Colors assigned to ${spacesWithoutColors.length} spaces`,
+        updatedSpaces: spacesWithoutColors.length
+      }
+    }
+  } catch (error: any) {
+    console.error('Assign colors error:', error)
+    return { success: false, error: 'Failed to assign colors to spaces' }
   }
 }
 

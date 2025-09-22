@@ -885,6 +885,7 @@ model Space {
     zone                String?
     images              Json?      // Array of image URLs
     area                Float?     // Square meters
+    color               String?    // Hex color for calendar display (e.g., "#3b82f6")
     maxAdvanceBooking   Int        @default(30)    // Days in advance
     minBookingDuration  Int        @default(60)    // Minutes
     maxBookingDuration  Int?       // Minutes (null = no limit)

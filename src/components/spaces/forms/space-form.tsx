@@ -12,8 +12,9 @@ import {
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { MapPin, Settings, DollarSign, Clock, Shield } from 'lucide-react'
+import { MapPin, Settings, DollarSign, Clock, Shield, Palette } from 'lucide-react'
 import Link from 'next/link'
+import { SPACE_COLOR_PALETTE } from '@/lib/utils/colors'
 
 interface SpaceFormProps {
   space?: any // Space from database for editing
@@ -185,6 +186,60 @@ export async function SpaceForm({ space, isEdit = false }: SpaceFormProps) {
                   Área específica del cowork
                 </p>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Color Configuration */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Palette className="h-5 w-5" />
+              Color del Espacio
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="color" className="text-sm font-medium">
+                Color para el Calendario
+              </label>
+              <div className="space-y-3">
+                {/* Color Input */}
+                <Input
+                  type="color"
+                  id="color"
+                  name="color"
+                  defaultValue={space?.color || SPACE_COLOR_PALETTE[0]}
+                  className="w-20 h-10 p-1 rounded cursor-pointer"
+                />
+
+                {/* Color Palette */}
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    Colores sugeridos:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {SPACE_COLOR_PALETTE.map((color, index) => (
+                      <button
+                        key={color}
+                        type="button"
+                        className="w-8 h-8 rounded-full border-2 border-gray-200 hover:border-gray-400 transition-colors"
+                        style={{ backgroundColor: color }}
+                        onClick={(e) => {
+                          const colorInput = document.getElementById('color') as HTMLInputElement
+                          if (colorInput) {
+                            colorInput.value = color
+                          }
+                        }}
+                        title={`Color ${index + 1}: ${color}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Este color se usará para identificar las reservas de este espacio en el calendario
+              </p>
             </div>
           </CardContent>
         </Card>

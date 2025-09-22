@@ -135,6 +135,7 @@ export const baseSpaceSchema = z.object({
   zone: z.string().max(50, 'La zona debe tener menos de 50 caracteres').optional(),
   images: z.array(z.string().url('Invalid image URL')).default([]),
   area: z.preprocess((val) => val === '' ? undefined : val, z.number().positive('El área debe ser positiva').optional()), // Square meters
+  color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'El color debe ser un valor hexadecimal válido (ej: #3b82f6)').optional(),
   maxAdvanceBooking: z.number().int().min(1, 'La reserva anticipada debe ser al menos 1 día').default(30), // Days
   minBookingDuration: z.number().int().min(15, 'La duración mínima debe ser al menos 15 minutos').default(60), // Minutes
   maxBookingDuration: z.preprocess((val) => val === '' ? undefined : val, z.number().int().min(15, 'La duración máxima debe ser al menos 15 minutos').optional()), // Minutes

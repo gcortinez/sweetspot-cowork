@@ -51,8 +51,9 @@ export async function createBookingAction(data: CreateBookingRequest): Promise<A
     const validatedData = createBookingSchema.parse(data)
 
     // Verify space exists if specified
+    let space: any = null
     if (validatedData.spaceId) {
-      const space = await prisma.space.findFirst({
+      space = await prisma.space.findFirst({
         where: {
           id: validatedData.spaceId,
           tenantId,
@@ -73,8 +74,8 @@ export async function createBookingAction(data: CreateBookingRequest): Promise<A
       )
 
       if (conflicts.length > 0) {
-        return { 
-          success: false, 
+        return {
+          success: false,
           error: 'Booking conflicts with existing reservation',
           details: { conflicts }
         }
@@ -119,6 +120,12 @@ export async function createBookingAction(data: CreateBookingRequest): Promise<A
       totalAmount = 100 // Placeholder
     }
 
+    // Determine booking status based on space approval requirements
+    let bookingStatus = validatedData.status
+    if (space && space.requiresApproval) {
+      bookingStatus = 'PENDING'
+    }
+
     // Create booking
     const booking = await prisma.booking.create({
       data: {
@@ -129,8 +136,9 @@ export async function createBookingAction(data: CreateBookingRequest): Promise<A
         description: validatedData.description,
         startTime: validatedData.startTime,
         endTime: validatedData.endTime,
-        status: validatedData.status,
+        status: bookingStatus,
         cost: totalAmount,
+        requiresApproval: space?.requiresApproval || false,
       },
       include: {
         tenant: true,
@@ -138,6 +146,18 @@ export async function createBookingAction(data: CreateBookingRequest): Promise<A
         user: true,
       },
     })
+
+    // Create approval record if space requires approval
+    if (space && space.requiresApproval) {
+      await prisma.bookingApproval.create({
+        data: {
+          bookingId: booking.id,
+          status: 'PENDING',
+          requestedAt: new Date(),
+          notes: `Reserva requiere aprobación para el espacio: ${space.name}`,
+        },
+      })
+    }
 
     // Create booking service records if services are specified
     if (validatedData.services && validatedData.services.length > 0) {

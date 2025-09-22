@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Calendar, Clock, MapPin, Users, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
+import { darkenColor, lightenColor } from '@/lib/utils/colors'
 
 // Regular imports for FullCalendar
 import FullCalendar from '@fullcalendar/react'
@@ -67,8 +68,20 @@ export function BookingCalendar({
     return () => clearTimeout(timer)
   }, [])
 
-  const getBookingColor = (status: Booking['status']) => {
-    switch (status) {
+  const getBookingColor = (booking: Booking, spaces: Space[]) => {
+    // First priority: Use the space's color
+    const space = spaces.find(s => s.id === booking.spaceId)
+    if (space?.color) {
+      return space.color
+    }
+
+    // Second priority: Use booking's own color
+    if (booking.color) {
+      return booking.color
+    }
+
+    // Fallback: Use color based on status
+    switch (booking.status) {
       case 'CONFIRMED':
         return '#10b981' // green-500
       case 'PENDING':
@@ -86,21 +99,47 @@ export function BookingCalendar({
     ? bookings
     : bookings.filter(b => b.spaceId === selectedSpace)
 
-  const calendarEvents = filteredBookings.map(booking => ({
-    id: booking.id,
-    title: booking.title || 'Sin título',
-    start: booking.start,
-    end: booking.end,
-    backgroundColor: booking.color || getBookingColor(booking.status),
-    borderColor: booking.color || getBookingColor(booking.status),
-    className: `booking-${booking.status?.toLowerCase() || 'confirmed'}`,
-    extendedProps: {
-      booking: {
-        ...booking,
-        spaceName: booking.spaceName || 'Espacio no especificado'
+  const calendarEvents = filteredBookings.map(booking => {
+    let backgroundColor = getBookingColor(booking, spaces)
+    let borderColor = darkenColor(backgroundColor, 15)
+
+    // Apply visual effects based on status
+    switch (booking.status) {
+      case 'PENDING':
+        // Make pending bookings lighter/faded
+        backgroundColor = lightenColor(backgroundColor, 30)
+        borderColor = backgroundColor
+        break
+      case 'CANCELLED':
+        // Make cancelled bookings very faded
+        backgroundColor = lightenColor(backgroundColor, 50)
+        borderColor = darkenColor(backgroundColor, 20)
+        break
+      case 'COMPLETED':
+        // Make completed bookings slightly faded
+        backgroundColor = lightenColor(backgroundColor, 20)
+        break
+      default:
+        // Normal confirmed bookings
+        break
+    }
+
+    return {
+      id: booking.id,
+      title: booking.title || 'Sin título',
+      start: booking.start,
+      end: booking.end,
+      backgroundColor,
+      borderColor,
+      className: `booking-${booking.status?.toLowerCase() || 'confirmed'}`,
+      extendedProps: {
+        booking: {
+          ...booking,
+          spaceName: booking.spaceName || 'Espacio no especificado'
+        }
       }
     }
-  }))
+  })
 
   const handleEventClick = useCallback((info: EventClickArg) => {
     if (onBookingSelect && info.event.extendedProps?.booking) {
@@ -187,6 +226,24 @@ export function BookingCalendar({
           </div>
         </div>
       </CardHeader>
+
+      {/* Color Legend */}
+      {selectedSpace === 'all' && spaces.length > 1 && (
+        <div className="px-6 py-3 border-b border-border bg-muted/30">
+          <div className="flex items-center gap-4 flex-wrap">
+            <span className="text-sm font-medium text-muted-foreground">Espacios:</span>
+            {spaces.map((space) => (
+              <div key={space.id} className="flex items-center gap-2">
+                <div
+                  className="w-3 h-3 rounded-full border border-gray-300"
+                  style={{ backgroundColor: space.color || '#3b82f6' }}
+                />
+                <span className="text-sm text-foreground">{space.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <CardContent className="p-4">
         <div className="w-full" style={{ height: height }}>
