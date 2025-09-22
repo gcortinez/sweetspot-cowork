@@ -71,6 +71,7 @@ function serializeSpaceData(space: any) {
     availabilityRules: safeJsonParse(space.availabilityRules, []),
     images: safeJsonParse(space.images, []),
     metadata: safeJsonParse(space.metadata, null),
+    isActive: space.isActive ?? true,  // Ensure isActive is always included
   }
 }
 

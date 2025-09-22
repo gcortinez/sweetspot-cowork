@@ -57,7 +57,7 @@ export function Sidebar({ className = '', onCreateLead }: SidebarProps) {
   const [isMounted, setIsMounted] = React.useState(false)
   const [openSections, setOpenSections] = React.useState<Record<string, boolean>>({
     crm: false,
-    operación: false,
+    operación: true,
     administración: false,
     reportes: false
   })
@@ -69,6 +69,22 @@ export function Sidebar({ className = '', onCreateLead }: SidebarProps) {
   React.useEffect(() => {
     setIsMounted(true)
   }, [])
+
+  // Auto-open sections that contain active items
+  React.useEffect(() => {
+    if (pathname.startsWith('/spaces') || pathname.startsWith('/bookings')) {
+      setOpenSections(prev => ({ ...prev, operación: true }))
+    }
+    if (pathname.startsWith('/leads') || pathname.startsWith('/opportunities') || pathname.startsWith('/clients') || pathname.startsWith('/services')) {
+      setOpenSections(prev => ({ ...prev, crm: true }))
+    }
+    if (pathname.startsWith('/admin') || pathname.startsWith('/users')) {
+      setOpenSections(prev => ({ ...prev, administración: true }))
+    }
+    if (pathname.startsWith('/reports')) {
+      setOpenSections(prev => ({ ...prev, reportes: true }))
+    }
+  }, [pathname])
 
   // Toggle section open/close
   const toggleSection = (sectionKey: string) => {

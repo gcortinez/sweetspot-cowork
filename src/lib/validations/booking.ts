@@ -1,5 +1,9 @@
 import { z } from 'zod'
 
+// CUID validation helper
+const cuidRegex = /^c[^\s-]{8,}$/i
+const cuidValidation = z.string().regex(cuidRegex, 'Invalid ID format')
+
 // Enums for booking-related fields
 export const BookingStatusSchema = z.enum([
   'PENDING',
@@ -52,7 +56,7 @@ export const CancellationReasonSchema = z.enum([
 
 // Booking participant schema
 export const BookingParticipantSchema = z.object({
-  userId: z.string().uuid('Invalid user ID').optional(),
+  userId: cuidValidation.optional(),
   name: z.string().min(1, 'Participant name is required').max(100),
   email: z.string().email('Invalid email address').optional(),
   phone: z.string().max(20).optional(),
@@ -64,7 +68,7 @@ export const BookingParticipantSchema = z.object({
 
 // Booking service schema
 export const BookingServiceSchema = z.object({
-  serviceId: z.string().uuid('Invalid service ID'),
+  serviceId: cuidValidation,
   quantity: z.number().int().min(1, 'Quantity must be at least 1').default(1),
   unitPrice: z.number().min(0, 'Unit price cannot be negative'),
   totalPrice: z.number().min(0, 'Total price cannot be negative'),
@@ -88,8 +92,8 @@ export const RecurrenceRuleSchema = z.object({
 
 // Base booking object (without refinements)
 const baseBookingObject = z.object({
-  spaceId: z.string().uuid('Invalid space ID').optional(),
-  clientId: z.string().uuid('Invalid client ID'),
+  spaceId: cuidValidation.optional(),
+  clientId: cuidValidation,
   type: BookingTypeSchema.default('SPACE_ONLY'),
   title: z.string().min(1, 'Booking title is required').max(200, 'Title must be less than 200 characters'),
   description: z.string().max(1000, 'Description must be less than 1000 characters').optional(),
@@ -113,16 +117,16 @@ const baseBookingObject = z.object({
   checkInMethod: CheckInMethodSchema.default('MANUAL'),
   isRecurring: z.boolean().default(false),
   recurrenceRule: RecurrenceRuleSchema.optional(),
-  parentBookingId: z.string().uuid().optional(), // For recurring bookings
+  parentBookingId: cuidValidation.optional(), // For recurring bookings
   requiresApproval: z.boolean().default(false),
-  approvedBy: z.string().uuid().optional(),
+  approvedBy: cuidValidation.optional(),
   approvedAt: z.date().optional(),
   checkedInAt: z.date().optional(),
   checkedOutAt: z.date().optional(),
   cancellationReason: CancellationReasonSchema.optional(),
   cancellationNotes: z.string().max(500).optional(),
   cancelledAt: z.date().optional(),
-  cancelledBy: z.string().uuid().optional(),
+  cancelledBy: cuidValidation.optional(),
   metadata: z.record(z.any()).optional(),
 })
 
@@ -146,19 +150,19 @@ export const createBookingSchema = baseBookingSchema
 
 // Update booking schema (all fields optional except ID)
 export const updateBookingSchema = z.object({
-  id: z.string().uuid('Invalid booking ID'),
+  id: cuidValidation,
 }).merge(baseBookingObject.partial())
 
 // Delete booking schema
 export const deleteBookingSchema = z.object({
-  id: z.string().uuid('Invalid booking ID'),
+  id: cuidValidation,
   reason: CancellationReasonSchema.optional(),
   notes: z.string().max(500).optional(),
 })
 
 // Get booking schema
 export const getBookingSchema = z.object({
-  id: z.string().uuid('Invalid booking ID'),
+  id: cuidValidation,
 })
 
 // List bookings schema
@@ -166,8 +170,8 @@ export const listBookingsSchema = z.object({
   page: z.number().int().min(1, 'Page must be at least 1').default(1),
   limit: z.number().int().min(1, 'Limit must be at least 1').max(100, 'Limit cannot exceed 100').default(20),
   search: z.string().max(100, 'Search query must be less than 100 characters').optional(),
-  spaceId: z.string().uuid().optional(),
-  clientId: z.string().uuid().optional(),
+  spaceId: cuidValidation.optional(),
+  clientId: cuidValidation.optional(),
   status: BookingStatusSchema.optional(),
   type: BookingTypeSchema.optional(),
   startDate: z.date().optional(),
@@ -180,14 +184,14 @@ export const listBookingsSchema = z.object({
 
 // Check booking conflicts schema
 export const checkBookingConflictsSchema = z.object({
-  spaceId: z.string().uuid('Invalid space ID'),
+  spaceId: cuidValidation,
   startTime: z.date({
     required_error: 'Start time is required',
   }),
   endTime: z.date({
     required_error: 'End time is required',
   }),
-  excludeBookingId: z.string().uuid().optional(),
+  excludeBookingId: cuidValidation.optional(),
   includeSetupCleanup: z.boolean().default(true),
 }).refine(
   (data) => data.endTime > data.startTime,
@@ -199,16 +203,16 @@ export const checkBookingConflictsSchema = z.object({
 
 // Booking check-in schema
 export const checkInBookingSchema = z.object({
-  id: z.string().uuid('Invalid booking ID'),
+  id: cuidValidation,
   method: CheckInMethodSchema.default('MANUAL'),
-  participantIds: z.array(z.string().uuid()).optional(),
+  participantIds: z.array(cuidValidation).optional(),
   notes: z.string().max(500).optional(),
   actualStartTime: z.date().optional(),
 })
 
 // Booking check-out schema
 export const checkOutBookingSchema = z.object({
-  id: z.string().uuid('Invalid booking ID'),
+  id: cuidValidation,
   actualEndTime: z.date().optional(),
   feedbackRating: z.number().int().min(1).max(5).optional(),
   feedback: z.string().max(1000).optional(),
@@ -217,17 +221,17 @@ export const checkOutBookingSchema = z.object({
 
 // Booking approval schema
 export const approveBookingSchema = z.object({
-  id: z.string().uuid('Invalid booking ID'),
+  id: cuidValidation,
   approved: z.boolean(),
   notes: z.string().max(500).optional(),
 })
 
 // Booking modification schema
 export const modifyBookingSchema = z.object({
-  id: z.string().uuid('Invalid booking ID'),
+  id: cuidValidation,
   startTime: z.date().optional(),
   endTime: z.date().optional(),
-  spaceId: z.string().uuid().optional(),
+  spaceId: cuidValidation.optional(),
   services: z.array(BookingServiceSchema).optional(),
   participants: z.array(BookingParticipantSchema).optional(),
   notes: z.string().max(1000).optional(),
@@ -242,7 +246,7 @@ export const modifyBookingSchema = z.object({
 
 // Bulk operations schema
 export const bulkUpdateBookingsSchema = z.object({
-  bookingIds: z.array(z.string().uuid('Invalid booking ID')).min(1, 'At least one booking ID is required'),
+  bookingIds: z.array(cuidValidation).min(1, 'At least one booking ID is required'),
   updates: z.object({
     status: BookingStatusSchema.optional(),
     requiresApproval: z.boolean().optional(),
@@ -258,8 +262,8 @@ export const bulkUpdateBookingsSchema = z.object({
 
 // Booking statistics schema
 export const getBookingStatsSchema = z.object({
-  spaceId: z.string().uuid().optional(),
-  clientId: z.string().uuid().optional(),
+  spaceId: cuidValidation.optional(),
+  clientId: cuidValidation.optional(),
   startDate: z.date().optional(),
   endDate: z.date().optional(),
   groupBy: z.enum(['hour', 'day', 'week', 'month']).default('day'),
@@ -268,7 +272,7 @@ export const getBookingStatsSchema = z.object({
 
 // Booking utilization schema
 export const getBookingUtilizationSchema = z.object({
-  spaceIds: z.array(z.string().uuid()).optional(),
+  spaceIds: z.array(cuidValidation).optional(),
   startDate: z.date({
     required_error: 'Start date is required',
   }),
@@ -286,7 +290,7 @@ export const getBookingUtilizationSchema = z.object({
 
 // Recurring booking generation schema
 export const generateRecurringBookingsSchema = z.object({
-  templateBookingId: z.string().uuid('Invalid booking ID'),
+  templateBookingId: cuidValidation,
   generateUntil: z.date({
     required_error: 'Generate until date is required',
   }),

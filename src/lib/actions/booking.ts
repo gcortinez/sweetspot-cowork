@@ -133,7 +133,7 @@ export async function createBookingAction(data: CreateBookingRequest): Promise<A
       include: {
         tenant: true,
         space: true,
-        client: true,
+        user: true,
       },
     })
 
@@ -282,7 +282,7 @@ export async function updateBookingAction(data: UpdateBookingRequest): Promise<A
       include: {
         tenant: true,
         space: true,
-        client: true,
+        user: true,
       },
     })
 
@@ -405,7 +405,7 @@ export async function getBookingAction(data: GetBookingRequest): Promise<ActionR
       include: {
         tenant: true,
         space: true,
-        client: true,
+        user: true,
       },
     })
 
@@ -524,7 +524,8 @@ export async function listBookingsAction(data: ListBookingsRequest = {}): Promis
       include: {
         tenant: true,
         space: true,
-        client: true,
+        user: true,
+        approval: true,
       },
     })
 
@@ -909,7 +910,7 @@ async function checkBookingConflictsInternal(
       startTime: true,
       endTime: true,
       status: true,
-      client: {
+      user: {
         select: {
           name: true,
         },

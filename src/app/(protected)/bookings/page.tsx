@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Calendar, Plus, Clock, Users, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
+import { listBookingsAction } from '@/lib/actions/booking'
+import { listSpacesAction } from '@/lib/actions/space'
 
 // Mock data - in real implementation, this would come from server actions
 const mockBookings = [
@@ -66,9 +68,24 @@ const mockSpaces = [
 ]
 
 async function BookingsContent() {
-  // In real implementation, fetch data from server actions
-  const bookings = mockBookings
-  const spaces = mockSpaces
+  // Fetch real data from server actions
+  const [bookingsResult, spacesResult] = await Promise.all([
+    listBookingsAction({
+      page: 1,
+      limit: 100,
+      sortBy: 'startTime',
+      sortOrder: 'asc',
+    }),
+    listSpacesAction({
+      page: 1,
+      limit: 100,
+      sortBy: 'name',
+      sortOrder: 'asc',
+    }),
+  ])
+
+  const bookings = bookingsResult.success ? (bookingsResult.data?.bookings || []) : []
+  const spaces = spacesResult.success ? (spacesResult.data?.spaces || []) : []
 
   const stats = {
     totalBookings: bookings.length,
@@ -135,7 +152,10 @@ async function BookingsContent() {
       </div>
 
       {/* Calendar - Client Component wrapper */}
-      <BookingCalendarWrapper bookings={bookings} spaces={spaces} />
+      <BookingCalendarWrapper
+        bookings={bookings}
+        spaces={spaces.filter(s => s.isActive !== false)}
+      />
     </div>
   )
 }
@@ -196,18 +216,11 @@ export default function BookingsPage() {
             Gestiona y visualiza todas las reservas de espacios
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Link href="/bookings/calendar">
-            <Button variant="outline">
-              <Calendar className="h-4 w-4 mr-1" />Vista de Calendario
-            </Button>
-          </Link>
-          <Link href="/bookings/new">
-            <Button>
-              <Plus className="h-4 w-4 mr-1" />Nueva Reserva
-            </Button>
-          </Link>
-        </div>
+        <Link href="/bookings/calendar">
+          <Button variant="outline">
+            <Calendar className="h-4 w-4 mr-1" />Vista de Calendario
+          </Button>
+        </Link>
       </div>
 
       <Suspense fallback={<BookingsLoading />}>

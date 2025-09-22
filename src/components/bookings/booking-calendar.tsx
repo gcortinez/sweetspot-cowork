@@ -88,25 +88,42 @@ export function BookingCalendar({
 
   const calendarEvents = filteredBookings.map(booking => ({
     id: booking.id,
-    title: booking.title,
+    title: booking.title || 'Sin título',
     start: booking.start,
     end: booking.end,
     backgroundColor: booking.color || getBookingColor(booking.status),
     borderColor: booking.color || getBookingColor(booking.status),
-    className: `booking-${booking.status.toLowerCase()}`,
-    extendedProps: { booking }
+    className: `booking-${booking.status?.toLowerCase() || 'confirmed'}`,
+    extendedProps: {
+      booking: {
+        ...booking,
+        spaceName: booking.spaceName || 'Espacio no especificado'
+      }
+    }
   }))
 
   const handleEventClick = useCallback((info: EventClickArg) => {
-    if (onBookingSelect) {
+    if (onBookingSelect && info.event.extendedProps?.booking) {
       const booking = info.event.extendedProps.booking as Booking
       onBookingSelect(booking)
     }
   }, [onBookingSelect])
 
   const handleDateSelect = useCallback((info: DateSelectArg) => {
-    if (onDateSelect) {
+    console.log('Date selection triggered:', {
+      start: info.start,
+      end: info.end,
+      allDay: info.allDay,
+      view: info.view.type
+    })
+
+    // Only process time selections, not all-day selections
+    if (onDateSelect && !info.allDay) {
+      // Call the handler with the selected time range
       onDateSelect(info.start, info.end, selectedSpace === 'all' ? undefined : selectedSpace)
+
+      // Unselect after processing
+      info.view.calendar.unselect()
     }
   }, [onDateSelect, selectedSpace])
 
@@ -131,7 +148,9 @@ export function BookingCalendar({
   }
 
   return (
-    <Card>
+    <Card className="overflow-hidden">
+      {/* Calendar wrapper with Tailwind CSS classes for styling FullCalendar components */}
+      <div className="fc-calendar-wrapper [&_.fc-highlight]:bg-purple-600/30 [&_.fc-highlight]:border-2 [&_.fc-highlight]:border-purple-600 [&_.fc-highlight]:rounded [&_.fc-timegrid-slot:hover]:bg-purple-600/5 [&_.fc-timegrid-slot]:cursor-crosshair [&_.fc-event]:cursor-pointer [&_.fc-event]:transition-all [&_.fc-event]:border-0 [&_.fc-event:hover]:scale-[1.02] [&_.fc-event:hover]:shadow-md [&_.fc-timegrid-slot-lane]:cursor-crosshair [&_.fc-timegrid_.fc-col-header-cell]:cursor-crosshair">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -186,14 +205,19 @@ export function BookingCalendar({
                 : 'timeGridDay'
             }
             editable={!!onEventDrop}
-            selectable={!!onDateSelect}
+            selectable={true}
             selectMirror={true}
+            selectOverlap={false}
+            unselectAuto={false}
+            selectMinDistance={5}
             dayMaxEvents={true}
             weekends={true}
             events={calendarEvents}
             eventClick={handleEventClick}
             select={handleDateSelect}
             eventDrop={handleEventDrop}
+            eventStartEditable={false}
+            eventDurationEditable={false}
             slotMinTime="06:00:00"
             slotMaxTime="24:00:00"
             allDaySlot={false}
@@ -204,12 +228,22 @@ export function BookingCalendar({
             expandRows={false}
             scrollTime="08:00:00"
             eventContent={(eventInfo) => {
-              const { booking } = eventInfo.event.extendedProps
+              const booking = eventInfo.event.extendedProps?.booking
+
+              // If no booking data (e.g., during selection), show simple title
+              if (!booking) {
+                return (
+                  <div className="p-1 text-xs">
+                    <div className="font-semibold truncate">{eventInfo.event.title}</div>
+                  </div>
+                )
+              }
+
               return (
                 <div className="p-1 text-xs">
                   <div className="font-semibold truncate">{eventInfo.event.title}</div>
                   <div className="text-[10px] opacity-90 truncate">
-                    {booking.spaceName}
+                    {booking.spaceName || 'Espacio no asignado'}
                   </div>
                   {booking.attendeeCount && (
                     <div className="text-[10px] flex items-center gap-1">
@@ -244,6 +278,7 @@ export function BookingCalendar({
           />
         </div>
       </CardContent>
+      </div>
     </Card>
   )
 }

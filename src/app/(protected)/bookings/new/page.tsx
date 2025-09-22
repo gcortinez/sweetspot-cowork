@@ -39,8 +39,13 @@ export default async function NewBookingPage({ searchParams }: NewBookingPagePro
     )
   }
 
-  const { data: spaces } = result.data
-  const activeSpaces = spaces?.filter(space => space.isActive) || []
+  // Debug logging
+  console.log('Result from listSpacesAction:', result)
+
+  const spaces = result.data?.spaces || []
+  console.log('Spaces found:', spaces)
+
+  const activeSpaces = spaces.filter(space => space.isActive !== false)
 
   if (activeSpaces.length === 0) {
     return (
@@ -56,9 +61,9 @@ export default async function NewBookingPage({ searchParams }: NewBookingPagePro
                 <ArrowLeft className="h-4 w-4 mr-1" />Volver a Reservas
               </Button>
             </Link>
-            <Button asChild>
-              <Link href="/spaces">Ver Espacios</Link>
-            </Button>
+            <Link href="/spaces">
+              <Button>Ver Espacios</Button>
+            </Link>
           </div>
         </div>
       </div>
