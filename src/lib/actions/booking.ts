@@ -912,7 +912,8 @@ async function checkBookingConflictsInternal(
       status: true,
       user: {
         select: {
-          name: true,
+          firstName: true,
+          lastName: true,
         },
       },
     },
