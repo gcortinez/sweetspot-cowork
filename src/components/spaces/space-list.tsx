@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -31,6 +32,7 @@ import {
   EyeOff,
   RotateCcw,
   Loader2,
+  Palette,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -622,6 +624,12 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
             {showInactive ? <Eye className="mr-2 h-4 w-4" /> : <EyeOff className="mr-2 h-4 w-4" />}
             {showInactive ? "Ocultar Inactivos" : "Mostrar Inactivos"}
           </Button>
+          <Link href="/admin/assign-space-colors">
+            <Button variant="outline">
+              <Palette className="mr-2 h-4 w-4" />
+              Gestionar Colores
+            </Button>
+          </Link>
           <Button onClick={() => setAddModalOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Agregar Espacio
