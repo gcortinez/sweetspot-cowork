@@ -23,7 +23,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
-import { Settings, DollarSign, Clock, Shield, Edit } from 'lucide-react'
+import { Settings, DollarSign, Clock, Shield, Edit, Palette } from 'lucide-react'
+import { ColorPaletteSelector } from '@/components/spaces/forms/color-palette-selector'
 import { updateSpaceAction } from '@/lib/actions/space'
 import { getSpaceTypeOptionsAction, createDefaultSpaceTypesAction } from '@/lib/actions/space-type'
 
@@ -44,6 +45,7 @@ interface Space {
   isActive: boolean
   requiresApproval: boolean
   allowRecurring: boolean
+  color?: string
 }
 
 interface EditSpaceModalProps {
@@ -73,6 +75,7 @@ export function EditSpaceModal({ open, onOpenChange, space, onSuccess }: EditSpa
     isActive: true,
     requiresApproval: false,
     allowRecurring: true,
+    color: '',
   })
 
   // Load space types when modal opens
@@ -101,6 +104,7 @@ export function EditSpaceModal({ open, onOpenChange, space, onSuccess }: EditSpa
         isActive: space.isActive ?? true,
         requiresApproval: space.requiresApproval ?? false,
         allowRecurring: space.allowRecurring ?? true,
+        color: space.color || '',
       })
     }
   }, [space])
@@ -153,6 +157,7 @@ export function EditSpaceModal({ open, onOpenChange, space, onSuccess }: EditSpa
         isActive: formData.isActive,
         requiresApproval: formData.requiresApproval,
         allowRecurring: formData.allowRecurring,
+        color: formData.color || undefined,
       })
 
       if (result.success) {
@@ -285,6 +290,31 @@ export function EditSpaceModal({ open, onOpenChange, space, onSuccess }: EditSpa
                     onChange={(e) => handleInputChange('zone', e.target.value)}
                   />
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Color Configuration */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Palette className="h-5 w-5" />
+                Color del Espacio
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="color" className="text-sm font-medium">
+                  Color para el Calendario
+                </label>
+                <ColorPaletteSelector
+                  defaultValue={formData.color}
+                  onColorChange={(color) => handleInputChange('color', color)}
+                  inputId="edit-space-color"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Este color se usará para identificar las reservas de este espacio en el calendario
+                </p>
               </div>
             </CardContent>
           </Card>
