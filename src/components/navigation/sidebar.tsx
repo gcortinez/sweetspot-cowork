@@ -94,6 +94,15 @@ const getBusinessItems = (t: (key: string) => string) => [
   },
 ];
 
+const getAdminItems = () => [
+  {
+    title: "Gestionar Reservas",
+    href: "/admin/booking-management",
+    icon: Calendar,
+    description: "Aprobar y gestionar reservas",
+  },
+];
+
 const getAccountItems = (t: (key: string) => string) => [
   {
     title: t("nav.profile"),
@@ -353,13 +362,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onCloseMobile }) =>
 
   const coreItems = getCoreItems(t);
   const businessItems = getBusinessItems(t);
+  const adminItems = getAdminItems();
   const crmItems = getCrmItems(t);
   const accountItems = getAccountItems(t);
   const supportItems = getSupportItems(t);
   const superAdminItems = getSuperAdminItems();
-  
-  // Check if user is Super Admin
+
+  // Check user roles
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+  const isAdmin = user?.role === 'COWORK_ADMIN' || user?.role === 'SUPER_ADMIN';
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -593,6 +604,33 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onCloseMobile }) =>
                 })}
               </nav>
             </SidebarSection>
+
+            {/* Administration Section - Only for admins */}
+            {isAdmin && (
+              <SidebarSection
+                title="Administración"
+                icon={Shield}
+                colorScheme={isSuperAdmin ? "purple" : "blue"}
+                isCollapsible={true}
+                defaultExpanded={pathname.includes('/admin')}
+              >
+                <nav className="space-y-1">
+                  {adminItems.map((item) => {
+                    const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                    return (
+                      <NavigationItem
+                        key={item.href}
+                        item={item}
+                        isActive={isActive}
+                        onCloseMobile={onCloseMobile}
+                        colorScheme={isSuperAdmin ? "purple" : "default"}
+                        showDescription={showDescriptions}
+                      />
+                    );
+                  })}
+                </nav>
+              </SidebarSection>
+            )}
 
             {/* CRM Section */}
             <SidebarSection 

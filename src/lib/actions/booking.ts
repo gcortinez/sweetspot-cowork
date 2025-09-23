@@ -968,3 +968,40 @@ async function checkBookingConflictsInternal(
     },
   })
 }
+
+/**
+ * Get count of pending bookings that require admin approval
+ */
+export async function getPendingApprovalsCountAction(): Promise<ActionResult<{ count: number }>> {
+  try {
+    // Get tenant context and validate auth
+    const { tenantId, user } = await getTenantContext()
+    if (!tenantId || !user) {
+      return { success: false, error: 'Authentication required' }
+    }
+
+    // Check if user is admin
+    if (!['COWORK_ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+      return { success: false, error: 'Admin access required' }
+    }
+
+    // Count pending bookings from spaces that require approval
+    const count = await prisma.booking.count({
+      where: {
+        status: 'PENDING',
+        space: {
+          tenantId,
+          requiresApproval: true,
+        },
+      },
+    })
+
+    return {
+      success: true,
+      data: { count },
+    }
+  } catch (error) {
+    console.error('Error getting pending approvals count:', error)
+    return { success: false, error: 'Failed to get pending approvals count' }
+  }
+}

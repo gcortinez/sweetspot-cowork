@@ -34,6 +34,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { AdminNotificationBell } from "@/components/notifications/admin-notification-bell";
 
 interface HeaderProps {
   onMobileMenuToggle?: () => void;
@@ -234,21 +235,22 @@ export function Header({
               <Search className="h-4 w-4" />
             </Button>
 
-            {/* Notifications */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn(
-                "relative transition-colors duration-200",
-                isSuperAdmin
-                  ? "text-purple-500 hover:text-purple-700 hover:bg-purple-100 dark:text-purple-400 dark:hover:text-purple-300 dark:hover:bg-purple-900/40"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800"
-              )}
-            >
-              <Bell className="h-4 w-4" />
-              {/* Notification badge */}
-              <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs"></span>
-            </Button>
+            {/* Admin Notifications - Show only for admins */}
+            {(user?.role === 'SUPER_ADMIN' || user?.role === 'COWORK_ADMIN') ? (
+              <AdminNotificationBell isSuperAdmin={isSuperAdmin} />
+            ) : (
+              /* Regular notifications for non-admin users */
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  "relative transition-colors duration-200",
+                  "text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800"
+                )}
+              >
+                <Bell className="h-4 w-4" />
+              </Button>
+            )}
 
             {/* Quick Create */}
             <Button
