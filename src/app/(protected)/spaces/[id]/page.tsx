@@ -16,6 +16,7 @@ import {
   Clock,
   Shield,
   RotateCcw,
+  Palette,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -210,6 +211,23 @@ export default async function SpaceDetailPage({ params }: SpaceDetailPageProps) 
                 </div>
                 <span className="font-medium">{formatCurrency(space.hourlyRate)}</span>
               </div>
+
+              {space.color && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Palette className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">Color del Calendario</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-6 h-6 rounded-full border-2 border-gray-300"
+                      style={{ backgroundColor: space.color }}
+                      title={`Color: ${space.color}`}
+                    />
+                    <span className="font-medium text-xs text-muted-foreground">{space.color}</span>
+                  </div>
+                </div>
+              )}
 
               <Separator />
 
