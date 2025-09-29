@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { listSpacesAction } from '@/lib/actions/space'
+import { listBookingsAction } from '@/lib/actions/booking'
 import { CalendarPageWrapper } from '@/components/bookings/calendar-page-wrapper'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -15,82 +16,56 @@ interface CalendarPageProps {
   }>
 }
 
-// Mock bookings data - in real implementation, this would come from server actions
-const mockBookings = [
-  {
-    id: '1',
-    title: 'Team Meeting',
-    start: '2025-01-20T09:00:00',
-    end: '2025-01-20T11:00:00',
-    spaceId: 'space-1',
-    spaceName: 'Conference Room A',
-    status: 'CONFIRMED' as const,
-    attendeeCount: 8,
-    isRecurring: false,
-  },
-  {
-    id: '2',
-    title: 'Weekly Standup',
-    start: '2025-01-21T10:00:00',
-    end: '2025-01-21T11:00:00',
-    spaceId: 'space-2',
-    spaceName: 'Meeting Room B',
-    status: 'CONFIRMED' as const,
-    attendeeCount: 5,
-    isRecurring: true,
-  },
-  {
-    id: '3',
-    title: 'Client Presentation',
-    start: '2025-01-22T14:00:00',
-    end: '2025-01-22T16:00:00',
-    spaceId: 'space-1',
-    spaceName: 'Conference Room A',
-    status: 'PENDING' as const,
-    attendeeCount: 12,
-    isRecurring: false,
-  },
-  {
-    id: '4',
-    title: 'Board Meeting',
-    start: '2025-01-23T15:00:00',
-    end: '2025-01-23T17:00:00',
-    spaceId: 'space-3',
-    spaceName: 'Executive Boardroom',
-    status: 'CONFIRMED' as const,
-    attendeeCount: 10,
-    isRecurring: false,
-  },
-]
-
 async function CalendarContent({ selectedSpaceId, view }: { selectedSpaceId?: string, view?: string }) {
-  const result = await listSpacesAction({
-    page: 1,
-    limit: 100,
-    sortBy: 'name',
-    sortOrder: 'asc',
-  })
+  // Fetch spaces and bookings in parallel
+  const [spacesResult, bookingsResult] = await Promise.all([
+    listSpacesAction({
+      page: 1,
+      limit: 100,
+      sortBy: 'name',
+      sortOrder: 'asc',
+    }),
+    listBookingsAction({
+      page: 1,
+      limit: 1000,
+      sortBy: 'startTime',
+      sortOrder: 'asc',
+      spaceId: selectedSpaceId,
+    }),
+  ])
 
-  if (!result.success) {
+  if (!spacesResult.success) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>Error al Cargar Calendario</CardTitle>
           <CardDescription>
-            {result.error || 'No se puede cargar el calendario de reservas en este momento'}
+            {spacesResult.error || 'No se puede cargar el calendario de reservas en este momento'}
           </CardDescription>
         </CardHeader>
       </Card>
     )
   }
 
-  const { data: spaces } = result.data
-  const activeSpaces = spaces?.filter(space => space.isActive) || []
+  const spaces = spacesResult.data?.spaces || []
+  const activeSpaces = spaces.filter(space => space.isActive)
 
-  // Filter bookings by selected space if specified
-  const bookings = selectedSpaceId
-    ? mockBookings.filter(booking => booking.spaceId === selectedSpaceId)
-    : mockBookings
+  // Get bookings and transform them for the calendar
+  const allBookings = bookingsResult.success ? (bookingsResult.data?.bookings || []) : []
+
+  // Transform bookings to match calendar format
+  const bookings = allBookings.map(booking => ({
+    id: booking.id,
+    title: booking.title,
+    start: new Date(booking.startTime).toISOString(),
+    end: new Date(booking.endTime).toISOString(),
+    spaceId: booking.spaceId,
+    spaceName: booking.space?.name || 'Espacio no encontrado',
+    status: booking.status as 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED',
+    attendeeCount: booking.attendeeCount,
+    isRecurring: false, // TODO: Add recurrence support
+    color: booking.space?.color,
+  }))
 
   const selectedSpace = selectedSpaceId ? activeSpaces.find(s => s.id === selectedSpaceId) : null
 
