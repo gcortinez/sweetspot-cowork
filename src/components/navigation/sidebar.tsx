@@ -96,10 +96,16 @@ const getBusinessItems = (t: (key: string) => string) => [
 
 const getAdminItems = () => [
   {
+    title: "Aprobar Reservas",
+    href: "/admin/booking-approvals",
+    icon: Clock,
+    description: "Aprobaciones pendientes",
+  },
+  {
     title: "Gestionar Reservas",
     href: "/admin/booking-management",
     icon: Calendar,
-    description: "Aprobar y gestionar reservas",
+    description: "Todas las reservas",
   },
 ];
 
