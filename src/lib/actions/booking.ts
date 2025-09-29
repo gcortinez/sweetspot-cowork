@@ -150,6 +150,7 @@ export async function createBookingAction(data: CreateBookingRequest): Promise<A
     if (space && space.requiresApproval) {
       await prisma.bookingApproval.create({
         data: {
+          tenantId,
           bookingId: booking.id,
           status: 'PENDING',
           requestedAt: new Date(),

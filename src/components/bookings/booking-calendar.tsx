@@ -36,6 +36,7 @@ interface Space {
   hourlyRate?: number
   floor?: string
   zone?: string
+  color?: string
 }
 
 interface BookingCalendarProps {
