@@ -16,6 +16,7 @@ import {
   Share2,
   Calendar,
   DollarSign,
+  Palette,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -253,6 +254,20 @@ export function SpaceCard({
             <Calendar className="w-4 h-4 ml-2" />
             <span>9:00 AM - 6:00 PM</span>
           </div>
+
+          {/* Color Display */}
+          {space.color && (
+            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+              <Palette className="w-4 h-4" />
+              <span>Color:</span>
+              <div
+                className="w-4 h-4 rounded-full border border-gray-300"
+                style={{ backgroundColor: space.color }}
+                title={`Color: ${space.color}`}
+              />
+              <span className="text-gray-400">{space.color}</span>
+            </div>
+          )}
         </CardContent>
 
         <CardFooter className={!isGridView ? "p-4 pt-0" : undefined}>

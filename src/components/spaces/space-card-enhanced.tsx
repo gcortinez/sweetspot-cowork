@@ -15,6 +15,7 @@ import {
   RotateCcw,
   CheckCircle,
   XCircle,
+  Palette,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -45,6 +46,7 @@ interface Space {
   maxAdvanceBooking: number
   minBookingDuration: number
   cancellationHours: number
+  color?: string
   createdAt: Date
   updatedAt: Date
 }
@@ -228,6 +230,18 @@ export function SpaceCardEnhanced({
               <Clock className="h-4 w-4 text-muted-foreground" />
               <span>Mín {formatDuration(space.minBookingDuration)}</span>
             </div>
+            {space.color && (
+              <div className="flex items-center gap-2 col-span-2">
+                <Palette className="h-4 w-4 text-muted-foreground" />
+                <span>Color:</span>
+                <div
+                  className="w-4 h-4 rounded-full border border-gray-300"
+                  style={{ backgroundColor: space.color }}
+                  title={`Color: ${space.color}`}
+                />
+                <span className="text-muted-foreground text-xs">{space.color}</span>
+              </div>
+            )}
           </div>
 
           {/* Features */}

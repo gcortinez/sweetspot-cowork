@@ -292,6 +292,7 @@ export async function updateSpaceAction(data: UpdateSpaceRequest): Promise<Actio
     if (updateData.floor !== undefined) processedUpdateData.floor = updateData.floor
     if (updateData.zone !== undefined) processedUpdateData.zone = updateData.zone
     if (updateData.area !== undefined) processedUpdateData.area = updateData.area
+    if (updateData.color !== undefined) processedUpdateData.color = updateData.color
     if (updateData.maxAdvanceBooking !== undefined) processedUpdateData.maxAdvanceBooking = updateData.maxAdvanceBooking
     if (updateData.minBookingDuration !== undefined) processedUpdateData.minBookingDuration = updateData.minBookingDuration
     if (updateData.maxBookingDuration !== undefined) processedUpdateData.maxBookingDuration = updateData.maxBookingDuration

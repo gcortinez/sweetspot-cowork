@@ -90,6 +90,7 @@ interface SpaceListItem {
   zone?: string
   area?: number
   hourlyRate?: number
+  color?: string
   isActive: boolean
   requiresApproval: boolean
   allowRecurring: boolean
@@ -260,13 +261,22 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
       cell: ({ row }) => {
         const space = row.original
         return (
-          <div className="flex flex-col">
-            <span className="font-medium">{space.name}</span>
-            {space.description && (
-              <span className="text-sm text-muted-foreground truncate max-w-[200px]">
-                {space.description}
-              </span>
+          <div className="flex items-center gap-2">
+            {space.color && (
+              <div
+                className="w-3 h-3 rounded-full border border-gray-300 flex-shrink-0"
+                style={{ backgroundColor: space.color }}
+                title={`Color: ${space.color}`}
+              />
             )}
+            <div className="flex flex-col">
+              <span className="font-medium">{space.name}</span>
+              {space.description && (
+                <span className="text-sm text-muted-foreground truncate max-w-[200px]">
+                  {space.description}
+                </span>
+              )}
+            </div>
           </div>
         )
       },
@@ -522,7 +532,7 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
             <Settings className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{statistics.totalCount}</div>
+            <div className="text-2xl font-bold">{statistics.activeCount}</div>
             <p className="text-xs text-muted-foreground">
               {statistics.activeCount} activos
             </p>
@@ -814,6 +824,18 @@ export function SpaceList({ spaces, totalCount }: SpaceListProps) {
                       <div className="flex items-center gap-2">
                         <Settings className="h-4 w-4 text-muted-foreground" />
                         <span>Área: {spaceToView.area} m²</span>
+                      </div>
+                    )}
+                    {spaceToView.color && (
+                      <div className="flex items-center gap-2">
+                        <Palette className="h-4 w-4 text-muted-foreground" />
+                        <span>Color: </span>
+                        <div
+                          className="w-5 h-5 rounded-full border-2 border-gray-300"
+                          style={{ backgroundColor: spaceToView.color }}
+                          title={`Color: ${spaceToView.color}`}
+                        />
+                        <span className="text-xs text-muted-foreground">{spaceToView.color}</span>
                       </div>
                     )}
                   </div>

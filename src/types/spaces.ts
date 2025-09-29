@@ -83,6 +83,7 @@ export interface Space {
     count: number;
   };
   tags: string[];
+  color?: string; // Hex color for calendar display
   createdAt: string;
   updatedAt: string;
 }
