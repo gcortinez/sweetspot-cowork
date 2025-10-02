@@ -10,6 +10,7 @@
     }
   },
   "github": {
-    "autoAlias": false
+    "autoAlias": false,
+    "silent": true
   }
 }
