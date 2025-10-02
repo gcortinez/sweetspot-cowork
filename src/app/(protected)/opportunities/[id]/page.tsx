@@ -1,19 +1,19 @@
 'use client'
 
+// Opportunity detail page
 import React, { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { AppHeader } from '@/components/shared/app-header'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { 
+import {
   getOpportunity,
   changeOpportunityStage,
   deleteOpportunity
 } from '@/lib/actions/opportunities'
-import { listActivities, updateActivity } from '@/lib/actions/activities'
+import { listActivities } from '@/lib/actions/activities'
 import { STAGE_METADATA } from '@/lib/validations/opportunities'
 import { useToast } from '@/hooks/use-toast'
 import EditOpportunityModal from '@/components/opportunities/EditOpportunityModal'
@@ -32,22 +32,15 @@ import {
   ArrowLeft,
   Edit,
   Trash2,
-  DollarSign,
   Calendar,
   User,
   Building2,
-  TrendingUp,
   Clock,
-  CheckCircle,
-  XCircle,
   MoreHorizontal,
   Activity,
   MessageSquare,
-  Phone,
-  Mail,
   FileText,
-  AlertCircle,
-  Plus
+  AlertCircle
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -100,7 +93,8 @@ interface Opportunity {
 interface OpportunityActivity {
   id: string
   type: string
-  title: string
+  subject: string // Nombre correcto del campo en la base de datos
+  title: string // Para compatibilidad con el código existente
   description?: string
   sortOrder?: number
   completedAt?: Date | null
@@ -164,7 +158,13 @@ export default function OpportunityDetailPage() {
     try {
       const [opportunityResult, activitiesResult] = await Promise.all([
         getOpportunity(opportunityId),
-        listActivities({ opportunityId })
+        listActivities({
+          opportunityId,
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+          page: 1,
+          limit: 100
+        })
       ])
 
       if (opportunityResult.success) {
@@ -185,7 +185,7 @@ export default function OpportunityDetailPage() {
         return
       }
 
-      if (activitiesResult.success) {
+      if (activitiesResult.success && activitiesResult.data) {
         const newActivities = activitiesResult.data
         setActivities(newActivities)
         updateOpportunityCounts(undefined, newActivities.length)
@@ -208,6 +208,8 @@ export default function OpportunityDetailPage() {
     try {
       const result = await listQuotationsAction({
         opportunityId: opportunityId,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
         page: 1,
         limit: 50
       })
@@ -320,7 +322,7 @@ export default function OpportunityDetailPage() {
     }
   }
 
-  const handleQuotationStatusChange = async (quotationId: string, newStatus: string) => {
+  const handleQuotationStatusChange = async (quotationId: string, newStatus: 'DRAFT' | 'SENT' | 'VIEWED' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CONVERTED') => {
     try {
       const result = await changeQuotationStatusAction({
         id: quotationId,
@@ -460,16 +462,6 @@ export default function OpportunityDetailPage() {
       gray: 'bg-gray-100 text-gray-800 border-gray-200',
     }
     return colors[STAGE_METADATA[stage].color as keyof typeof colors] || colors.gray
-  }
-
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'CALL': return <Phone className="h-4 w-4" />
-      case 'EMAIL': return <Mail className="h-4 w-4" />
-      case 'MEETING': return <MessageSquare className="h-4 w-4" />
-      case 'NOTE': return <FileText className="h-4 w-4" />
-      default: return <Activity className="h-4 w-4" />
-    }
   }
 
   if (loading) {

@@ -40,7 +40,8 @@ import {
   Plus,
   Search,
   Filter,
-  Loader2
+  Loader2,
+  Mail
 } from 'lucide-react'
 
 interface Quotation {

@@ -114,13 +114,13 @@ export async function generateQuotationPDFAction(data: GenerateQuotationPDFReque
 
     const coworkInfo = {
       name: tenant?.name || 'SweetSpot Cowork',
-      address: settings?.address || 'Dirección no configurada',
-      phone: settings?.contactInfo?.phone || 'Teléfono no configurado',
-      email: settings?.contactInfo?.email || 'Email no configurado',
-      website: settings?.contactInfo?.website,
+      address: settings?.address || settings?.contactInfo?.address || 'Dirección no configurada',
+      phone: settings?.contactInfo?.phone || settings?.phone || 'Teléfono no configurado',
+      email: settings?.contactInfo?.email || settings?.email || 'Email no configurado',
+      website: settings?.contactInfo?.website || settings?.website,
       logo: getLogoForPDF(tenant?.logoBase64, tenant?.logo), // Use base64 first, fallback to URL
     }
-    
+
     console.log('🔍 PDF Debug - Cowork info:', coworkInfo)
 
     // Helper function to safely convert Decimal to number
@@ -174,12 +174,15 @@ export async function generateQuotationPDFAction(data: GenerateQuotationPDFReque
 
     const pdfBuffer = await renderToBuffer(pdfDocument)
 
-    return { 
-      success: true, 
+    // Convert buffer to base64 for client component compatibility
+    const pdfBase64 = Buffer.from(pdfBuffer).toString('base64')
+
+    return {
+      success: true,
       data: {
         quotation: pdfData,
         coworkInfo,
-        pdfBuffer: pdfBuffer,
+        pdfBuffer: pdfBase64, // Return as base64 string instead of Uint8Array
         generatedAt: new Date().toISOString(),
         generatedBy: {
           id: user.id,
