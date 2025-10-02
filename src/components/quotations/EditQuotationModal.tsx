@@ -434,6 +434,7 @@ export default function EditQuotationModal({
                       type="number"
                       value={formData.discountValue}
                       onChange={(e) => handleInputChange('discountValue', parseFloat(e.target.value) || 0)}
+                      onFocus={(e) => e.target.select()}
                       placeholder="0"
                       min="0"
                       max={formData.discountType === 'PERCENTAGE' ? 100 : undefined}
