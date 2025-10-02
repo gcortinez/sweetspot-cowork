@@ -30,6 +30,8 @@ interface Quotation {
   title: string
   description?: string
   subtotal: number
+  discountType: 'FIXED' | 'PERCENTAGE'
+  discountValue: number
   discounts: number
   taxes: number
   total: number
@@ -78,8 +80,8 @@ export default function EditQuotationModal({
     title: '',
     description: '',
     validUntil: '',
-    discounts: 0,
-    taxes: 0,
+    discountType: 'FIXED' as 'FIXED' | 'PERCENTAGE',
+    discountValue: 0,
     currency: 'CLP',
     notes: '',
   })
@@ -95,8 +97,8 @@ export default function EditQuotationModal({
         title: quotation.title,
         description: quotation.description || '',
         validUntil: quotation.validUntil.split('T')[0], // Convert to date input format
-        discounts: quotation.discounts,
-        taxes: quotation.taxes,
+        discountType: quotation.discountType || 'FIXED',
+        discountValue: quotation.discountValue || 0,
         currency: quotation.currency,
         notes: quotation.notes || '',
       })
@@ -118,13 +120,26 @@ export default function EditQuotationModal({
     }
   }, [isOpen, quotation])
 
-  // Calculate totals with proper number conversion
+  // Calculate totals with automatic IVA
   const subtotal = selectedServices.reduce((sum, service) => {
     // Ensure we're working with proper numbers, not Decimal objects
     const serviceTotal = typeof service.total === 'number' ? service.total : parseFloat(service.total?.toString() || '0')
     return sum + serviceTotal
   }, 0)
-  const total = subtotal - (formData.discounts || 0) + (formData.taxes || 0)
+
+  // Calculate discount amount based on type
+  const discountAmount = formData.discountType === 'PERCENTAGE'
+    ? (subtotal * formData.discountValue) / 100
+    : formData.discountValue
+
+  // Calculate taxable amount (subtotal - discount)
+  const taxableAmount = Math.max(0, subtotal - discountAmount)
+
+  // Calculate IVA (19% of taxable amount)
+  const taxes = taxableAmount * 0.19
+
+  // Calculate total
+  const total = subtotal - discountAmount + taxes
 
   const handleInputChange = (field: string, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -189,8 +204,8 @@ export default function EditQuotationModal({
           unitPrice: Number(service.unitPrice),
           total: Number(service.total),
         })),
-        discounts: formData.discounts,
-        taxes: formData.taxes,
+        discountType: formData.discountType,
+        discountValue: formData.discountValue,
         currency: formData.currency,
         validUntil: formData.validUntil,
         notes: formData.notes || undefined,
@@ -212,8 +227,8 @@ export default function EditQuotationModal({
           setFormData({
             title: result.data.title || '',
             description: result.data.description || '',
-            discounts: result.data.discounts || 0,
-            taxes: result.data.taxes || 0,
+            discountType: result.data.discountType || 'FIXED',
+            discountValue: result.data.discountValue || 0,
             currency: result.data.currency || 'CLP',
             validUntil: result.data.validUntil ? result.data.validUntil.split('T')[0] : '',
             notes: result.data.notes || '',
@@ -395,28 +410,34 @@ export default function EditQuotationModal({
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="discounts">Descuentos ({formData.currency})</Label>
-                    <Input
-                      id="discounts"
-                      type="number"
-                      value={formData.discounts}
-                      onChange={(e) => handleInputChange('discounts', parseFloat(e.target.value) || 0)}
-                      placeholder="0"
-                      min="0"
-                      step="0.01"
-                    />
+                    <Label htmlFor="discountType">Tipo de Descuento</Label>
+                    <Select
+                      value={formData.discountType}
+                      onValueChange={(value: 'FIXED' | 'PERCENTAGE') => handleInputChange('discountType', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="FIXED">Monto Fijo (CLP)</SelectItem>
+                        <SelectItem value="PERCENTAGE">Porcentaje (%)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  
+
                   <div className="space-y-2">
-                    <Label htmlFor="taxes">Impuestos ({formData.currency})</Label>
+                    <Label htmlFor="discountValue">
+                      Valor del Descuento {formData.discountType === 'PERCENTAGE' ? '(%)' : `(${formData.currency})`}
+                    </Label>
                     <Input
-                      id="taxes"
+                      id="discountValue"
                       type="number"
-                      value={formData.taxes}
-                      onChange={(e) => handleInputChange('taxes', parseFloat(e.target.value) || 0)}
+                      value={formData.discountValue}
+                      onChange={(e) => handleInputChange('discountValue', parseFloat(e.target.value) || 0)}
                       placeholder="0"
                       min="0"
-                      step="0.01"
+                      max={formData.discountType === 'PERCENTAGE' ? 100 : undefined}
+                      step={formData.discountType === 'PERCENTAGE' ? '0.01' : '1'}
                     />
                   </div>
                 </div>
@@ -429,30 +450,31 @@ export default function EditQuotationModal({
                     <span>Subtotal:</span>
                     <span className="font-medium">${subtotal.toLocaleString()} {formData.currency}</span>
                   </div>
-                  {formData.discounts > 0 && (
+                  {discountAmount > 0 && (
                     <div className="flex justify-between items-center text-green-600">
-                      <span>Descuentos:</span>
-                      <span>-${formData.discounts.toLocaleString()} {formData.currency}</span>
+                      <span>
+                        Descuentos
+                        {formData.discountType === 'PERCENTAGE' && ` (${formData.discountValue}%)`}:
+                      </span>
+                      <span>-${Math.round(discountAmount).toLocaleString()} {formData.currency}</span>
                     </div>
                   )}
-                  {formData.taxes > 0 && (
-                    <div className="flex justify-between items-center text-orange-600">
-                      <span>Impuestos:</span>
-                      <span>+${formData.taxes.toLocaleString()} {formData.currency}</span>
-                    </div>
-                  )}
+                  <div className="flex justify-between items-center text-orange-600">
+                    <span>Impuestos (IVA 19%):</span>
+                    <span>+${Math.round(taxes).toLocaleString()} {formData.currency}</span>
+                  </div>
                   <Separator />
                   <div className="flex justify-between items-center text-lg font-semibold">
                     <span>Total:</span>
-                    <span className="text-green-600">${total.toLocaleString()} {formData.currency}</span>
+                    <span className="text-green-600">${Math.round(total).toLocaleString()} {formData.currency}</span>
                   </div>
                 </div>
 
-                {total < 0 && (
+                {discountAmount > subtotal && (
                   <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
                     <AlertCircle className="h-4 w-4 text-red-600" />
                     <span className="text-red-600 text-sm">
-                      El total no puede ser negativo. Ajusta los descuentos.
+                      El descuento no puede ser mayor al subtotal.
                     </span>
                   </div>
                 )}
@@ -489,10 +511,10 @@ export default function EditQuotationModal({
               <Button type="button" variant="outline" onClick={handleClose}>
                 Cancelar
               </Button>
-              <Button 
+              <Button
                 type="button"
                 onClick={handleSave}
-                disabled={isSubmitting || isSubmittingAndClosing || selectedServices.length === 0 || total < 0}
+                disabled={isSubmitting || isSubmittingAndClosing || selectedServices.length === 0 || discountAmount > subtotal}
                 variant="secondary"
               >
                 {isSubmitting ? (
@@ -507,10 +529,10 @@ export default function EditQuotationModal({
                   </>
                 )}
               </Button>
-              <Button 
-                type="button" 
+              <Button
+                type="button"
                 onClick={handleSaveAndClose}
-                disabled={isSubmitting || isSubmittingAndClosing || selectedServices.length === 0 || total < 0}
+                disabled={isSubmitting || isSubmittingAndClosing || selectedServices.length === 0 || discountAmount > subtotal}
                 className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
               >
                 {isSubmittingAndClosing ? (

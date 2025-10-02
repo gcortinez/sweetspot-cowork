@@ -689,25 +689,27 @@ model LeadConversion {
 // ============================================================================
 
 model Quotation {
-    id          String          @id @default(cuid())
-    tenantId    String
-    clientId    String
-    number      String
-    title       String
-    description String?
-    subtotal    Decimal         @db.Decimal(10, 2)
-    discounts   Decimal         @default(0) @db.Decimal(10, 2)
-    taxes       Decimal         @default(0) @db.Decimal(10, 2)
-    total       Decimal         @db.Decimal(10, 2)
-    currency    String          @default("USD")
-    validUntil  DateTime
-    status      QuotationStatus @default(DRAFT)
-    notes       String?
-    createdBy   String
-    approvedBy  String?
-    approvedAt  DateTime?
-    createdAt   DateTime        @default(now())
-    updatedAt   DateTime        @updatedAt
+    id            String                  @id @default(cuid())
+    tenantId      String
+    clientId      String
+    number        String
+    title         String
+    description   String?
+    subtotal      Decimal                 @db.Decimal(10, 2)
+    discountType  QuotationDiscountType   @default(FIXED)
+    discountValue Decimal                 @default(0) @db.Decimal(10, 2)
+    discounts     Decimal                 @default(0) @db.Decimal(10, 2)
+    taxes         Decimal                 @default(0) @db.Decimal(10, 2)
+    total         Decimal                 @db.Decimal(10, 2)
+    currency      String                  @default("USD")
+    validUntil    DateTime
+    status        QuotationStatus         @default(DRAFT)
+    notes         String?
+    createdBy     String
+    approvedBy    String?
+    approvedAt    DateTime?
+    createdAt     DateTime                @default(now())
+    updatedAt     DateTime                @updatedAt
 
     // Relationships
     tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -746,6 +748,11 @@ enum QuotationStatus {
     REJECTED
     EXPIRED
     CONVERTED
+}
+
+enum QuotationDiscountType {
+    FIXED
+    PERCENTAGE
 }
 
 model Contract {

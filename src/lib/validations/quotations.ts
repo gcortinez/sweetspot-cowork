@@ -3,12 +3,17 @@ import { z } from 'zod'
 // Enum schemas for quotation-related fields
 export const QuotationStatusSchema = z.enum([
   'DRAFT',
-  'SENT', 
+  'SENT',
   'VIEWED',
   'ACCEPTED',
   'REJECTED',
   'EXPIRED',
   'CONVERTED'
+])
+
+export const DiscountTypeSchema = z.enum([
+  'FIXED',
+  'PERCENTAGE'
 ])
 
 // Base quotation item schema
@@ -30,8 +35,8 @@ export const CreateQuotationSchema = z.object({
   title: z.string().min(1, 'El título es requerido'),
   description: z.string().optional(),
   items: z.array(QuotationItemSchema).min(1, 'Debe incluir al menos un item'),
-  discounts: z.number().min(0, 'Los descuentos no pueden ser negativos').default(0),
-  taxes: z.number().min(0, 'Los impuestos no pueden ser negativos').default(0),
+  discountType: DiscountTypeSchema.default('FIXED'),
+  discountValue: z.number().min(0, 'El valor del descuento no puede ser negativo').default(0),
   currency: z.string().default('CLP'),
   validUntil: z.string().refine((date) => {
     const parsedDate = new Date(date)
@@ -41,9 +46,25 @@ export const CreateQuotationSchema = z.object({
 }).refine((data) => {
   // Calculate subtotal from items
   const subtotal = data.items.reduce((sum, item) => sum + item.total, 0)
-  const total = subtotal - data.discounts + data.taxes
+
+  // Calculate discount amount
+  const discountAmount = data.discountType === 'PERCENTAGE'
+    ? (subtotal * data.discountValue) / 100
+    : data.discountValue
+
+  // Validate discount doesn't exceed subtotal
+  if (discountAmount > subtotal) {
+    return false
+  }
+
+  // Calculate taxes (19% IVA on subtotal - discount)
+  const taxableAmount = subtotal - discountAmount
+  const taxes = taxableAmount * 0.19
+
+  // Calculate total
+  const total = subtotal - discountAmount + taxes
   return total >= 0
-}, 'El total de la cotización debe ser mayor o igual a 0')
+}, 'El descuento no puede ser mayor al subtotal')
 
 // Update quotation schema
 export const UpdateQuotationSchema = z.object({
@@ -51,8 +72,8 @@ export const UpdateQuotationSchema = z.object({
   title: z.string().min(1, 'El título es requerido').optional(),
   description: z.string().optional(),
   items: z.array(QuotationItemSchema).min(1, 'Debe incluir al menos un item').optional(),
-  discounts: z.number().min(0, 'Los descuentos no pueden ser negativos').optional(),
-  taxes: z.number().min(0, 'Los impuestos no pueden ser negativos').optional(),
+  discountType: DiscountTypeSchema.optional(),
+  discountValue: z.number().min(0, 'El valor del descuento no puede ser negativo').optional(),
   currency: z.string().optional(),
   validUntil: z.string().refine((date) => {
     const parsedDate = new Date(date)
@@ -172,6 +193,7 @@ export const ApplyDiscountToQuotationSchema = z.object({
 
 // Type exports
 export type QuotationStatus = z.infer<typeof QuotationStatusSchema>
+export type DiscountType = z.infer<typeof DiscountTypeSchema>
 export type QuotationItem = z.infer<typeof QuotationItemSchema>
 export type CreateQuotationRequest = z.infer<typeof CreateQuotationSchema>
 export type UpdateQuotationRequest = z.infer<typeof UpdateQuotationSchema>
@@ -189,13 +211,32 @@ export type UpdateQuotationItemRequest = z.infer<typeof UpdateQuotationItemSchem
 export type ApplyDiscountToQuotationRequest = z.infer<typeof ApplyDiscountToQuotationSchema>
 
 // Utility functions for quotation calculations
-export const calculateQuotationTotals = (items: QuotationItem[], discounts: number = 0, taxes: number = 0) => {
+export const calculateQuotationTotals = (
+  items: QuotationItem[],
+  discountType: 'FIXED' | 'PERCENTAGE' = 'FIXED',
+  discountValue: number = 0
+) => {
   const subtotal = items.reduce((sum, item) => sum + item.total, 0)
-  const total = subtotal - discounts + taxes
-  
+
+  // Calculate discount amount based on type
+  const discountAmount = discountType === 'PERCENTAGE'
+    ? (subtotal * discountValue) / 100
+    : discountValue
+
+  // Calculate taxable amount (subtotal - discount)
+  const taxableAmount = Math.max(0, subtotal - discountAmount)
+
+  // Calculate IVA (19% of taxable amount)
+  const taxes = taxableAmount * 0.19
+
+  // Calculate total
+  const total = subtotal - discountAmount + taxes
+
   return {
     subtotal,
-    discounts,
+    discountType,
+    discountValue,
+    discounts: discountAmount,
     taxes,
     total: Math.max(0, total) // Ensure total is never negative
   }

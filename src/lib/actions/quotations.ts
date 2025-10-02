@@ -61,6 +61,8 @@ function serializeQuotation(quotation: any) {
   return {
     ...quotation,
     subtotal: toNumber(quotation.subtotal),
+    discountType: quotation.discountType || 'FIXED',
+    discountValue: toNumber(quotation.discountValue),
     discounts: toNumber(quotation.discounts),
     taxes: toNumber(quotation.taxes),
     total: toNumber(quotation.total),
@@ -126,11 +128,11 @@ export async function createQuotationAction(data: CreateQuotationRequest): Promi
       return { success: false, error: 'Los totales de los items no son válidos' }
     }
 
-    // Calculate totals
-    const { subtotal, total } = calculateQuotationTotals(
+    // Calculate totals with automatic tax calculation
+    const { subtotal, discounts, taxes, total } = calculateQuotationTotals(
       validatedData.items,
-      validatedData.discounts,
-      validatedData.taxes
+      validatedData.discountType,
+      validatedData.discountValue
     )
 
     // Get next quotation number
@@ -155,8 +157,10 @@ export async function createQuotationAction(data: CreateQuotationRequest): Promi
         title: validatedData.title,
         description: validatedData.description,
         subtotal,
-        discounts: validatedData.discounts,
-        taxes: validatedData.taxes,
+        discountType: validatedData.discountType,
+        discountValue: validatedData.discountValue,
+        discounts,
+        taxes,
         total,
         currency: validatedData.currency,
         validUntil: new Date(validatedData.validUntil),
@@ -232,14 +236,23 @@ export async function updateQuotationAction(data: UpdateQuotationRequest): Promi
 
     // Prepare update data
     const updateData: any = {}
-    
+
     if (validatedData.title !== undefined) updateData.title = validatedData.title
     if (validatedData.description !== undefined) updateData.description = validatedData.description
-    if (validatedData.discounts !== undefined) updateData.discounts = validatedData.discounts
-    if (validatedData.taxes !== undefined) updateData.taxes = validatedData.taxes
+    if (validatedData.discountType !== undefined) updateData.discountType = validatedData.discountType
+    if (validatedData.discountValue !== undefined) updateData.discountValue = validatedData.discountValue
     if (validatedData.currency !== undefined) updateData.currency = validatedData.currency
     if (validatedData.validUntil !== undefined) updateData.validUntil = new Date(validatedData.validUntil)
     if (validatedData.notes !== undefined) updateData.notes = validatedData.notes
+
+    // Determine discount values to use for calculation
+    const discountTypeValue = validatedData.discountType !== undefined
+      ? validatedData.discountType
+      : (existingQuotation.discountType as 'FIXED' | 'PERCENTAGE')
+
+    const discountValueAmount = validatedData.discountValue !== undefined
+      ? validatedData.discountValue
+      : Number(existingQuotation.discountValue)
 
     // Handle items update
     if (validatedData.items) {
@@ -248,17 +261,16 @@ export async function updateQuotationAction(data: UpdateQuotationRequest): Promi
         return { success: false, error: 'Los totales de los items no son válidos' }
       }
 
-      const discountsValue = validatedData.discounts !== undefined ? validatedData.discounts : Number(existingQuotation.discounts)
-      const taxesValue = validatedData.taxes !== undefined ? validatedData.taxes : Number(existingQuotation.taxes)
-      
-      // Calculate new totals
-      const { subtotal, total } = calculateQuotationTotals(
+      // Calculate new totals with automatic tax calculation
+      const { subtotal, discounts, taxes, total } = calculateQuotationTotals(
         validatedData.items,
-        discountsValue,
-        taxesValue
+        discountTypeValue,
+        discountValueAmount
       )
 
       updateData.subtotal = subtotal
+      updateData.discounts = discounts
+      updateData.taxes = taxes
       updateData.total = total
 
       // Delete existing items and create new ones
@@ -272,19 +284,21 @@ export async function updateQuotationAction(data: UpdateQuotationRequest): Promi
         })),
       }
     } else {
-      // Recalculate totals if discounts or taxes changed
-      if (validatedData.discounts !== undefined || validatedData.taxes !== undefined) {
-        const { subtotal, total } = calculateQuotationTotals(
+      // Recalculate totals if discount type or value changed
+      if (validatedData.discountType !== undefined || validatedData.discountValue !== undefined) {
+        const { subtotal, discounts, taxes, total } = calculateQuotationTotals(
           existingQuotation.items.map(item => ({
             description: item.description,
             quantity: item.quantity,
             unitPrice: Number(item.unitPrice),
             total: Number(item.total),
           })),
-          validatedData.discounts !== undefined ? validatedData.discounts : Number(existingQuotation.discounts),
-          validatedData.taxes !== undefined ? validatedData.taxes : Number(existingQuotation.taxes)
+          discountTypeValue,
+          discountValueAmount
         )
         updateData.subtotal = subtotal
+        updateData.discounts = discounts
+        updateData.taxes = taxes
         updateData.total = total
       }
     }
@@ -712,12 +726,14 @@ export async function duplicateQuotationAction(data: DuplicateQuotationRequest):
         title: validatedData.title || `${originalQuotation.title} (v${nextVersion})`,
         description: originalQuotation.description,
         subtotal: originalQuotation.subtotal,
+        discountType: originalQuotation.discountType,
+        discountValue: originalQuotation.discountValue,
         discounts: originalQuotation.discounts,
         taxes: originalQuotation.taxes,
         total: originalQuotation.total,
         currency: originalQuotation.currency,
-        validUntil: validatedData.validUntil 
-          ? new Date(validatedData.validUntil) 
+        validUntil: validatedData.validUntil
+          ? new Date(validatedData.validUntil)
           : originalQuotation.validUntil,
         status: 'DRAFT',
         notes: originalQuotation.notes,
